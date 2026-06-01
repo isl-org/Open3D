@@ -22,11 +22,6 @@
 #include "open3d/t/io/TriangleMeshIO.h"
 #include "open3d/utility/Logging.h"
 
-#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
-#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
-#define AI_MATKEY_SHEEN "$mat.sheen", 0, 0
-#define AI_MATKEY_ANISOTROPY "$mat.anisotropy", 0, 0
-
 namespace open3d {
 namespace t {
 namespace io {
@@ -523,6 +518,11 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             auto ac = aiColor4D(c.x(), c.y(), c.z(), c.w());
             ai_mat->AddProperty(&ac, 1, AI_MATKEY_COLOR_DIFFUSE);
             ai_mat->AddProperty(&ac, 1, AI_MATKEY_BASE_COLOR);
+            // Set glTF alpha mode so importers treat the mesh as transparent
+            if (c.w() < 1.f) {
+                aiString alpha_mode("BLEND");
+                ai_mat->AddProperty(&alpha_mode, AI_MATKEY_GLTF_ALPHAMODE);
+            }
         }
         if (w_mesh.GetMaterial().HasBaseRoughness()) {
             auto r = w_mesh.GetMaterial().GetBaseRoughness();

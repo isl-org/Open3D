@@ -1303,9 +1303,10 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
         case FILE_OPEN: {
             auto dlg = std::make_shared<gui::FileDialog>(
                     gui::FileDialog::Mode::OPEN, "Open Geometry", GetTheme());
-            dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb",
+            dlg->AddFilter(".ply .stl .fbx .obj .off .gltf .glb "
+                           ".usd .usda .usdc .usdz",
                            "Triangle mesh files (.ply, .stl, .fbx, .obj, .off, "
-                           ".gltf, .glb)");
+                           ".gltf, .glb, .usd, .usda, .usdc, .usdz)");
             dlg->AddFilter(".xyz .xyzn .xyzrgb .ply .pcd .pts",
                            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
                            ".pcd, .pts)");
@@ -1316,6 +1317,9 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
             dlg->AddFilter(".off", "Object file format (.off)");
             dlg->AddFilter(".gltf", "OpenGL transfer files (.gltf)");
             dlg->AddFilter(".glb", "OpenGL binary transfer files (.glb)");
+            dlg->AddFilter(".usd .usda .usdc .usdz",
+                           "Universal Scene Description files "
+                           "(.usd, .usda, .usdc, .usdz)");
             dlg->AddFilter(".xyz", "ASCII point cloud files (.xyz)");
             dlg->AddFilter(".xyzn", "ASCII point cloud with normals (.xyzn)");
             dlg->AddFilter(".xyzrgb",

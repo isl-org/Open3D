@@ -125,5 +125,29 @@ TEST(FileFormatIO, ReadFileGeometryTypeSPLAT) {
     EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_GAUSSIAN_SPLATS));
 }
 
+// USD extensions are dispatched to ReadFileGeometryTypeUSD, which always
+// reports CONTAINS_TRIANGLES | CONTAINS_POINTS regardless of file content
+// (same convention as FBX).
+TEST(FileFormatIO, ReadFileGeometryTypeUSD) {
+    const std::string tmp = utility::filesystem::GetTempDirectoryPath();
+    for (const std::string& ext : {"usd", "usda", "usdc", "usdz"}) {
+        const std::string path = tmp + "/file_type." + ext;
+        std::ofstream output(path, std::ios::binary);
+        ASSERT_TRUE(output.is_open());
+        output.write("", 0);
+        output.close();
+
+        const auto geometry = io::ReadFileGeometryType(path);
+        EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_TRIANGLES))
+                << "Extension ." << ext
+                << " should report CONTAINS_TRIANGLES";
+        EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_POINTS))
+                << "Extension ." << ext << " should report CONTAINS_POINTS";
+        EXPECT_FALSE(HasGeometry(geometry, io::CONTAINS_GAUSSIAN_SPLATS))
+                << "Extension ." << ext
+                << " should NOT report CONTAINS_GAUSSIAN_SPLATS";
+    }
+}
+
 }  // namespace tests
 }  // namespace open3d

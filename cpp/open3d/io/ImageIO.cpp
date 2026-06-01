@@ -8,6 +8,7 @@
 #include "open3d/io/ImageIO.h"
 
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <unordered_map>
 
@@ -19,12 +20,17 @@ namespace io {
 
 namespace {
 
-using signature_decoder_t =
-        std::pair<std::string,
-                  std::function<bool(const std::string &, geometry::Image &)>>;
-static const std::array<signature_decoder_t, 2> signature_decoder_list{
-        {{"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNG},
-         {"\xFF\xD8\xFF", ReadImageFromJPG}}};
+struct ImageSignatureDecoder {
+    std::string signature;
+    std::function<bool(const std::string &, geometry::Image &)> read_from_file;
+    std::function<bool(const unsigned char *, size_t, geometry::Image &)>
+            read_from_memory;
+};
+
+static const std::array<ImageSignatureDecoder, 2> kImageSignatureDecoders{{
+        {"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNG, ReadPNGFromMemory},
+        {"\xFF\xD8\xFF", ReadImageFromJPG, ReadJPGFromMemory},
+}};
 static constexpr uint8_t MAX_SIGNATURE_LEN = 8;
 
 static const std::unordered_map<
@@ -53,10 +59,10 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
         err_msg = "Read geometry::Image failed for file {}. I/O error.";
     } else {
         file.close();
-        for (const auto &signature_decoder : signature_decoder_list) {
-            if (signature_buffer.compare(0, signature_decoder.first.size(),
-                                         signature_decoder.first) == 0) {
-                return signature_decoder.second(filename, image);
+        for (const auto &decoder : kImageSignatureDecoders) {
+            if (signature_buffer.compare(0, decoder.signature.size(),
+                                         decoder.signature) == 0) {
+                return decoder.read_from_file(filename, image);
             }
         }
         err_msg =
@@ -101,14 +107,20 @@ bool ReadImageFromMemory(const std::string &image_format,
                          const unsigned char *image_data_ptr,
                          size_t image_data_size,
                          geometry::Image &image) {
-    if (image_format == "png") {
-        return ReadPNGFromMemory(image_data_ptr, image_data_size, image);
-    } else if (image_format == "jpg") {
-        return ReadJPGFromMemory(image_data_ptr, image_data_size, image);
-    } else {
-        utility::LogWarning("The format of {} is not supported", image_format);
-        return false;
+    (void)image_format;
+    for (const auto &decoder : kImageSignatureDecoders) {
+        const auto &magic = decoder.signature;
+        if (image_data_size >= magic.size() &&
+            std::memcmp(image_data_ptr, magic.data(), magic.size()) == 0) {
+            return decoder.read_from_memory(image_data_ptr, image_data_size,
+                                            image);
+        }
     }
+    utility::LogWarning(
+            "Read image from memory failed: unknown file signature, only PNG "
+            "and JPG are supported.");
+    image.Clear();
+    return false;
 }
 
 }  // namespace io
