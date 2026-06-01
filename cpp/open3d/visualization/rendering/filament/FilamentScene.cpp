@@ -56,11 +56,16 @@
 // clang-format on
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
+#ifdef WITH_IPP
+#include "open3d/t/geometry/kernel/IPPImage.h"
+#endif
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Light.h"
 #include "open3d/visualization/rendering/Material.h"
@@ -144,6 +149,81 @@ FilamentMatrix FilamentMatrixFromEigenMatrix(const EigenMatrix& em) {
             em(3, 0), em(3, 1), em(3, 2), em(3, 3)});
 }
 }  // namespace converters
+
+/// Read one channel of a legacy attribute map as an 8-bit value. For 16-bit
+/// maps the most significant byte is used (endianness-safe via a uint16 read),
+/// so 8- and 16-bit maps pack identically into the 8-bit combined texture.
+inline uint8_t SampleAttributeU8(const open3d::geometry::Image& map,
+                                 int u,
+                                 int v,
+                                 int ch) {
+    if (map.bytes_per_channel_ == 2) {
+        return static_cast<uint8_t>(*map.PointerAt<uint16_t>(u, v, ch) >> 8);
+    }
+    return *map.PointerAt<uint8_t>(u, v, ch);
+}
+
+/// Resample a legacy attribute map to (target_w, target_h) with IPP, preserving
+/// the source bit depth (UInt8 or UInt16). Returns the input when already the
+/// right size, or nullptr when IPP is unavailable or the resize fails.
+std::shared_ptr<open3d::geometry::Image> AlignAttributeMapToTarget(
+        std::shared_ptr<open3d::geometry::Image> map,
+        int target_w,
+        int target_h,
+        const char* map_name) {
+    if (!map || (map->width_ == target_w && map->height_ == target_h)) {
+        return map;
+    }
+#ifndef WITH_IPP
+    open3d::utility::LogWarning(
+            "Dropping {} texture ({}x{}) because it does not match the target "
+            "PBR map size ({}x{}) and Open3D was built without IPP.",
+            map_name, map->width_, map->height_, target_w, target_h);
+    return nullptr;
+#else
+    using open3d::core::Dtype;
+    using open3d::core::Tensor;
+    using open3d::t::geometry::Image;
+    using open3d::t::geometry::ipp::Resize;
+
+    // IPP resize supports UInt8 and UInt16 with {1, 3, 4} channels.
+    const Dtype dtype = (map->bytes_per_channel_ == 2) ? open3d::core::UInt16
+                                                       : open3d::core::UInt8;
+    if (map->bytes_per_channel_ != 1 && map->bytes_per_channel_ != 2) {
+        open3d::utility::LogWarning(
+                "Dropping {} texture: unsupported bytes/channel ({}).",
+                map_name, map->bytes_per_channel_);
+        return nullptr;
+    }
+
+    const int64_t rows = map->height_;
+    const int64_t cols = map->width_;
+    const int64_t ch = map->num_of_channels_;
+    // Tensor strides are in elements, so they are independent of dtype size.
+    Tensor src_tensor(map->data_.data(), dtype, {rows, cols, ch},
+                      {cols * ch, ch, 1});
+
+    auto resized = std::make_shared<open3d::geometry::Image>();
+    resized->Prepare(target_w, target_h, static_cast<int>(ch),
+                     map->bytes_per_channel_);
+    Tensor dst_tensor(resized->data_.data(), dtype,
+                      {static_cast<int64_t>(target_h),
+                       static_cast<int64_t>(target_w), ch},
+                      {static_cast<int64_t>(target_w) * ch, ch, 1});
+
+    try {
+        Resize(src_tensor, dst_tensor, Image::InterpType::Linear);
+    } catch (const std::exception&) {
+        open3d::utility::LogWarning(
+                "Dropping {} texture ({}x{}) because IPP resize to {}x{} "
+                "failed.",
+                map_name, map->width_, map->height_, target_w, target_h);
+        return nullptr;
+    }
+    return resized;
+#endif
+}
+
 /// @endcond
 }  // namespace
 
@@ -1394,44 +1474,42 @@ std::shared_ptr<geometry::Image> CombineTextures(
         std::shared_ptr<geometry::Image> rough,
         std::shared_ptr<geometry::Image> metal) {
     int width = 0, height = 0;
-    if (ao && ao->HasData()) {
+    if (metal) {
+        width = metal->width_;
+        height = metal->height_;
+    } else if (rough) {
+        width = rough->width_;
+        height = rough->height_;
+    } else if (ao) {
         width = ao->width_;
         height = ao->height_;
     }
-    if (rough && rough->HasData()) {
-        if (width == 0) {
-            width = rough->width_;
-            height = rough->height_;
-        } else if (width != rough->width_ || height != rough->height_) {
-            utility::LogWarning(
-                    "Attribute texture maps must have same dimensions");
-            return {};
-        }
-    }
-    if (metal && metal->HasData()) {
-        if (width == 0) {
-            width = metal->width_;
-            height = metal->height_;
-        } else if (width != metal->width_ || height != metal->height_) {
-            utility::LogWarning(
-                    "Attribute texture maps must have same dimensions");
-            return {};
-        }
-    }
 
-    // no maps are valid so return empty texture and let caller use defaults
     if (width == 0 || height == 0) {
         return {};
+    }
+
+    const int target_w = width;
+    const int target_h = height;
+
+    if (metal) {
+        rough = AlignAttributeMapToTarget(rough, target_w, target_h,
+                                          "roughness");
+        ao = AlignAttributeMapToTarget(ao, target_w, target_h, "AO");
+    } else if (rough) {
+        ao = AlignAttributeMapToTarget(ao, target_w, target_h, "AO");
+        metal = AlignAttributeMapToTarget(metal, target_w, target_h,
+                                          "metallic");
     }
 
     auto image = std::make_shared<geometry::Image>();
     image->Prepare(width, height, 3, 1);
     auto data = reinterpret_cast<uint8_t*>(image->data_.data());
 
-    auto set_pixel = [&data](std::shared_ptr<geometry::Image> map, int i,
+    auto set_pixel = [&data](const std::shared_ptr<geometry::Image>& map, int i,
                              int j) {
         if (map && map->HasData()) {
-            *data++ = *(map->PointerAt<uint8_t>(j, i, 0));
+            *data++ = SampleAttributeU8(*map, j, i, 0);
         } else {
             *data++ = 255;
         }
@@ -1450,15 +1528,11 @@ std::shared_ptr<geometry::Image> CombineTextures(
 
 void CombineTextures(std::shared_ptr<geometry::Image> ao,
                      std::shared_ptr<geometry::Image> rough_metal) {
-    int width = rough_metal->width_;
-    int height = rough_metal->height_;
+    const int width = rough_metal->width_;
+    const int height = rough_metal->height_;
 
-    if (ao && ao->HasData()) {
-        if (width != ao->width_ || height != ao->height_) {
-            utility::LogWarning(
-                    "Attribute texture maps must have same dimensions");
-            return;
-        }
+    if (ao && (width != ao->width_ || height != ao->height_)) {
+        ao = AlignAttributeMapToTarget(ao, width, height, "AO");
     }
 
     auto data = reinterpret_cast<uint8_t*>(rough_metal->data_.data());
@@ -1467,7 +1541,7 @@ void CombineTextures(std::shared_ptr<geometry::Image> ao,
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             if (ao && ao->HasData()) {
-                *data = *(ao->PointerAt<uint8_t>(j, i, 0));
+                *data = SampleAttributeU8(*ao, j, i, 0);
             } else {
                 *data = 255;
             }
@@ -1521,8 +1595,10 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
                is_map_valid(props.metallic_img)) {
         props.ao_rough_metal_img = CombineTextures(
                 props.ao_img, props.roughness_img, props.metallic_img);
-        maps.ao_rough_metal_map =
-                renderer_.AddTexture(props.ao_rough_metal_img);
+        if (is_map_valid(props.ao_rough_metal_img)) {
+            maps.ao_rough_metal_map =
+                    renderer_.AddTexture(props.ao_rough_metal_img);
+        }
     }
 
     // Update shader properties

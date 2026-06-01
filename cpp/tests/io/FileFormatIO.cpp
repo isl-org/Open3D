@@ -139,8 +139,7 @@ TEST(FileFormatIO, ReadFileGeometryTypeUSD) {
 
         const auto geometry = io::ReadFileGeometryType(path);
         EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_TRIANGLES))
-                << "Extension ." << ext
-                << " should report CONTAINS_TRIANGLES";
+                << "Extension ." << ext << " should report CONTAINS_TRIANGLES";
         EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_POINTS))
                 << "Extension ." << ext << " should report CONTAINS_POINTS";
         EXPECT_FALSE(HasGeometry(geometry, io::CONTAINS_GAUSSIAN_SPLATS))

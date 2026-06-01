@@ -104,9 +104,8 @@ void LoadTextures(const std::string& filename,
                     auto image = std::make_shared<geometry::Image>();
                     image->Prepare(static_cast<int>(texture->mWidth),
                                    static_cast<int>(texture->mHeight), 4, 1);
-                    const auto* texels =
-                            reinterpret_cast<const unsigned char*>(
-                                    texture->pcData);
+                    const auto* texels = reinterpret_cast<const unsigned char*>(
+                            texture->pcData);
                     const size_t num_bytes =
                             static_cast<size_t>(texture->mWidth) *
                             static_cast<size_t>(texture->mHeight) * 4;
@@ -443,7 +442,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         o3d_mat.name = mat->GetName().C_Str();
 
-        // Prefer PBR RGBA base color (glTF/USD); fall back to legacy RGB diffuse
+        // Prefer PBR RGBA base color (glTF/USD); fall back to legacy RGB
+        // diffuse
         aiColor4D base_color4(1.f, 1.f, 1.f, 1.f);
         if (mat->Get(AI_MATKEY_BASE_COLOR, base_color4) != AI_SUCCESS) {
             aiColor3D c(1.f, 1.f, 1.f);
@@ -451,7 +451,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
             base_color4 = aiColor4D(c.r, c.g, c.b, 1.f);
         }
         o3d_mat.base_color = Eigen::Vector4f(base_color4.r, base_color4.g,
-                                              base_color4.b, base_color4.a);
+                                             base_color4.b, base_color4.a);
 
         mat->Get(AI_MATKEY_METALLIC_FACTOR, o3d_mat.base_metallic);
         mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, o3d_mat.base_roughness);
@@ -475,7 +475,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
         // Transmission / volume (glTF KHR_materials_transmission/volume)
         bool has_transmission =
                 (mat->Get(AI_MATKEY_TRANSMISSION_FACTOR,
-                           o3d_mat.transmission) == AI_SUCCESS) &&
+                          o3d_mat.transmission) == AI_SUCCESS) &&
                 o3d_mat.transmission > 0.f;
         if (!has_transmission) {
             o3d_mat.transmission = 0.f;
@@ -490,11 +490,11 @@ bool ReadModelUsingAssimp(const std::string& filename,
                  o3d_mat.absorption_distance);
 
         // Alpha/transparency: glTF alpha mode takes priority; for non-glTF
-        // formats (OBJ, FBX) fall back to base_color alpha or AI_MATKEY_OPACITY.
-        // KHR_materials_transmission is approximated via alpha blending:
-        // base_color.w = 1 - transmission_factor. This avoids screen-space
-        // refraction (defaultLitSSR) which produces ghosting and is hidden in
-        // offscreen render_to_image calls.
+        // formats (OBJ, FBX) fall back to base_color alpha or
+        // AI_MATKEY_OPACITY. KHR_materials_transmission is approximated via
+        // alpha blending: base_color.w = 1 - transmission_factor. This avoids
+        // screen-space refraction (defaultLitSSR) which produces ghosting and
+        // is hidden in offscreen render_to_image calls.
         aiString alpha_mode;
         mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
         std::string alpha_mode_str(alpha_mode.C_Str());

@@ -296,7 +296,8 @@ void pybind_class_io_definitions(py::module &m_io) {
             "Read a TriangleMeshModel from a file. Supported formats (via "
             "Assimp): fbx, gltf, glb, obj, stl, off, usd, usda, usdc, usdz. "
             "USD import is experimental: mesh geometry and PBR materials only. "
-            "filename"_a, "print_progress"_a = false);
+            "filename"_a,
+            "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_model",
                                  map_shared_argument_docstrings);
 

@@ -4,7 +4,6 @@
 # Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
-
 """Load a multi-material mesh model from USD (experimental).
 
 Downloads Apple's sample biplane USDZ asset, reads it with
@@ -51,7 +50,10 @@ def main():
     print(f"  materials: {len(model.materials)}")
 
     o3d.visualization.draw(
-        [{"name": model_path.stem, "geometry": model}],
+        [{
+            "name": model_path.stem,
+            "geometry": model
+        }],
         title="Open3D: " + model_path.name,
     )
 
