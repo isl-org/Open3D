@@ -365,6 +365,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
         return false;
     }
 
+    if (scene->mNumMeshes == 0) {
+        utility::LogWarning(
+                "File loaded {} but produced no meshes. Please verify your "
+                "file with a file format (GLTF/USD) validator.",
+                filename);
+        return false;
+    }
+
     progress = int64_t(readfile_total);
     reporter.Update(progress);
 
