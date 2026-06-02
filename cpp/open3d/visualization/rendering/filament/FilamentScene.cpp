@@ -1720,14 +1720,13 @@ void FilamentScene::OverrideMaterial(const std::string& object_name,
     }
     const auto& submesh_names = it->second;
     bool changed = false;
-    for (size_t i = 0;
-         i < submesh_names.size() && i < model.meshes_.size(); ++i) {
+    for (size_t i = 0; i < submesh_names.size() && i < model.meshes_.size();
+         ++i) {
         auto geom_entry = geometries_.find(submesh_names[i]);
         if (geom_entry == geometries_.end()) {
             continue;
         }
-        const auto& material =
-                model.materials_[model.meshes_[i].material_idx];
+        const auto& material = model.materials_[model.meshes_[i].material_idx];
         OverrideMaterialInternal(&geom_entry->second, material);
         changed = true;
     }

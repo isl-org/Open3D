@@ -32,6 +32,8 @@ ExternalProject_Add(
         ${CMAKE_CURRENT_LIST_DIR}/0001-fix-usd-AddProperty-aiString-pointer.patch
     COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
         ${CMAKE_CURRENT_LIST_DIR}/0002-fix-usd-embedded-texture-mwidth-bytes.patch
+    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+        ${CMAKE_CURRENT_LIST_DIR}/0003-fix-draco-cmake-intelllvm-cxx-flags.patch
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_CXX_FLAGS:STRING=${assimp_cmake_cxx_flags}

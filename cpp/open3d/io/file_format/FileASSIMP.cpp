@@ -366,10 +366,12 @@ bool ReadModelUsingAssimp(const std::string& filename,
     }
 
     if (scene->mNumMeshes == 0) {
-        utility::LogWarning(
-                "File loaded {} but produced no meshes. Please verify your "
-                "file with a file format (GLTF/USD) validator.",
-                filename);
+        const std::string usd_expt =
+                (filename.find(".usd") != std::string::npos)
+                        ? " (USD import is experimental.)"
+                        : "";
+        utility::LogWarning("File {} loaded but produced no meshes.{}",
+                            filename, usd_expt);
         return false;
     }
 
