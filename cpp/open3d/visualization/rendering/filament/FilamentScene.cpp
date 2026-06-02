@@ -1708,6 +1708,34 @@ void FilamentScene::OverrideMaterial(const std::string& object_name,
     }
 }
 
+void FilamentScene::OverrideMaterial(const std::string& object_name,
+                                     const TriangleMeshModel& model) {
+    // Restore per-submesh materials in place. The submesh entities are left
+    // untouched, so this preserves transform and visibility (unlike a
+    // remove/re-add). model_geometries_[object_name] is stored in the same
+    // order as model.meshes_ (see AddGeometry), so indices align.
+    auto it = model_geometries_.find(object_name);
+    if (it == model_geometries_.end()) {
+        return;
+    }
+    const auto& submesh_names = it->second;
+    bool changed = false;
+    for (size_t i = 0;
+         i < submesh_names.size() && i < model.meshes_.size(); ++i) {
+        auto geom_entry = geometries_.find(submesh_names[i]);
+        if (geom_entry == geometries_.end()) {
+            continue;
+        }
+        const auto& material =
+                model.materials_[model.meshes_[i].material_idx];
+        OverrideMaterialInternal(&geom_entry->second, material);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
+    }
+}
+
 void FilamentScene::QueryGeometry(std::vector<std::string>& geometry) {
     for (const auto& ge : geometries_) {
         geometry.push_back(ge.first);

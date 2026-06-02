@@ -108,6 +108,12 @@ bool ReadImageFromMemory(const std::string &image_format,
                          size_t image_data_size,
                          geometry::Image &image) {
     (void)image_format;
+    if (image_data_ptr == nullptr || image_data_size == 0) {
+        utility::LogWarning(
+                "Read image from memory failed: null or empty buffer.");
+        image.Clear();
+        return false;
+    }
     for (const auto &decoder : kImageSignatureDecoders) {
         const auto &magic = decoder.signature;
         if (image_data_size >= magic.size() &&

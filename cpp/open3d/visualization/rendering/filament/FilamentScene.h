@@ -129,6 +129,8 @@ public:
                              uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
                           const MaterialRecord& material) override;
+    void OverrideMaterial(const std::string& object_name,
+                          const TriangleMeshModel& model) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
     std::uint64_t GetGeometryChangeId() const;
 
