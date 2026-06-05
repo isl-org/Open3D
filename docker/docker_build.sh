@@ -326,7 +326,7 @@ ci_build() {
 5-ml-noble_export_env() {
     export DOCKER_TAG=open3d-ci:5-ml-noble
 
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
+    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu24.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
     export PYTHON_VERSION=3.12
