@@ -774,7 +774,9 @@ public:
                       bool copy = false) const;
 
     /// Returns copy of the BoundingSphere on the same device.
-    BoundingSphere Clone() const { return To(GetDevice(), /*copy=*/true); }
+    BoundingSphere Clone() const {
+        return To(GetDevice(), GetDtype(), /*copy=*/true);
+    }
 
     BoundingSphere &Clear() override;
 

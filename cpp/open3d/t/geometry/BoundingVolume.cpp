@@ -1193,13 +1193,15 @@ BoundingSphere BoundingSphere::FromLegacy(
 }
 
 // checked
-BoundingSphere BoundingSphere::CreateFromPoints(const core::Tensor &points) {
+BoundingSphere BoundingSphere::CreateFromPoints(
+    const core::Tensor &points, 
+    bool robust) {
     core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     if (points.GetShape(0) < 1) {
         utility::LogError("Input point set must have at least 1 point.");
     }
-    return kernel::bounding_sphere::ComputeMinimumBSWelzl(points);
+    return kernel::bounding_sphere::ComputeMinimumBSWelzl(points, robust);
 }
 
 }  // namespace geometry
