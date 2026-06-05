@@ -718,7 +718,7 @@ Example::
         print(f"Center: {sphere.center}")
         print(f"Radius: {sphere.radius}")
 )",
-            "points"_a);
+            "points"_a, "robust"_a = false);
 
     docstring::ClassMethodDocInject(
             m, "BoundingSphere", "set_center",
