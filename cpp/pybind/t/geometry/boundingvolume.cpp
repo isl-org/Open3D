@@ -695,7 +695,9 @@ must be on the same device and have the same data type.)");
 
 Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or
-        float64 (N x 3 tensor, where N must be at least 1).
+        float64 (N x 3 tensor, where N must be larger than 3).
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
 
 Returns:
     BoundingSphere with same data type and device as input points.
@@ -759,7 +761,9 @@ Example::
             m, "BoundingSphere", "create_from_points",
             {{"points",
               "A list of points with data type of float32 or float64 (N x 3 "
-              "tensor, where N must be at least 1)."}});
+              "tensor, where N must be larger than 3)."},
+             {"robust", "If set to true uses a more robust method which works in "
+                        "degenerate cases but introduces noise to the points coordinates."}});
 }
 
 }  // namespace geometry
