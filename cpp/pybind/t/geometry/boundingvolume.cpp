@@ -50,6 +50,15 @@ arbitrary frame of reference with the properties:
 - ``color``: Color of the bounding ellipsoid is a tensor with shape (3,) and
   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
   Values can only be in the range [0.0, 1.0].)");
+
+     py::class_<BoundingSphere, PyGeometry<BoundingSphere>, std::shared_ptr<BoundingSphere>,
+                Geometry>
+            bs(m, "BoundingSphere",
+               R"(A bounding sphere defined by a center point and a radius with the properties:
+
+- ``center``: Center point of the bounding sphere. Tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the sphere.
+- ``radius``: Radius of the bounding sphere. Scalar tensor with a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the sphere.
+- ``color``: Color of the bounding sphere is a tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. Values can only be in the range [0.0, 1.0].)");
 }
 void pybind_boundingvolume_definitions(py::module& m) {
     auto aabb = static_cast<py::class_<AxisAlignedBoundingBox,
