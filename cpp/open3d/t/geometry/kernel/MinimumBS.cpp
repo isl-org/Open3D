@@ -289,8 +289,8 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     std::vector<Eigen::Vector3d> boundary;
 
     // Run Welzl's algorithm on convex hull vertices
-    // EigenSphere es = WelzlRecursive(pts, boundary, pts.size());
-    EigenSphere es = WelzlIterative(pts, pts.size());
+    EigenSphere es = WelzlRecursive(pts, boundary, pts.size());
+    // EigenSphere es = WelzlIterative(pts, pts.size());
 
     open3d::geometry::BoundingSphere sphere(es.center_, es.radius_);
     return sphere;
