@@ -45,7 +45,14 @@ static const std::unordered_map<
                            const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"npz", WriteTriangleMeshToNPZ},
+                // ASSIMP-based writers: full PBR material support.
+                // OBJ/FBX write external PNG sidecars for texture maps.
+                // GLB embeds textures. STL is geometry-only.
                 {"glb", WriteTriangleMeshUsingASSIMP},
+                {"gltf", WriteTriangleMeshUsingASSIMP},
+                {"obj", WriteTriangleMeshUsingASSIMP},
+                {"stl", WriteTriangleMeshUsingASSIMP},
+                {"fbx", WriteTriangleMeshUsingASSIMP},
         };
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
@@ -57,18 +64,13 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
     return mesh;
 }
 
-// TODO:
-// 1. Currently, the tensor triangle mesh implementation has no provision for
-// triangle_uvs,  materials, triangle_material_ids and textures which are
-// supported by the legacy. These can be added as custom attributes (level 2)
-// approach. Please check legacy file formats(e.g. FileOBJ.cpp) for more
-// information.
-// 2. Add these properties to the legacy to tensor mesh and tensor to legacy
-// mesh conversion.
-// 3. Update the documentation with information on how to access these
-// additional attributes from tensor based triangle mesh.
-// 4. Implement read/write tensor triangle mesh with various file formats.
-// 5. Compare with legacy triangle mesh and add corresponding unit tests.
+// Status of tensor TriangleMesh I/O features:
+// - Supported: vertex positions/normals/colors, triangle indices, per-triangle
+//   UV coordinates (triangle attribute "texture_uvs", shape [T, 3, 2]), one
+//   material (PBR scalars + albedo/normal/AO/roughness/metallic/ao_rough_metal
+//   texture maps). FromLegacy/ToLegacy conversion includes all of the above.
+// - Not supported: multiple materials, triangle_material_ids, per-triangle
+//   normals export, additional UV sets, skeleton/animation/cameras/lights.
 
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,

@@ -10,12 +10,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <fstream>
+#include <functional>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
 #include "open3d/core/ParallelFor.h"
-#include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
@@ -33,6 +35,13 @@ static const std::array<signature_decoder_t, 2> signature_decoder_list{
         {{"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNG},
          {"\xFF\xD8\xFF", ReadImageFromJPG}}};
 static constexpr uint8_t MAX_SIGNATURE_LEN = 8;
+
+using mem_signature_decoder_t = std::pair<
+        std::string,
+        std::function<bool(const uint8_t *, size_t, geometry::Image &)>>;
+static const std::array<mem_signature_decoder_t, 2> mem_signature_decoder_list{
+        {{"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNGInMemory},
+         {"\xFF\xD8\xFF", ReadImageFromJPGInMemory}}};
 
 static const std::unordered_map<
         std::string,
@@ -72,6 +81,23 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
     }
     image.Clear();
     utility::LogWarning(err_msg.c_str(), filename);
+    return false;
+}
+
+bool ReadImageFromMemory(const uint8_t *data,
+                         size_t size,
+                         geometry::Image &image) {
+    for (const auto &sig_dec : mem_signature_decoder_list) {
+        const auto &sig = sig_dec.first;
+        if (size >= sig.size() &&
+            std::memcmp(data, sig.data(), sig.size()) == 0) {
+            return sig_dec.second(data, size, image);
+        }
+    }
+    image.Clear();
+    utility::LogWarning(
+            "ReadImageFromMemory: unknown image format "
+            "(only PNG and JPG are supported).");
     return false;
 }
 

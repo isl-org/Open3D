@@ -19,6 +19,9 @@ endif()
 # Assimp import/export toggles aligned with Open3D mesh I/O (see TriangleMeshIO and
 # FileASSIMP). Native Open3D readers/writers handle ply and legacy off read; assimp
 # is enabled only for the formats below.
+#
+# Importers: obj, stl, off, gltf/glb, fbx, usd
+# Exporters: gltf/glb (embedded textures), obj, stl, fbx (best-effort geometry)
 
 ExternalProject_Add(
     ext_assimp
@@ -60,6 +63,9 @@ ExternalProject_Add(
         -DASSIMP_BUILD_FBX_IMPORTER=ON
         -DASSIMP_BUILD_USD_IMPORTER=ON   # USD (tinyusdz)
         -DASSIMP_BUILD_GLTF_EXPORTER=ON
+        -DASSIMP_BUILD_OBJ_EXPORTER=ON
+        -DASSIMP_BUILD_STL_EXPORTER=ON
+        -DASSIMP_BUILD_FBX_EXPORTER=ON
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}

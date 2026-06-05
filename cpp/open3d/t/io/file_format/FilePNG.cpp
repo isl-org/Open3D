@@ -36,18 +36,10 @@ static void SetPNGImageFromImage(const geometry::Image &image,
     }
 }
 
-bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
-    png_image pngimage;
-    memset(&pngimage, 0, sizeof(pngimage));
-    pngimage.version = PNG_IMAGE_VERSION;
-    if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-        utility::LogWarning("Read PNG failed: unable to parse header.");
-        image.Clear();
-        return false;
-    }
-
-    // Clear colormap flag if necessary to ensure libpng expands the color
-    // indexed pixels to full color
+// Shared setup for a png_image struct from a decoded format descriptor.
+static bool FinishReadPNG(png_image &pngimage,
+                          geometry::Image &image,
+                          const char *source_label) {
     if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
         pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
     }
@@ -60,16 +52,41 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format), core::UInt8,
                     image.GetDevice());
     }
-
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
         0) {
-        utility::LogWarning("Read PNG failed: unable to read file: {}",
-                            filename);
-        utility::LogWarning("PNG error: {}", pngimage.message);
+        utility::LogWarning("Read PNG failed from {}: {}", source_label,
+                            pngimage.message);
         image.Clear();
         return false;
     }
     return true;
+}
+
+bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
+        utility::LogWarning("Read PNG failed: unable to parse header.");
+        image.Clear();
+        return false;
+    }
+    return FinishReadPNG(pngimage, image, filename.c_str());
+}
+
+bool ReadImageFromPNGInMemory(const uint8_t *data,
+                              size_t size,
+                              geometry::Image &image) {
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_memory(&pngimage, data, size) == 0) {
+        utility::LogWarning(
+                "Read PNG from memory failed: unable to parse header.");
+        image.Clear();
+        return false;
+    }
+    return FinishReadPNG(pngimage, image, "<memory>");
 }
 
 bool WriteImageToPNG(const std::string &filename,
