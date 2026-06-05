@@ -1182,8 +1182,8 @@ BoundingSphere BoundingSphere::FromLegacy(
             core::eigen_converter::EigenMatrixToTensor(sphere.center_)
                     .Flatten()
                     .To(device, dtype),
-            core::Tensor(std::vector<double>{sphere.radius_}, {1}, dtype,
-                         device));
+            core::Tensor(std::vector<double>{sphere.radius_}, {1}, 
+                core::Float64, device).To(device, dtype));
 
     t_sphere.SetColor(
             core::eigen_converter::EigenMatrixToTensor(sphere.color_)
