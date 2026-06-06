@@ -51,6 +51,9 @@ bool ReadTriangleMesh(const std::string &filename,
 ///               guaranteed by the ASSIMP FBX exporter)
 ///   - \c stl  -- via ASSIMP; geometry only (positions, faces, normals)
 ///   - \c ply, off -- via legacy Open3D writer; geometry + colors/normals only
+/// \note For ASSIMP writers, \p write_ascii is format-specific: it selects
+///       ASCII vs binary STL and is ignored for \c glb / \c gltf (encoding
+///       follows the file extension), \c obj, and \c fbx as documented in logs.
 /// \note Only a single material per mesh is supported. Multiple materials,
 ///       triangle_material_ids, per-triangle normals, and animation are not
 ///       supported.

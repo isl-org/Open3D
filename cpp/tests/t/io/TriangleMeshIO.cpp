@@ -65,7 +65,8 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
 
     const std::string filename =
             utility::filesystem::GetTempDirectoryPath() + "/cube.obj";
-    EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
+    EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh,
+                                         /*write_ascii=*/true));
     t::geometry::TriangleMesh mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh_read));
 
@@ -77,15 +78,15 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
 }
 
 // OBJ round-trip with PBR material.  The OBJ/MTL format has no PBR material
-// properties, so roughness/metallic maps are skipped on export (a warning is
-// logged).  Only albedo (map_Kd) is written to the MTL and read back.
+// properties, so roughness/metallic maps are skipped on export.  Only albedo
+// (map_Kd) is written to the MTL and read back.
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJMaterial) {
     t::geometry::TriangleMesh mesh = MakeTexturedBoxPBR();
 
     const std::string tmp =
             utility::filesystem::GetTempDirectoryPath() + "/obj_material";
     const std::string filename = tmp + ".obj";
-    EXPECT_TRUE(t::io::WriteTriangleMesh(filename, mesh));
+    EXPECT_TRUE(t::io::WriteTriangleMesh(filename, mesh, /*write_ascii=*/true));
 
     // Albedo sidecar PNG must be written and referenced by the MTL.
     EXPECT_TRUE(utility::filesystem::FileExists(tmp + "_albedo.png"));
@@ -227,7 +228,8 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     std::string file_name_tensor = tmp_path + "/test_mesh_tensor.obj";
     std::string file_name_legacy = tmp_path + "/test_mesh_legacy.obj";
 
-    EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
+    EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor,
+                                         /*write_ascii=*/true));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name_tensor, mesh_tensor_read));
     EXPECT_TRUE(io::ReadTriangleMesh(file_name_legacy, mesh_legacy_read));

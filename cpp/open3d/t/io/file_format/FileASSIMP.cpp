@@ -14,7 +14,10 @@
 #include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
+#include <cmath>
+#include <cstring>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -25,7 +28,9 @@
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TriangleMeshIO.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace t {
@@ -184,6 +189,7 @@ struct ExportFormat {
 
 ExportFormat ResolveExportFormat(const std::string& ext, bool write_ascii) {
     //                             assimp_id          embed  mat    pbr
+    // glb / gltf: encoding follows the file extension, not write_ascii.
     if (ext == "glb") return {"glb2", true, true, true};
     if (ext == "gltf") return {"gltf2", false, true, true};
     if (ext == "obj") return {"obj", false, true, false};
@@ -192,6 +198,43 @@ ExportFormat ResolveExportFormat(const std::string& ext, bool write_ascii) {
         return {write_ascii ? "stl" : "stlb", false, false, false};
     utility::LogError("Unsupported ASSIMP export extension: {}", ext);
 }
+
+// Log when write_ascii does not match the encoding implied by the extension.
+void WarnIfWriteAsciiMismatch(const std::string& ext, bool write_ascii) {
+    if (ext == "glb" && write_ascii) {
+        utility::LogInfo(".glb export is binary; write_ascii=true is ignored.");
+    }
+    // STL: write_ascii selects ASSIMP "stl" (ASCII) vs "stlb" (binary); both
+    // use a .stl filename — no message when the flag matches
+    // ResolveExportFormat.
+    if ((ext == "obj" || ext == "gltf") && !write_ascii) {
+        utility::LogInfo(
+                ".{} export is text-based; write_ascii=false is ignored.", ext);
+    }
+    if (ext == "fbx" && write_ascii) {
+        utility::LogInfo(
+                "ASSIMP FBX export is binary; write_ascii=true is ignored.");
+    }
+}
+
+// ASSIMP import/export progress (same contract as legacy ReadModelUsingAssimp).
+class AssimpProgressHandler : public Assimp::ProgressHandler {
+public:
+    explicit AssimpProgressHandler(std::function<bool(double)> update_progress)
+        : update_progress_(std::move(update_progress)) {}
+
+    bool Update(float percentage = -1.f) override {
+        if (!update_progress_) {
+            return true;
+        }
+        const double pct =
+                100.0 * static_cast<double>(std::max(0.f, percentage));
+        return update_progress_(pct);
+    }
+
+private:
+    std::function<bool(double)> update_progress_;
+};
 
 // Register a texture URI (embedded "*N" or a relative sidecar filename) in
 // one material texture slot.
@@ -231,7 +274,12 @@ std::string EmbedTexturePNG(aiScene* scene,
                             int idx,
                             const geometry::Image& img) {
     std::vector<uint8_t> buf;
-    WriteImageToPNGInMemory(buf, img, 6);
+    if (!WriteImageToPNGInMemory(buf, img, 6) || buf.empty()) {
+        utility::LogWarning(
+                "Could not encode texture to PNG for embedding (slot {}).",
+                idx);
+        return "";
+    }
 
     auto* tex = scene->mTextures[idx];
     const std::string uri = std::string("*") + std::to_string(idx);
@@ -469,6 +517,11 @@ bool ReadTriangleMeshUsingASSIMP(
         const open3d::io::ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
+    if (params.update_progress) {
+        importer.SetProgressHandler(
+                new AssimpProgressHandler(params.update_progress));
+    }
+
     unsigned int post_process_flags = kPostProcessFlags_compulsory;
     if (params.enable_post_processing) {
         post_process_flags = kPostProcessFlags_fast;
@@ -682,7 +735,14 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     std::string ext = filepath.extension().string();
     if (!ext.empty()) ext = ext.substr(1);  // strip leading '.'
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    WarnIfWriteAsciiMismatch(ext, write_ascii);
     const ExportFormat fmt = ResolveExportFormat(ext, write_ascii);
+
+    if (compressed) {
+        utility::LogWarning(
+                "The compressed flag is not used for ASSIMP export (.{}).",
+                ext);
+    }
 
     if (!fmt.supports_materials) {
         if (write_triangle_uvs && mesh.HasTriangleAttr("texture_uvs"))
@@ -691,11 +751,6 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             utility::LogWarning("{} does not support vertex colors.", ext);
         if (mesh.HasMaterial())
             utility::LogWarning("{} does not support materials.", ext);
-    }
-    if (write_ascii && (ext == "glb" || ext == "gltf")) {
-        utility::LogWarning(
-                "TriangleMesh cannot be saved in ASCII format as .{}.", ext);
-        return false;
     }
 
     // Convert per-triangle UVs to per-vertex UVs (ASSIMP requirement).
@@ -706,6 +761,17 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
                     : mesh;
 
     Assimp::Exporter exporter;
+    if (print_progress) {
+        const std::string progress_info = std::string("Writing ") +
+                                          utility::ToUpper(ext) +
+                                          " file: " + filename;
+        auto pbar = utility::ProgressBar(100, progress_info, true);
+        exporter.SetProgressHandler(
+                new AssimpProgressHandler([pbar](double pct) mutable -> bool {
+                    pbar.SetCurrentCount(size_t(pct));
+                    return true;
+                }));
+    }
     auto ai_scene = std::unique_ptr<aiScene>(new aiScene);
 
     // ----- Geometry -----
@@ -715,7 +781,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_mesh->mName.Set("Object1");
     ai_mesh->mPrimitiveTypes = aiPrimitiveType_TRIANGLE;
 
-    auto vertices = w_mesh.GetVertexPositions().Contiguous();
+    auto vertices = w_mesh.GetVertexPositions().To(core::Float32).Contiguous();
     // ASSIMP face indices must be unsigned int; get a contiguous buffer.
     auto indices =
             w_mesh.GetTriangleIndices().To(core::Dtype::UInt32).Contiguous();
@@ -723,7 +789,7 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     ai_mesh->mNumFaces = static_cast<unsigned int>(indices.GetShape(0));
 
     ai_mesh->mVertices = new aiVector3D[ai_mesh->mNumVertices];
-    std::memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr(),
+    std::memcpy(&ai_mesh->mVertices->x, vertices.GetDataPtr<float>(),
                 sizeof(float) * ai_mesh->mNumVertices * 3);
 
     // Build aiFace array. ASSIMP's aiFace destructor calls delete[] on
@@ -739,35 +805,42 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     }
 
     if (write_vertex_normals && w_mesh.HasVertexNormals()) {
-        auto normals = w_mesh.GetVertexNormals().Contiguous();
+        auto normals = w_mesh.GetVertexNormals().To(core::Float32).Contiguous();
         ai_mesh->mNormals = new aiVector3D[ai_mesh->mNumVertices];
-        std::memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr(),
+        std::memcpy(&ai_mesh->mNormals->x, normals.GetDataPtr<float>(),
                     sizeof(float) * ai_mesh->mNumVertices * 3);
     }
 
     if (fmt.supports_materials && write_vertex_colors &&
         w_mesh.HasVertexColors()) {
-        auto colors = w_mesh.GetVertexColors().Contiguous();
+        auto colors = w_mesh.GetVertexColors().To(core::Float32).Contiguous();
         ai_mesh->mColors[0] = new aiColor4D[ai_mesh->mNumVertices];
         if (colors.GetShape(1) == 4) {
-            std::memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr(),
+            std::memcpy(&ai_mesh->mColors[0][0].r, colors.GetDataPtr<float>(),
                         sizeof(float) * ai_mesh->mNumVertices * 4);
         } else {
-            auto* cp = colors.GetDataPtr<float>();
+            const auto* cp = colors.GetDataPtr<float>();
             for (unsigned int i = 0; i < ai_mesh->mNumVertices; ++i) {
-                ai_mesh->mColors[0][i] = {*cp++, *cp++, *cp++, 1.f};
+                const float r = cp[i * 3 + 0];
+                const float g = cp[i * 3 + 1];
+                const float b = cp[i * 3 + 2];
+                ai_mesh->mColors[0][i] = aiColor4D(r, g, b, 1.f);
             }
         }
     }
 
     if (fmt.supports_materials && write_triangle_uvs &&
         w_mesh.HasVertexAttr("texture_uvs")) {
-        auto vuv = w_mesh.GetVertexAttr("texture_uvs").Contiguous();
+        auto vuv = w_mesh.GetVertexAttr("texture_uvs")
+                           .To(core::Float32)
+                           .Contiguous();
         ai_mesh->mNumUVComponents[0] = 2;
         ai_mesh->mTextureCoords[0] = new aiVector3D[ai_mesh->mNumVertices];
-        auto* up = vuv.GetDataPtr<float>();
+        const auto* up = vuv.GetDataPtr<float>();
         for (unsigned int i = 0; i < ai_mesh->mNumVertices; ++i) {
-            ai_mesh->mTextureCoords[0][i] = {*up++, *up++, 0.f};
+            const float u = up[i * 2 + 0];
+            const float v = up[i * 2 + 1];
+            ai_mesh->mTextureCoords[0][i] = aiVector3D(u, v, 0.f);
         }
     }
     ai_scene->mMeshes[0] = ai_mesh;
@@ -841,6 +914,12 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
             for (int i = 0; i < n; ++i) {
                 const std::string uri =
                         EmbedTexturePNG(ai_scene.get(), i, textures[i].img);
+                if (uri.empty()) {
+                    utility::LogWarning(
+                            "Skipping embedded texture '{}' (encode failed).",
+                            textures[i].name);
+                    continue;
+                }
                 for (auto tt : textures[i].ai_types) {
                     SetMaterialTextureURI(ai_mat, tt, uri);
                 }

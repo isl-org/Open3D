@@ -12,7 +12,9 @@
 
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace t {
@@ -87,6 +89,16 @@ bool ReadTriangleMesh(const std::string &filename,
     auto map_itr =
             file_extension_to_trianglemesh_read_function.find(filename_ext);
     bool success = false;
+    if (params.print_progress) {
+        auto progress_text = std::string("Reading ") +
+                             utility::ToUpper(filename_ext) +
+                             " file: " + filename;
+        auto pbar = utility::ProgressBar(100, progress_text, true);
+        params.update_progress = [pbar](double percent) mutable -> bool {
+            pbar.SetCurrentCount(size_t(percent));
+            return true;
+        };
+    }
     if (map_itr == file_extension_to_trianglemesh_read_function.end()) {
         open3d::geometry::TriangleMesh legacy_mesh;
         success = open3d::io::ReadTriangleMesh(filename, legacy_mesh, params);

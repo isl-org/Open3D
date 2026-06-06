@@ -7,6 +7,8 @@
 
 #include <png.h>
 
+#include <string>
+
 #include "open3d/core/Dtype.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/utility/Logging.h"
@@ -14,6 +16,20 @@
 namespace open3d {
 namespace t {
 namespace io {
+
+namespace {
+
+// libpng fills pngimage.message with text that already includes "libpng error:
+// ".
+void LogLibPNGError(const png_image &pngimage, const char *fallback) {
+    if (pngimage.message[0] != '\0') {
+        utility::LogWarning("{}", pngimage.message);
+    } else {
+        utility::LogWarning("PNG error: {}.", fallback);
+    }
+}
+
+}  // namespace
 
 static void SetPNGImageFromImage(const geometry::Image &image,
                                  int quality,
@@ -54,8 +70,9 @@ static bool FinishReadPNG(png_image &pngimage,
     }
     if (png_image_finish_read(&pngimage, NULL, image.GetDataPtr(), 0, NULL) ==
         0) {
-        utility::LogWarning("Read PNG failed from {}: {}", source_label,
-                            pngimage.message);
+        const std::string fallback =
+                std::string("Read PNG failed from ") + source_label;
+        LogLibPNGError(pngimage, fallback.c_str());
         image.Clear();
         return false;
     }
@@ -67,7 +84,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_file(&pngimage, filename.c_str()) == 0) {
-        utility::LogWarning("Read PNG failed: unable to parse header.");
+        LogLibPNGError(pngimage, "Read PNG failed: unable to parse header");
         image.Clear();
         return false;
     }
@@ -81,8 +98,8 @@ bool ReadImageFromPNGInMemory(const uint8_t *data,
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
     if (png_image_begin_read_from_memory(&pngimage, data, size) == 0) {
-        utility::LogWarning(
-                "Read PNG from memory failed: unable to parse header.");
+        LogLibPNGError(pngimage,
+                       "Read PNG from memory failed: unable to parse header");
         image.Clear();
         return false;
     }
@@ -117,8 +134,9 @@ bool WriteImageToPNG(const std::string &filename,
     SetPNGImageFromImage(image, quality, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
                                 image.GetDataPtr(), 0, NULL) == 0) {
-        utility::LogWarning("Write PNG failed: unable to write file: {}",
-                            filename);
+        const std::string fallback =
+                std::string("unable to write file: ") + filename;
+        LogLibPNGError(pngimage, fallback.c_str());
         return false;
     }
     return true;
@@ -154,15 +172,17 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
     size_t mem_bytes = 0;
     if (png_image_write_to_memory(&pngimage, nullptr, &mem_bytes, 0,
                                   image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning(
-                "Could not compute bytes needed for encoding to PNG in "
-                "memory.");
+        LogLibPNGError(
+                pngimage,
+                "Write PNG failed: could not compute in-memory buffer size");
         return false;
     }
     buffer.resize(mem_bytes);
     if (png_image_write_to_memory(&pngimage, &buffer[0], &mem_bytes, 0,
                                   image.GetDataPtr(), 0, nullptr) == 0) {
-        utility::LogWarning("Unable to encode to PNG in memory.");
+        LogLibPNGError(pngimage,
+                       "Write PNG failed: unable to encode to memory");
+        buffer.clear();
         return false;
     }
     return true;
