@@ -24,15 +24,14 @@
 #include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 
-#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
-#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness", 0, 0
-#define AI_MATKEY_SHEEN "$mat.sheen", 0, 0
-#define AI_MATKEY_ANISOTROPY "$mat.anisotropy", 0, 0
-
 namespace open3d {
 namespace io {
 
 FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
+    return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
+}
+
+FileGeometry ReadFileGeometryTypeUSD(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
@@ -68,39 +67,52 @@ void LoadTextures(const std::string& filename,
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
 
+    // Load texture at slot (type, index) into img. index defaults to 0 for
+    // all standard single-slot types; multi-slot types (e.g. CLEARCOAT)
+    // use explicit indices.
     auto texture_loader = [&base_path, &scene, &mat, &filename](
                                   aiTextureType type,
-                                  std::shared_ptr<geometry::Image>& img) {
-        if (mat->GetTextureCount(type) > 0) {
+                                  std::shared_ptr<geometry::Image>& img,
+                                  unsigned int index = 0) {
+        if (mat->GetTextureCount(type) > index) {
             aiString path;
-            mat->GetTexture(type, 0, &path);
+            mat->GetTexture(type, index, &path);
 
             // If the texture is an embedded texture, use `GetEmbeddedTexture`.
             if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
-                if (texture->CheckFormat("png")) {
+                if (texture->mHeight == 0) {
+                    // Compressed image: mWidth is the size in bytes. Detect
+                    // PNG/JPEG from magic bytes (same as ImageIO::ReadImage).
                     auto image = io::CreateImageFromMemory(
-                            "png",
+                            "",
                             reinterpret_cast<const unsigned char*>(
                                     texture->pcData),
                             texture->mWidth);
                     if (image->HasData()) {
                         img = image;
-                    }
-                } else if (texture->CheckFormat("jpg")) {
-                    auto image = io::CreateImageFromMemory(
-                            "jpg",
-                            reinterpret_cast<const unsigned char*>(
-                                    texture->pcData),
-                            texture->mWidth);
-                    if (image->HasData()) {
-                        img = image;
+                    } else {
+                        utility::LogWarning(
+                                "Unsupported or undecodable embedded texture "
+                                "{} in file {}: only jpg and png are "
+                                "supported.",
+                                path.C_Str(), filename);
                     }
                 } else {
-                    utility::LogWarning(
-                            "Unsupported texture format for texture {} for "
-                            "file {}: Only jpg and "
-                            "png textures are supported.",
-                            path.C_Str(), filename);
+                    // Uncompressed texels. The USD importer fills aiTexel as
+                    // .b=R, .g=G, .r=B, .a=A, so the in-memory byte order is
+                    // already [R, G, B, A]. Copy straight into the RGBA image.
+                    auto image = std::make_shared<geometry::Image>();
+                    image->Prepare(static_cast<int>(texture->mWidth),
+                                   static_cast<int>(texture->mHeight), 4, 1);
+                    const auto* texels = reinterpret_cast<const unsigned char*>(
+                            texture->pcData);
+                    const size_t num_bytes =
+                            static_cast<size_t>(texture->mWidth) *
+                            static_cast<size_t>(texture->mHeight) * 4;
+                    for (size_t i = 0; i < num_bytes; ++i) {
+                        image->data_[i] = texels[i];
+                    }
+                    img = image;
                 }
             }
             // Else, build the path to it.
@@ -133,11 +145,14 @@ void LoadTextures(const std::string& filename,
         texture_loader(aiTextureType_DIFFUSE, maps.albedo);
     }
     texture_loader(aiTextureType_NORMALS, maps.normal);
-    // Assimp may place ambient occlusion texture in AMBIENT_OCCLUSION if
-    // format has AO support. Prefer that texture if it is preset. Otherwise,
-    // try AMBIENT where OBJ and FBX typically put AO textures.
+    // Ambient occlusion: Assimp uses different slots per format.
+    // glTF 2.0 and USD importers use LIGHTMAP for occlusionTexture /
+    // surfaceShader.occlusion; OBJ/FBX often use AMBIENT; some paths use
+    // AMBIENT_OCCLUSION.
     if (mat->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0) {
         texture_loader(aiTextureType_AMBIENT_OCCLUSION, maps.ao);
+    } else if (mat->GetTextureCount(aiTextureType_LIGHTMAP) > 0) {
+        texture_loader(aiTextureType_LIGHTMAP, maps.ao);
     } else {
         texture_loader(aiTextureType_AMBIENT, maps.ao);
     }
@@ -156,10 +171,11 @@ void LoadTextures(const std::string& filename,
     // type to store OBJ map_Ps 'sheen' PBR map
     texture_loader(aiTextureType_REFLECTION, maps.reflectance);
 
-    // NOTE: ASSIMP doesn't appear to provide texture params for the following:
-    // clearcoat
-    // clearcoat_roughness
-    // anisotropy
+    // Clearcoat: slot 0 = clearcoat factor, slot 1 = clearcoat roughness.
+    // Anisotropy: single slot 0 (Assimp 6 aiTextureType_CLEARCOAT/ANISOTROPY).
+    texture_loader(aiTextureType_CLEARCOAT, maps.clearcoat, 0);
+    texture_loader(aiTextureType_CLEARCOAT, maps.clearcoat_roughness, 1);
+    texture_loader(aiTextureType_ANISOTROPY, maps.anisotropy, 0);
 }
 
 bool ReadTriangleMeshUsingASSIMP(
@@ -258,23 +274,34 @@ bool ReadTriangleMeshUsingASSIMP(
         using MaterialParameter =
                 geometry::TriangleMesh::Material::MaterialParameter;
 
-        // Retrieve base material properties
-        aiColor3D color(1.f, 1.f, 1.f);
+        // Retrieve base material properties.
+        // Prefer PBR RGBA base color; fall back to legacy RGB diffuse.
+        aiColor4D base_color4(1.f, 1.f, 1.f, 1.f);
+        if (mat->Get(AI_MATKEY_BASE_COLOR, base_color4) != AI_SUCCESS) {
+            aiColor3D c(1.f, 1.f, 1.f);
+            mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
+            base_color4 = aiColor4D(c.r, c.g, c.b, 1.f);
+        }
+        mesh_material.baseColor = MaterialParameter(
+                base_color4.r, base_color4.g, base_color4.b, base_color4.a);
 
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        mesh_material.baseColor =
-                MaterialParameter::CreateRGB(color.r, color.g, color.b);
         mat->Get(AI_MATKEY_METALLIC_FACTOR, mesh_material.baseMetallic);
         mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mesh_material.baseRoughness);
-        // NOTE: We prefer sheen to reflectivity so the following code works
-        // since if sheen is not present it won't modify baseReflectance
         mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
-        mat->Get(AI_MATKEY_SHEEN, mesh_material.baseReflectance);
-
-        mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, mesh_material.baseClearCoat);
-        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS,
+        // Clearcoat and anisotropy — Assimp 6 key names
+        mat->Get(AI_MATKEY_CLEARCOAT_FACTOR, mesh_material.baseClearCoat);
+        mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  mesh_material.baseClearCoatRoughness);
-        mat->Get(AI_MATKEY_ANISOTROPY, mesh_material.baseAnisotropy);
+        mat->Get(AI_MATKEY_ANISOTROPY_FACTOR, mesh_material.baseAnisotropy);
+
+        // Opacity for non-glTF formats (OBJ d / FBX Opacity)
+        {
+            float opacity = 1.f;
+            mat->Get(AI_MATKEY_OPACITY, opacity);
+            if (opacity < 1.f) {
+                mesh_material.baseColor.f4[3] = opacity;
+            }
+        }
 
         // Retrieve textures
         TextureImages maps;
@@ -335,6 +362,16 @@ bool ReadModelUsingAssimp(const std::string& filename,
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP: {}", filename,
                             importer.GetErrorString());
+        return false;
+    }
+
+    if (scene->mNumMeshes == 0) {
+        const std::string usd_expt =
+                (filename.find(".usd") != std::string::npos)
+                        ? " (USD import is experimental.)"
+                        : "";
+        utility::LogWarning("File {} loaded but produced no meshes.{}",
+                            filename, usd_expt);
         return false;
     }
 
@@ -415,29 +452,78 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         o3d_mat.name = mat->GetName().C_Str();
 
-        // Retrieve base material properties
-        aiColor3D color(1.f, 1.f, 1.f);
+        // Prefer PBR RGBA base color (glTF/USD); fall back to legacy RGB
+        // diffuse
+        aiColor4D base_color4(1.f, 1.f, 1.f, 1.f);
+        if (mat->Get(AI_MATKEY_BASE_COLOR, base_color4) != AI_SUCCESS) {
+            aiColor3D c(1.f, 1.f, 1.f);
+            mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
+            base_color4 = aiColor4D(c.r, c.g, c.b, 1.f);
+        }
+        o3d_mat.base_color = Eigen::Vector4f(base_color4.r, base_color4.g,
+                                             base_color4.b, base_color4.a);
 
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
         mat->Get(AI_MATKEY_METALLIC_FACTOR, o3d_mat.base_metallic);
         mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, o3d_mat.base_roughness);
         mat->Get(AI_MATKEY_REFLECTIVITY, o3d_mat.base_reflectance);
-        mat->Get(AI_MATKEY_SHEEN, o3d_mat.base_reflectance);
-
-        mat->Get(AI_MATKEY_CLEARCOAT_THICKNESS, o3d_mat.base_clearcoat);
+        // Clearcoat and anisotropy — Assimp 6 key names
         mat->Get(AI_MATKEY_CLEARCOAT_FACTOR, o3d_mat.base_clearcoat);
         mat->Get(AI_MATKEY_CLEARCOAT_ROUGHNESS_FACTOR,
                  o3d_mat.base_clearcoat_roughness);
-        mat->Get(AI_MATKEY_ANISOTROPY, o3d_mat.base_anisotropy);
-        mat->Get(AI_MATKEY_COLOR_EMISSIVE, color);
-        o3d_mat.emissive_color =
-                Eigen::Vector4f(color.r, color.g, color.b, 1.f);
+        mat->Get(AI_MATKEY_ANISOTROPY_FACTOR, o3d_mat.base_anisotropy);
+
+        // Emissive color scaled by optional emissive intensity factor
+        {
+            aiColor3D e(0.f, 0.f, 0.f);
+            mat->Get(AI_MATKEY_COLOR_EMISSIVE, e);
+            float intensity = 1.f;
+            mat->Get(AI_MATKEY_EMISSIVE_INTENSITY, intensity);
+            o3d_mat.emissive_color = Eigen::Vector4f(
+                    e.r * intensity, e.g * intensity, e.b * intensity, 1.f);
+        }
+
+        // Transmission / volume (glTF KHR_materials_transmission/volume)
+        bool has_transmission =
+                (mat->Get(AI_MATKEY_TRANSMISSION_FACTOR,
+                          o3d_mat.transmission) == AI_SUCCESS) &&
+                o3d_mat.transmission > 0.f;
+        if (!has_transmission) {
+            o3d_mat.transmission = 0.f;
+        }
+        mat->Get(AI_MATKEY_VOLUME_THICKNESS_FACTOR, o3d_mat.thickness);
+        {
+            aiColor3D att(1.f, 1.f, 1.f);
+            mat->Get(AI_MATKEY_VOLUME_ATTENUATION_COLOR, att);
+            o3d_mat.absorption_color = Eigen::Vector3f(att.r, att.g, att.b);
+        }
+        mat->Get(AI_MATKEY_VOLUME_ATTENUATION_DISTANCE,
+                 o3d_mat.absorption_distance);
+
+        // Alpha/transparency: glTF alpha mode takes priority; for non-glTF
+        // formats (OBJ, FBX) fall back to base_color alpha or
+        // AI_MATKEY_OPACITY. KHR_materials_transmission is approximated via
+        // alpha blending: base_color.w = 1 - transmission_factor. This avoids
+        // screen-space refraction (defaultLitSSR) which produces ghosting and
+        // is hidden in offscreen render_to_image calls.
         aiString alpha_mode;
         mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode);
         std::string alpha_mode_str(alpha_mode.C_Str());
         if (alpha_mode_str == "BLEND" || alpha_mode_str == "MASK") {
             o3d_mat.has_alpha = true;
+        } else if (o3d_mat.base_color.w() < 1.f) {
+            o3d_mat.has_alpha = true;
+        } else if (has_transmission) {
+            // Approximate transmission as alpha blending: fully transmissive
+            // (transmission=1) maps to fully transparent (alpha=0).
+            o3d_mat.base_color.w() = 1.f - o3d_mat.transmission;
+            o3d_mat.has_alpha = true;
+        } else {
+            float opacity = 1.f;
+            mat->Get(AI_MATKEY_OPACITY, opacity);
+            if (opacity < 1.f) {
+                o3d_mat.base_color.w() = opacity;
+                o3d_mat.has_alpha = true;
+            }
         }
 
         // Retrieve textures
@@ -450,6 +536,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
         o3d_mat.roughness_img = maps.roughness;
         o3d_mat.reflectance_img = maps.reflectance;
         o3d_mat.ao_rough_metal_img = maps.gltf_rough_metal;
+        o3d_mat.clearcoat_img = maps.clearcoat;
+        o3d_mat.clearcoat_roughness_img = maps.clearcoat_roughness;
+        o3d_mat.anisotropy_img = maps.anisotropy;
 
         if (o3d_mat.has_alpha) {
             o3d_mat.shader = "defaultLitTransparency";

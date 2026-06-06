@@ -6,6 +6,7 @@ target_sources(tests PRIVATE
     TriangleMesh.cpp
     AxisAlignedBoundingBox.cpp
     OrientedBoundingBox.cpp
+    OrientedBoundingEllipsoid.cpp
     VoxelBlockGrid.cpp
     VtkUtils.cpp
 )

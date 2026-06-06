@@ -39,8 +39,8 @@ public:
     ///
     /// \param relative_fitness If relative change (difference) of fitness score
     /// is lower than relative_fitness, the iteration stops.
-    /// \param relative_rmse If relative change (difference) of inliner RMSE score is
-    /// lower than relative_rmse, the iteration stops.
+    /// \param relative_rmse If relative change (difference) of inliner RMSE
+    /// score is lower than relative_rmse, the iteration stops.
     /// \param max_iteration Maximum iteration before iteration stops.
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
@@ -52,10 +52,10 @@ public:
 
 public:
     /// If relative change (difference) of fitness score is lower than
-    /// `relative_fitness`, the iteration stops.
+    /// `relative_fitness_`, the iteration stops.
     double relative_fitness_;
     /// If relative change (difference) of inliner RMSE score is lower than
-    /// `relative_rmse`, the iteration stops.
+    /// `relative_rmse_`, the iteration stops.
     double relative_rmse_;
     /// Maximum iteration before iteration stops.
     int max_iteration_;

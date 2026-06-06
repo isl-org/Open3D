@@ -754,9 +754,9 @@ private:
 };
 
 /// \class RedwoodIndoorLivingRoom1
-/// \brief Data class for `RedwoodIndoorLivingRoom1` (Augmented ICL-NUIM Dataset),
-/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
-/// sequence, oni sequence, and ground-truth camera trajectory.
+/// \brief Data class for `RedwoodIndoorLivingRoom1` (Augmented ICL-NUIM
+/// Dataset), containing dense point cloud, rgb sequence, clean depth sequence,
+/// noisy depth sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorLivingRoom1
 ///     ├── colors
@@ -810,9 +810,9 @@ private:
 };
 
 /// \class RedwoodIndoorLivingRoom2
-/// \brief Data class for `RedwoodIndoorLivingRoom2` (Augmented ICL-NUIM Dataset),
-/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
-/// sequence, oni sequence, and ground-truth camera trajectory.
+/// \brief Data class for `RedwoodIndoorLivingRoom2` (Augmented ICL-NUIM
+/// Dataset), containing dense point cloud, rgb sequence, clean depth sequence,
+/// noisy depth sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorLivingRoom2
 ///     ├── colors
@@ -867,8 +867,8 @@ private:
 
 /// \class RedwoodIndoorOffice1
 /// \brief Data class for `RedwoodIndoorOffice1` (Augmented ICL-NUIM Dataset),
-/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
-/// sequence, oni sequence, and ground-truth camera trajectory.
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy
+/// depth sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorOffice1
 ///     ├── colors
@@ -923,8 +923,8 @@ private:
 
 /// \class RedwoodIndoorOffice2
 /// \brief Data class for `RedwoodIndoorOffice2` (Augmented ICL-NUIM Dataset),
-/// containing dense point cloud, rgb sequence, clean depth sequence, noisy depth
-/// sequence, oni sequence, and ground-truth camera trajectory.
+/// containing dense point cloud, rgb sequence, clean depth sequence, noisy
+/// depth sequence, oni sequence, and ground-truth camera trajectory.
 ///
 ///     RedwoodIndoorOffice2
 ///     ├── colors

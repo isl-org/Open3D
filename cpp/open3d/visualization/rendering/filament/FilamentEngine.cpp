@@ -25,6 +25,10 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
+#if !defined(__APPLE__)
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#endif
 
 namespace open3d {
 namespace visualization {
@@ -34,14 +38,9 @@ namespace {
 static std::shared_ptr<EngineInstance> g_instance = nullptr;
 }  // namespace
 
-#ifdef _WIN32
-// Default for Windows is Vulkan, but this sometimes selects the Direct3D12
-// emulated backend, which is not fully functional. Force OpenGL instead.
-RenderingType EngineInstance::type_ = RenderingType::kOpenGL;
-#else
 RenderingType EngineInstance::type_ = RenderingType::kDefault;
-#endif
 std::string EngineInstance::resource_path_ = "";
+void* EngineInstance::shared_context_ = nullptr;
 
 void EngineInstance::SelectBackend(RenderingType type) { type_ = type; }
 
@@ -55,10 +54,20 @@ void EngineInstance::SetResourcePath(const std::string& resource_path) {
 
 const std::string& EngineInstance::GetResourcePath() { return resource_path_; }
 
+void EngineInstance::SetSharedContext(void* shared_context) {
+    shared_context_ = shared_context;
+}
+
+void* EngineInstance::GetSharedContext() { return shared_context_; }
+
 filament::Engine& EngineInstance::GetInstance() { return *Get().engine_; }
 
 FilamentResourceManager& EngineInstance::GetResourceManager() {
     return *Get().resource_manager_;
+}
+
+filament::backend::Platform* EngineInstance::GetPlatform() {
+    return Get().engine_->getPlatform();
 }
 
 EngineInstance::~EngineInstance() {
@@ -68,6 +77,15 @@ EngineInstance::~EngineInstance() {
 
     filament::Engine::destroy(engine_);
     engine_ = nullptr;
+
+#if !defined(__APPLE__)
+    GaussianSplatOpenGLContext::GetInstance().Shutdown();
+    GaussianSplatVulkanInteropContext::GetInstance().Shutdown();
+    // The GLX context handle is now destroyed; clear the cached pointer so
+    // that the next EngineInstance creation re-initialises the compute
+    // context and passes a fresh handle to Filament's Engine::create().
+    shared_context_ = nullptr;
+#endif
 }
 
 EngineInstance& EngineInstance::Get() {
@@ -96,7 +114,66 @@ EngineInstance::EngineInstance() {
             break;
     }
 
-    engine_ = filament::Engine::create(backend);
+#if !defined(__APPLE__)
+    // Filament's DEFAULT backend on Windows and Linux resolves to Vulkan (or
+    // the Vulkan D3D12 emulation layer on Windows), which conflicts with our
+    // OpenGL-based compute context sharing for Gaussian splatting.  Filament
+    // only supports zero copy buffer sharing on Metal and OpenGL. Also, on
+    // Windows, Vulkan sometimes defaults to the D3D12 emulated Vulkan GPU,
+    // which does not support triple buffering and causes a crash at startup.
+    // Force OpenGL unconditionally.
+    if (backend == filament::backend::Backend::DEFAULT) {
+        backend = filament::backend::Backend::OPENGL;
+    }
+
+    // Initialise the Vulkan interop context BEFORE the GL context so that
+    // Vulkan device memory allocations and exported FDs are ready for the
+    // GL EXT_memory_object import calls made during PrepareOutputTextures().
+    // Failure is non-fatal: the Vulkan backend will fall back gracefully.
+    {
+        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+        if (!vk_ctx.IsValid()) {
+            if (!vk_ctx.Initialize()) {
+                utility::LogWarning(
+                        "EngineInstance: Vulkan interop context init failed: "
+                        "{}",
+                        vk_ctx.GetLastError());
+            }
+        }
+    }
+
+    // On Linux (X11/XWayland via GLX) and Windows (WGL), create our compute
+    // GL context BEFORE the Filament engine so we can pass it as the
+    // sharedGLContext. Filament then creates its own context sharing our GL
+    // namespace, enabling zero-copy texture import() between the two
+    // contexts. This must happen before Engine::create() because GLX/WGL
+    // sharing can only be established at context creation time.
+    if ((backend == filament::backend::Backend::OPENGL ||
+         backend == filament::backend::Backend::DEFAULT) &&
+        !shared_context_) {
+        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
+        if (!gl_ctx.IsValid()) {
+            gl_ctx.InitializeStandalone();
+        }
+        if (gl_ctx.IsValid()) {
+            shared_context_ = gl_ctx.GetNativeContext();
+            utility::LogDebug(
+                    "EngineInstance: passing GS compute context to Filament "
+                    "as sharedGLContext ({:p}).",
+                    shared_context_);
+        }
+    }
+#endif
+
+    filament::Engine::Config fmcfg;
+    fmcfg.stereoscopicType = filament::Engine::StereoscopicType::INSTANCED;
+    fmcfg.stereoscopicEyeCount = 1;  // We do not support stereo.
+    engine_ =
+            filament::Engine::create(backend, nullptr, shared_context_, &fmcfg);
+    if (!engine_) {
+        utility::LogError("Failed to create Filament engine.");
+    }
+
     resource_manager_ = new FilamentResourceManager(*engine_);
     // Query and record the backend selected by filament for future use (e.g.
     // for ImGui)

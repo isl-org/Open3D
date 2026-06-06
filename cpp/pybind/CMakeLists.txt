@@ -48,9 +48,12 @@ if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
     # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
 elseif (APPLE)
+    # Symbol names in Apple's -exported_symbols_list must carry the leading
+    # underscore that the C ABI prepends to all extern "C" symbols on macOS.
+    # ld-prime (Xcode 16+) is strict about this; older ld-classic was lenient.
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
-open3d_core_cuda_device_count
+_open3d_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list

@@ -357,6 +357,13 @@ This example shows how to create a hemisphere from a sphere::
                         "float_dtype"_a = core::Float32,
                         "int_dtype"_a = core::Int64,
                         "device"_a = core::Device("CPU:0"))
+            .def_static("create_ellipsoid", &TriangleMesh::CreateEllipsoid,
+                        "Create an ellipsoid mesh centered at (0, 0, 0).",
+                        "radius_x"_a = 1.0, "radius_y"_a = 1.0,
+                        "radius_z"_a = 1.0, "resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
             .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
                         "Create a tetrahedron mesh centered at (0, 0, 0).",
                         "radius"_a = 1.0, "float_dtype"_a = core::Float32,
@@ -554,6 +561,28 @@ Example:
 )");
 
     triangle_mesh.def_static(
+            "create_from_oriented_bounding_ellipsoid",
+            &TriangleMesh::CreateFromOrientedBoundingEllipsoid, "ellipsoid"_a,
+            "scale"_a = core::Tensor::Ones({3}, core::Float64,
+                                           core::Device("CPU:0")),
+            "resolution"_a = 20, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
+            R"(Create a solid TriangleMesh representing the surface of an OrientedBoundingEllipsoid.
+
+Args:
+    ellipsoid (open3d.t.geometry.OrientedBoundingEllipsoid): The oriented
+        bounding ellipsoid.
+    scale (open3d.core.Tensor): Per-axis scale factors applied to each
+        semi-axis radius, shape (3,). Default is (1, 1, 1).
+    resolution (int): Resolution of the generated ellipsoid surface mesh.
+    float_dtype (open3d.core.Dtype): Float32 or Float64, for vertex attributes.
+    int_dtype (open3d.core.Dtype): Int32 or Int64, for triangle indices.
+    device (open3d.core.Device): The device for the returned mesh.
+
+Returns:
+    open3d.t.geometry.TriangleMesh: Solid surface mesh of the ellipsoid.)");
+
+    triangle_mesh.def_static(
             "create_isosurfaces",
             // Accept anything for contour_values that pybind can convert to
             // std::list. This also avoids o3d.utility.DoubleVector.
@@ -744,6 +773,11 @@ Example:
                       &TriangleMesh::GetOrientedBoundingBox,
                       "Create an oriented bounding box from vertex attribute "
                       "'positions'.");
+    triangle_mesh.def("get_oriented_bounding_ellipsoid",
+                      &TriangleMesh::GetOrientedBoundingEllipsoid,
+                      "Create an oriented bounding ellipsoid from vertex "
+                      "attribute 'positions'.",
+                      "robust"_a = false);
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,
@@ -1198,6 +1232,74 @@ Example::
     print(metrics)
     np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
                                rtol=0.05)
+    )");
+
+    triangle_mesh.def(
+            "compute_ambient_occlusion", &TriangleMesh::ComputeAmbientOcclusion,
+            "tex_width"_a = 256, "n_rays"_a = 32,
+            "max_hit_distance"_a = INFINITY, "update_material"_a = true,
+            R"(Computes an ambient occlusion texture for the mesh.
+    
+    This method generates an ambient occlusion map by casting rays from the surface
+    of the mesh and measuring occlusion. The mesh must have texture coordinates
+    ("texture_uvs" triangle attribute). The resulting texture is a single-channel
+    grayscale image with values in [0, 255], where 0 is fully occluded and 255 is
+    fully exposed.
+    
+    This function always uses the CPU device.
+    
+    Args:
+        tex_width (int): The width and height of the output texture in pixels (square).
+        n_rays (int): The number of rays to cast per texel for occlusion estimation.
+        max_hit_distance (float): The maximum distance for ray intersection. The
+            default is INFINITY, i.e. very far occlusions also count.
+        update_material (bool): If true, updates the mesh material with the computed
+            ambient occlusion texture.
+    
+    Returns:
+        The computed ambient occlusion texture as an Image (single channel, UInt8).
+    )");
+
+    triangle_mesh.def(
+            "compute_tangent_space", &TriangleMesh::ComputeTangentSpace,
+            "bake"_a = true, "tex_width"_a = 512,
+            R"(Computes tangent space for the triangle mesh with MikkTSpace.
+    The mesh must have vertex positions, vertex normals, and texture UVs
+    (triangle attribute 'texture_uvs'). The computed tangents will be added as
+    vertex attributes 'tangents' shape (N,4), where the 4th element is the sign.
+    Bitangents are normally computed as needed with the formula:
+    ``vB = sign * cross(vN, vT);``
+    This function works on the CPU and will transfer data to the CPU if necessary.
+    
+    Args:
+        bake (bool): If true, the normals and tangents will also be baked to
+            textures and saved to the material.
+        tex_width (int): Baked texture size. Default 512.
+    )");
+
+    triangle_mesh.def("transform_normal_map", &TriangleMesh::TransformNormalMap,
+                      "normal_map"_a, "to_tangent_space"_a = true,
+                      "update_material"_a = false,
+                      R"(Converts a normal map between world and tangent space.
+    
+    The conversion is performed for each pixel of the map. The mesh must
+    have vertex normals (shape (N, 3)) and tangents with sign (shape (N, 4)).
+    The tangent space attributes can be computed with `compute_tangent_space()`.
+    
+    Args:
+        normal_map (o3d.t.geometry.Image): The normal map to convert.
+            When converting to tangent space, this is the world-space normal map.
+            When converting to world space, this is the tangent-space normal map.
+            It is expected to have 3 channels with Float32 or Float64 data type,
+            with values in range [-1, 1], or UInt8 data type in the range [0, 255].
+        to_tangent_space (bool): If true, converts from world to tangent space.
+            If false, converts from tangent to world space.
+        update_material (bool): If true and we are converting to tangent space,
+            the mesh material will be updated to contain the new normal map.
+    
+    Returns:
+        The converted normal map as an Image. This will have 3 channels,
+        UInt8 data type, with values in range [0, 255].
     )");
 }
 

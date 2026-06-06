@@ -27,6 +27,8 @@ deps=(
     libc++abi-dev
     libsdl2-dev
     libxi-dev
+    # Compute shaders
+    glslang-tools
     # ML
     libtbb-dev
     # Headless rendering
