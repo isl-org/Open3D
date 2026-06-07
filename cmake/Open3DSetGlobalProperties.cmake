@@ -93,6 +93,29 @@ function(open3d_set_global_properties target)
         if (ENABLE_CACHED_CUDA_MANAGER)
             target_compile_definitions(${target} PRIVATE ENABLE_CACHED_CUDA_MANAGER)
         endif()
+        if (USE_HIP)
+            target_compile_definitions(${target} PRIVATE USE_HIP)
+            # Host .cpp across the tree include CUDAUtils.h -> <cuda.h>. Put the
+            # hip_compat shim dir + cpp root + the ROCm include dir on EVERY
+            # target (not just the .cu-bearing GPU libs) so those CUDA-spelled
+            # includes resolve to the HIP runtime under the host compiler too.
+            target_include_directories(${target} PRIVATE
+                "${PROJECT_SOURCE_DIR}/cpp/open3d/core/hip/hip_compat"
+                "${PROJECT_SOURCE_DIR}/cpp")
+            # rocThrust's compiler.h auto-detects the backend from __CUDACC__
+            # / __HIPCC__; without an explicit override it can pin to the wrong
+            # backend. THRUST_DEVICE_SYSTEM_HIP == 5 (thrust/detail/config/
+            # device_system.h); pin it directly so auto-detect is bypassed.
+            # __CUDACC__ is deliberately NOT defined (CUDAToHIP.h explains why;
+            # the device guards are extended to ||__HIPCC__ at each site).
+            # Applies to .cu TUs and host .cpp alike.
+            target_compile_definitions(${target} PRIVATE
+                THRUST_DEVICE_SYSTEM=5)
+            find_package(hip QUIET)
+            if (TARGET hip::host)
+                target_link_libraries(${target} PRIVATE hip::host)
+            endif()
+        endif()
     endif()
     if (BUILD_ISPC_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_ISPC_MODULE)
@@ -205,10 +228,51 @@ function(open3d_set_global_properties target)
             BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../")
     elseif(UNIX)
         # INSTALL_RPATH for C++ binaries.
-        set_target_properties(${target} PROPERTIES 
+        set_target_properties(${target} PROPERTIES
             INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../"
         # BUILD_RPATH for Python wheel libs and app.
             BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
     endif()
 
+    # HIP: retag this target's .cu sources to the HIP language so they compile
+    # with hipcc/clang, force-include the CUDA->HIP compat header on them, and
+    # add the toolkit-include shim dir (hip_compat) so the CUDA-spelled
+    # <cuda.h>/<cuda_runtime.h>/<cub/cub.cuh> includes resolve to HIP. Every GPU
+    # library calls open3d_set_global_properties after its target_sources, so
+    # the .cu sources are present here; the CUDA build never enters this branch.
+    if (USE_HIP)
+        open3d_set_hip_properties(${target})
+    endif()
+
+endfunction()
+
+
+# open3d_set_hip_properties(target)
+#
+# Mark a target's CUDA-spelled .cu sources LANGUAGE HIP and wire up the compat
+# layer (force-include + shim include dir). No-op for targets with no .cu.
+function(open3d_set_hip_properties target)
+    get_target_property(target_sources_list ${target} SOURCES)
+    if (NOT target_sources_list)
+        return()
+    endif()
+    set(hip_sources)
+    foreach(src ${target_sources_list})
+        if (src MATCHES "\\.cu$")
+            list(APPEND hip_sources ${src})
+        endif()
+    endforeach()
+    if (NOT hip_sources)
+        return()
+    endif()
+    set_source_files_properties(${hip_sources} TARGET_DIRECTORY ${target}
+                                PROPERTIES LANGUAGE HIP)
+    set_target_properties(${target} PROPERTIES
+        HIP_ARCHITECTURES "${CMAKE_HIP_ARCHITECTURES}")
+    # The hip_compat shim dir + cpp root are already on the include path for
+    # every target (open3d_set_global_properties). Force-include the compat
+    # header on the HIP TUs so its aliases precede any use regardless of each
+    # file's include order.
+    target_compile_options(${target} PRIVATE
+        "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-include ${PROJECT_SOURCE_DIR}/cpp/open3d/core/hip/CUDAToHIP.h>")
 endfunction()

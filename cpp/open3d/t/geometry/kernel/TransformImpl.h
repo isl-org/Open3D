@@ -87,7 +87,7 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotateNormalsKernel(
     normals_ptr[2] = x[2];
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void TransformPointsCUDA
 #else
 void TransformPointsCPU
@@ -107,7 +107,7 @@ void TransformPointsCPU
     });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void TransformNormalsCUDA
 #else
 void TransformNormalsCPU
@@ -127,7 +127,7 @@ void TransformNormalsCPU
     });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void RotatePointsCUDA
 #else
 void RotatePointsCPU
@@ -149,7 +149,7 @@ void RotatePointsCPU
     });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void RotateNormalsCUDA
 #else
 void RotateNormalsCPU

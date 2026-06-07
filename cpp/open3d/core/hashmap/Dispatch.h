@@ -59,7 +59,7 @@
         }                                                                     \
     }()
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 // Reinterpret hash maps' void* value arrays as CUDA primitive types arrays, to
 // avoid slow memcpy or byte-by-byte copy in kernels.
 // Not used in the CPU version since memcpy is relatively fast on CPU.

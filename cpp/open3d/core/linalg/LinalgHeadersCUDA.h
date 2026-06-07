@@ -13,9 +13,76 @@
 #pragma once
 
 #ifdef BUILD_CUDA_MODULE
+
+#if defined(USE_HIP)
+// hipBLAS / hipSOLVER expose a near-1:1 typed-Dense API for the cuBLAS /
+// cuSOLVER calls the linalg sources use; alias the CUDA spellings to the HIP
+// ones so the host .cpp wrappers compile unchanged. The cuSOLVER status enum
+// is wider than hipSOLVER's, so the orphan cases below are guarded out.
+#include <hipblas/hipblas.h>
+#include <hipsolver/hipsolver.h>
+
+#define cublasStatus_t hipblasStatus_t
+#define cublasHandle_t hipblasHandle_t
+#define cublasOperation_t hipblasOperation_t
+#define cublasFillMode_t hipblasFillMode_t
+#define cublasDiagType_t hipblasDiagType_t
+#define cublasSideMode_t hipblasSideMode_t
+#define cublasCreate hipblasCreate
+#define cublasDestroy hipblasDestroy
+#define cublasSgemm hipblasSgemm
+#define cublasDgemm hipblasDgemm
+#define cublasStrsm hipblasStrsm
+#define cublasDtrsm hipblasDtrsm
+#define CUBLAS_OP_N HIPBLAS_OP_N
+#define CUBLAS_OP_T HIPBLAS_OP_T
+#define CUBLAS_SIDE_LEFT HIPBLAS_SIDE_LEFT
+#define CUBLAS_FILL_MODE_UPPER HIPBLAS_FILL_MODE_UPPER
+#define CUBLAS_DIAG_NON_UNIT HIPBLAS_DIAG_NON_UNIT
+#define CUBLAS_STATUS_SUCCESS HIPBLAS_STATUS_SUCCESS
+#define CUBLAS_STATUS_NOT_SUPPORTED HIPBLAS_STATUS_NOT_SUPPORTED
+
+#define cusolverStatus_t hipsolverStatus_t
+#define cusolverDnHandle_t hipsolverDnHandle_t
+#define cusolverDnCreate hipsolverDnCreate
+#define cusolverDnDestroy hipsolverDnDestroy
+#define cusolverDnSgetrf hipsolverDnSgetrf
+#define cusolverDnDgetrf hipsolverDnDgetrf
+#define cusolverDnSgetrf_bufferSize hipsolverDnSgetrf_bufferSize
+#define cusolverDnDgetrf_bufferSize hipsolverDnDgetrf_bufferSize
+#define cusolverDnSgetrs hipsolverDnSgetrs
+#define cusolverDnDgetrs hipsolverDnDgetrs
+#define cusolverDnSgesvd hipsolverDnSgesvd
+#define cusolverDnDgesvd hipsolverDnDgesvd
+#define cusolverDnSgesvd_bufferSize hipsolverDnSgesvd_bufferSize
+#define cusolverDnDgesvd_bufferSize hipsolverDnDgesvd_bufferSize
+#define cusolverDnSgeqrf hipsolverDnSgeqrf
+#define cusolverDnDgeqrf hipsolverDnDgeqrf
+#define cusolverDnSgeqrf_bufferSize hipsolverDnSgeqrf_bufferSize
+#define cusolverDnDgeqrf_bufferSize hipsolverDnDgeqrf_bufferSize
+#define cusolverDnSormqr hipsolverDnSormqr
+#define cusolverDnDormqr hipsolverDnDormqr
+#define cusolverDnSormqr_bufferSize hipsolverDnSormqr_bufferSize
+#define cusolverDnDormqr_bufferSize hipsolverDnDormqr_bufferSize
+
+#define CUSOLVER_STATUS_SUCCESS HIPSOLVER_STATUS_SUCCESS
+#define CUSOLVER_STATUS_NOT_INITIALIZED HIPSOLVER_STATUS_NOT_INITIALIZED
+#define CUSOLVER_STATUS_ALLOC_FAILED HIPSOLVER_STATUS_ALLOC_FAILED
+#define CUSOLVER_STATUS_INVALID_VALUE HIPSOLVER_STATUS_INVALID_VALUE
+#define CUSOLVER_STATUS_ARCH_MISMATCH HIPSOLVER_STATUS_ARCH_MISMATCH
+#define CUSOLVER_STATUS_MAPPING_ERROR HIPSOLVER_STATUS_MAPPING_ERROR
+#define CUSOLVER_STATUS_EXECUTION_FAILED HIPSOLVER_STATUS_EXECUTION_FAILED
+#define CUSOLVER_STATUS_INTERNAL_ERROR HIPSOLVER_STATUS_INTERNAL_ERROR
+#define CUSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED \
+    HIPSOLVER_STATUS_MATRIX_TYPE_NOT_SUPPORTED
+#define CUSOLVER_STATUS_NOT_SUPPORTED HIPSOLVER_STATUS_NOT_SUPPORTED
+#define CUSOLVER_STATUS_ZERO_PIVOT HIPSOLVER_STATUS_ZERO_PIVOT
+#else
 #include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <cusolver_common.h>
+#endif
+
 #include <fmt/core.h>
 #include <fmt/format.h>
 
@@ -61,6 +128,8 @@ struct formatter<cusolverStatus_t> {
             case CUSOLVER_STATUS_ZERO_PIVOT:
                 text = "CUSOLVER_STATUS_ZERO_PIVOT";
                 break;
+#if !defined(USE_HIP)
+            // hipSOLVER's status enum does not define these codes.
             case CUSOLVER_STATUS_INVALID_LICENSE:
                 text = "CUSOLVER_STATUS_INVALID_LICENSE";
                 break;
@@ -104,6 +173,7 @@ struct formatter<cusolverStatus_t> {
             case CUSOLVER_STATUS_INVALID_WORKSPACE:
                 text = "CUSOLVER_STATUS_INVALID_WORKSPACE";
                 break;
+#endif  // !USE_HIP
             default:
                 text = "CUSOLVER_STATUS_UNKNOWN";
                 break;

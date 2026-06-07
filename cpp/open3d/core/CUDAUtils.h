@@ -28,9 +28,17 @@
 #define OPEN3D_FORCE_INLINE __forceinline__
 #define OPEN3D_HOST_DEVICE __host__ __device__
 #define OPEN3D_DEVICE __device__
+#if defined(USE_HIP)
+// __nv_is_extended_host_device_lambda_closure_type is an nvcc-only intrinsic;
+// clang/hipcc has no equivalent. The assertion is only a compile-time sanity
+// check that the kernel lambda is __host__ __device__, so make it a no-op on
+// HIP (HIP's extended lambdas need no such annotation check).
+#define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)
+#else
 #define OPEN3D_ASSERT_HOST_DEVICE_LAMBDA(type)                            \
     static_assert(__nv_is_extended_host_device_lambda_closure_type(type), \
                   #type " must be a __host__ __device__ lambda")
+#endif
 #define OPEN3D_CUDA_CHECK(err) \
     open3d::core::__OPEN3D_CUDA_CHECK(err, __FILE__, __LINE__)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message) \

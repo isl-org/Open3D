@@ -20,12 +20,12 @@ namespace geometry {
 namespace kernel {
 namespace image {
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::isinf;
 using std::isnan;
 #endif
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ToCUDA
 #else
 void ToCPU
@@ -82,7 +82,7 @@ void ToCPU
 #undef LINEAR_SATURATE
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ClipTransformCUDA
 #else
 void ClipTransformCPU
@@ -118,7 +118,7 @@ void ClipTransformCPU
 
 // Reimplementation of the reference:
 // https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void PyrDownDepthCUDA
 #else
 void PyrDownDepthCPU
@@ -143,7 +143,7 @@ void PyrDownDepthCPU
     const int gkernel_size_2 = gkernel_size / 2;
     const float gweights[3] = {0.375f, 0.25f, 0.0625f};
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
     using std::abs;
     using std::max;
     using std::min;
@@ -191,7 +191,7 @@ void PyrDownDepthCPU
             });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void CreateVertexMapCUDA
 #else
 void CreateVertexMapCPU
@@ -209,7 +209,7 @@ void CreateVertexMapCPU
     int64_t cols = src.GetShape(1);
     int64_t n = rows * cols;
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
     using std::isinf;
     using std::isnan;
 #endif
@@ -238,7 +238,7 @@ void CreateVertexMapCPU
                 }
             });
 }
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void CreateNormalMapCUDA
 #else
 void CreateNormalMapCPU
@@ -303,7 +303,7 @@ void CreateNormalMapCPU
             });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ColorizeDepthCUDA
 #else
 void ColorizeDepthCPU

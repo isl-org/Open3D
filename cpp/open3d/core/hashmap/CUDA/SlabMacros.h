@@ -63,8 +63,19 @@ static constexpr uint32_t kBlockMaskBits = 10;
 static constexpr uint32_t kSlabMaskBits = 5;
 
 // Masks & flags
+// The SlabHash backend is the NON-default warp-cooperative hashmap (the default
+// is StdGPU). Its 32-lane lane-election logic (tid>>5, lane masks, __ffs of a
+// ballot) is NOT wave64-correct and a correct wave64 rewrite is deferred; here
+// the lane masks are only widened to 64 bits so the *_sync intrinsics, which on
+// HIP static_assert sizeof(mask)==8, compile. SlabHash-backend tests are
+// skipped on this port (see notes.md).
+#if defined(USE_HIP)
+static constexpr unsigned long long kSyncLanesMask = 0xFFFFFFFFFFFFFFFFull;
+static constexpr unsigned long long kNodePtrLanesMask = 0x7FFFFFFFull;
+#else
 static constexpr uint32_t kSyncLanesMask = 0xFFFFFFFF;
 static constexpr uint32_t kNodePtrLanesMask = 0x7FFFFFFF;
+#endif
 static constexpr uint32_t kNextSlabPtrLaneId = 31;
 
 static constexpr uint32_t kHeadSlabAddr = 0xFFFFFFFE;
