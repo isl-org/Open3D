@@ -83,5 +83,13 @@ function(open3d_show_and_abort_on_warning target)
             target_compile_options(${target} PRIVATE
                 $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=maybe-uninitialized>)
         endif()
+        # On Windows USE_HIP forces an all-clang toolchain, so the host .cpp are
+        # clang-compiled. clang reports the ignored nodiscard hipError_t under
+        # -Wunused-value (gcc spells it -Wunused-result, relaxed above); demote
+        # that one too. Host-only, clang-only: the Linux gcc build is unchanged.
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=unused-value>)
+        endif()
     endif()
 endfunction()

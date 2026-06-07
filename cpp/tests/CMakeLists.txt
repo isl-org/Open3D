@@ -52,7 +52,9 @@ endif()
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 # On Windows, running tests from the build folder needs tbb.dll to be in the same folder.
-if (WIN32)
+# With USE_SYSTEM_TBB the bundled `tbb` target does not exist (TBB::tbb is imported
+# from the system/vcpkg tree); its DLL is supplied on PATH at run time instead.
+if (WIN32 AND TARGET tbb)
   add_custom_command(
       TARGET tests
       POST_BUILD
