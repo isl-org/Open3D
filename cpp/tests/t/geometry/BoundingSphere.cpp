@@ -75,5 +75,26 @@ TEST_P(BoundingSpherePermuteDevices,
           .Item<double>() > 0.0);
 }
 
+TEST_P(BoundingSpherePermuteDevices,
+       PointCloudGetBoundingSphereCoplanar) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud pcd(core::Tensor::Init<float>({
+            {1.0f, 0.0f, 0.0f},
+            {-1.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, -1.0f, 0.0f}},
+            device));
+
+    t::geometry::BoundingSphere ebs = pcd.GetBoundingSphere();
+
+    EXPECT_TRUE(ebs.GetCenter().AllClose(
+            core::Tensor::Zeros({3}, core::Float32, device),
+            /*rtol=*/0.0, /*atol=*/1e-5));
+    EXPECT_NEAR(
+            ebs.GetRadius().To(core::Device("CPU:0")).Item<double>(),
+            1.0, 1e-5);
+}
+
 }  // namespace tests
 }  // namespace open3d
