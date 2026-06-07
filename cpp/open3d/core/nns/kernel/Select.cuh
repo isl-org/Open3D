@@ -158,7 +158,7 @@ struct BlockSelect {
         bool needSort = (numVals == NumThreadQ);
 
 #if CUDA_VERSION >= 9000
-        needSort = __any_sync(0xffffffff, needSort);
+        needSort = __any_sync(OPEN3D_FULL_WARP_MASK, needSort);
 #else
         needSort = __any(needSort);
 #endif
@@ -422,7 +422,7 @@ struct WarpSelect {
         bool needSort = (numVals == NumThreadQ);
 
 #if CUDA_VERSION >= 9000
-        needSort = __any_sync(0xffffffff, needSort);
+        needSort = __any_sync(OPEN3D_FULL_WARP_MASK, needSort);
 #else
         needSort = __any(needSort);
 #endif

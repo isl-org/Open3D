@@ -41,12 +41,25 @@ namespace core {
 #error "CUDA >= 8.0 is required"
 #endif
 
-// We validate this against the actual architecture in device initialization
+// This FAISS-derived warp-select treats a "warp" as a 32-lane bitonic-sort
+// group: the queue layout, the shfl_xor butterfly (width=kWarpSize), the
+// per-thread/warp-queue register counts, and the smallest instantiated queue
+// (NumWarpQ==32, see BlockSelectFloat*.cu) are all built around 32 lanes. On a
+// 64-lane CDNA wavefront we therefore run the algorithm as two independent
+// 32-lane groups: kWarpSize stays 32, every
+// shfl uses width=32 so exchanges stay within a group, and getLaneId() returns
+// the 0..31 lane *within* the group (PtxUtils.cuh). This is correct on wave32
+// (gfx11xx) and wave64 (gfx9xx) alike; do NOT raise it to 64 -- that collapses
+// the NumWarpQ<64 queues (kNumWarpQRegisters = NumWarpQ / kWarpSize == 0).
 constexpr int kWarpSize = 32;
 
-// This is a memory barrier for intra-warp writes to shared memory.
+// This is a memory barrier for intra-warp writes to shared memory. The select
+// kernels are warp-convergent (no warp-granularity divergence), so a
+// full-wavefront barrier is safe and covers both 32-lane groups on wave64.
 __forceinline__ __device__ void warpFence() {
-#if CUDA_VERSION >= 9000
+#if defined(USE_HIP)
+    __syncthreads();
+#elif CUDA_VERSION >= 9000
     __syncwarp();
 #else
     // For the time being, assume synchronicity.

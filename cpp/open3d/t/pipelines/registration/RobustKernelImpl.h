@@ -13,7 +13,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::abs;
 using std::exp;
 using std::max;

@@ -485,7 +485,19 @@ include(ProcessorCount)
 ProcessorCount(NPROC)
 
 # CUDAToolkit (required at this point for subsequent checks and targets)
-if(BUILD_CUDA_MODULE)
+if(BUILD_CUDA_MODULE AND USE_HIP)
+    # ROCm/HIP: link only hip::host (the runtime). Do NOT link hip::device or
+    # roc::rocthrust: their INTERFACE_COMPILE_OPTIONS carry "-x hip
+    # --offload-arch" which propagate to every language of a consuming target,
+    # so g++ chokes on the host .cpp in the same OBJECT lib.
+    # rocThrust/hipCUB/rocPRIM are header-only on
+    # the HIP compiler's default include path, so a LANGUAGE-HIP .cu finds them
+    # with no link target.
+    find_package(hip REQUIRED)
+    find_package(hipblas REQUIRED)
+    find_package(hipsolver REQUIRED)
+    find_package(hipsparse REQUIRED)
+elseif(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
@@ -1789,7 +1801,26 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
 endif(OPEN3D_USE_ONEAPI_PACKAGES)
 
 # cuBLAS
-if(BUILD_CUDA_MODULE)
+if(BUILD_CUDA_MODULE AND USE_HIP)
+    # Build the 3rdparty_cublas INTERFACE target from the ROCm math libs. The
+    # LinalgHeadersCUDA.h compat shim aliases the cublas*/cusolver* spellings to
+    # the hipblas*/hipsolver* symbols these targets provide. hipsparse stands in
+    # for cusparse; hipblaslt is folded into hipblas on ROCm so no separate
+    # target is needed.
+    add_library(3rdparty_cublas INTERFACE)
+    target_link_libraries(3rdparty_cublas INTERFACE
+        roc::hipblas
+        roc::hipsolver
+        roc::hipsparse
+        hip::host
+    )
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)
+        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "hip" "hipblas" "hipsolver" "hipsparse")
+    endif()
+    add_library(Open3D::3rdparty_cublas ALIAS 3rdparty_cublas)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cublas)
+elseif(BUILD_CUDA_MODULE)
     if(WIN32)
         # Nvidia does not provide static libraries for Windows. We don't release
         # pip wheels for Windows with CUDA support at the moment. For the pip
@@ -1853,7 +1884,11 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 # NPP
-if (BUILD_CUDA_MODULE)
+# NVIDIA Performance Primitives has no ROCm equivalent, so the GPU image-filter
+# ops that dispatch to NPP (NPPImage.*) are guarded out of the HIP build and
+# Image.cpp reports them unsupported on ROCm (the CPU/IPP image path is
+# unaffected). See notes.md for the scoped-out image ops.
+if (BUILD_CUDA_MODULE AND NOT USE_HIP)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
     if(WIN32)
         open3d_find_package_3rdparty_library(3rdparty_cuda_npp

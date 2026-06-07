@@ -29,7 +29,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(BUILD_CUDA_MODULE) && (defined(__CUDACC__) || defined(__HIPCC__))
 #include <cuda.h>
 #endif
 
@@ -43,13 +43,13 @@
 #define gtiny_number 1.e-20
 #define gfour_gamma_squared 5.8284273147583007813
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::abs;
 using std::max;
 using std::sqrt;
 #endif
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(BUILD_CUDA_MODULE) && (defined(__CUDACC__) || defined(__HIPCC__))
 #define __fadd_rn(x, y) __fadd_rn(x, y)
 #define __fsub_rn(x, y) __fsub_rn(x, y)
 #define __frsqrt_rn(x) __frsqrt_rn(x)
