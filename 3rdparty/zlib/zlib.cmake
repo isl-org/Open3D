@@ -1,6 +1,10 @@
 include(ExternalProject)
 
-if(MSVC)
+# The static lib basename follows the target platform (zlib's CMake emits
+# zlibstatic on Windows), not the compiler frontend -- gate on WIN32 so an
+# all-clang Windows toolchain (where CMake's MSVC is FALSE) still imports the
+# right name.
+if(WIN32)
     set(lib_name zlibstatic)
 else()
     set(lib_name z)
@@ -32,7 +36,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
-if(MSVC)
+if(WIN32)
     set(ZLIB_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
 else()
     set(ZLIB_LIBRARIES ${lib_name})
