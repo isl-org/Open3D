@@ -10,7 +10,6 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <algorithm>
 #include <assimp/Exporter.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/ProgressHandler.hpp>
@@ -450,12 +449,11 @@ struct TexExport {
 };
 
 // Collect the textures present in `mat` into a list ready for export.
-// embed=true  → GLB/GLTF: combined roughness+metallic map via ASSIMP 6's
-//               primary metallicRoughness slot
-//               (aiTextureType_DIFFUSE_ROUGHNESS).
-// embed=false → sidecar PNGs for formats that support separate roughness /
-//               metallic maps (GLTF, FBX).  supports_roughness_metallic must
-//               be false for OBJ, which has no PBR material properties.
+// Combined ao_rough_metal uses ASSIMP 6's primary metallicRoughness slot
+// (aiTextureType_DIFFUSE_ROUGHNESS) for GLB embed and GLTF/FBX sidecars.
+// When only separate roughness/metallic maps exist, embed combines them;
+// sidecar export writes separate PNGs.  supports_roughness_metallic must be
+// false for OBJ, which has no PBR material properties.
 std::vector<TexExport> CollectTextures(
         const visualization::rendering::Material& mat,
         bool embed,
@@ -480,10 +478,7 @@ std::vector<TexExport> CollectTextures(
         return out;
     }
 
-    // ASSIMP 6 glTF2 exporter checks aiTextureType_DIFFUSE_ROUGHNESS (primary)
-    // for metallicRoughnessTexture.  Use the combined map when embedding; use
-    // separate per-channel maps when writing sidecars (GLTF, FBX).
-    if (embed && mat.HasAORoughnessMetalMap()) {
+    if (mat.HasAORoughnessMetalMap()) {
         out.push_back({"ao_rough_metal",
                        mat.GetAORoughnessMetalMap(),
                        {aiTextureType_DIFFUSE_ROUGHNESS}});
@@ -733,8 +728,8 @@ bool WriteTriangleMeshUsingASSIMP(const std::string& filename,
     // Derive extension and export format.
     const std::filesystem::path filepath(filename);
     std::string ext = filepath.extension().string();
-    if (!ext.empty()) ext = ext.substr(1);  // strip leading '.'
-    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    if (!ext.empty() && ext[0] == '.') ext = ext.substr(1);
+    ext = utility::ToLower(ext);
     WarnIfWriteAsciiMismatch(ext, write_ascii);
     const ExportFormat fmt = ResolveExportFormat(ext, write_ascii);
 

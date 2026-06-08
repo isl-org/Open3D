@@ -199,8 +199,8 @@ Supported formats:
 - ``npz`` -- Open3D NPZ format (full round-trip including materials and
   texture maps).
 - ``obj``, ``stl``, ``off``, ``gltf``, ``glb``, ``fbx`` -- via ASSIMP
-  (geometry + vertex normals/colors + UV coordinates + single PBR material
-  with scalar properties and texture maps).
+  (geometry; optional vertex normals/colors, UVs, and material/PBR data
+  depending on format, e.g. STL is geometry-only).
 
 The following example reads a triangle mesh with the .ply extension::
 

@@ -87,6 +87,12 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
 bool ReadImageFromMemory(const uint8_t *data,
                          size_t size,
                          geometry::Image &image) {
+    if (data == nullptr || size == 0) {
+        utility::LogWarning(
+                "ReadImageFromMemory failed: null or empty buffer.");
+        image.Clear();
+        return false;
+    }
     for (const auto &sig_dec : mem_signature_decoder_list) {
         const auto &sig = sig_dec.first;
         if (size >= sig.size() &&

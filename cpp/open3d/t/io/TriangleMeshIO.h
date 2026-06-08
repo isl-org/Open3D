@@ -26,9 +26,9 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 /// \par Supported read formats:
 ///   - \c ply  -- native Open3D reader (geometry + colors/normals)
 ///   - \c npz  -- Open3D NPZ format (full round-trip incl. materials)
-///   - \c obj, stl, off, gltf, glb, fbx -- via ASSIMP
-///     (geometry + vertex normals/colors + UV coordinates + single material
-///      with PBR scalar and texture-map properties)
+///   - \c obj, stl, off, gltf, glb, fbx -- via ASSIMP (geometry; optional
+///     vertex normals/colors, UVs, and material/PBR data depending on format,
+///     e.g. STL is geometry-only)
 /// \param filename Path to the mesh file.
 /// \param mesh Output parameter for the mesh.
 /// \param params Additional read options to enable post-processing or progress
