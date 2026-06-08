@@ -29,15 +29,109 @@ namespace bounding_sphere {
 // ============================================================================
 // MINIMUM BOUNDING SPHERE COMPUTATION
 // ============================================================================
-// Algorithm: Welzl's linear-time randomized algorithm for the smallest
-// enclosing sphere. Handles full-rank (3D) and lower-dimensional (coplanar,
-// collinear) point sets through projection and lifting.
 //
-// Key features:
-// - O(n) expected time complexity with linear space usage
-// - Robust handling of degenerate (coplanar/collinear) point sets
-// - Analytic circumsphere formulas for small boundary sets (2-4 points)
-// - Single global shuffle for deterministic recursion
+// Implementation of Welzl's randomized linear-time algorithm for the smallest
+// enclosing sphere in 3D.
+//
+// The implementation explicitly separates:
+//
+//   • Full-rank 3D geometry (true tetrahedral configurations)
+//   • Degenerate lower-dimensional geometry (coplanar / collinear sets)
+//
+// in order to achieve both numerical robustness and efficient geometric solves.
+//
+// Key properties:
+// - Expected O(n) runtime with linear space usage
+// - Robust handling of coplanar and collinear point clouds
+// - Convex hull reduction before Welzl recursion
+// - Single global shuffle for deterministic recursion order
+//
+// ============================================================================
+// ARCHITECTURE
+// ============================================================================
+//
+// The solver uses a deliberate dual-path design:
+//
+// -----------------------------------------------------------------------------
+// PATH 1: Full-Rank 3D Solver (rank == 3)
+// -----------------------------------------------------------------------------
+//
+// If the convex hull spans all 3 spatial dimensions, the algorithm uses
+// specialized analytic circumsphere routines operating directly in R^3:
+//
+//     WelzlRecursive()
+//         -> SphereFromBoundary()
+//             -> ComputeCircumsphere2()
+//             -> ComputeCircumsphere3()
+//             -> ComputeCircumsphere4()
+//
+// These routines use explicit geometric constructions:
+//
+// - 2 points -> midpoint sphere
+// - 3 points -> triangle circumcircle in 3D
+// - 4 points -> tetrahedral circumsphere
+//
+// Advantages:
+// - Fast fixed-size computations
+// - Geometry-aware analytic formulas
+// - Strong numerical behavior for true tetrahedral geometry
+// - Clear geometric interpretation of boundary spheres
+//
+// This path is intentionally optimized for non-degenerate 3D point sets.
+//
+// -----------------------------------------------------------------------------
+// PATH 2: Intrinsic-Dimension Solver (rank < 3)
+// -----------------------------------------------------------------------------
+//
+// Degenerate point clouds are not solved using tetrahedral geometry.
+//
+// Instead:
+//
+//   1. Compute intrinsic rank using SVD
+//   2. Construct an orthonormal basis for the intrinsic subspace
+//   3. Project points into intrinsic coordinates
+//   4. Run generic N-D Welzl recursion:
+//
+//          WelzlNDRecursive()
+//              -> FitCircumsphereND()
+//
+//   5. Lift the center back into R^3
+//
+// This projection-based formulation avoids unstable or ill-defined 3D
+// circumsphere computations for degenerate configurations.
+//
+// Examples:
+//
+// - Collinear 3D points  -> solved as a 1D interval problem
+// - Coplanar 3D points   -> solved as a 2D circumcircle problem
+//
+// -----------------------------------------------------------------------------
+// DESIGN RATIONALE
+// -----------------------------------------------------------------------------
+//
+// The implementation intentionally avoids forcing all configurations through a
+// single generic 3D circumsphere solver.
+//
+// Instead, it combines:
+//
+//   • Specialized analytic 3D geometry for full-rank tetrahedral problems
+//   • Generic intrinsic-dimension solvers for degenerate geometry
+//
+// This hybrid architecture provides:
+//
+// - Stable behavior for nearly degenerate configurations
+// - Efficient exact solves for small 3D boundary sets
+// - Cleaner geometric reasoning
+// - Improved numerical robustness
+//
+// The result is a minimum bounding sphere implementation capable of handling:
+//
+// - General 3D point sets
+// - Coplanar convex hulls
+// - Collinear convex hulls
+// - Nearly degenerate inputs
+//
+// while preserving the expected linear-time behavior of Welzl's algorithm.
 // ============================================================================
 
 namespace {
@@ -304,21 +398,18 @@ EigenSphere ComputeCircumsphere4(
     // Proper tetrahedral circumsphere
     // ------------------------------------------------------------------------
 
-    Eigen::Matrix3d A;
-    A.row(0) = 2.0 * (p2 - p1);
-    A.row(1) = 2.0 * (p3 - p1);
-    A.row(2) = 2.0 * (p4 - p1);
+    // Circumsphere linear system:
+    //     A c = b
+    // where A = 2*(p_i - p_1)
+    Eigen::Matrix3d A = 2.0 * M;
 
     Eigen::Vector3d b;
     b(0) = p2.squaredNorm() - p1.squaredNorm();
     b(1) = p3.squaredNorm() - p1.squaredNorm();
     b(2) = p4.squaredNorm() - p1.squaredNorm();
 
-    Eigen::FullPivLU<Eigen::Matrix3d> lu(A);
-    if (lu.rank() < 3) {
-        return ComputeBestLowerDimensionalSphere(pts);
-    }
-
+    // Find the unique point in 3D that is equidistant from the 
+    // four tetrahedron vertices -> center of the circumsphere.
     Eigen::Vector3d center = A.jacobiSvd(
         Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
     double radius = (center - p1).norm();
@@ -380,7 +471,6 @@ EigenSphere SphereFromBoundary(
 // Recursive Welzl
 // IMPORTANT:
 // - shuffle once globally
-// - no per-recursion randomization
 // ----------------------------------------------------------------------------
 
 EigenSphere WelzlRecursive(
@@ -412,99 +502,16 @@ EigenSphere WelzlRecursive(
             n - 1);
 }
 
-// ----------------------------------------------------------------------------
-// Iterative Welzl
-// ----------------------------------------------------------------------------
-
-EigenSphere WelzlIterative(
-        std::vector<Eigen::Vector3d>& points,
-        size_t n) {
-
-    if (n == 0) {
-        return EigenSphere(
-                Eigen::Vector3d::Zero(),
-                0.0);
-    }
-
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-
-    std::shuffle(
-            points.begin(),
-            points.begin() +
-                static_cast<std::ptrdiff_t>(n),
-            gen);
-
-    EigenSphere sphere(
-            Eigen::Vector3d::Zero(),
-            -1.0);
-
-    for (size_t i = 0; i < n; ++i) {
-
-        const Eigen::Vector3d& pi = points[i];
-
-        if (sphere.radius_ >= 0 &&
-            sphere.IsInside(pi)) {
-            continue;
-        }
-
-        sphere = EigenSphere(
-                pi,
-                0.0,
-                {pi});
-
-        for (size_t j = 0; j < i; ++j) {
-
-            const Eigen::Vector3d& pj = points[j];
-
-            if (sphere.IsInside(pj)) {
-                continue;
-            }
-
-            sphere = ComputeCircumsphere2(pi, pj);
-
-            for (size_t k = 0; k < j; ++k) {
-
-                const Eigen::Vector3d& pk = points[k];
-
-                if (sphere.IsInside(pk)) {
-                    continue;
-                }
-
-                sphere =
-                        ComputeCircumsphere3(
-                                pi,
-                                pj,
-                                pk);
-
-                for (size_t l = 0; l < k; ++l) {
-
-                    const Eigen::Vector3d& pl = points[l];
-
-                    if (sphere.IsInside(pl)) {
-                        continue;
-                    }
-
-                    sphere =
-                            ComputeCircumsphere4(
-                                    pi,
-                                    pj,
-                                    pk,
-                                    pl);
-                }
-            }
-        }
-    }
-
-    return sphere;
-}
 
 // ----------------------------------------------------------------------------
 // Generic N-D Welzl (small helper for projecting degenerate 3D sets)
 // Supports D = 1 or 2 (used when points lie in a lower-dimensional subspace).
 // ----------------------------------------------------------------------------
 
-// Fit circumsphere to <= D+1 points in R^D (D small: 1 or 2).
+// Generic circumsphere fit for <= D+1 points in R^D.
+// Used by the intrinsic-dimension Welzl solver.
+// Typically exercised for D=1 or D=2 degenerate 3D point sets,
+// but mathematically valid for arbitrary small D.
 static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
         const Eigen::MatrixXd &points) {
     const int M = static_cast<int>(points.rows());
@@ -621,7 +628,6 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     // ========================================================================
     // DIMENSIONALITY DETECTION AND DUAL-PATH ROUTING
     // ========================================================================
-    // This section mirrors the Python logic in intrinsic_dimension():
     //   1. Center points at first point (affine origin)
     //   2. Compute SVD to find singular values
     //   3. Count non-zero singular values to determine rank
@@ -645,7 +651,6 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     Eigen::MatrixXd centered = Pmat.rowwise() - offset;
 
     // --- Step 2: Compute intrinsic rank using a shared helper ---
-    // Matches Python's matrix_rank(centered, tol=1e-9).
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(
             centered, Eigen::ComputeThinU | Eigen::ComputeThinV);
     const int rank = ComputeIntrinsicRank(svd.singularValues());
@@ -692,9 +697,9 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     // Run standard 3D Welzl directly
     std::shuffle(pts.begin(), pts.end(), gen);
 
-    EigenSphere es = WelzlRecursive(pts, {}, pts.size());
+    EigenSphere bs = WelzlRecursive(pts, {}, pts.size());
 
-    return open3d::geometry::BoundingSphere(es.center_, es.radius_);
+    return open3d::geometry::BoundingSphere(bs.center_, bs.radius_);
 }
 
 BoundingSphere ComputeMinimumBSWelzl(
