@@ -12,6 +12,26 @@ on:
         description: 'Specify Depot Tools commit to to use for the build.'
         required: false
         default: 'e1a98941d3ab10549be6d82d0686bb0fb91ec903' # Date: Wed Apr 7 21:35:29 2021 +0000
+      build_linux:
+        description: 'Build Linux binary'
+        type: boolean
+        required: false
+        default: true
+      build_macos:
+        description: 'Build macOS binary'
+        type: boolean
+        required: false
+        default: true
+      build_windows_static:
+        description: 'Build Windows Static Runtime binary'
+        type: boolean
+        required: false
+        default: true
+      build_windows_dll:
+        description: 'Build Windows DLL (Dynamic Runtime) binary'
+        type: boolean
+        required: false
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -23,14 +43,11 @@ env:
 
 jobs:
 
-  Unix:
+  Linux:
     permissions:
       contents: write  # upload
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, macos-13]
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.inputs.build_linux == 'true' || github.event_name != 'workflow_dispatch' }}
 
     steps:
       - name: Checkout source code
@@ -42,7 +59,6 @@ jobs:
           python-version: 3.10
 
       - name: Install dependencies
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
@@ -60,17 +76,52 @@ jobs:
       - name: Upload WebRTC
         uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release_${{ matrix.os }}
+          name: webrtc_release_ubuntu-22.04
           path: |
                  webrtc_*.tar.gz
                  checksum_*.txt
           if-no-files-found: error
 
-  Windows:
+  macOS:
+    permissions:
+      contents: write  # upload
+    runs-on: macos-13
+    if: ${{ github.event.inputs.build_macos == 'true' || github.event_name != 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+
+      - name: Download WebRTC sources
+        run: |
+          source 3rdparty/webrtc/webrtc_build.sh
+          download_webrtc_sources
+
+      - name: Build WebRTC
+        run: |
+          source 3rdparty/webrtc/webrtc_build.sh
+          build_webrtc
+
+      - name: Upload WebRTC
+        uses: actions/upload-artifact@v4
+        with:
+          name: webrtc_release_macos-13
+          path: |
+                 webrtc_*.tar.gz
+                 checksum_*.txt
+          if-no-files-found: error
+
+  Windows-Static:
     permissions:
       contents: write  # upload
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
     runs-on: windows-2022
+    if: ${{ github.event.inputs.build_windows_static == 'true' || github.event_name != 'workflow_dispatch' }}
     env:
       WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
       OPEN3D_DIR: "D:\\a\\open3d\\open3d"
@@ -138,6 +189,7 @@ jobs:
           cd webrtc/build
           cmake -G Ninja -D CMAKE_BUILD_TYPE=Release `
                 -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Release `
+                -D STATIC_WINDOWS_RUNTIME=ON `
                 ..
           ninja install
           echo "Cleanup build folder for next config build"
@@ -153,6 +205,7 @@ jobs:
           cd webrtc/build
           cmake -G Ninja -D CMAKE_BUILD_TYPE=Debug `
                 -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Debug `
+                -D STATIC_WINDOWS_RUNTIME=ON `
                 ..
           ninja install
 
@@ -168,7 +221,118 @@ jobs:
       - name: Upload WebRTC
         uses: actions/upload-artifact@v4
         with:
-          name: webrtc_release_windows
+          name: webrtc_release_windows_static
+          path: |
+                 ${{ env.WORK_DIR }}/webrtc_*.zip
+                 ${{ env.WORK_DIR }}/checksum_*.txt
+          if-no-files-found: error
+
+  Windows-DLL:
+    permissions:
+      contents: write  # upload
+    # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
+    runs-on: windows-2022
+    if: ${{ github.event.inputs.build_windows_dll == 'true' || github.event_name != 'workflow_dispatch' }}
+    env:
+      WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
+      OPEN3D_DIR: "D:\\a\\open3d\\open3d"
+      DEPOT_TOOLS_UPDATE: 1   # Fix cannot find python3_bin_reldir.txt
+      DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      NPROC: 2
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Disk space
+        run: |
+          Get-PSDrive
+          mkdir "$env:WORK_DIR"
+
+      - name: Setup PATH for Visual Studio # Required for Ninja
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Download WebRTC sources
+        shell: pwsh
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          echo "Get depot_tools"
+          # Checkout to a specific version
+          # Ref: https://chromium.googlesource.com/chromium/src/+/main/docs/building_old_revisions.md
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
+
+          echo "Get WebRTC"
+          mkdir webrtc
+          cd webrtc
+          fetch webrtc
+
+          git -C src checkout $env:WEBRTC_COMMIT
+          git -C src submodule update --init --recursive
+          echo "gclient sync"
+          gclient sync -D --force --reset
+          cd ..
+          echo "random.org"
+          curl "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" -o skipcache
+
+      - name: Patch WebRTC
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cp "$env:OPEN3D_DIR/3rdparty/webrtc/CMakeLists.txt" webrtc/
+          cp "$env:OPEN3D_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
+
+      - name: Build WebRTC (Release)
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
+          mkdir webrtc/build
+          cd webrtc/build
+          cmake -G Ninja -D CMAKE_BUILD_TYPE=Release `
+                -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Release `
+                -D STATIC_WINDOWS_RUNTIME=OFF `
+                ..
+          ninja install
+          echo "Cleanup build folder for next config build"
+          cd ..
+          rm -r build
+
+      - name: Build WebRTC (Debug)
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
+          mkdir webrtc/build
+          cd webrtc/build
+          cmake -G Ninja -D CMAKE_BUILD_TYPE=Debug `
+                -D CMAKE_INSTALL_PREFIX=${{ env.WORK_DIR }}/webrtc_release/Debug `
+                -D STATIC_WINDOWS_RUNTIME=OFF `
+                ..
+          ninja install
+
+      - name: Package WebRTC
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:WEBRTC_COMMIT_SHORT = (git -C webrtc/src rev-parse --short=7 HEAD)
+          cmake -E tar cv webrtc_${env:WEBRTC_COMMIT_SHORT}_win_dll.zip `
+            --format=zip -- webrtc_release
+          cmake -E sha256sum webrtc_${env:WEBRTC_COMMIT_SHORT}_win_dll.zip | Tee-Object -FilePath checksum_win_dll.txt
+
+      - name: Upload WebRTC
+        uses: actions/upload-artifact@v4
+        with:
+          name: webrtc_release_windows_dll
           path: |
                  ${{ env.WORK_DIR }}/webrtc_*.zip
                  ${{ env.WORK_DIR }}/checksum_*.txt
