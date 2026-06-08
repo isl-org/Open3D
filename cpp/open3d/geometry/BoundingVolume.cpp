@@ -138,7 +138,6 @@ std::vector<size_t> OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingElli
     return indices;
 }
 
-// checked
 BoundingSphere& BoundingSphere::Clear() {
     center_.setZero();
     radius_ = 0;
@@ -146,23 +145,18 @@ BoundingSphere& BoundingSphere::Clear() {
     return *this;
 }
 
-// checked
 bool BoundingSphere::IsEmpty() const { return Volume() <= 0; }
 
-// checked
 Eigen::Vector3d BoundingSphere::GetMinBound() const {
     return center_ - Eigen::Vector3d(radius_, radius_, radius_);
 }
 
-// checked
 Eigen::Vector3d BoundingSphere::GetMaxBound() const {
     return center_ + Eigen::Vector3d(radius_, radius_, radius_);
 }
 
-// checked
 Eigen::Vector3d BoundingSphere::GetCenter() const { return center_; }
 
-// checked
 AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
 }
@@ -179,7 +173,6 @@ OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
         GetAxisAlignedBoundingBox());
 }
 
-// checked
 BoundingSphere& BoundingSphere::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
@@ -189,7 +182,6 @@ BoundingSphere& BoundingSphere::Transform(
     return *this;
 }
 
-// checked
 BoundingSphere& BoundingSphere::Translate(const Eigen::Vector3d& translation,
                                           bool relative) {
     if (relative) {
@@ -200,7 +192,6 @@ BoundingSphere& BoundingSphere::Translate(const Eigen::Vector3d& translation,
     return *this;
 }
 
-// checked
 BoundingSphere& BoundingSphere::Scale(const double scale,
                                       const Eigen::Vector3d& center) {
     radius_ *= scale;
@@ -208,19 +199,16 @@ BoundingSphere& BoundingSphere::Scale(const double scale,
     return *this;
 }
 
-// checked
 BoundingSphere& BoundingSphere::Rotate(const Eigen::Matrix3d& R,
                                        const Eigen::Vector3d& center) {
     center_ = R * (center_ - center) + center;
     return *this;
 }
 
-// checked
 double BoundingSphere::Volume() const {
     return 4.0 * M_PI * radius_ * radius_ * radius_ / 3.0;
 }
 
-// checked
 std::vector<Eigen::Vector3d> BoundingSphere::GetSpherePoints() const {
     std::vector<Eigen::Vector3d> points(6);
     points[0] = center_ + Eigen::Vector3d(radius_, 0, 0);

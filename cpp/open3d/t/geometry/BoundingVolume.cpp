@@ -907,7 +907,6 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
     return kernel::minimum_obe::ComputeMinimumOBEKhachiyan(points, robust);
 }
 
-// checked
 BoundingSphere::BoundingSphere(const core::Device &device)
     : Geometry(Geometry::GeometryType::BoundingSphere, 3),
       device_(device),
@@ -916,7 +915,6 @@ BoundingSphere::BoundingSphere(const core::Device &device)
       radius_(core::Tensor::Zeros({1}, dtype_, device)),
       color_(core::Tensor::Ones({3}, dtype_, device)) {}
 
-// checked
 BoundingSphere::BoundingSphere(const core::Tensor &center,
                                const core::Tensor &radius)
     : BoundingSphere([&]() {
@@ -943,7 +941,6 @@ BoundingSphere::BoundingSphere(const core::Tensor &center,
     }
 }
 
-// checked
 BoundingSphere BoundingSphere::To(
     const core::Device &device, const core::Dtype &dtype, bool copy) const {
     if (!copy && GetDevice() == device && GetDtype() == dtype) {
@@ -956,7 +953,6 @@ BoundingSphere BoundingSphere::To(
     return sphere;
 }
 
-// checked
 BoundingSphere &BoundingSphere::Clear() {
     center_ = core::Tensor::Zeros({3}, GetDtype(), GetDevice());
     radius_ = core::Tensor::Zeros({1}, GetDtype(), GetDevice());
@@ -964,7 +960,6 @@ BoundingSphere &BoundingSphere::Clear() {
     return *this;
 }
 
-// checked
 void BoundingSphere::SetCenter(const core::Tensor &center) {
     core::AssertTensorDevice(center, GetDevice());
     core::AssertTensorShape(center, {3});
@@ -973,7 +968,6 @@ void BoundingSphere::SetCenter(const core::Tensor &center) {
     center_ = center.To(GetDtype());
 }
 
-// checked
 void BoundingSphere::SetRadius(const core::Tensor &radius) {
     core::AssertTensorDevice(radius, GetDevice());
     core::AssertTensorShape(radius, {1});
@@ -989,7 +983,6 @@ void BoundingSphere::SetRadius(const core::Tensor &radius) {
     radius_ = radius.To(GetDtype());
 }
 
-// checked
 void BoundingSphere::SetColor(const core::Tensor &color) {
     core::AssertTensorDevice(color, GetDevice());
     core::AssertTensorShape(color, {3});
@@ -1006,45 +999,38 @@ void BoundingSphere::SetColor(const core::Tensor &color) {
     color_ = color.To(GetDtype());
 }
 
-// checked
 core::Tensor BoundingSphere::GetMinBound() const {
     return GetCenter() - GetRadius().Reshape({});
 }
 
-// checked
 core::Tensor BoundingSphere::GetMaxBound() const {
     return GetCenter() + GetRadius().Reshape({});
 }
 
-// checked
 double BoundingSphere::Volume() const {
-    double r = radius_.Item<double>();
+    double r = radius_.To(core::Float64).Item<double>();
     return 4.0 * M_PI * r * r * r / 3.0;
 }
 
-// checked
 core::Tensor BoundingSphere::GetSpherePoints() const {
-    double r = radius_.Item<double>();
-    std::vector<core::Tensor> points;
+    // Unit axis directions
+    core::Tensor offsets = core::Tensor::Init<float>(
+            {{ 1.f,  0.f,  0.f},
+             {-1.f,  0.f,  0.f},
+             { 0.f,  1.f,  0.f},
+             { 0.f, -1.f,  0.f},
+             { 0.f,  0.f,  1.f},
+             { 0.f,  0.f, -1.f}},
+            GetDevice()).To(GetDtype());
 
-    // Six critical points along the principal axes
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{r, 0.0, 0.0},
-                                                 {3}, GetDtype(), GetDevice()));
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{-r, 0.0, 0.0},
-                                                 {3}, GetDtype(), GetDevice()));
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{0.0, r, 0.0},
-                                                 {3}, GetDtype(), GetDevice()));
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{0.0, -r, 0.0},
-                                                 {3}, GetDtype(), GetDevice()));
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{0.0, 0.0, r},
-                                                 {3}, GetDtype(), GetDevice()));
-    points.push_back(GetCenter() + core::Tensor(std::vector<double>{0.0, 0.0, -r},
-                                                 {3}, GetDtype(), GetDevice()));
+    // Shape: {6,3}
+    // offsets * radius broadcasts scalar radius to all entries
+    core::Tensor scaled_offsets = offsets * GetRadius();
 
-    return core::Concatenate(points).Reshape({6, 3});
+    // Center reshape allows broadcasting across rows
+    return GetCenter().Reshape({1, 3}) + scaled_offsets;
 }
 
-// checked
 BoundingSphere &BoundingSphere::Translate(const core::Tensor &translation,
                                           bool relative) {
     core::AssertTensorDevice(translation, GetDevice());
@@ -1090,7 +1076,7 @@ BoundingSphere &BoundingSphere::Rotate(
     return *this;
 }
 
-// checked
+
 BoundingSphere &BoundingSphere::Scale(double scale,
                                       const std::optional<core::Tensor> &center) {
     radius_ *= scale;
@@ -1106,7 +1092,6 @@ BoundingSphere &BoundingSphere::Scale(double scale,
     return *this;
 }
 
-// checked
 core::Tensor BoundingSphere::GetPointIndicesWithinBoundingSphere(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
@@ -1127,14 +1112,12 @@ core::Tensor BoundingSphere::GetPointIndicesWithinBoundingSphere(
     return mask.NonZero().Flatten();
 }
 
-// checked
 std::string BoundingSphere::ToString() const {
     return fmt::format("BoundingSphere[center: {}, radius: {}, {}, {}]",
                        GetCenter().ToString(false), GetRadius().ToString(false),
                        GetDtype().ToString(), GetDevice().ToString());
 }
 
-// checked
 open3d::geometry::BoundingSphere BoundingSphere::ToLegacy() const {
     open3d::geometry::BoundingSphere legacy_sphere;
 
@@ -1148,7 +1131,6 @@ open3d::geometry::BoundingSphere BoundingSphere::ToLegacy() const {
     return legacy_sphere;
 }
 
-// checked
 AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox()
         const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
@@ -1166,7 +1148,6 @@ OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
             GetAxisAlignedBoundingBox());
 }
 
-// checked
 BoundingSphere BoundingSphere::FromLegacy(
     const open3d::geometry::BoundingSphere &sphere,
     const core::Dtype &dtype,
@@ -1192,7 +1173,7 @@ BoundingSphere BoundingSphere::FromLegacy(
     return t_sphere;
 }
 
-// checked
+
 BoundingSphere BoundingSphere::CreateFromPoints(
     const core::Tensor &points, 
     bool robust) {

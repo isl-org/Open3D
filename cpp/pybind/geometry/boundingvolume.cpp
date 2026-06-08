@@ -133,10 +133,10 @@ Example::
      py::detail::bind_default_constructor<BoundingSphere>(bounding_sphere);
      py::detail::bind_copy_functions<BoundingSphere>(bounding_sphere);
      bounding_sphere
-             .def(py::init<const Eigen::Vector3d &, double>(),
+            .def(py::init<const Eigen::Vector3d &, double>(),
                   "Create BoundingSphere from center and radius", "center"_a,
                   "radius"_a)
-             .def("__repr__",
+            .def("__repr__",
                   [](const BoundingSphere &sphere) {
                       std::stringstream s;
                       auto c = sphere.center_;
@@ -146,60 +146,60 @@ Example::
                       return s.str();
                   })
 
-                 .def_static("create_from_points",
-                             &BoundingSphere::CreateFromPoints, "points"_a,
-                             "robust"_a = false,
-                             R"doc(
-     Creates the bounding sphere that encloses the set of points.
+            .def_static("create_from_points",
+                         &BoundingSphere::CreateFromPoints, "points"_a,
+                         "robust"_a = false,
+                         R"doc(
+Creates the bounding sphere that encloses the set of points.
 
-     Uses Welzl's algorithm to compute the minimum enclosing sphere.
+Uses Welzl's algorithm to compute the minimum enclosing sphere.
 
-     Args:
-          points (open3d.utility.Vector3dVector): Input points.
-          robust (bool): If set to true uses a more robust method which works in
-               degenerate cases but introduces noise to the points coordinates.
+Args:
+     points (open3d.utility.Vector3dVector): Input points.
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
 
-     Returns:
-          open3d.geometry.BoundingSphere: The minimum bounding sphere.
+Returns:
+     open3d.geometry.BoundingSphere: The minimum bounding sphere.
 
-     Example::
+Example::
 
-         import open3d as o3d
+     import open3d as o3d
 
-         # Compute oriented bounding ellipsoid from a mesh
-         mesh_path = o3d.data.MonkeyModel().path
-         mesh = o3d.io.read_triangle_mesh(mesh_path)
-         mesh.compute_triangle_normals()
-         sphere = mesh.get_bounding_sphere()
-         print(f"Volume: {sphere.volume()}")
-         sphere.color = (0, 0.44, 0.77)
+     # Compute oriented bounding ellipsoid from a mesh
+     mesh_path = o3d.data.MonkeyModel().path
+     mesh = o3d.io.read_triangle_mesh(mesh_path)
+     mesh.compute_triangle_normals()
+     sphere = mesh.get_bounding_sphere()
+     print(f"Volume: {sphere.volume()}")
+     sphere.color = (0, 0.44, 0.77)
     
-    # Option 1: wireframe visualization via LineSet
-    sphere_lines = o3d.geometry.LineSet.create_from_bounding_sphere(sphere)
-    o3d.visualization.draw([mesh, sphere_lines])
+     # Option 1: wireframe visualization via LineSet
+     sphere_lines = o3d.geometry.LineSet.create_from_bounding_sphere(sphere)
+     o3d.visualization.draw([mesh, sphere_lines])
     
-    # Option 2: solid sphere mesh
-    sphere_mesh = o3d.geometry.TriangleMesh.create_from_bounding_sphere(sphere)
-    o3d.visualization.draw([mesh, sphere_mesh])
-     )doc")
-                 .def("volume", &BoundingSphere::Volume,
-                      "Returns the volume of the bounding sphere.")
-                 .def("get_sphere_points", &BoundingSphere::GetSpherePoints,
-                      "Returns six critical points on the surface of the sphere.")
-                 .def("get_point_indices_within_bounding_sphere",
-                      &BoundingSphere::GetPointIndicesWithinBoundingSphere,
-                      "Return indices to points that are within the bounding sphere.",
-                      "points"_a)
-                 .def_readwrite("center", &BoundingSphere::center_,
-                                "``float64`` array of shape ``(3, )``")
-                 .def_readwrite("radius", &BoundingSphere::radius_,
-                                "float64: radius of the bounding sphere")
-                 .def_readwrite("color", &BoundingSphere::color_,
-                                "``float64`` array of shape ``(3, )``");
-         docstring::ClassMethodDocInject(m, "BoundingSphere", "volume");
-         docstring::ClassMethodDocInject(m, "BoundingSphere",
-                                         "get_point_indices_within_bounding_sphere",
-                                         {{"points", "A list of points."}});
+     # Option 2: solid sphere mesh
+     sphere_mesh = o3d.geometry.TriangleMesh.create_from_bounding_sphere(sphere)
+     o3d.visualization.draw([mesh, sphere_mesh])
+)doc")
+               .def("volume", &BoundingSphere::Volume,
+                    "Returns the volume of the bounding sphere.")
+               .def("get_sphere_points", &BoundingSphere::GetSpherePoints,
+                    "Returns six critical points on the surface of the sphere.")
+               .def("get_point_indices_within_bounding_sphere",
+                    &BoundingSphere::GetPointIndicesWithinBoundingSphere,
+                    "Return indices to points that are within the bounding sphere.",
+                    "points"_a)
+               .def_readwrite("center", &BoundingSphere::center_,
+                              "``float64`` array of shape ``(3, )``")
+               .def_readwrite("radius", &BoundingSphere::radius_,
+                              "float64: radius of the bounding sphere")
+               .def_readwrite("color", &BoundingSphere::color_,
+                              "``float64`` array of shape ``(3, )``");
+     docstring::ClassMethodDocInject(m, "BoundingSphere", "volume");
+     docstring::ClassMethodDocInject(m, "BoundingSphere",
+                                        "get_point_indices_within_bounding_sphere",
+                                        {{"points", "A list of points."}});
 
     
     auto oriented_bounding_box = static_cast<
