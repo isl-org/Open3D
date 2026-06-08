@@ -57,10 +57,9 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-jammy                   : CUDA CI, 2-jammy, developer mode
-    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
-    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
-    5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    2-noble                   : CUDA CI, 2-noble, developer mode
+    3-ml-shared-noble-release : CUDA CI, 3-ml-shared-noble (cxx11_abi), release mode
+    3-ml-shared-noble         : CUDA CI, 3-ml-shared-noble (cxx11_abi), developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
@@ -278,12 +277,12 @@ ci_build() {
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 
-2-jammy_export_env() {
-    export DOCKER_TAG=open3d-ci:2-jammy
+2-noble_export_env() {
+    export DOCKER_TAG=open3d-ci:2-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-2-jammy
+    export CCACHE_TAR_NAME=open3d-ci-2-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -293,12 +292,12 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-jammy_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
+3-ml-shared-noble_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
@@ -308,33 +307,18 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-jammy-release_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
+3-ml-shared-noble-release_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-5-ml-noble_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-noble
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu24.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
-    export PYTHON_VERSION=3.12
-    export BUILD_SHARED_LIBS=OFF
-    export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
     export BUILD_SYCL_MODULE=OFF
 }
 
@@ -608,20 +592,16 @@ function main() {
         ;;
 
     # ML CIs
-    2-jammy)
-        2-jammy_export_env
+    2-noble)
+        2-noble_export_env
         ci_build
         ;;
-    3-ml-shared-jammy-release)
-        3-ml-shared-jammy-release_export_env
+    3-ml-shared-noble-release)
+        3-ml-shared-noble-release_export_env
         ci_build
         ;;
-    3-ml-shared-jammy)
-        3-ml-shared-jammy_export_env
-        ci_build
-        ;;
-    5-ml-noble)
-        5-ml-noble_export_env
+    3-ml-shared-noble)
+        3-ml-shared-noble_export_env
         ci_build
         ;;
     *)
