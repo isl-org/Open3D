@@ -700,14 +700,14 @@ must be on the same device and have the same data type.)");
             "Create a BoundingSphere from a legacy Open3D bounding sphere.");
     bs.def_static(
             "create_from_points", &BoundingSphere::CreateFromPoints,
-            R"(Creates a bounding sphere from a set of points using Welzl's algorithm.
+            R"(Creates a bounding sphere from a set of points.
 
 Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or
         float64 (N x 3 tensor, where N must be larger than 3).
+    method (MethodBoundingSphereCreate): The method to use for creating the bounding sphere.
     robust (bool): If set to true uses a more robust method which works in
         degenerate cases but introduces noise to the points coordinates.
-
 Returns:
     BoundingSphere with same data type and device as input points.
 
@@ -727,7 +727,9 @@ Example::
         print(f"Center: {sphere.center}")
         print(f"Radius: {sphere.radius}")
 )",
-            "points"_a, "robust"_a = false);
+            "points"_a,
+            "method"_a = MethodBoundingSphereCreate::EXACT, 
+            "robust"_a = false);
 
     docstring::ClassMethodDocInject(
             m, "BoundingSphere", "set_center",
@@ -771,6 +773,7 @@ Example::
             {{"points",
               "A list of points with data type of float32 or float64 (N x 3 "
               "tensor, where N must be larger than 3)."},
+             {"method", "The method to use for creating the bounding sphere."},
              {"robust", "If set to true uses a more robust method which works in "
                         "degenerate cases but introduces noise to the points coordinates."}});
 }

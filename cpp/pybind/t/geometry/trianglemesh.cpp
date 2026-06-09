@@ -799,6 +799,7 @@ Example:
                       &TriangleMesh::GetBoundingSphere,
                       "Create a bounding sphere from vertex "
                       "attribute 'positions'.",
+                      "method"_a = MethodBoundingSphereCreate::EXACT,
                       "robust"_a = false);
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,

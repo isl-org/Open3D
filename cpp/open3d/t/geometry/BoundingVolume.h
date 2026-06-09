@@ -895,11 +895,19 @@ public:
     /// Creates the minimum bounding sphere using Welzl's algorithm.
     /// \param points A list of points with data type of float32 or float64 (N x
     /// 3 tensor, where N must be larger than 0).
+    /// \param method This is one of \c EXACT and \c APPROX in the
+    /// open3d::t::geometry::MethodBoundingSphereCreate namespace.
+    ///     \li \c EXACT computes the exact minimum bounding sphere using Welzl's
+    ///     algorithm. This algorithm is recursive and has an expected time
+    ///     complexity of O(n).
+    ///     \li \c APPROX computes an approximate minimum bounding sphere using 
+    ///     Ritter's approximation algorithm.
     /// \param robust If set to true uses a more robust method which works in
     /// degenerate cases but introduces noise to the points coordinates.    
     /// \return BoundingSphere with same data type and device as input points.
-    static BoundingSphere CreateFromPoints(const core::Tensor &points, 
-        bool robust);
+    static BoundingSphere CreateFromPoints(const core::Tensor &points,
+        MethodBoundingSphereCreate method = MethodBoundingSphereCreate::EXACT, 
+        bool robust = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

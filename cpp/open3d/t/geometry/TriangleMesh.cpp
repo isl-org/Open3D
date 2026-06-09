@@ -796,9 +796,11 @@ TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
 }
 
 BoundingSphere TriangleMesh::GetBoundingSphere(
+        MethodBoundingSphereCreate method,
         bool robust) const {
     return BoundingSphere::CreateFromPoints(GetVertexPositions(),
-                                                       robust);
+                                            method,
+                                            robust);
 }
 
 TriangleMesh TriangleMesh::CreateFromBoundingSphere(

@@ -682,7 +682,9 @@ public:
             bool robust = false) const;
 
     /// Create a bounding sphere from attribute "positions".
-    BoundingSphere GetBoundingSphere(bool robust = false) const;
+    BoundingSphere GetBoundingSphere(
+        MethodBoundingSphereCreate method = MethodBoundingSphereCreate::EXACT,
+        bool robust = false) const;
 
     /// \brief Function to crop pointcloud into output pointcloud.
     ///

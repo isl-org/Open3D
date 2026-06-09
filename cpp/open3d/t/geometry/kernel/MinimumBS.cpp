@@ -734,6 +734,204 @@ BoundingSphere ComputeMinimumBSWelzl(
                     points.GetDevice());
 }
 
+
+// // Approximate bounding sphere, based on "An Efficient Bounding Sphere" by Jack Ritter, from "Graphics Gems"
+// Sphere nv::approximateSphere_Ritter(const Vector3 * pointArray, const uint pointCount) {
+//     nvDebugCheck(pointArray != NULL);
+//     nvDebugCheck(pointCount > 0);
+
+//     Vector3 xmin, xmax, ymin, ymax, zmin, zmax;
+
+//     xmin = xmax = ymin = ymax = zmin = zmax = pointArray[0];
+
+//     // FIRST PASS: find 6 minima/maxima points
+//     xmin.x = ymin.y = zmin.z = FLT_MAX;
+//     xmax.x = ymax.y = zmax.z = -FLT_MAX;
+
+//     for (uint i = 0; i < pointCount; i++) {
+//         const Vector3 & p = pointArray[i];
+//         if (p.x < xmin.x) xmin = p;
+//         if (p.x > xmax.x) xmax = p;
+//         if (p.y < ymin.y) ymin = p;
+//         if (p.y > ymax.y) ymax = p;
+//         if (p.z < zmin.z) zmin = p;
+//         if (p.z > zmax.z) zmax = p;
+//     }
+
+//     float xspan = lengthSquared(xmax - xmin);
+//     float yspan = lengthSquared(ymax - ymin);
+//     float zspan = lengthSquared(zmax - zmin);
+
+//     // Set points dia1 & dia2 to the maximally separated pair.
+//     Vector3 dia1 = xmin; 
+//     Vector3 dia2 = xmax;
+//     float maxspan = xspan;
+//     if (yspan > maxspan) {
+//         maxspan = yspan;
+//         dia1 = ymin;
+//         dia2 = ymax;
+//     }
+//     if (zspan > maxspan) {
+//         dia1 = zmin;
+//         dia2 = zmax;
+//     }
+
+//     // |dia1-dia2| is a diameter of initial sphere
+
+//     // calc initial center
+//     Sphere sphere;
+//     sphere.center = (dia1 + dia2) / 2.0f;
+
+//     // calculate initial radius**2 and radius
+//     float rad_sq = lengthSquared(dia2 - sphere.center);
+//     sphere.radius = sqrtf(rad_sq);
+
+
+//     // SECOND PASS: increment current sphere
+//     for (uint i = 0; i < pointCount; i++) {
+//         const Vector3 & p = pointArray[i];
+
+//         float old_to_p_sq = lengthSquared(p - sphere.center);
+
+//         if (old_to_p_sq > rad_sq) {    // do r**2 test first
+            
+//             // this point is outside of current sphere
+//             float old_to_p = sqrtf(old_to_p_sq);
+
+//             // calc radius of new sphere
+//             sphere.radius = (sphere.radius + old_to_p) / 2.0f;
+//             rad_sq = sphere.radius * sphere.radius;     // for next r**2 compare
+            
+//             float old_to_new = old_to_p - sphere.radius;
+
+//             // calc center of new sphere
+//             sphere.center = (sphere.radius * sphere.center + old_to_new * p) / old_to_p;
+//         }
+//     }
+
+//     nvDebugCheck(allInside(sphere, pointArray, pointCount));
+
+//     return sphere;
+// }
+
+EigenSphere RitterBSApproximation(
+        const std::vector<Eigen::Vector3d>& points,
+        size_t n) {
+
+            Eigen::Vector3d xmin, xmax, ymin, ymax, zmin, zmax;
+            xmin = xmax = ymin = ymax = zmin = zmax = points[0];
+
+            // FIRST PASS: find 6 minima/maxima points
+            for (size_t i = 0; i < n; i++) {
+                const Eigen::Vector3d & p = points[i];
+                if (p.x() < xmin.x()) xmin = p;
+                if (p.x() > xmax.x()) xmax = p;
+                if (p.y() < ymin.y()) ymin = p;
+                if (p.y() > ymax.y()) ymax = p;
+                if (p.z() < zmin.z()) zmin = p;
+                if (p.z() > zmax.z()) zmax = p;
+            }
+
+            double x_span_sq = (xmax - xmin).squaredNorm();
+            double y_span_sq = (ymax - ymin).squaredNorm();
+            double z_span_sq = (zmax - zmin).squaredNorm();
+
+            // Set points extreme_point1 & extreme_point2 to 
+            // the maximally separated pair.
+            Eigen::Vector3d extreme_point1 = xmin;
+            Eigen::Vector3d extreme_point2 = xmax;
+            double max_span_sq = x_span_sq;
+            if (y_span_sq > max_span_sq) {
+                max_span_sq = y_span_sq;
+                extreme_point1 = ymin;
+                extreme_point2 = ymax;
+            }
+            if (z_span_sq > max_span_sq) {
+                extreme_point1 = zmin;
+                extreme_point2 = zmax;
+            }
+
+            // Initial sphere from extrema pair
+            Eigen::Vector3d center = 0.5 * (extreme_point1 + extreme_point2);
+            double radius = (extreme_point2 - extreme_point1).norm() / 2.0;
+
+            EigenSphere sphere(center, radius);
+
+            // SECOND PASS: increment current sphere
+            for (size_t i = 0; i < n; i++) {
+                const Eigen::Vector3d & p = points[i];
+                
+                if (!sphere.IsInside(p)) {
+                    
+                    double center_to_point = (p - center).norm();
+
+                    // update radius
+                    radius = 0.5 * (radius + center_to_point);
+
+                    double center_shift = center_to_point - radius;
+                    
+                    // update center
+                    center = (radius * center + center_shift * p) / 
+                                center_to_point;
+                    
+                    // update sphere for next iteration
+                    sphere = EigenSphere(center, radius);
+                }
+
+            }
+
+            return sphere;
+
+}
+
+open3d::geometry::BoundingSphere ComputeApproximateBSRitter(
+        const std::vector<Eigen::Vector3d>& points) {
+
+    if (points.empty()) {
+        utility::LogError(
+                "Input point set is empty.");
+    }
+
+    if (static_cast<int>(points.size()) < 2) {
+        utility::LogError(
+                "Input point set has less than 2 points.");
+    }
+    
+    EigenSphere bs = RitterBSApproximation(points, points.size());
+
+    return open3d::geometry::BoundingSphere(bs.center_, bs.radius_);
+}
+
+BoundingSphere ComputeApproximateBSRitter(
+        const core::Tensor& points) {
+
+    core::AssertTensorShape(points, {std::nullopt, 3});
+
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+
+    if (points.GetShape(0) < 1) {
+        utility::LogError(
+                "Input point set must have at least 1 point.");
+    }
+
+    const std::vector<Eigen::Vector3d> eigen_points =
+            core::eigen_converter::
+                    TensorToEigenVector3dVector(
+                            points.To(
+                                    core::Device("CPU:0"),
+                                    core::Float64));
+
+    open3d::geometry::BoundingSphere sphere =
+            ComputeApproximateBSRitter(
+                    eigen_points);
+
+    return open3d::t::geometry::BoundingSphere::
+            FromLegacy(
+                    sphere,
+                    points.GetDtype(),
+                    points.GetDevice());
+}
+
 }  // namespace bounding_sphere
 }  // namespace kernel
 }  // namespace geometry
