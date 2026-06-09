@@ -187,11 +187,14 @@ bool RunGaussianGeometryPasses(
             float err = diff.cwiseAbs().sum();
             if (std::isnan(err) || err > 1.5f) {
                 vs.prev_valid = 0;
+                utility::LogInfo("[gs-occl] Big view change.");
             }
         }
     } else {
         vs.prev_valid = 0;
     }
+    utility::LogInfo("[gs-occl] occl_cull={} prev_valid={} err_reset_path",
+                 config.occlusion_cull, vs.prev_valid);
 
     // CPU-uploaded buffers: Shared/DYNAMIC_DRAW so the CPU can write them.
     vs.view_params_buf = ctx.ResizeBuffer(

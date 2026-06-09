@@ -53,7 +53,7 @@ class GaussianSplatVulkanBackend final : public GaussianSplatRenderer::Backend {
 public:
     explicit GaussianSplatVulkanBackend(
             const GaussianSplatRenderer::RenderConfig& config)
-        : config_(config) {}
+        : config_(config) {}  // config_ is a const-ref to GaussianSplatRenderer::render_config_
 
     ~GaussianSplatVulkanBackend() override {
         // Free per-view GPU resources via the compute context.
@@ -320,7 +320,10 @@ public:
     }
 
 private:
-    GaussianSplatRenderer::RenderConfig config_;
+    // Reference to GaussianSplatRenderer::render_config_ so that
+    // SetRenderConfig() changes (e.g. enabling occlusion culling after
+    // add_geometry) are immediately visible without reconstructing the backend.
+    const GaussianSplatRenderer::RenderConfig& config_;
     std::unique_ptr<GaussianSplatGpuContext> gpu_;
     std::unordered_map<const FilamentView*, GaussianSplatViewGpuResources>
             view_states_;

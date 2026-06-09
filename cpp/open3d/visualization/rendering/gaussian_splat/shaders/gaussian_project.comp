@@ -422,16 +422,24 @@ SortEntryParams ProjectGaussian(uint splat_index) {
     // Hierarchical Depth Occlusion Culling.
     // hiz_pyramid_tex is built by gaussian_depth_reproject +
     // gaussian_hiz_reduce from the previous frame's depth, scattered into
-    // current-frame screen space. Sample at the current splat center UV — not
-    // the previous-frame UV.
+    // current-frame screen space.
     if (view_params.prev_depth_params.w > 0.5 &&
         view_params.prev_depth_params.z > 0.5) {
         vec2 curr_uv = center_pixel / resolution;
         if (curr_uv.x >= 0.0 && curr_uv.x <= 1.0 && curr_uv.y >= 0.0 &&
             curr_uv.y <= 1.0) {
             float d_pixels = max(bbox_half_extent.x, bbox_half_extent.y) * 2.0;
-            float L = clamp(log2(d_pixels / 2.0), 0.0, 5.0);
-            float max_hiz_depth = textureLod(hiz_pyramid_tex, curr_uv, L).r;
+            // Choose the mip level whose texel covers the splat's screen
+            // footprint, rounding up so the texel is never smaller than the
+            // footprint.  Each mip l has texel size 2^l × 2^l pixels.
+            int L = clamp(int(ceil(log2(d_pixels / 2.0))), 0, 5);
+            // Use texelFetch (point/nearest) to read the exact stored maximum
+            // depth for this texel.  textureLod bilinearly interpolates within
+            // the mip, which can yield a blended value lower than the true max
+            // and cause foreground splats to be incorrectly culled.
+            ivec2 hiz_size = max(ivec2(view_params.viewport_origin_and_size.zw) >> L, ivec2(1));
+            ivec2 hiz_coord = clamp(ivec2(curr_uv * vec2(hiz_size)), ivec2(0), hiz_size - ivec2(1));
+            float max_hiz_depth = texelFetch(hiz_pyramid_tex, hiz_coord, L).r;
             if (norm_depth > max_hiz_depth + 1e-3) {
                 return CulledEntryParams(splat_index);
             }

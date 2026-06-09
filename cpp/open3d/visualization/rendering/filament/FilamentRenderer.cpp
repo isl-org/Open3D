@@ -173,9 +173,15 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 
 void FilamentRenderer::BeginFrame() {
     // We will complete render to buffer requests first
+    // Track views already processed by buffer renderers so the main
+    // ForEachActiveView loop below does not dispatch a second geometry pass
+    // for the same view.
+    std::unordered_set<const FilamentView*> buffer_rendered_views;
     if (!buffer_renderers_.empty()) {
         for (auto& br : buffer_renderers_) {
             if (br->pending_) {
+                buffer_rendered_views.insert(
+                        static_cast<const FilamentView*>(&br->GetView()));
                 br->Render();
             }
         }
@@ -214,9 +220,16 @@ void FilamentRenderer::BeginFrame() {
             scene->ForEachView([&live_views](const FilamentView& view) {
                 live_views.insert(&view);
             });
-            scene->ForEachActiveView([this, &scene](FilamentView& view) {
-                gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
-            });
+            // Skip views already processed by a buffer renderer this frame to
+            // avoid dispatching two geometry passes for the same view.
+            scene->ForEachActiveView(
+                    [this, &scene,
+                     &buffer_rendered_views](FilamentView& view) {
+                        if (buffer_rendered_views.count(&view) == 0) {
+                            gaussian_splat_renderer_->RenderGeometryStage(
+                                    view, *scene);
+                        }
+                    });
         }
         for (const auto& br : buffer_renderers_) {
             live_views.insert(static_cast<FilamentView*>(&br->GetView()));
