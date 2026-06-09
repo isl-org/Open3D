@@ -21,7 +21,7 @@ namespace {
 
 // libpng fills pngimage.message with text that already includes "libpng error:
 // ".
-void LogLibPNGError(const png_image &pngimage, const char *fallback) {
+void LogLibPNGError(const png_image& pngimage, const char* fallback) {
     if (pngimage.message[0] != '\0') {
         utility::LogWarning("{}", pngimage.message);
     } else {
@@ -31,9 +31,9 @@ void LogLibPNGError(const png_image &pngimage, const char *fallback) {
 
 }  // namespace
 
-static void SetPNGImageFromImage(const geometry::Image &image,
+static void SetPNGImageFromImage(const geometry::Image& image,
                                  int quality,
-                                 png_image &pngimage) {
+                                 png_image& pngimage) {
     pngimage.width = image.GetCols();
     pngimage.height = image.GetRows();
     pngimage.format = pngimage.flags = 0;
@@ -53,9 +53,9 @@ static void SetPNGImageFromImage(const geometry::Image &image,
 }
 
 // Shared setup for a png_image struct from a decoded format descriptor.
-static bool FinishReadPNG(png_image &pngimage,
-                          geometry::Image &image,
-                          const char *source_label) {
+static bool FinishReadPNG(png_image& pngimage,
+                          geometry::Image& image,
+                          const char* source_label) {
     if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
         pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
     }
@@ -79,7 +79,7 @@ static bool FinishReadPNG(png_image &pngimage,
     return true;
 }
 
-bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
+bool ReadImageFromPNG(const std::string& filename, geometry::Image& image) {
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
@@ -91,9 +91,15 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     return FinishReadPNG(pngimage, image, filename.c_str());
 }
 
-bool ReadImageFromPNGInMemory(const uint8_t *data,
+bool ReadImageFromPNGInMemory(const uint8_t* data,
                               size_t size,
-                              geometry::Image &image) {
+                              geometry::Image& image) {
+    if (data == nullptr || size == 0) {
+        utility::LogWarning(
+                "ReadImageFromPNGInMemory failed: null or empty buffer.");
+        image.Clear();
+        return false;
+    }
     png_image pngimage;
     memset(&pngimage, 0, sizeof(pngimage));
     pngimage.version = PNG_IMAGE_VERSION;
@@ -106,8 +112,8 @@ bool ReadImageFromPNGInMemory(const uint8_t *data,
     return FinishReadPNG(pngimage, image, "<memory>");
 }
 
-bool WriteImageToPNG(const std::string &filename,
-                     const geometry::Image &image,
+bool WriteImageToPNG(const std::string& filename,
+                     const geometry::Image& image,
                      int quality) {
     if (image.IsEmpty()) {
         utility::LogWarning("Write PNG failed: image has no data.");
@@ -142,8 +148,8 @@ bool WriteImageToPNG(const std::string &filename,
     return true;
 }
 
-bool WriteImageToPNGInMemory(std::vector<uint8_t> &buffer,
-                             const t::geometry::Image &image,
+bool WriteImageToPNGInMemory(std::vector<uint8_t>& buffer,
+                             const t::geometry::Image& image,
                              int quality) {
     if (image.IsEmpty()) {
         utility::LogWarning("Write PNG failed: image has no data.");

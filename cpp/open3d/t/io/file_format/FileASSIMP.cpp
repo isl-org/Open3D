@@ -23,7 +23,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "open3d/core/ParallelFor.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TriangleMeshIO.h"
@@ -576,14 +575,12 @@ bool ReadTriangleMeshUsingASSIMP(
         core::Tensor faces = core::Tensor::Empty({assimp_mesh->mNumFaces, 3},
                                                  core::Dtype::Int64);
         auto* fp = faces.GetDataPtr<int64_t>();
-        core::ParallelFor(
-                core::Device("CPU:0"), assimp_mesh->mNumFaces,
-                [&](size_t fidx) {
-                    const auto& face = assimp_mesh->mFaces[fidx];
-                    fp[3 * fidx + 0] = face.mIndices[0] + current_vidx;
-                    fp[3 * fidx + 1] = face.mIndices[1] + current_vidx;
-                    fp[3 * fidx + 2] = face.mIndices[2] + current_vidx;
-                });
+        for (unsigned int fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
+            const auto& face = assimp_mesh->mFaces[fidx];
+            fp[3 * fidx + 0] = face.mIndices[0] + current_vidx;
+            fp[3 * fidx + 1] = face.mIndices[1] + current_vidx;
+            fp[3 * fidx + 2] = face.mIndices[2] + current_vidx;
+        }
         mesh_faces.push_back(faces);
 
         if (assimp_mesh->HasTextureCoords(0)) {
@@ -597,7 +594,8 @@ bool ReadTriangleMeshUsingASSIMP(
                 *up++ = assimp_mesh->mTextureCoords[0][i].y;
             }
             // Index vertex UVs by the face array to get per-triangle UVs.
-            mesh_uvs.push_back(vertex_uvs.IndexGet({faces}));
+            mesh_uvs.push_back(vertex_uvs.IndexGet(
+                    {faces - static_cast<int64_t>(current_vidx)}));
             count_mesh_with_uvs++;
         }
 

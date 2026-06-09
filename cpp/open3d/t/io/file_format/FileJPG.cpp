@@ -26,10 +26,9 @@ namespace {
 void jpeg_error_throw(j_common_ptr p_cinfo) {
     if (p_cinfo->is_decompressor)
         jpeg_destroy_decompress(
-                reinterpret_cast<jpeg_decompress_struct *>(p_cinfo));
+                reinterpret_cast<jpeg_decompress_struct*>(p_cinfo));
     else
-        jpeg_destroy_compress(
-                reinterpret_cast<jpeg_compress_struct *>(p_cinfo));
+        jpeg_destroy_compress(reinterpret_cast<jpeg_compress_struct*>(p_cinfo));
     char buffer[JMSG_LENGTH_MAX];
     (*p_cinfo->err->format_message)(p_cinfo, buffer);
     throw std::runtime_error(buffer);
@@ -39,8 +38,8 @@ void jpeg_error_throw(j_common_ptr p_cinfo) {
 
 // Decompress a JPEG after the source has already been set on cinfo.
 // Shared by the file-based and in-memory readers.
-static bool DecompressJPG(struct jpeg_decompress_struct &cinfo,
-                          geometry::Image &image) {
+static bool DecompressJPG(struct jpeg_decompress_struct& cinfo,
+                          geometry::Image& image) {
     jpeg_read_header(&cinfo, TRUE);
 
     // We only support two channel types: gray, and RGB.
@@ -71,7 +70,7 @@ static bool DecompressJPG(struct jpeg_decompress_struct &cinfo,
     const int row_stride = cinfo.output_width * cinfo.output_components;
     JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo,
                                                    JPOOL_IMAGE, row_stride, 1);
-    uint8_t *pdata = static_cast<uint8_t *>(image.GetDataPtr());
+    uint8_t* pdata = static_cast<uint8_t*>(image.GetDataPtr());
 
     while (cinfo.output_scanline < cinfo.output_height) {
         jpeg_read_scanlines(&cinfo, buffer, 1);
@@ -84,10 +83,10 @@ static bool DecompressJPG(struct jpeg_decompress_struct &cinfo,
     return true;
 }
 
-bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
+bool ReadImageFromJPG(const std::string& filename, geometry::Image& image) {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
-    FILE *file_in;
+    FILE* file_in;
 
     if ((file_in = utility::filesystem::FOpen(filename, "rb")) == NULL) {
         utility::LogWarning("Read JPG failed: unable to open file: {}",
@@ -103,7 +102,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
         bool ok = DecompressJPG(cinfo, image);
         fclose(file_in);
         return ok;
-    } catch (const std::runtime_error &err) {
+    } catch (const std::runtime_error& err) {
         fclose(file_in);
         image.Clear();
         utility::LogWarning("libjpeg error: {}", err.what());
@@ -111,9 +110,15 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     }
 }
 
-bool ReadImageFromJPGInMemory(const uint8_t *data,
+bool ReadImageFromJPGInMemory(const uint8_t* data,
                               size_t size,
-                              geometry::Image &image) {
+                              geometry::Image& image) {
+    if (data == nullptr || size == 0) {
+        utility::LogWarning(
+                "ReadImageFromJPGInMemory failed: null or empty buffer.");
+        image.Clear();
+        return false;
+    }
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
     try {
@@ -121,18 +126,18 @@ bool ReadImageFromJPGInMemory(const uint8_t *data,
         jerr.error_exit = jpeg_error_throw;
         jpeg_create_decompress(&cinfo);
         // jpeg_mem_src accepts non-const data pointer (libjpeg API)
-        jpeg_mem_src(&cinfo, const_cast<uint8_t *>(data),
+        jpeg_mem_src(&cinfo, const_cast<uint8_t*>(data),
                      static_cast<unsigned long>(size));
         return DecompressJPG(cinfo, image);
-    } catch (const std::runtime_error &err) {
+    } catch (const std::runtime_error& err) {
         image.Clear();
         utility::LogWarning("libjpeg error: {}", err.what());
         return false;
     }
 }
 
-bool WriteImageToJPG(const std::string &filename,
-                     const geometry::Image &image,
+bool WriteImageToJPG(const std::string& filename,
+                     const geometry::Image& image,
                      int quality /* = kOpen3DImageIODefaultQuality*/) {
     if (image.IsEmpty()) {
         utility::LogWarning("Write JPG failed: image has no data.");
@@ -154,7 +159,7 @@ bool WriteImageToJPG(const std::string &filename,
 
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
-    FILE *file_out;
+    FILE* file_out;
     JSAMPROW row_pointer[1];
 
     if ((file_out = utility::filesystem::FOpen(filename, "wb")) == NULL) {
@@ -177,7 +182,7 @@ bool WriteImageToJPG(const std::string &filename,
         jpeg_set_quality(&cinfo, quality, TRUE);
         jpeg_start_compress(&cinfo, TRUE);
         int row_stride = image.GetCols() * image.GetChannels();
-        const uint8_t *pdata = static_cast<const uint8_t *>(image.GetDataPtr());
+        const uint8_t* pdata = static_cast<const uint8_t*>(image.GetDataPtr());
         std::vector<uint8_t> buffer(row_stride);
         while (cinfo.next_scanline < cinfo.image_height) {
             core::MemoryManager::MemcpyToHost(
@@ -190,7 +195,7 @@ bool WriteImageToJPG(const std::string &filename,
         fclose(file_out);
         jpeg_destroy_compress(&cinfo);
         return true;
-    } catch (const std::runtime_error &err) {
+    } catch (const std::runtime_error& err) {
         fclose(file_out);
         utility::LogWarning("libjpeg error: {}", err.what());
         return false;
