@@ -232,6 +232,28 @@ public:
         std::memset([b contents], 0, it -> second);
     }
 
+    void ClearBufferUInt32Ones(std::uintptr_t buf) override {
+        auto it = buffer_sizes_.find(buf);
+        if (it == buffer_sizes_.end()) {
+            return;
+        }
+        id<MTLBuffer> b = (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf);
+        const NSUInteger size = static_cast<NSUInteger>(it->second);
+
+        id<MTLCommandBuffer> cb = geom_cb_ ? geom_cb_ : comp_cb_;
+        if (encoder_ && cb) {
+            [encoder_ endEncoding];
+            id<MTLBlitCommandEncoder> blit = [cb blitCommandEncoder];
+            [blit fillBuffer:b range:NSMakeRange(0, size) value:255];
+            [blit endEncoding];
+            encoder_ = [cb computeCommandEncoder];
+            ApplyEncoderState();
+            return;
+        }
+
+        std::memset([b contents], 255, it -> second);
+    }
+
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
         id<MTLBuffer> b =
                 buf ? (__bridge id<MTLBuffer>)reinterpret_cast<void*>(buf)
@@ -407,6 +429,43 @@ public:
         return k;
     }
 
+    std::uintptr_t CreateTexture2DR16FMipmapped(
+            std::uint32_t width,
+            std::uint32_t height,
+            std::uint32_t levels,
+            const char* label = nullptr) override {
+        MTLTextureDescriptor* d = [MTLTextureDescriptor
+                texture2DDescriptorWithPixelFormat:MTLPixelFormatR16Float
+                                             width:width
+                                            height:height
+                                         mipmapped:YES];
+        d.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        d.storageMode = MTLStorageModePrivate;
+        d.mipmapLevelCount = levels;
+        id<MTLTexture> t = [device_ newTextureWithDescriptor:d];
+        if (!t) {
+            return 0;
+        }
+        if (label && label[0] != '\0') {
+            t.label = [NSString stringWithUTF8String:label];
+        }
+        texture_sizes_[reinterpret_cast<std::uintptr_t>(t)] = {width, height};
+        return reinterpret_cast<std::uintptr_t>((__bridge_retained void*)t);
+    }
+
+    std::uintptr_t ResizeTexture2DR16FMipmapped(
+            std::uintptr_t tex,
+            std::uint32_t width,
+            std::uint32_t height,
+            std::uint32_t levels,
+            const char* label = nullptr) override {
+        if (tex == 0) {
+            return CreateTexture2DR16FMipmapped(width, height, levels, label);
+        }
+        DestroyTexture(tex);
+        return CreateTexture2DR16FMipmapped(width, height, levels, label);
+    }
+
     bool DownloadTextureR32F(std::uintptr_t tex,
                              std::uint32_t width,
                              std::uint32_t height,
@@ -439,6 +498,28 @@ public:
                 tex ? (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex)
                     : nil;
         SetTextureBinding(binding, t);
+    }
+
+    void BindImageMip(std::uint32_t binding,
+                      std::uintptr_t tex,
+                      std::uint32_t /*width*/,
+                      std::uint32_t /*height*/,
+                      std::uint32_t level,
+                      ImageFormat /*fmt*/) override {
+        id<MTLTexture> t =
+                tex ? (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex)
+                    : nil;
+        if (t && level > 0) {
+            id<MTLTexture> view =
+                    [t newTextureViewWithPixelFormat:[t pixelFormat]
+                                         textureType:MTLTextureType2D
+                                              levels:NSMakeRange(level, 1)
+                                              slices:NSMakeRange(0, 1)];
+            temp_mip_views_.push_back(view);
+            SetTextureBinding(binding, view);
+        } else {
+            SetTextureBinding(binding, t);
+        }
     }
 
     void BindSamplerTexture(std::uint32_t unit,
@@ -628,6 +709,7 @@ private:
         for (auto& b : buffer_bindings_) b = {};
         for (auto& t : texture_bindings_) t = {};
         for (auto& s : sampler_bindings_) s = {};
+        temp_mip_views_.clear();
     }
 
     void SetBufferBinding(std::uint32_t binding,
@@ -729,6 +811,7 @@ private:
     std::unordered_map<std::uintptr_t, std::size_t> buffer_sizes_;
     std::unordered_map<std::uintptr_t, std::pair<std::uint32_t, std::uint32_t>>
             texture_sizes_;
+    std::vector<id<MTLTexture>> temp_mip_views_;
 };
 
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextMetal(

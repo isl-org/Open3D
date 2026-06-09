@@ -1,0 +1,125 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#version 460 core
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+}
+view_params;
+
+layout(std430, binding = 1) restrict readonly buffer ReprojScatterBuf {
+    uint reproj_scatter_buf[];
+};
+
+// Bindings for mip levels 0..5
+layout(binding = 2, r16f) uniform writeonly image2D out_mip0;
+layout(binding = 3, r16f) uniform writeonly image2D out_mip1;
+layout(binding = 4, r16f) uniform writeonly image2D out_mip2;
+layout(binding = 5, r16f) uniform writeonly image2D out_mip3;
+layout(binding = 6, r16f) uniform writeonly image2D out_mip4;
+layout(binding = 7, r16f) uniform writeonly image2D out_mip5;
+
+void WriteMip(int level, ivec2 c, vec4 val) {
+    switch (level) {
+        case 0: imageStore(out_mip0, c, val); break;
+        case 1: imageStore(out_mip1, c, val); break;
+        case 2: imageStore(out_mip2, c, val); break;
+        case 3: imageStore(out_mip3, c, val); break;
+        case 4: imageStore(out_mip4, c, val); break;
+        case 5: imageStore(out_mip5, c, val); break;
+    }
+}
+
+shared float s_mips[16][16];
+
+float LoadScatterDepth(ivec2 c, ivec2 vp_size) {
+    if (c.x >= vp_size.x || c.y >= vp_size.y) return 1.0;
+    uint val_uint = reproj_scatter_buf[c.y * vp_size.x + c.x];
+    if (val_uint == 0xFFFFFFFFu) return 1.0;
+    return uintBitsToFloat(val_uint);
+}
+
+void main() {
+    ivec2 vp_size = ivec2(view_params.viewport_origin_and_size.zw);
+
+    int tx = int(gl_LocalInvocationID.x);
+    int ty = int(gl_LocalInvocationID.y);
+    int gx = int(gl_WorkGroupID.x) * 32;
+    int gy = int(gl_WorkGroupID.y) * 32;
+
+    int cx = gx + tx * 2;
+    int cy = gy + ty * 2;
+
+    // Load 2x2 squad
+    float v00 = LoadScatterDepth(ivec2(cx, cy), vp_size);
+    float v10 = LoadScatterDepth(ivec2(cx + 1, cy), vp_size);
+    float v01 = LoadScatterDepth(ivec2(cx, cy + 1), vp_size);
+    float v11 = LoadScatterDepth(ivec2(cx + 1, cy + 1), vp_size);
+
+    // Mip 0 coords and sizes
+    ivec2 sz0 = vp_size;
+    ivec2 c0 = ivec2(cx, cy);
+    if (c0.x < sz0.x && c0.y < sz0.y)
+        WriteMip(0, c0, vec4(v00, 0.0, 0.0, 0.0));
+    if (c0.x + 1 < sz0.x && c0.y < sz0.y)
+        WriteMip(0, c0 + ivec2(1, 0), vec4(v10, 0.0, 0.0, 0.0));
+    if (c0.x < sz0.x && c0.y + 1 < sz0.y)
+        WriteMip(0, c0 + ivec2(0, 1), vec4(v01, 0.0, 0.0, 0.0));
+    if (c0.x + 1 < sz0.x && c0.y + 1 < sz0.y)
+        WriteMip(0, c0 + ivec2(1, 1), vec4(v11, 0.0, 0.0, 0.0));
+
+    // Reduce to mip 1
+    float m0 = max(max(v00, v10), max(v01, v11));
+    ivec2 sz1 = max(sz0 / 2, ivec2(1));
+    ivec2 c1 = ivec2(gx / 2 + tx, gy / 2 + ty);
+    if (c1.x < sz1.x && c1.y < sz1.y) {
+        WriteMip(1, c1, vec4(m0, 0.0, 0.0, 0.0));
+    }
+
+    s_mips[ty][tx] = m0;
+    barrier();
+
+    // Reduce mips 2..5.  Each iteration consumes the previous level from shared
+    // memory and produces the next, writing back into the same s_mips array.
+    // A barrier must separate the read phase from the write phase: an active
+    // thread reads a 2x2 block (indices up to 2*limit-1) that other active
+    // threads (in different subgroups) are about to overwrite.  Without the
+    // mid-iteration barrier this is a cross-subgroup read-after-write race that
+    // corrupts the higher pyramid levels.  Compute val into a register first,
+    // barrier, then store.
+    for (int l = 2; l <= 5; ++l) {
+        int limit = 16 >> (l - 1);
+        bool is_active = (tx < limit && ty < limit);
+        float val = 0.0;
+        if (is_active) {
+            val = max(max(s_mips[ty * 2][tx * 2], s_mips[ty * 2][tx * 2 + 1]),
+                      max(s_mips[ty * 2 + 1][tx * 2],
+                          s_mips[ty * 2 + 1][tx * 2 + 1]));
+            ivec2 sz = max(vp_size >> l, ivec2(1));
+            ivec2 c = ivec2(gx >> l, gy >> l) + ivec2(tx, ty);
+            if (c.x < sz.x && c.y < sz.y) {
+                WriteMip(l, c, vec4(val, 0.0, 0.0, 0.0));
+            }
+        }
+        barrier();  // all reads of level l-1 done before any overwrite
+        if (is_active) {
+            s_mips[ty][tx] = val;
+        }
+        barrier();  // all writes of level l visible before next iteration reads
+    }
+}

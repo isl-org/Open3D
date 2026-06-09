@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -46,11 +47,13 @@ enum class ComputeProgramId : int {
     /// Merges GS linear depth (R32F) with Filament scene depth (reversed-Z)
     /// into a normalised R16UI texture for CPU readback.
     kGsDepthMerge = 5,
-    kCount = 6,
+    kGsDepthReproject = 6,
+    kGsHiZReduce = 7,
+    kCount = 8,
 };
 
 /// Format selector for GaussianSplatGpuContext::BindImage().
-enum class ImageFormat { kRGBA16F, kR32F, kR16UI };
+enum class ImageFormat { kRGBA16F, kR32F, kR16UI, kR16F };
 
 /// Canonical shader base names indexed by ComputeProgramId.
 /// Backends append ".spv" (Vulkan) or "_main" (Metal entry point).
@@ -61,6 +64,8 @@ constexpr const char* kGsShaderNames[] = {
         "gaussian_radix_sort_scatter",
         "gaussian_compute_dispatch_args",
         "gaussian_depth_merge",
+        "gaussian_depth_reproject",
+        "gaussian_hiz_reduce",
 };
 static_assert(std::size(kGsShaderNames) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
@@ -110,15 +115,31 @@ struct GaussianSplatViewGpuResources {
     std::uintptr_t mask_buf = 0;
     /// GS composite depth output (image binding 1); not the shared scene depth.
     std::uintptr_t composite_depth_tex = 0;
+    /// GS composite stricter occluder depth output (image binding 13); R32F
+    /// holding linear depth [0,1].
+    std::uintptr_t composite_occluder_depth_tex = 0;
     /// Merged GS+Filament depth as R16UI (normalised [0,65535]); non-zero only
     /// when an offscreen capture is active and scene depth is available.
     std::uintptr_t merged_depth_u16_tex = 0;
+    /// Persistent previous R32F linear depth texture and scatter buffers for
+    /// occlusion culling
+    std::uintptr_t prior_depth_tex = 0;
+    std::uintptr_t reproj_scatter_buf = 0;
+    std::uintptr_t hiz_pyramid_tex = 0;
+    /// CPU-side tracking of previous frame's projection matrices and parameters
+    float prev_clip_from_world_inv[16]{};
+    float prev_near = 0.f;
+    float prev_far = 0.f;
+    std::uint32_t prev_valid = 0;
     /// Which sort_values_buf index holds the final sorted splat indices.
     /// Set at the end of RunGaussianGeometryPasses; read by composite.
     int final_sort_src = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;
     std::uint32_t warned_gpu_error_flags = 0;
+    /// Counters from the most recently completed geometry pass.
+    /// Fields: total_entries, error_flags, tile_count, splat_count.
+    std::array<std::uint32_t, 4> last_counters{};
 };
 
 // ---------------------------------------------------------------------------
@@ -169,6 +190,7 @@ public:
         return false;
     }
     virtual void ClearBufferUInt32Zero(std::uintptr_t buf) = 0;
+    virtual void ClearBufferUInt32Ones(std::uintptr_t buf) = 0;
 
     // --- Bindings ---------------------------------------------------------
     virtual void BindSSBO(std::uint32_t binding, std::uintptr_t buf) = 0;
@@ -209,6 +231,19 @@ public:
             std::uint32_t height,
             const char* label = nullptr) = 0;
 
+    /// Create or resize a mipmapped R16F texture.
+    virtual std::uintptr_t CreateTexture2DR16FMipmapped(
+            std::uint32_t width,
+            std::uint32_t height,
+            std::uint32_t levels,
+            const char* label = nullptr) = 0;
+    virtual std::uintptr_t ResizeTexture2DR16FMipmapped(
+            std::uintptr_t tex,
+            std::uint32_t width,
+            std::uint32_t height,
+            std::uint32_t levels,
+            const char* label = nullptr) = 0;
+
     /// Download the contents of an R32F texture into a float vector.
     /// The caller must ensure no outstanding GPU writes to the texture.
     /// Returns false when not supported or on error.
@@ -243,6 +278,15 @@ public:
                            std::uint32_t width,
                            std::uint32_t height,
                            ImageFormat fmt) = 0;
+
+    /// Bind a write image mip level at the given unit with the specified
+    /// format.
+    virtual void BindImageMip(std::uint32_t binding,
+                              std::uintptr_t tex,
+                              std::uint32_t width,
+                              std::uint32_t height,
+                              std::uint32_t level,
+                              ImageFormat fmt) = 0;
 
     virtual void BindSamplerTexture(std::uint32_t unit,
                                     std::uintptr_t tex,
@@ -379,6 +423,16 @@ public:
                           std::uint32_t h,
                           ImageFormat fmt) {
         if (ok_) ctx_.BindImage(binding, tex, w, h, fmt);
+        return *this;
+    }
+
+    GpuComputePass& ImageMip(std::uint32_t binding,
+                             std::uintptr_t tex,
+                             std::uint32_t w,
+                             std::uint32_t h,
+                             std::uint32_t level,
+                             ImageFormat fmt) {
+        if (ok_) ctx_.BindImageMip(binding, tex, w, h, level, fmt);
         return *this;
     }
 

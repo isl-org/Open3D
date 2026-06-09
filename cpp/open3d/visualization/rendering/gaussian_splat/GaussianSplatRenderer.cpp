@@ -451,6 +451,12 @@ const char* GaussianSplatRenderer::GetBackendName() const {
     return backend_ ? backend_->GetName() : "Unavailable";
 }
 
+std::array<std::uint32_t, 4> GaussianSplatRenderer::GetLastFrameCounters()
+        const {
+    return backend_ ? backend_->GetLastFrameCounters()
+                    : std::array<std::uint32_t, 4>{};
+}
+
 GaussianSplatRenderer::OutputTargets&
 GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     // Allocate (or return cached) output textures and render target for this

@@ -69,6 +69,8 @@ static constexpr ShaderBindingDesc kBindingsProject[] = {
         {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {15, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
 };
 static constexpr ShaderBindingDesc kBindingsComposite[] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
@@ -78,6 +80,7 @@ static constexpr ShaderBindingDesc kBindingsComposite[] = {
         {8, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {11, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {13, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
         {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         {16, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
@@ -104,10 +107,29 @@ static constexpr ShaderBindingDesc kBindingsDispatchArgs[] = {
 static constexpr ShaderBindingDesc kBindingsDepthMerge[] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {12, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {13, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
         {15, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+};
+static constexpr ShaderBindingDesc kBindingsDepthReproject[] = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {14, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+};
+static constexpr ShaderBindingDesc kBindingsHiZReduce[] = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_IMAGE_LAYOUT_UNDEFINED},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {5, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {6, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
+        {7, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL},
 };
 
 // Table indexed by ComputeProgramId: binding descriptor + count.
@@ -123,6 +145,8 @@ static constexpr ShaderBindingTable kShaderBindings[] = {
         {kBindingsRadixScatter, std::size(kBindingsRadixScatter)},
         {kBindingsDispatchArgs, std::size(kBindingsDispatchArgs)},
         {kBindingsDepthMerge, std::size(kBindingsDepthMerge)},
+        {kBindingsDepthReproject, std::size(kBindingsDepthReproject)},
+        {kBindingsHiZReduce, std::size(kBindingsHiZReduce)},
 };
 static_assert(std::size(kShaderBindings) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
@@ -288,6 +312,13 @@ public:
         cmd_.fillBuffer(vk::Buffer(it->second.buffer), 0, VK_WHOLE_SIZE, 0u);
     }
 
+    void ClearBufferUInt32Ones(std::uintptr_t buf) override {
+        auto it = buffers_.find(buf);
+        if (it == buffers_.end()) return;
+        cmd_.fillBuffer(vk::Buffer(it->second.buffer), 0, VK_WHOLE_SIZE,
+                        0xFFFFFFFFu);
+    }
+
     // --- Bindings ---------------------------------------------------------
 
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
@@ -348,6 +379,35 @@ public:
             return;
         }
         auto view = ResolveImageView(tex, VK_IMAGE_LAYOUT_GENERAL);
+        if (view == VK_NULL_HANDLE) return;
+        PendingWrite pw{};
+        pw.binding = binding;
+        pw.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        pw.img = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL};
+        pending_.push_back(pw);
+    }
+
+    void BindImageMip(std::uint32_t binding,
+                      std::uintptr_t tex,
+                      std::uint32_t /*width*/,
+                      std::uint32_t /*height*/,
+                      std::uint32_t level,
+                      ImageFormat /*fmt*/) override {
+        auto it = textures_.find(tex);
+        if (it == textures_.end()) {
+            auto git = gl_to_handle_.find(static_cast<std::uint32_t>(tex));
+            if (git != gl_to_handle_.end()) {
+                it = textures_.find(git->second);
+            }
+        }
+        if (it == textures_.end()) return;
+        auto& e = it->second;
+        if (level >= e.mip_views.size()) return;
+
+        // Ensure the base layout is Transitioned as needed
+        ResolveImageView(tex, VK_IMAGE_LAYOUT_GENERAL);
+
+        auto view = static_cast<VkImageView>(*e.mip_views[level]);
         if (view == VK_NULL_HANDLE) return;
         PendingWrite pw{};
         pw.binding = binding;
@@ -432,8 +492,9 @@ public:
         auto it = textures_.find(tex);
         if (it == textures_.end()) return;
         auto& e = it->second;
-        // Explicitly destroy the view before the VMA image for correct order.
+        // Explicitly destroy the views before the VMA image for correct order.
         e.view = vk::raii::ImageView{nullptr};
+        e.mip_views.clear();
         if (!e.is_shared) vmaDestroyImage(vma_, e.image, e.alloc);
         textures_.erase(it);
     }
@@ -466,6 +527,32 @@ public:
                 w, h, VK_FORMAT_R16_UINT,
                 VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
+    std::uintptr_t CreateTexture2DR16FMipmapped(
+            std::uint32_t w,
+            std::uint32_t h,
+            std::uint32_t levels,
+            const char* /*label*/) override {
+        return AllocTexMipmapped(w, h, levels, VK_FORMAT_R16_SFLOAT,
+                                 VK_IMAGE_USAGE_STORAGE_BIT |
+                                         VK_IMAGE_USAGE_SAMPLED_BIT |
+                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                 VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
+    std::uintptr_t ResizeTexture2DR16FMipmapped(std::uintptr_t tex,
+                                                std::uint32_t w,
+                                                std::uint32_t h,
+                                                std::uint32_t levels,
+                                                const char* label) override {
+        if (tex == 0) return CreateTexture2DR16FMipmapped(w, h, levels, label);
+        auto it = textures_.find(tex);
+        if (it != textures_.end() && it->second.width == w &&
+            it->second.height == h && it->second.mip_levels == levels)
+            return tex;
+        DestroyTexture(tex);
+        return CreateTexture2DR16FMipmapped(w, h, levels, label);
     }
 
     bool DownloadTextureR32F(std::uintptr_t tex,
@@ -723,11 +810,13 @@ private:
         VkImage image = VK_NULL_HANDLE;
         vk::raii::ImageView view{
                 nullptr};  // RAII: auto-destroys vkDestroyImageView
+        std::vector<vk::raii::ImageView> mip_views;
         VkFormat format = VK_FORMAT_UNDEFINED;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
         VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
         bool is_shared = false;
+        std::uint32_t mip_levels = 1;
     };
     std::unordered_map<uintptr_t, TexEntry> textures_;
     std::unordered_map<std::uint32_t, uintptr_t> gl_to_handle_;
@@ -1125,14 +1214,16 @@ private:
                 vk::ImageSubresourceRange{
                         is_depth ? vk::ImageAspectFlagBits::eDepth
                                  : vk::ImageAspectFlagBits::eColor,
-                        0, 1, 0, 1},
+                        0, VK_REMAINING_MIP_LEVELS, 0, 1},
         };
         cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, b});
     }
 
     vk::raii::ImageView CreateImageView(VkImage image,
                                         VkFormat format,
-                                        VkImageAspectFlags aspect) {
+                                        VkImageAspectFlags aspect,
+                                        std::uint32_t base_mip = 0,
+                                        std::uint32_t mip_count = 1) {
         vk::ImageViewCreateInfo vci{
                 {},
                 vk::Image(image),
@@ -1140,7 +1231,8 @@ private:
                 static_cast<vk::Format>(format),
                 {},
                 vk::ImageSubresourceRange{
-                        static_cast<vk::ImageAspectFlags>(aspect), 0, 1, 0, 1},
+                        static_cast<vk::ImageAspectFlags>(aspect), base_mip,
+                        mip_count, 0, 1},
         };
         try {
             return GaussianSplatVulkanInteropContext::GetInstance()
@@ -1231,6 +1323,57 @@ private:
         e.height = h;
         e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
         e.is_shared = false;
+        e.mip_levels = 1;
+        return handle;
+    }
+
+    std::uintptr_t AllocTexMipmapped(std::uint32_t w,
+                                     std::uint32_t h,
+                                     std::uint32_t levels,
+                                     VkFormat format,
+                                     VkImageUsageFlags usage,
+                                     VkImageAspectFlags aspect) {
+        VkImageCreateInfo ici{};
+        ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        ici.imageType = VK_IMAGE_TYPE_2D;
+        ici.format = format;
+        ici.extent = {w, h, 1};
+        ici.mipLevels = levels;
+        ici.arrayLayers = 1;
+        ici.samples = VK_SAMPLE_COUNT_1_BIT;
+        ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+        ici.usage = usage;
+        ici.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VmaAllocationCreateInfo aci{};
+        aci.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        VmaAllocation alloc = VK_NULL_HANDLE;
+        VkImage image = VK_NULL_HANDLE;
+        if (vmaCreateImage(vma_, &ici, &aci, &image, &alloc, nullptr) !=
+            VK_SUCCESS)
+            return 0;
+        vk::raii::ImageView view =
+                CreateImageView(image, format, aspect, 0, levels);
+        if (static_cast<VkImageView>(*view) == VK_NULL_HANDLE) {
+            vmaDestroyImage(vma_, image, alloc);
+            return 0;
+        }
+        uintptr_t handle = next_handle_++;
+        TexEntry& e = textures_[handle];
+        e.alloc = alloc;
+        e.image = image;
+        e.view = std::move(view);
+        e.format = format;
+        e.width = w;
+        e.height = h;
+        e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        e.is_shared = false;
+        e.mip_levels = levels;
+
+        for (std::uint32_t m = 0; m < levels; ++m) {
+            e.mip_views.push_back(CreateImageView(image, format, aspect, m, 1));
+        }
+
         return handle;
     }
 

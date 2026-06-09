@@ -488,6 +488,7 @@ void FilamentScene::RebuildMergedGaussianData() {
     // Aggregate RenderConfig: elementwise max across all objects' materials.
     std::uint32_t max_tiles_per_splat = 32u;
     std::uint32_t max_tile_entries_total = 32u * 1024u * 1024u;
+    bool occlusion_cull = false;
 
     for (auto& [obj_name, geom] : geometries_) {
         auto it = per_object_gs_attrs_.find(obj_name);
@@ -502,6 +503,8 @@ void FilamentScene::RebuildMergedGaussianData() {
         max_tile_entries_total =
                 std::max(max_tile_entries_total,
                          mat.gaussian_splat_max_tile_entries_total);
+        // Enable occlusion culling if any object requests it.
+        occlusion_cull = occlusion_cull || mat.gaussian_splat_occlusion_cull;
     }
 
     auto merged = std::make_unique<GaussianSplatPackedAttrs>();
@@ -522,6 +525,7 @@ void FilamentScene::RebuildMergedGaussianData() {
             auto cfg = gcr->GetRenderConfig();
             cfg.max_tiles_per_splat = max_tiles_per_splat;
             cfg.max_tile_entries_total = max_tile_entries_total;
+            cfg.occlusion_cull = occlusion_cull;
             gcr->SetRenderConfig(cfg);
         }
     }

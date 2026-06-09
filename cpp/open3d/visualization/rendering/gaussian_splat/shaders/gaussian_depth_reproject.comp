@@ -1,0 +1,155 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+#version 460 core
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(std140, binding = 0) uniform GaussianViewParams {
+    mat4 world_from_model;
+    mat4 view_from_world;
+    mat4 clip_from_view;
+    vec4 camera_position_and_near;
+    vec4 viewport_origin_and_size;
+    uvec4 scene;
+    uvec4 tiles;
+    uvec4 limits;
+    vec4 depth_range_and_flags;
+    mat4 prev_clip_from_world_inv;
+    vec4 prev_depth_params;  // x=prev_near, y=prev_far, z=prev_valid,
+                             // w=occl_enable
+}
+view_params;
+
+layout(std430, binding = 1) restrict buffer ReprojScatterBuf {
+    uint reproj_scatter_buf[];
+};
+
+layout(binding = 14) uniform sampler2D prior_depth;
+
+bool GetScreenYDown() { return (view_params.scene.w != 0u); }
+
+float Linear01ToInverse(float linear_01, float near, float far) {
+    if (linear_01 <= 0.0) return 1.0;
+    return near * (1.0 - linear_01) / (near + linear_01 * (far - near));
+}
+
+void main() {
+    ivec2 coord = ivec2(gl_GlobalInvocationID.xy) * 2;
+    ivec2 vp_size = ivec2(view_params.viewport_origin_and_size.zw);
+    if (coord.x >= vp_size.x || coord.y >= vp_size.y) return;
+
+    float prev_near = view_params.prev_depth_params.x;
+    float prev_far = view_params.prev_depth_params.y;
+    bool prev_valid = (view_params.prev_depth_params.z > 0.5);
+    if (!prev_valid) return;
+
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
+
+    // Corner coordinates inside the 2x2 quad
+    ivec2 coords[4] = {coord, coord + ivec2(1, 0), coord + ivec2(0, 1),
+                       coord + ivec2(1, 1)};
+
+    // Store unprojected + reprojected screen space results and depths
+    vec2 reprojected_px[4];
+    float reprojected_lin[4];
+    bool valid_corner[4] = {false, false, false, false};
+    int valid_count = 0;
+
+    for (int i = 0; i < 4; ++i) {
+        ivec2 c = coords[i];
+        if (c.x >= vp_size.x || c.y >= vp_size.y) continue;
+
+        float d_lin = texelFetch(prior_depth, c, 0).r;
+        if (isnan(d_lin) || isinf(d_lin) || d_lin >= 0.999)
+            continue;  // skip far/empty/unwritten pixels (R8 background skip)
+
+        float d_inv = Linear01ToInverse(d_lin, prev_near, prev_far);
+        vec2 uv = (vec2(c) + 0.5) / vec2(vp_size);
+        float clip_y = uv.y * 2.0 - 1.0;
+        if (GetScreenYDown()) {
+            clip_y = 1.0 - uv.y * 2.0;
+        }
+        vec4 clip = vec4(uv.x * 2.0 - 1.0, clip_y, d_inv, 1.0);
+
+        vec4 world = view_params.prev_clip_from_world_inv * clip;
+        if (world.w == 0.0) continue;
+        world /= world.w;
+
+        vec4 view_curr = view_params.view_from_world * world;
+        float curr_lin = (-view_curr.z - near) / (far - near);
+        if (isnan(curr_lin) || isinf(curr_lin) || curr_lin < 0.0 ||
+            curr_lin > 1.0)
+            continue;
+
+        vec4 clip_curr = view_params.clip_from_view * view_curr;
+        if (clip_curr.w <= 0.0) continue;
+
+        vec2 ndc_curr = clip_curr.xy / clip_curr.w;
+        float px_curr_y = ndc_curr.y * 0.5 + 0.5;
+        if (GetScreenYDown()) {
+            px_curr_y = 1.0 - px_curr_y;
+        }
+        vec2 px_curr = vec2((ndc_curr.x * 0.5 + 0.5) * float(vp_size.x),
+                            px_curr_y * float(vp_size.y));
+
+        reprojected_px[i] = px_curr;
+        reprojected_lin[i] = curr_lin;
+        valid_corner[i] = true;
+        valid_count++;
+    }
+
+    if (valid_count == 0) return;
+
+    // Calculate Bounding Box dimensions of valid corners
+    vec2 min_px = vec2(999999.0);
+    vec2 max_px = vec2(-999999.0);
+    float max_depth = -1.0;
+
+    for (int i = 0; i < 4; ++i) {
+        if (valid_corner[i]) {
+            min_px = min(min_px, reprojected_px[i]);
+            max_px = max(max_px, reprojected_px[i]);
+            max_depth = max(max_depth, reprojected_lin[i]);
+        }
+    }
+
+    ivec2 dst_min = ivec2(round(min_px));
+    ivec2 dst_max = ivec2(round(max_px));
+    ivec2 bbox_size = dst_max - dst_min + ivec2(1);
+
+    // If all 4 corners are valid and bbox is compact: 2x2 quad MAX-fill (N=3)
+    if (valid_count == 4 && bbox_size.x <= 3 && bbox_size.y <= 3) {
+        uint encoded = floatBitsToUint(max_depth);
+        for (int y = dst_min.y; y <= dst_max.y; ++y) {
+            for (int x = dst_min.x; x <= dst_max.x; ++x) {
+                if (x >= 0 && x < vp_size.x && y >= 0 && y < vp_size.y) {
+                    uint idx = uint(y * vp_size.x + x);
+                    if (encoded < reproj_scatter_buf[idx]) {
+                        atomicMin(reproj_scatter_buf[idx], encoded);
+                    }
+                }
+            }
+        }
+    } else {
+        // Scatter corners only
+        for (int i = 0; i < 4; ++i) {
+            if (valid_corner[i]) {
+                ivec2 dst_px = ivec2(round(reprojected_px[i]));
+                if (dst_px.x >= 0 && dst_px.x < vp_size.x && dst_px.y >= 0 &&
+                    dst_px.y < vp_size.y) {
+                    uint encoded = floatBitsToUint(reprojected_lin[i]);
+                    uint idx = uint(dst_px.y * vp_size.x + dst_px.x);
+                    if (encoded < reproj_scatter_buf[idx]) {
+                        atomicMin(reproj_scatter_buf[idx], encoded);
+                    }
+                }
+            }
+        }
+    }
+}

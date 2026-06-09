@@ -58,6 +58,9 @@ public:
         /// Can also be set per-scene via
         /// MaterialRecord::gaussian_splat_antialias.
         bool antialias = false;
+        /// Use depth data from the previous frame to cull splats in the
+        /// projection shader.
+        bool occlusion_cull = false;
     };
 
     /// Camera and viewport state extracted per-view each geometry pass.
@@ -192,6 +195,14 @@ public:
             (void)height;
             return false;
         }
+
+        /// Returns counters from the most recently completed geometry pass.
+        /// Elements: [0]=total_entries, [1]=error_flags,
+        ///           [2]=tile_count,    [3]=splat_count.
+        /// Default: returns zeros.
+        virtual std::array<std::uint32_t, 4> GetLastFrameCounters() const {
+            return {};
+        }
     };
 
     GaussianSplatRenderer(filament::Engine& engine,
@@ -260,6 +271,11 @@ public:
     const RenderConfig& GetRenderConfig() const;
     void SetRenderConfig(const RenderConfig& config);
     const char* GetBackendName() const;
+
+    /// Returns counters from the most recently completed geometry pass for any
+    /// view.  Elements: [0]=total_entries (tile-splat pairs), [1]=error_flags,
+    /// [2]=tile_count, [3]=splat_count.  Returns zeros when no frame has run.
+    std::array<std::uint32_t, 4> GetLastFrameCounters() const;
 
 private:
     using ViewKey = const FilamentView*;

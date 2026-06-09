@@ -113,6 +113,7 @@ layout(std430, binding = 11) restrict readonly buffer SortedSplatIndices {
 // UBO.
 layout(binding = 16, rgba16f) uniform writeonly image2D out_color;
 layout(binding = 1, r32f) uniform writeonly image2D out_depth;
+layout(binding = 13, r32f) uniform writeonly image2D out_occluder_depth;
 
 // Scene depth from Filament's render pass (reversed-Z, non-linear).
 // Bound only when depth_range_and_flags.w > 0.5.
@@ -313,6 +314,9 @@ void main() {
         // pick the Filament scene depth via max(gs_inv=0, sc_inv).
         float out_norm_depth = 1.0;
         bool depth_written = false;
+        float out_occluder_norm_depth = 1.0;
+        bool occluder_written = false;
+        const float kOccluderThreshold = 1.0 / 255.0;
         vec2 pixel_center = vec2(pixel) + vec2(0.5);
 
         // Convert Filament scene depth (inverse, near=1, far=0) to linear_01
@@ -380,6 +384,11 @@ void main() {
                         out_norm_depth = s_depth[i];
                         depth_written = true;
                     }
+                    if (!occluder_written &&
+                        transmittance < kOccluderThreshold) {
+                        out_occluder_norm_depth = s_depth[i];
+                        occluder_written = true;
+                    }
                     if (transmittance <= kMinTransmittance) {
                         transmittance = 0.0;
                         pixel_active = false;  // saturated
@@ -416,6 +425,8 @@ void main() {
                     Linear01ToInverse(out_norm_depth, near, far);
             imageStore(out_depth, pixel,
                        vec4(out_inverse_depth, 0.0, 0.0, 0.0));
+            imageStore(out_occluder_depth, pixel,
+                       vec4(out_occluder_norm_depth, 0.0, 0.0, 0.0));
         }
     }  // work-stealing loop: grab next tile
 }

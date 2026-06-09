@@ -35,8 +35,12 @@ layout(std140, binding = 0) uniform GaussianViewParams {
     uvec4 scene;
     uvec4 tiles;
     uvec4 limits;
-    // depth_range_and_flags: x=near, y=far, z=reserved, w=reserved
+    // depth_range_and_flags: x=near, y=far, z=wants_readback, w=has_scene_depth
     vec4 depth_range_and_flags;
+    // Extended fields (same buffer as gaussian_project.comp).
+    mat4 prev_clip_from_world_inv;
+    // prev_depth_params: x=prev_near, y=prev_far, z=prev_valid, w=occlusion_cull
+    vec4 prev_depth_params;
 }
 view_params;
 
@@ -53,20 +57,59 @@ layout(binding = 1, r16ui) uniform writeonly uimage2D merged_depth;
 // so the same descriptor set works for both shaders.
 layout(binding = 14) uniform sampler2D scene_depth;
 
+// NEW: GS composite linear stricter depth
+layout(binding = 13) uniform sampler2D gs_occluder_depth;
+
+// NEW: output prior_depth image for culling on next frame (linear depth, [0,1])
+layout(binding = 12, r32f) uniform writeonly image2D prior_depth;
+
+float InverseToLinear01(float inv, float near, float far) {
+    if (inv <= 0.0) return 1.0;  // far
+    return near * (1.0 - inv) / (inv * (far - near) + near);
+}
+
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 vp = ivec2(view_params.viewport_origin_and_size.zw);
     if (pixel.x >= vp.x || pixel.y >= vp.y) return;
 
-    // Both depth inputs are in Filament reversed/inverse depth convention.
-    float gs_inv = texelFetch(gs_depth, pixel, 0).r;
-    float sc_inv = texelFetch(scene_depth, pixel, 0).r;
+    float near = view_params.depth_range_and_flags.x;
+    float far = view_params.depth_range_and_flags.y;
+    bool wants_readback  = (view_params.depth_range_and_flags.z > 0.5);
+    bool has_scene_depth = (view_params.depth_range_and_flags.w > 0.5);
 
-    // In inverse depth, larger means nearer.
-    float merged = max(gs_inv, sc_inv);
+    // Fetch scene depth once; reused by both the readback and prior-depth
+    // paths to avoid a second texelFetch when both paths are active.
+    float sc_inv = 0.0;
+    if (has_scene_depth) {
+        sc_inv = texelFetch(scene_depth, pixel, 0).r;
+    }
 
-    // Normalise to uint16 preserving Filament convention:
-    // near -> 65535, far -> 0.
-    uint u16 = uint(clamp(merged, 0.0, 1.0) * 65535.0 + 0.5);
-    imageStore(merged_depth, pixel, uvec4(u16, 0u, 0u, 0u));
+    // CPU-readback path: merge GS + scene inverse depths into R16UI output.
+    // Merge pass is only dispatched when has_scene_depth && wants_readback,
+    // so the has_scene_depth branch is always taken here, but the explicit
+    // check keeps the shader self-consistent.
+    if (wants_readback) {
+        float gs_inv = texelFetch(gs_depth, pixel, 0).r;
+        // In inverse depth larger means nearer; take max to keep nearest hit.
+        float merged_inv = has_scene_depth ? max(gs_inv, sc_inv) : gs_inv;
+        uint u16 = uint(clamp(merged_inv, 0.0, 1.0) * 65535.0 + 0.5);
+        imageStore(merged_depth, pixel, uvec4(u16, 0u, 0u, 0u));
+    }
+
+    // Prior-depth (occlusion-culling) path: persist linear [0,1] depth for the
+    // next frame's Hi-Z pyramid.  Written unconditionally — the merge pass only
+    // runs when prior_depth is needed (occlusion cull) or for depth readback,
+    // and prior_depth_tex is always allocated, so an extra write here is cheap
+    // and avoids a fragile dependence on a UBO flag being plumbed correctly.
+    // Uses the stricter occluder depth (1/255 alpha threshold) so only
+    // well-covered geometry occludes.
+    float gs_linear = texelFetch(gs_occluder_depth, pixel, 0).r;
+    float prior = gs_linear;
+    if (has_scene_depth) {
+        // Convert scene inverse depth to linear [0,1] and take the nearer
+        // (smaller linear value) of GS and scene geometry.
+        prior = min(gs_linear, InverseToLinear01(sc_inv, near, far));
+    }
+    imageStore(prior_depth, pixel, vec4(prior, 0.0, 0.0, 0.0));
 }

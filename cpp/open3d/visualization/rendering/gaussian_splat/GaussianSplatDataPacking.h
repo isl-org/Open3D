@@ -57,9 +57,14 @@ struct alignas(16) GaussianViewParams {
     std::uint32_t limits[4];
     // vec4 depth_range_and_flags (x=near, y=far, z=reserved, w=0)
     float depth_range_and_flags[4];
+    // mat4 prev_clip_from_world_inv (offset 288)
+    float prev_clip_from_world_inv[16];
+    // vec4 prev_depth_params (offset 352: x=prev_near, y=prev_far,
+    // z=prev_valid, w=occl_enable)
+    float prev_depth_params[4];
 };
-static_assert(sizeof(GaussianViewParams) == 288,
-              "GaussianViewParams must be 288 bytes to match GLSL layout");
+static_assert(sizeof(GaussianViewParams) == 368,
+              "GaussianViewParams must be 368 bytes to match GLSL layout");
 
 /// Composite-pass projected splat data (32 bytes, binding 6).
 /// Written by gaussian_project.comp, read only by gaussian_composite.comp.

@@ -47,14 +47,17 @@ inline std::size_t IndirectByteOffset(std::uint32_t slot) {
 /// Keeps a bitfield of already-warned flags to suppress repeated messages.
 void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
                               GaussianSplatViewGpuResources& vs) {
-    if ((vs.warned_gpu_error_flags & kGaussianGpuErrorKnownMask) ==
-        kGaussianGpuErrorKnownMask) {
-        return;
-    }
-
     std::array<std::uint32_t, kGaussianCounterCount> counters = {0, 0, 0, 0};
     if (!ctx.DownloadBuffer(vs.counters_buf, counters.data(), sizeof(counters),
                             0)) {
+        return;
+    }
+    // Cache counters for diagnostic readback (e.g. Python
+    // GetLastFrameCounters).
+    vs.last_counters = counters;
+
+    if ((vs.warned_gpu_error_flags & kGaussianGpuErrorKnownMask) ==
+        kGaussianGpuErrorKnownMask) {
         return;
     }
 
@@ -147,6 +150,49 @@ bool RunGaussianGeometryPasses(
     GaussianGpuBufferSizes gpu_sizes;
     ComputeGaussianGpuBufferSizes(frame_data, &gpu_sizes);
 
+    if (config.occlusion_cull) {
+        const std::uint32_t w = static_cast<std::uint32_t>(
+                frame_data.view_params.viewport_origin_and_size[2]);
+        const std::uint32_t h = static_cast<std::uint32_t>(
+                frame_data.view_params.viewport_origin_and_size[3]);
+        std::uintptr_t old_prior = vs.prior_depth_tex;
+        vs.prior_depth_tex = ctx.ResizeTexture2DR32F(vs.prior_depth_tex, w, h,
+                                                     "gs.prior_depth");
+        vs.composite_occluder_depth_tex =
+                ctx.ResizeTexture2DR32F(vs.composite_occluder_depth_tex, w, h,
+                                        "gs.composite_occluder_depth");
+        vs.reproj_scatter_buf = ctx.ResizePrivateBuffer(
+                vs.reproj_scatter_buf, w * h * sizeof(std::uint32_t),
+                "gs.reproj_scatter");
+        const std::uint32_t levels = 6u;
+        vs.hiz_pyramid_tex = ctx.ResizeTexture2DR16FMipmapped(
+                vs.hiz_pyramid_tex, w, h, levels, "gs.hiz_pyramid");
+        if (old_prior != vs.prior_depth_tex || scene_changed) {
+            vs.prev_valid = 0;
+        }
+
+        // Detect camera discontinuity (e.g. view jump/paste)
+        if (vs.prev_valid) {
+            Eigen::Matrix4f view_mat = Eigen::Map<const Eigen::Matrix4f>(
+                    frame_data.view_params.view_from_world);
+            Eigen::Matrix4f proj_mat = Eigen::Map<const Eigen::Matrix4f>(
+                    frame_data.view_params.clip_from_view);
+            Eigen::Matrix4f clip_from_world = proj_mat * view_mat;
+            Eigen::Matrix4f prev_clip_from_world_inv =
+                    Eigen::Map<const Eigen::Matrix4f>(
+                            vs.prev_clip_from_world_inv);
+
+            Eigen::Matrix4f diff = clip_from_world * prev_clip_from_world_inv -
+                                   Eigen::Matrix4f::Identity();
+            float err = diff.cwiseAbs().sum();
+            if (std::isnan(err) || err > 1.5f) {
+                vs.prev_valid = 0;
+            }
+        }
+    } else {
+        vs.prev_valid = 0;
+    }
+
     // CPU-uploaded buffers: Shared/DYNAMIC_DRAW so the CPU can write them.
     vs.view_params_buf = ctx.ResizeBuffer(
             vs.view_params_buf, sizeof(GaussianViewParams), "gs.view_params");
@@ -209,7 +255,23 @@ bool RunGaussianGeometryPasses(
                                                   gpu_sizes.radix_params_size,
                                                   "gs.radix_params");
 
-    ctx.UploadBuffer(vs.view_params_buf, &frame_data.view_params,
+    GaussianViewParams local_view_params = frame_data.view_params;
+    if (config.occlusion_cull) {
+        std::memcpy(local_view_params.prev_clip_from_world_inv,
+                    vs.prev_clip_from_world_inv,
+                    sizeof(vs.prev_clip_from_world_inv));
+        local_view_params.prev_depth_params[0] = vs.prev_near;
+        local_view_params.prev_depth_params[1] = vs.prev_far;
+        local_view_params.prev_depth_params[2] =
+                static_cast<float>(vs.prev_valid);
+        local_view_params.prev_depth_params[3] =
+                1.0f;  // occlusion cull enabled
+    } else {
+        local_view_params.prev_depth_params[3] =
+                0.0f;  // occlusion cull disabled
+    }
+
+    ctx.UploadBuffer(vs.view_params_buf, &local_view_params,
                      sizeof(GaussianViewParams), 0);
     if (scene_changed) {
         ctx.UploadBuffer(vs.positions_buf, attrs.positions.data(),
@@ -245,6 +307,54 @@ bool RunGaussianGeometryPasses(
     // layer reports READ_AFTER_WRITE (TRANSFER_WRITE → SHADER_STORAGE_READ).
     ctx.FullBarrier();
 
+    if (config.occlusion_cull && vs.prev_valid) {
+        const std::uint32_t w = static_cast<std::uint32_t>(
+                frame_data.view_params.viewport_origin_and_size[2]);
+        const std::uint32_t h = static_cast<std::uint32_t>(
+                frame_data.view_params.viewport_origin_and_size[3]);
+
+        ctx.ClearBufferUInt32Ones(vs.reproj_scatter_buf);
+        ctx.FullBarrier();
+
+        const std::uint32_t w_quads = DivUp(w, 2u);
+        const std::uint32_t h_quads = DivUp(h, 2u);
+        GpuComputePass(ctx, ComputeProgramId::kGsDepthReproject,
+                       "gs_depth_reproject")
+                .UBO(0, vs.view_params_buf)
+                .SSBO(1, vs.reproj_scatter_buf)
+                .Sampler(14, vs.prior_depth_tex, w, h)
+                .Dispatch(DivUp(w_quads, 16u), DivUp(h_quads, 16u), 1u);
+        ctx.FullBarrier();
+
+        GpuComputePass reduce_pass(ctx, ComputeProgramId::kGsHiZReduce,
+                                   "gs_hiz_reduce");
+        reduce_pass.UBO(0, vs.view_params_buf);
+        reduce_pass.SSBO(1, vs.reproj_scatter_buf);
+        for (std::uint32_t level = 0; level < 6; ++level) {
+            uint32_t mw = std::max(w >> level, 1u);
+            uint32_t mh = std::max(h >> level, 1u);
+            reduce_pass.ImageMip(2 + level, vs.hiz_pyramid_tex, mw, mh, level,
+                                 ImageFormat::kR16F);
+        }
+        reduce_pass.Dispatch(DivUp(w, 32u), DivUp(h, 32u), 1u);
+        ctx.FullBarrier();
+    }
+
+    // Ensure hiz_pyramid_tex always holds a valid texture handle — binding 14
+    // of the project shader is declared in the Vulkan layout and must be bound.
+    // When occlusion culling is off (or on the first frame before a pyramid is
+    // built), we allocate a 1×1 placeholder. The shader guards every read with
+    // prev_depth_params.w > 0.5 so the placeholder is never actually sampled.
+    if (vs.hiz_pyramid_tex == 0) {
+        vs.hiz_pyramid_tex =
+                ctx.ResizeTexture2DR16FMipmapped(0, 1, 1, 1, "gs.hiz_dummy");
+    }
+
+    const std::uint32_t w = static_cast<std::uint32_t>(
+            frame_data.view_params.viewport_origin_and_size[2]);
+    const std::uint32_t h = static_cast<std::uint32_t>(
+            frame_data.view_params.viewport_origin_and_size[3]);
+
     // Pass 1: Project each Gaussian to screen space and generate sort entries.
     // Each (splat, tile) pair atomically claims a slot in
     // sort_keys/sort_values. Replaces old project + prefix_sum + scatter +
@@ -261,6 +371,7 @@ bool RunGaussianGeometryPasses(
             .SSBO(8, vs.sort_values_buf[0])
             .SSBO(10, vs.counters_buf)
             .SSBO(15, vs.mask_buf)
+            .Sampler(14, vs.hiz_pyramid_tex, w, h)
             .Dispatch(proj_gx, proj_gy, 1u);
     ctx.FullBarrier();
 
@@ -276,6 +387,21 @@ bool RunGaussianGeometryPasses(
     // Passes 3-10: 4-pass LSD radix sort (8 dispatches).
     int src = RunClassicalRadixSort(ctx, vs, 0);
     vs.final_sort_src = src;
+
+    // Save previous camera state for culling on next frame
+    if (config.occlusion_cull) {
+        Eigen::Matrix4f view_mat = Eigen::Map<const Eigen::Matrix4f>(
+                frame_data.view_params.view_from_world);
+        Eigen::Matrix4f proj_mat = Eigen::Map<const Eigen::Matrix4f>(
+                frame_data.view_params.clip_from_view);
+        Eigen::Matrix4f clip_from_world = proj_mat * view_mat;
+        Eigen::Matrix4f clip_from_world_inv = clip_from_world.inverse();
+        std::memcpy(vs.prev_clip_from_world_inv, clip_from_world_inv.data(),
+                    16 * sizeof(float));
+        vs.prev_near = frame_data.view_params.depth_range_and_flags[0];
+        vs.prev_far = frame_data.view_params.depth_range_and_flags[1];
+        vs.prev_valid = 1;
+    }
 
     // Flush GPU error counters so tile-entry overflow warnings are visible.
     LogGaussianGpuErrorsOnce(ctx, vs);
@@ -329,6 +455,18 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
         ctx.UploadBuffer(vs.view_params_buf, &flag, sizeof(flag),
                          kDepthFlagOffset);
     }
+    // Upload wants_readback flag (.z) so the depth-merge shader skips the
+    // R16UI imageStore when no CPU readback is requested (e.g. occlusion-cull
+    // only).  The full struct upload in the geometry pass resets .z to 0.0f
+    // each frame, so we only need to patch it when readback is wanted.
+    if (targets.wants_depth_readback) {
+        float flag = 1.0f;
+        static constexpr std::size_t kReadbackFlagOffset =
+                offsetof(GaussianViewParams, depth_range_and_flags) +
+                2 * sizeof(float);
+        ctx.UploadBuffer(vs.view_params_buf, &flag, sizeof(flag),
+                         kReadbackFlagOffset);
+    }
 
     GpuComputeFrame frame(ctx, GpuComputeFrame::Kind::kComposite);
 
@@ -341,12 +479,23 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     const std::uint32_t h = targets.height;
     vs.composite_depth_tex = ctx.ResizeTexture2DR32F(vs.composite_depth_tex, w,
                                                      h, "gs.composite_depth");
+    vs.composite_occluder_depth_tex =
+            ctx.ResizeTexture2DR32F(vs.composite_occluder_depth_tex, w, h,
+                                    "gs.composite_occluder_depth");
+    vs.prior_depth_tex =
+            ctx.ResizeTexture2DR32F(vs.prior_depth_tex, w, h, "gs.prior_depth");
+
     // Allocate the merged-depth R16UI texture only when both scene depth is
     // present (mesh occluders exist) AND an offscreen depth readback has been
     // requested for this view.  When only GS depth is needed (no meshes),
     // composite_depth_tex (R32F) is read directly via
     // ReadCompositeDepthToFloatCpu.
-    if (has_scene_depth && targets.wants_depth_readback) {
+    // Allocate merged_depth_u16_tex whenever the depth-merge pass is needed:
+    // for occlusion culling (writes prior_depth), for CPU depth readback, or
+    // both. Always R16UI to match the shader's `layout(r16ui)` declaration on
+    // binding 1.
+    if (config.occlusion_cull ||
+        (has_scene_depth && targets.wants_depth_readback)) {
         vs.merged_depth_u16_tex = ctx.ResizeTexture2DR16UI(
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");
     }
@@ -382,7 +531,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             // Image unit 16 for color (shared UBO/image binding 0 conflict in
             // Vulkan); image unit 1 for composite depth.
             .Image(16, color_tex, w, h, ImageFormat::kRGBA16F)
-            .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
+            .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F)
+            .Image(13, vs.composite_occluder_depth_tex, w, h,
+                   ImageFormat::kR32F);
 
     if (has_scene_depth) {
         std::uintptr_t sd = targets.scene_depth_mtl_texture
@@ -395,21 +546,31 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     pass.Dispatch(steal_wg_count, 1u, 1u);
     ctx.FullBarrier();
 
-    // GPU depth-merge pass (optional): merge GS linear depth with Filament
-    // scene depth into a normalised R16UI texture for CPU readback.
-    // Only dispatched when a readback was requested AND the merged texture
-    // was successfully allocated.
-    if (targets.wants_depth_readback && vs.merged_depth_u16_tex != 0) {
-        const std::uintptr_t sd =
-                targets.scene_depth_mtl_texture
-                        ? targets.scene_depth_mtl_texture
-                        : static_cast<std::uintptr_t>(
-                                  targets.scene_depth_gl_handle);
+    // GPU depth-merge pass: merges GS occluder/composite depth with Filament
+    // scene depth to write persistent linear prior_depth_tex (for occlusion
+    // culling), and/or write a normalized R16UI texture for CPU readback.
+    // wants_merge_pass matches the merged_depth_u16_tex allocation condition
+    // above.
+    const bool wants_merge_pass =
+            config.occlusion_cull ||
+            (has_scene_depth && targets.wants_depth_readback);
+
+    if (wants_merge_pass) {
+        std::uintptr_t sd = targets.scene_depth_mtl_texture
+                                    ? targets.scene_depth_mtl_texture
+                                    : static_cast<std::uintptr_t>(
+                                              targets.scene_depth_gl_handle);
+        if (sd == 0) {
+            sd = vs.composite_depth_tex;  // safe dummy sampler
+        }
+
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
                 .Sampler(15, vs.composite_depth_tex, w,
                          h)  // binding 15: Metal max texture/sampler index
                 .Image(1, vs.merged_depth_u16_tex, w, h, ImageFormat::kR16UI)
+                .Image(12, vs.prior_depth_tex, w, h, ImageFormat::kR32F)
+                .Sampler(13, vs.composite_occluder_depth_tex, w, h)
                 .Sampler(14, sd, w, h)
                 .Dispatch(DivUp(w, 16u), DivUp(h, 16u), 1u);
         ctx.FullBarrier();

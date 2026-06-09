@@ -342,9 +342,22 @@ private:
             gpu_->DestroyTexture(vs.composite_depth_tex);
             vs.composite_depth_tex = 0;
         }
+        if (vs.composite_occluder_depth_tex != 0) {
+            gpu_->DestroyTexture(vs.composite_occluder_depth_tex);
+            vs.composite_occluder_depth_tex = 0;
+        }
         if (vs.merged_depth_u16_tex != 0) {
             gpu_->DestroyTexture(vs.merged_depth_u16_tex);
             vs.merged_depth_u16_tex = 0;
+        }
+        if (vs.prior_depth_tex != 0) {
+            gpu_->DestroyTexture(vs.prior_depth_tex);
+            vs.prior_depth_tex = 0;
+        }
+        destroy_buf(vs.reproj_scatter_buf);
+        if (vs.hiz_pyramid_tex != 0) {
+            gpu_->DestroyTexture(vs.hiz_pyramid_tex);
+            vs.hiz_pyramid_tex = 0;
         }
     }
 

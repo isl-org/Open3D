@@ -54,6 +54,8 @@ layout(std140, binding = 0) uniform GaussianViewParams {
     uvec4 tiles;
     uvec4 limits;
     vec4 depth_range_and_flags;
+    mat4 prev_clip_from_world_inv;
+    vec4 prev_depth_params;
 }
 view_params;
 
@@ -115,6 +117,8 @@ gs_counters;
 layout(std430, binding = 15) restrict readonly buffer VisibilityMask {
     uint visibility_mask[];
 };
+
+layout(binding = 14) uniform sampler2D hiz_pyramid_tex;
 
 const float kMinDeterminant = 1e-8;
 const float kMinEigenValue = 1e-6;
@@ -408,6 +412,32 @@ SortEntryParams ProjectGaussian(uint splat_index) {
         return CulledEntryParams(splat_index);
     }
 
+    // Normalized linear depth (near=0, far=1).  Computed once here and reused
+    // in the Hi-Z test below and the composite buffer write below.
+    float norm_depth = (-view_center.z - near) / (far - near);
+    if (isnan(norm_depth) || isinf(norm_depth)) {
+        return CulledEntryParams(splat_index);
+    }
+
+    // Hierarchical Depth Occlusion Culling.
+    // hiz_pyramid_tex is built by gaussian_depth_reproject +
+    // gaussian_hiz_reduce from the previous frame's depth, scattered into
+    // current-frame screen space. Sample at the current splat center UV — not
+    // the previous-frame UV.
+    if (view_params.prev_depth_params.w > 0.5 &&
+        view_params.prev_depth_params.z > 0.5) {
+        vec2 curr_uv = center_pixel / resolution;
+        if (curr_uv.x >= 0.0 && curr_uv.x <= 1.0 && curr_uv.y >= 0.0 &&
+            curr_uv.y <= 1.0) {
+            float d_pixels = max(bbox_half_extent.x, bbox_half_extent.y) * 2.0;
+            float L = clamp(log2(d_pixels / 2.0), 0.0, 5.0);
+            float max_hiz_depth = textureLod(hiz_pyramid_tex, curr_uv, L).r;
+            if (norm_depth > max_hiz_depth + 1e-3) {
+                return CulledEntryParams(splat_index);
+            }
+        }
+    }
+
     uvec2 tile_size = GetTileSize();
     uvec2 tile_count = GetTileCount();
     ivec2 clamped_min_pixel = ivec2(max(min_pixel, vec2(0.0)));
@@ -429,11 +459,6 @@ SortEntryParams ProjectGaussian(uint splat_index) {
     } else {
         view_dir = vec3(0.0, 0.0, 1.0);
     }
-
-    // Normalize view-space depth to [0, 1] with near=0, far=1.
-    // Uniform distribution gives constant sort-key resolution across the range.
-    // Splats outside [near, far] are already culled above, so always in [0, 1].
-    float norm_depth = (-view_center.z - near) / (far - near);
 
     // Composite buffer (binding 6): all composite-pass data in one 32 B struct.
     composite[splat_index].center_xy_fp16 = packHalf2x16(center_pixel);
@@ -460,11 +485,14 @@ SortEntryParams ProjectGaussian(uint splat_index) {
 // the subgroup operations always see a full (or uniform-tail) set of lanes.
 void WriteSortEntries(SortEntryParams p) {
     // Prefix sum: claim a contiguous block of sort-key slots for this lane.
+    uint is_visible = (p.entry_count > 0u) ? 1u : 0u;
+    uint sg_visible_total = subgroupAdd(is_visible);
     uint sg_total = subgroupAdd(p.entry_count);
     uint sg_offset = subgroupExclusiveAdd(p.entry_count);
     uint sg_base = 0u;
     if (subgroupElect()) {
         sg_base = atomicAdd(gs_counters.total_entries, sg_total);
+        atomicAdd(gs_counters.splat_count, sg_visible_total);
     }
     sg_base = subgroupBroadcastFirst(sg_base);
     uint my_base = sg_base + sg_offset;

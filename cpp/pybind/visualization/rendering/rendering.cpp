@@ -18,6 +18,7 @@
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind/visualization/visualization.h"
@@ -58,6 +59,21 @@ public:
             bool z_in_view_space = false) {
         return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
                                                     z_in_view_space);
+    }
+
+    // Returns GPU counters from the most recent Gaussian splat geometry pass
+    // as a dict: total_entries, error_flags, tile_count, splat_count.
+    py::dict GetGsFrameCounters() {
+        py::dict d;
+        auto *fr = dynamic_cast<FilamentRenderer *>(renderer_);
+        auto *gcr = fr ? fr->GetGaussianSplatRenderer() : nullptr;
+        std::array<std::uint32_t, 4> c = gcr ? gcr->GetLastFrameCounters()
+                                             : std::array<std::uint32_t, 4>{};
+        d["total_entries"] = c[0];  // tile-splat coverage pairs
+        d["error_flags"] = c[1];
+        d["tile_count"] = c[2];
+        d["splat_count"] = c[3];  // splats that generated sort entries
+        return d;
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
@@ -316,7 +332,15 @@ void pybind_rendering_definitions(py::module &m) {
                  "the image is returned. Pixels range from 0 (near plane) to "
                  "1 (far plane). If z_in_view_space is set to True then pixels "
                  "are pre-transformed into view space (i.e., distance from "
-                 "camera).");
+                 "camera).")
+            .def("get_gs_frame_counters",
+                 &PyOffscreenRenderer::GetGsFrameCounters,
+                 "Returns Gaussian splat GPU counters from the last rendered "
+                 "frame as a dict with keys: total_entries (tile-splat "
+                 "coverage "
+                 "pairs, proportional to composite work), error_flags, "
+                 "tile_count, splat_count (splats that generated sort entries "
+                 "after Hi-Z culling).");
 
     // ---- Camera ----
     auto cam = static_cast<py::class_<Camera, std::shared_ptr<Camera>>>(
@@ -478,6 +502,14 @@ void pybind_rendering_definitions(py::module &m) {
                     "Total tile-coverage entry budget for the whole scene. "
                     "Increase for dense or high-resolution scenes at the cost "
                     "of GPU memory. Default: 33554432 (32 * 1024 * 1024).")
+            .def_readwrite(
+                    "gaussian_splat_occlusion_cull",
+                    &MaterialRecord::gaussian_splat_occlusion_cull,
+                    "Enable prior-frame Hi-Z occlusion culling for Gaussian "
+                    "splats. Splats fully occluded by the previous frame's "
+                    "depth pyramid are culled in the projection shader, "
+                    "reducing tile-entry count and composite work. "
+                    "Default: False.")
             .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----

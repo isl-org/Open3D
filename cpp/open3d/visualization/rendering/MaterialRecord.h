@@ -107,6 +107,11 @@ struct MaterialRecord {
     // Raise this for dense or high-resolution scenes at the cost of GPU memory.
     uint32_t gaussian_splat_max_tile_entries_total = 32u * 1024u * 1024u;
 
+    // Enable prior-frame Hi-Z occlusion culling for Gaussian splats.
+    // Splats fully behind the previous frame's depth are culled in the
+    // projection shader, reducing tile-entry count and composite work.
+    bool gaussian_splat_occlusion_cull = false;
+
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;
     std::unordered_map<std::string, geometry::Image> generic_imgs;
