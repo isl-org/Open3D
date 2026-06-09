@@ -14,6 +14,9 @@ endif()
 
 if (APPLE)  # homebrew does not package libidn2
     set(curl_cmake_extra_args -DUSE_APPLE_IDN=ON -DUSE_LIBIDN2=OFF -DUSE_NGHTTP2=OFF)
+else()
+    # Disable nghttp2 to avoid unresolved references when linking statically
+    set(curl_cmake_extra_args -DUSE_NGHTTP2=OFF)
 endif()
 
 ExternalProject_Add(

@@ -207,6 +207,9 @@ public:
     /// far_plane. Field names match draw.py parameters for easy reuse.
     void CopyViewToClipboard();
 
+    /// Pastes camera view parameters from the clipboard in JSON format.
+    void PasteViewFromClipboard();
+
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;
 

@@ -77,6 +77,8 @@ set(GAUSSIAN_COMPUTE_SHADER_SOURCE_FILES
     ../rendering/gaussian_splat/shaders/gaussian_radix_sort_scatter.comp
     ../rendering/gaussian_splat/shaders/gaussian_compute_dispatch_args.comp
     ../rendering/gaussian_splat/shaders/gaussian_depth_merge.comp
+    ../rendering/gaussian_splat/shaders/gaussian_depth_reproject.comp
+    ../rendering/gaussian_splat/shaders/gaussian_hiz_reduce.comp
 )
 
 # copy GUI/Resources -> <output>/resources

@@ -53,7 +53,7 @@ void MapOBEToClosestIdentity(EigenOBE& obe) {
     Eigen::Vector3d col[3] = {R.col(0), R.col(1), R.col(2)};
     double best_score = -1e9;
     Eigen::Matrix3d best_R;
-    Eigen::Vector3d best_radii;
+    Eigen::Vector3d best_radii = Eigen::Vector3d::Zero();
 
     // Hard-coded permutations of indices [0,1,2]
     static const std::array<std::array<int, 3>, 6> permutations = {

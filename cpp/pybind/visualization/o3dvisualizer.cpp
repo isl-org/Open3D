@@ -329,6 +329,13 @@ void pybind_o3dvisualizer_definitions(py::module& m) {
                  "Exports a PNG or JPEG image of what is currently displayed "
                  "to the given path.",
                  "path"_a)
+            .def("copy_view_to_clipboard", &O3DVisualizer::CopyViewToClipboard,
+                 "Copies the current camera view parameters to the clipboard "
+                 "as a JSON string")
+            .def("paste_view_from_clipboard",
+                 &O3DVisualizer::PasteViewFromClipboard,
+                 "Reads camera view parameters from the clipboard in JSON "
+                 "format and updates the view.")
             .def("start_rpc_interface", &O3DVisualizer::StartRPCInterface,
                  "address"_a, "timeout"_a,
                  "Starts the RPC interface.\n"
