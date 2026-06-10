@@ -164,7 +164,7 @@ bool WriteImageToJPG(const std::string &filename,
         return true;
     } catch (const std::runtime_error &err) {
         fclose(file_out);
-        utility::LogWarning(err.what());
+        utility::LogWarning("libjpeg error: {}", err.what());
         return false;
     }
 }
