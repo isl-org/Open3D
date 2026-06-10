@@ -17,6 +17,7 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
+#include "open3d/pipelines/registration/SymmetricICP.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
@@ -105,6 +106,12 @@ void pybind_registration_declarations(py::module &m) {
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to plane "
                    "distance.");
+    py::class_<TransformationEstimationSymmetric,
+               PyTransformationEstimation<TransformationEstimationSymmetric>,
+               TransformationEstimation>
+            te_sym(m_registration, "TransformationEstimationSymmetric",
+                   "Class to estimate a transformation for symmetric "
+                   "point to plane distance.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
@@ -305,6 +312,27 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                  })
             .def_readwrite("kernel",
                            &TransformationEstimationPointToPlane::kernel_,
+                           "Robust Kernel used in the Optimization");
+
+    auto te_sym = static_cast<py::class_<
+            TransformationEstimationSymmetric,
+            PyTransformationEstimation<TransformationEstimationSymmetric>,
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationSymmetric"));
+    py::detail::bind_default_constructor<TransformationEstimationSymmetric>(
+            te_sym);
+    py::detail::bind_copy_functions<TransformationEstimationSymmetric>(te_sym);
+    te_sym.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationSymmetric(
+                           std::move(kernel));
+               }),
+               "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationSymmetric &te) {
+                     return std::string("TransformationEstimationSymmetric");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationSymmetric::kernel_,
                            "Robust Kernel used in the Optimization");
 
     // open3d.registration.TransformationEstimationForColoredICP :
@@ -627,6 +655,7 @@ must hold true for all edges.)");
                      "Estimation method. One of "
                      "(``TransformationEstimationPointToPoint``, "
                      "``TransformationEstimationPointToPlane``, "
+                     "``TransformationEstimationSymmetric``, "
                      "``TransformationEstimationForGeneralizedICP``, "
                      "``TransformationEstimationForColoredICP``)"},
                     {"init", "Initial transformation estimation"},
@@ -667,6 +696,17 @@ must hold true for all edges.)");
             "estimation_method"_a = TransformationEstimationPointToPoint(false),
             "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m_registration, "registration_icp",
+                                 map_shared_argument_docstrings);
+
+    m_registration.def(
+            "registration_symmetric_icp", &RegistrationSymmetricICP,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function for symmetric ICP registration", "source"_a, "target"_a,
+            "max_correspondence_distance"_a,
+            "init"_a = Eigen::Matrix4d::Identity(),
+            "estimation_method"_a = TransformationEstimationSymmetric(),
+            "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m_registration, "registration_symmetric_icp",
                                  map_shared_argument_docstrings);
 
     m_registration.def("registration_colored_icp", &RegistrationColoredICP,

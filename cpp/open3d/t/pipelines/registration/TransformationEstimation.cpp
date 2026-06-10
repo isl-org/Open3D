@@ -10,6 +10,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
 namespace t {
@@ -161,6 +162,105 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
 
     // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
     // device, from pose {6}.
+    return pipelines::kernel::PoseToTransformation(pose);
+}
+
+double TransformationEstimationSymmetric::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals() || !source.HasPointNormals()) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+
+    // Check if there are any valid correspondences
+    if (neighbour_indices.GetLength() == 0) {
+        return 0.0;
+    }
+
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor source_normals_indexed =
+            source.GetPointNormals().IndexGet({valid});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
+
+    // Compute residuals for both point-to-plane terms
+    core::Tensor diff = source_points_indexed - target_points_indexed;
+    core::Tensor r1 = diff.Mul(target_normals_indexed).Sum({1});
+    core::Tensor r2 = diff.Mul(source_normals_indexed).Sum({1});
+
+    // Compute symmetric error
+    core::Tensor error_t = r1.Mul(r1) + r2.Mul(r2);
+    double error = error_t.Sum({0}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
+}
+
+core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const std::size_t iteration) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals() || !source.HasPointNormals()) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+
+    const core::Device device = source.GetPointPositions().GetDevice();
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointNormals(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(source.GetPointNormals(),
+                            source.GetPointPositions().GetDtype());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    // Check if there are any valid correspondences
+    core::Tensor valid = correspondences.Ne(-1);
+    if (valid.Any().Item<bool>() == false) {
+        // Return identity transformation if no valid correspondences
+        return core::Tensor::Eye(4, dtype, device);
+    }
+
+    // Get pose {6} of type Float64.
+    core::Tensor pose = pipelines::kernel::ComputePoseSymmetric(
+            source.GetPointPositions(), target.GetPointPositions(),
+            source.GetPointNormals(), target.GetPointNormals(), correspondences,
+            this->kernel_);
+
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from pose {6}.
+    (void)current_transform;
+    (void)iteration;
     return pipelines::kernel::PoseToTransformation(pose);
 }
 
