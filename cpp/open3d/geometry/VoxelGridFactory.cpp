@@ -41,6 +41,23 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3d &origin,
     return output;
 }
 
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromSparseIndices(
+        const std::vector<Eigen::Vector3i> &indices,
+        const std::vector<Eigen::Vector3d> &colors,
+        const Eigen::Vector3d origin,
+        double voxel_size) {
+    if (indices.size() != colors.size()) {
+        utility::LogError("Size of indices and colors are different");
+    }
+    auto output = std::make_shared<VoxelGrid>();
+    output->origin_ = origin;
+    output->voxel_size_ = voxel_size;
+    for (size_t i = 0; i < indices.size(); ++i) {
+        output->AddVoxel(geometry::Voxel(indices[i], colors[i]));
+    }
+    return output;
+}
+
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const PointCloud &input,
         double voxel_size,
