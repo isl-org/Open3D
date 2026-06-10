@@ -33,13 +33,20 @@
 
 #include <cuda.h>
 
+// Full-warp lane mask for the *_sync shuffles. HIP requires a 64-bit mask
+// (sizeof(mask)==8 static_assert), so the compat header provides ~0ull; on
+// CUDA the mask is the 32-bit all-lanes value.
+#ifndef OPEN3D_FULL_WARP_MASK
+#define OPEN3D_FULL_WARP_MASK 0xffffffffu
+#endif
+
 namespace open3d {
 namespace core {
 
 // defines to simplify the SASS assembly structure file/line in the profiler
 #if CUDA_VERSION >= 9000
 #define SHFL_SYNC(VAL, SRC_LANE, WIDTH) \
-    __shfl_sync(0xffffffff, VAL, SRC_LANE, WIDTH)
+    __shfl_sync(OPEN3D_FULL_WARP_MASK, VAL, SRC_LANE, WIDTH)
 #else
 #define SHFL_SYNC(VAL, SRC_LANE, WIDTH) __shfl(VAL, SRC_LANE, WIDTH)
 #endif
@@ -47,7 +54,7 @@ namespace core {
 template <typename T>
 inline __device__ T shfl(const T val, int srcLane, int width = kWarpSize) {
 #if CUDA_VERSION >= 9000
-    return __shfl_sync(0xffffffff, val, srcLane, width);
+    return __shfl_sync(OPEN3D_FULL_WARP_MASK, val, srcLane, width);
 #else
     return __shfl(val, srcLane, width);
 #endif
@@ -67,7 +74,7 @@ inline __device__ T shfl_up(const T val,
                             unsigned int delta,
                             int width = kWarpSize) {
 #if CUDA_VERSION >= 9000
-    return __shfl_up_sync(0xffffffff, val, delta, width);
+    return __shfl_up_sync(OPEN3D_FULL_WARP_MASK, val, delta, width);
 #else
     return __shfl_up(val, delta, width);
 #endif
@@ -89,7 +96,7 @@ inline __device__ T shfl_down(const T val,
                               unsigned int delta,
                               int width = kWarpSize) {
 #if CUDA_VERSION >= 9000
-    return __shfl_down_sync(0xffffffff, val, delta, width);
+    return __shfl_down_sync(OPEN3D_FULL_WARP_MASK, val, delta, width);
 #else
     return __shfl_down(val, delta, width);
 #endif
@@ -108,7 +115,7 @@ inline __device__ T* shfl_down(T* const val,
 template <typename T>
 inline __device__ T shfl_xor(const T val, int laneMask, int width = kWarpSize) {
 #if CUDA_VERSION >= 9000
-    return __shfl_xor_sync(0xffffffff, val, laneMask, width);
+    return __shfl_xor_sync(OPEN3D_FULL_WARP_MASK, val, laneMask, width);
 #else
     return __shfl_xor(val, laneMask, width);
 #endif

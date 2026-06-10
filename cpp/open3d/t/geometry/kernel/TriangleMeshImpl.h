@@ -21,11 +21,11 @@ namespace geometry {
 namespace kernel {
 namespace trianglemesh {
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::isnan;
 #endif
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void NormalizeNormalsCUDA
 #else
 void NormalizeNormalsCPU
@@ -62,7 +62,7 @@ void NormalizeNormalsCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ComputeTriangleNormalsCUDA
 #else
 void ComputeTriangleNormalsCPU
@@ -107,7 +107,7 @@ void ComputeTriangleNormalsCPU
     });
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ComputeTriangleAreasCUDA
 #else
 void ComputeTriangleAreasCPU

@@ -56,11 +56,24 @@ constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
                       (OPEN3D_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
                                                 (min_blocks_per_sm))))
 
+// The full-warp mask: HIP's __shfl_down_sync takes a 64-bit mask and
+// static_asserts sizeof(mask)==8, so a 32-bit default does not compile there.
+// This reduction tree is wave-size-aware (it shuffles with width=warpSize, 64
+// on gfx9xx), so the mask must cover the whole wavefront.
+#if defined(USE_HIP)
+using open3d_warp_mask_t = unsigned long long;
+#define OPEN3D_REDUCE_FULL_WARP_MASK (~0ull)
+#else
+using open3d_warp_mask_t = unsigned int;
+#define OPEN3D_REDUCE_FULL_WARP_MASK 0xffffffffu
+#endif
+
 template <typename T>
-OPEN3D_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
-                                               unsigned int delta,
-                                               int width = warpSize,
-                                               unsigned int mask = 0xffffffff) {
+OPEN3D_DEVICE __forceinline__ T
+WARP_SHFL_DOWN(T value,
+               unsigned int delta,
+               int width = warpSize,
+               open3d_warp_mask_t mask = OPEN3D_REDUCE_FULL_WARP_MASK) {
 #if CUDA_VERSION >= 9000
     return __shfl_down_sync(mask, value, delta, width);
 #else

@@ -52,7 +52,9 @@ endif()
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 # On Windows, running tests from the build folder needs tbb.dll to be in the same folder.
-if (WIN32)
+# With USE_SYSTEM_TBB the bundled `tbb` target does not exist (TBB::tbb is imported
+# from the system/vcpkg tree); its DLL is supplied on PATH at run time instead.
+if (WIN32 AND TARGET tbb)
   add_custom_command(
       TARGET tests
       POST_BUILD
@@ -66,7 +68,12 @@ if (BUILD_AZURE_KINECT)
     target_include_directories(tests SYSTEM PRIVATE ${K4A_INCLUDE_DIR})
 endif()
 
-if (BUILD_CUDA_MODULE)
+if (BUILD_CUDA_MODULE AND USE_HIP)
+    # HIP: link the HIP runtime (hip::host) for the few tests that touch the
+    # CUDA-spelled runtime API. hip::host carries no -x hip propagation.
+    find_package(hip REQUIRED)
+    target_link_libraries(tests PRIVATE hip::host)
+elseif (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
     # Consider removing dependencies of CUDA headers in the future.
     find_package(CUDAToolkit REQUIRED)

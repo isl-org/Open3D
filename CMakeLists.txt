@@ -40,12 +40,26 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
+option(USE_HIP                    "Build the GPU module with HIP for AMD"    OFF)
 option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
 else()
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    ON )
+endif()
+
+# USE_HIP drives the GPU module through HIP (AMD ROCm) instead of CUDA. The GPU
+# code paths are keyed on BUILD_CUDA_MODULE throughout the tree (both in CMake
+# and via #if defined(BUILD_CUDA_MODULE) host guards), so HIP reuses that switch
+# and only swaps the compiler/language and the math libraries. The .cu sources
+# stay in CUDA spelling and are retagged LANGUAGE HIP (see
+# Open3DSetGlobalProperties.cmake); a single compat header
+# (cpp/open3d/core/hip/CUDAToHIP.h) is force-included on the HIP TUs.
+if(USE_HIP)
+    set(BUILD_CUDA_MODULE ON CACHE BOOL "Build the CUDA module" FORCE)
+    set(BUILD_WITH_CUDA_STATIC OFF CACHE BOOL "Build with static CUDA libraries" FORCE)
+    set(BUILD_COMMON_CUDA_ARCHS OFF CACHE BOOL "Build for common CUDA GPUs" FORCE)
 endif()
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
@@ -405,7 +419,19 @@ endmacro()
 cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_module_)")
 
 # Build CUDA module by default if CUDA is available
-if(BUILD_CUDA_MODULE)
+if(BUILD_CUDA_MODULE AND USE_HIP)
+    # AMD ROCm/HIP path. Mirror the CUDA enable but for the HIP language.
+    # enable_language(HIP) would auto-detect the host GPU architecture (via
+    # rocm_agent_enumerator) when CMAKE_HIP_ARCHITECTURES is unset; we pin
+    # gfx90a as a deterministic default instead. Pass -DCMAKE_HIP_ARCHITECTURES
+    # to build for another target.
+    if(NOT DEFINED CMAKE_HIP_ARCHITECTURES OR CMAKE_HIP_ARCHITECTURES STREQUAL "")
+        set(CMAKE_HIP_ARCHITECTURES "gfx90a")
+    endif()
+    enable_language(HIP)
+    set(CMAKE_HIP_STANDARD 17)
+    message(STATUS "Building with HIP for AMD architectures: ${CMAKE_HIP_ARCHITECTURES}")
+elseif(BUILD_CUDA_MODULE)
     if(MSVC)
         # Handle/suppress nvcc unsupported compiler error for MSVC>=1940 with CUDA 11.7 to 12.4:
         # (https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12)

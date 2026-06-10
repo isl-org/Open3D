@@ -260,8 +260,10 @@ CUDAState::CUDAState() {
                     p2p_enabled_[src_id][tar_id] = true;
                     cudaError_t err = cudaDeviceEnablePeerAccess(tar_id, 0);
                     if (err == cudaErrorPeerAccessAlreadyEnabled) {
-                        // Ignore error since P2P is already enabled.
-                        cudaGetLastError();
+                        // Ignore error since P2P is already enabled. Cast to
+                        // void: HIP marks hipGetLastError nodiscard (CUDA does
+                        // not), which trips -Werror.
+                        static_cast<void>(cudaGetLastError());
                     } else {
                         OPEN3D_CUDA_CHECK(err);
                     }

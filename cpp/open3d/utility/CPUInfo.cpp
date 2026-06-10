@@ -83,16 +83,18 @@ static int PhysicalConcurrency() {
 #elif _WIN32
         // Ref: https://stackoverflow.com/a/44247223/1255535.
         DWORD length = 0;
-        const BOOL result_first = GetLogicalProcessorInformationEx(
-                RelationProcessorCore, nullptr, &length);
+        [[maybe_unused]] const BOOL result_first =
+                GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr,
+                                                 &length);
         assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
 
         std::unique_ptr<uint8_t[]> buffer(new uint8_t[length]);
         const PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX info =
                 reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
                         buffer.get());
-        const BOOL result_second = GetLogicalProcessorInformationEx(
-                RelationProcessorCore, info, &length);
+        [[maybe_unused]] const BOOL result_second =
+                GetLogicalProcessorInformationEx(RelationProcessorCore, info,
+                                                 &length);
         assert(result_second != FALSE);
 
         int nb_physical_cores = 0;

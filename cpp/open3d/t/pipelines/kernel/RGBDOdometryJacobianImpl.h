@@ -20,7 +20,7 @@ namespace odometry {
 using t::geometry::kernel::NDArrayIndexer;
 using t::geometry::kernel::TransformIndexer;
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::abs;
 using std::isnan;
 using std::max;

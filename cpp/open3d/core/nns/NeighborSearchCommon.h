@@ -18,7 +18,7 @@ namespace nns {
 /// Supported metrics
 enum Metric { L1, L2, Linf };
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #define HOST_DEVICE __host__ __device__
 #else
 #define HOST_DEVICE

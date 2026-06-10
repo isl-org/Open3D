@@ -17,7 +17,7 @@
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::abs;
 #endif
 
@@ -187,7 +187,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     return true;
 }
 
-template bool GetJacobianPointToPlane(int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianPointToPlane(int64_t workload_idx,
                                       const float *source_points_ptr,
                                       const float *target_points_ptr,
                                       const float *target_normals_ptr,
@@ -195,7 +195,7 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
                                       float *J_ij,
                                       float &r);
 
-template bool GetJacobianPointToPlane(int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianPointToPlane(int64_t workload_idx,
                                       const double *source_points_ptr,
                                       const double *target_points_ptr,
                                       const double *target_normals_ptr,
@@ -285,7 +285,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianColoredICP(
     return true;
 }
 
-template bool GetJacobianColoredICP(const int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianColoredICP(const int64_t workload_idx,
                                     const float *source_points_ptr,
                                     const float *source_colors_ptr,
                                     const float *target_points_ptr,
@@ -300,7 +300,7 @@ template bool GetJacobianColoredICP(const int64_t workload_idx,
                                     float &r_G,
                                     float &r_I);
 
-template bool GetJacobianColoredICP(const int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianColoredICP(const int64_t workload_idx,
                                     const double *source_points_ptr,
                                     const double *source_colors_ptr,
                                     const double *target_points_ptr,
@@ -333,13 +333,13 @@ OPEN3D_HOST_DEVICE inline void PreComputeForDopplerICP(
     core::linalg::kernel::matmul3x3_3x1(R_S_to_V, v_s_in_V, v_s_in_S);
 }
 
-template void PreComputeForDopplerICP(const float *R_S_to_V,
+template OPEN3D_HOST_DEVICE void PreComputeForDopplerICP(const float *R_S_to_V,
                                       const float *r_v_to_s_in_V,
                                       const float *w_v_in_V,
                                       const float *v_v_in_V,
                                       float *v_s_in_S);
 
-template void PreComputeForDopplerICP(const double *R_S_to_V,
+template OPEN3D_HOST_DEVICE void PreComputeForDopplerICP(const double *R_S_to_V,
                                       const double *r_v_to_s_in_V,
                                       const double *w_v_in_V,
                                       const double *v_v_in_V,
@@ -435,7 +435,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDopplerICP(
     return true;
 }
 
-template bool GetJacobianDopplerICP(const int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianDopplerICP(const int64_t workload_idx,
                                     const float *source_points_ptr,
                                     const float *source_dopplers_ptr,
                                     const float *source_directions_ptr,
@@ -455,7 +455,7 @@ template bool GetJacobianDopplerICP(const int64_t workload_idx,
                                     float &r_G,
                                     float &r_D);
 
-template bool GetJacobianDopplerICP(const int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetJacobianDopplerICP(const int64_t workload_idx,
                                     const double *source_points_ptr,
                                     const double *source_dopplers_ptr,
                                     const double *source_directions_ptr,
@@ -507,14 +507,14 @@ OPEN3D_HOST_DEVICE inline bool GetInformationJacobians(
     return true;
 }
 
-template bool GetInformationJacobians(int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetInformationJacobians(int64_t workload_idx,
                                       const float *target_points_ptr,
                                       const int64_t *correspondence_indices,
                                       float *jacobian_x,
                                       float *jacobian_y,
                                       float *jacobian_z);
 
-template bool GetInformationJacobians(int64_t workload_idx,
+template OPEN3D_HOST_DEVICE bool GetInformationJacobians(int64_t workload_idx,
                                       const double *target_points_ptr,
                                       const int64_t *correspondence_indices,
                                       double *jacobian_x,

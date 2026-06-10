@@ -1,6 +1,9 @@
 include(ExternalProject)
 
-if(MSVC)
+# libpng's CMake emits libpng16_static on Windows regardless of compiler
+# frontend, so gate the imported name on WIN32 (not MSVC) -- an all-clang
+# Windows toolchain has CMake's MSVC set to FALSE.
+if(WIN32)
     set(LIBPNG_LIB_NAME libpng16_static)
 else()
     set(LIBPNG_LIB_NAME png16)
