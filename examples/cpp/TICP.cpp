@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, (const char**)argv);
+    app.Initialize();
     app.AddWindow(std::make_shared<RegistrationWindow>(core::Device(argv[1])));
     app.Run();
     return 0;

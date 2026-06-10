@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
@@ -107,6 +108,17 @@ void pybind_pointcloud_definitions(py::module &m) {
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
+            .def("get_oriented_bounding_ellipsoid",
+                 &PointCloud::GetOrientedBoundingEllipsoid, "robust"_a = false,
+                 R"(Compute the minimum volume oriented bounding ellipsoid that
+encloses the point cloud, using Khachiyan's algorithm.
+
+Args:
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+    open3d.geometry.OrientedBoundingEllipsoid)")
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Removes all points from the point cloud that have a nan "
                  "entry, or infinite entries. It also removes the "
