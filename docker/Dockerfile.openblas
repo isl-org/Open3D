@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
@@ -19,6 +20,7 @@ RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not sp
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+ENV CCACHE_DIR=/root/.cache/ccache
 
 # Minimal dependencies for running Docker
 # wget    : for downloading
@@ -33,6 +35,7 @@ RUN apt-get update && apt-get install -y \
 # Minimal dependencies for building python
 RUN apt-get update && apt-get install -y \
     build-essential \
+    ccache \
     libssl-dev \
     zlib1g-dev \
     libbz2-dev \
@@ -48,6 +51,10 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+    ccache -M 4G \
+ && ccache -s
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
@@ -98,7 +105,8 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build
-RUN mkdir build \
+RUN --mount=type=cache,target=/root/.cache/ccache,sharing=locked \
+ mkdir build \
  && cd build \
  && cmake \
     -DBUILD_UNIT_TESTS=ON \
@@ -109,5 +117,6 @@ RUN mkdir build \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
  && make install-pip-package -j$NPROC \
- && make install -j$NPROC
+ && make install -j$NPROC \
+ && ccache -s
 RUN cp build/lib/python_package/pip_package/*.whl /

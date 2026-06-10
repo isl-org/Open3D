@@ -54,6 +54,7 @@ OPTION:
     3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
     3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
     5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    5-ml-noble-sbsa           : CUDA SBSA CI, 5-ml-noble-sbsa, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -365,6 +366,11 @@ sycl-static)
     ;;
 5-ml-noble)
     5-ml-noble_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+5-ml-noble-sbsa)
+    5-ml-noble-sbsa_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
