@@ -13,7 +13,7 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-std::array<std::uint16_t, static_cast<size_t>(EntityType::Count)>
+std::array<std::uint32_t, static_cast<size_t>(EntityType::Count)>
         REHandle_abstract::uid_table;
 
 std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {

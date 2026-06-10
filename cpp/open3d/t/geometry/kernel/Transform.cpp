@@ -18,7 +18,7 @@ namespace kernel {
 namespace transform {
 
 void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor points_contiguous = points.Contiguous();
@@ -40,7 +40,7 @@ void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
 
 void TransformNormals(const core::Tensor& transformation,
                       core::Tensor& normals) {
-    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(normals, {std::nullopt, 3});
     core::AssertTensorShape(transformation, {4, 4});
 
     core::Tensor normals_contiguous = normals.Contiguous();
@@ -63,7 +63,7 @@ void TransformNormals(const core::Tensor& transformation,
 void RotatePoints(const core::Tensor& R,
                   core::Tensor& points,
                   const core::Tensor& center) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorShape(R, {3, 3});
     core::AssertTensorShape(center, {3});
 
@@ -86,7 +86,7 @@ void RotatePoints(const core::Tensor& R,
 }
 
 void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
-    core::AssertTensorShape(normals, {utility::nullopt, 3});
+    core::AssertTensorShape(normals, {std::nullopt, 3});
     core::AssertTensorShape(R, {3, 3});
 
     core::Tensor normals_contiguous = normals.Contiguous();

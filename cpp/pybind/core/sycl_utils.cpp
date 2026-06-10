@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <optional>
+
 #include "open3d/core/SYCLUtils.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 
 namespace open3d {
@@ -19,6 +20,10 @@ void pybind_sycl_utils_definitions(py::module& m) {
     m_sycl.def("is_available", sy::IsAvailable,
                "Returns true if Open3D is compiled with SYCL support and at "
                "least one compatible SYCL device is detected.");
+
+    m_sycl.def("device_count", sy::GetDeviceCount,
+               "Return the number of available SYCL devices (including the CPU "
+               "device).");
 
     m_sycl.def("get_available_devices", sy::GetAvailableSYCLDevices,
                "Return a list of available SYCL devices.");

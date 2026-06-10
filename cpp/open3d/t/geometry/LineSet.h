@@ -215,7 +215,7 @@ public:
     /// Set the value of the "positions" attribute in point_attr_.
     /// Convenience function.
     void SetPointPositions(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetPointAttr("positions", value);
     }
 
@@ -231,14 +231,14 @@ public:
 
     /// Set the value of the "indices" attribute in line_attr_.
     void SetLineIndices(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 2});
+        core::AssertTensorShape(value, {std::nullopt, 2});
         SetLineAttr("indices", value);
     }
 
     /// Set the value of the "colors" attribute in line_attr_.
     /// This is a convenience function.
     void SetLineColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetLineAttr("colors", value);
     }
 
@@ -368,6 +368,20 @@ public:
     /// Create an oriented bounding box from point attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
+    /// Create a wireframe LineSet representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param resolution Resolution of the generated ellipsoid wireframe.
+    /// \param float_dtype The data type for point attributes.
+    /// \param int_dtype The data type for line indices.
+    /// \param device The device for the returned line set.
+    static LineSet CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
     /// Sweeps the line set rotationally about an axis.
     /// \param angle The rotation angle in degree.
     /// \param axis The rotation axis.
@@ -385,8 +399,9 @@ public:
     /// Sweeps the line set along a direction vector.
     /// \param vector The direction vector.
     /// \param scale Scalar factor which essentially scales the direction
-    /// vector. \param capping If true adds caps to the mesh. \return A triangle
-    /// mesh with the result of the sweep operation.
+    /// vector.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
     TriangleMesh ExtrudeLinear(const core::Tensor &vector,
                                double scale = 1.0,
                                bool capping = true) const;

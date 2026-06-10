@@ -81,7 +81,7 @@ TensorToEigenMatrixXi(const core::Tensor &tensor) {
 template <typename T, int N>
 static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         const core::Tensor &tensor) {
-    AssertTensorShape(tensor, {utility::nullopt, N});
+    AssertTensorShape(tensor, {std::nullopt, N});
 
     static_assert(
             (std::is_same<T, double>::value || std::is_same<T, int>::value) &&

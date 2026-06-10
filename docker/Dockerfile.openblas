@@ -30,23 +30,40 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Minimal dependencies for building
+# Minimal dependencies for building python
 RUN apt-get update && apt-get install -y \
     build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    curl \
     git \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && bash Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh -b \
- && rm Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+RUN curl https://pyenv.run | bash \
+        && pyenv update \
+        && pyenv install $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
@@ -89,7 +106,8 @@ RUN mkdir build \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
+ && export NPROC=$(($(nproc)+2)) \
+ && make -j$NPROC \
+ && make install-pip-package -j$NPROC \
+ && make install -j$NPROC
 RUN cp build/lib/python_package/pip_package/*.whl /

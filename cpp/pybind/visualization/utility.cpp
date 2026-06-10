@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
+namespace fs = std::filesystem;
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/IJsonConvertibleIO.h"
@@ -114,11 +116,10 @@ void pybind_visualization_utility_definitions(py::module &m) {
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
                int top, bool point_show_normal, bool mesh_show_wireframe,
-               bool mesh_show_back_face,
-               utility::optional<Eigen::Vector3d> lookat,
-               utility::optional<Eigen::Vector3d> up,
-               utility::optional<Eigen::Vector3d> front,
-               utility::optional<double> zoom) {
+               bool mesh_show_back_face, std::optional<Eigen::Vector3d> lookat,
+               std::optional<Eigen::Vector3d> up,
+               std::optional<Eigen::Vector3d> front,
+               std::optional<double> zoom) {
                 std::string current_dir =
                         utility::filesystem::GetWorkingDirectory();
                 DrawGeometries(geometry_ptrs, window_name, width, height, left,

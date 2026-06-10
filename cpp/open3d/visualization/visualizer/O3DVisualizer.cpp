@@ -7,9 +7,13 @@
 
 #include "open3d/visualization/visualizer/O3DVisualizer.h"
 
+#include <json/json.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
+
+#include <cmath>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/Image.h"
@@ -23,6 +27,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/IJsonConvertible.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
@@ -41,6 +46,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
+#include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
@@ -67,7 +73,9 @@ static const std::string kDefaultIBL = "default";
 
 enum MenuId {
     MENU_ABOUT = 0,
+    MENU_HELP_CONTROLS,
     MENU_EXPORT_RGB,
+    MENU_EXPORT_DEPTH,
     MENU_CLOSE,
     MENU_SETTINGS,
     MENU_ACTIONS_BASE = 1000 /* this should be last */
@@ -470,9 +478,14 @@ struct O3DVisualizer::Impl {
         auto *reset = new SmallButton("Reset Camera");
         reset->SetOnClicked([this]() { this->ResetCameraToDefault(); });
 
+        auto *copy_view = new SmallButton("Copy View");
+        copy_view->SetOnClicked([this]() { this->CopyViewToClipboard(); });
+
         h = new Horiz(v_spacing);
         h->AddStretch();
         h->AddChild(GiveOwnership(reset));
+        h->AddFixed(v_spacing);
+        h->AddChild(GiveOwnership(copy_view));
         h->AddStretch();
         settings.view_panel->AddChild(GiveOwnership(h));
 
@@ -937,7 +950,8 @@ Ctrl-alt-click to polygon select)";
             }
             if (is_gaussian_splat) {
                 mat.shader = kShaderGaussianSplat;
-                mat.sh_degree = t_cloud->GaussianSplatGetSHOrder();
+                mat.gaussian_splat_sh_degree =
+                        t_cloud->GaussianSplatGetSHOrder();
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
@@ -990,6 +1004,10 @@ Ctrl-alt-click to polygon select)";
                 mat.clearcoat_img = mesh_material.clearCoat;
                 mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
                 mat.anisotropy_img = mesh_material.anisotropy;
+                if (mat.base_color.w() < 1.f) {
+                    mat.has_alpha = true;
+                    mat.shader = "defaultLitTransparency";
+                }
             }
         }
 
@@ -1594,10 +1612,18 @@ Ctrl-alt-click to polygon select)";
 
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
-            OverrideMaterial(o.name, o.material, shader);
+            if (o.model && shader == Shader::STANDARD) {
+                scene_->GetScene()->UpdateModelMaterial(o.name, *o.model);
+            } else {
+                OverrideMaterial(o.name, o.material, shader);
+            }
         }
         for (auto &o : inspection_objects_) {
-            OverrideMaterial(o.name, o.material, shader);
+            if (o.model && shader == Shader::STANDARD) {
+                scene_->GetScene()->UpdateModelMaterial(o.name, *o.model);
+            } else {
+                OverrideMaterial(o.name, o.material, shader);
+            }
         }
         scene_->ForceRedraw();
     }
@@ -2114,6 +2140,29 @@ Ctrl-alt-click to polygon select)";
         next_animation_tick_clock_time_ = now + ui_state_.frame_delay;
     }
 
+    /// Copies current camera parameters to the clipboard as a JSON string.
+    void CopyViewToClipboard() {
+        auto *camera = scene_->GetScene()->GetCamera();
+        Eigen::Vector3d lookat = scene_->GetCenterOfRotation().cast<double>();
+        Eigen::Vector3d eye = camera->GetPosition().cast<double>();
+        Eigen::Vector3d up = camera->GetUpVector().cast<double>();
+
+        Json::Value result;
+        utility::IJsonConvertible::EigenVector3dToJsonArray(lookat,
+                                                            result["lookat"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(eye, result["eye"]);
+        utility::IJsonConvertible::EigenVector3dToJsonArray(up, result["up"]);
+        result["field_of_view"] = camera->GetFieldOfView();
+        result["near_plane"] = camera->GetNear();
+        result["far_plane"] = camera->GetFar();
+        auto frame = scene_->GetFrame();
+        result["width"] = frame.width;
+        result["height"] = frame.height;
+
+        window_->SetClipboardText(utility::JsonToString(result));
+        utility::LogInfo("View parameters copied to clipboard.");
+    }
+
     void ExportCurrentImage(const std::string &path) {
         scene_->EnableSceneCaching(false);
         scene_->GetScene()->GetScene()->RenderToImage(
@@ -2129,6 +2178,53 @@ Ctrl-alt-click to polygon select)";
                 });
     }
 
+    void ExportCurrentDepthImage(const std::string &path) {
+        scene_->EnableSceneCaching(false);
+        auto fs = scene_->GetScene()->GetScene();
+        fs->RenderToDepthImage([this,
+                                path](std::shared_ptr<geometry::Image> image) {
+            bool ok = false;
+            auto finite_max = [](float a, float b) {
+                if (!std::isfinite(a)) return b;
+                if (!std::isfinite(b)) return a;
+                return std::max(a, b);
+            };
+            if (image && image->num_of_channels_ == 1 &&
+                image->bytes_per_channel_ == 4) {
+                // Depth export stores normalized depth in 16-bit PNG.
+                auto depth_float = std::make_shared<geometry::Image>(*image);
+                float *depth_data = depth_float->PointerAs<float>();
+                size_t num_pixels =
+                        static_cast<size_t>(depth_float->GetMaxBound().prod());
+                auto depth_subrange_finite_max =
+                        [depth_data](const tbb::blocked_range<size_t> &r,
+                                     float cmax) {
+                            for (size_t i = r.begin(); i != r.end(); ++i) {
+                                if (std::isfinite(depth_data[i])) {
+                                    cmax = std::max(cmax, depth_data[i]);
+                                }
+                            }
+                            return cmax;
+                        };
+                float max_val = tbb::parallel_reduce(
+                        tbb::blocked_range<size_t>(0, num_pixels), -INFINITY,
+                        depth_subrange_finite_max, finite_max);
+                if (max_val > 0)
+                    depth_float->LinearTransform(65535.0 / max_val, 0.0);
+                auto depth_u16 =
+                        depth_float->CreateImageFromFloatImage<uint16_t>();
+                ok = io::WriteImage(path, *depth_u16);
+            }
+            if (!ok) {
+                this->window_->ShowMessageBox(
+                        "Error",
+                        fmt::format("Could not write depth image to {}.", path)
+                                .c_str());
+            }
+            scene_->EnableSceneCaching(true);
+        });
+    }
+
     void OnAbout() {
         auto &theme = window_->GetTheme();
         auto dlg = std::make_shared<gui::Dialog>("About");
@@ -2137,7 +2233,7 @@ Ctrl-alt-click to polygon select)";
                 (std::string("Open3D ") + OPEN3D_VERSION).c_str());
         auto text = std::make_shared<gui::Label>(
                 "The MIT License (MIT)\n"
-                "Copyright (c) 2018-2023 www.open3d.org\n\n"
+                "Copyright (c) 2018-2026 www.open3d.org\n\n"
 
                 "Permission is hereby granted, free of charge, to any person "
                 "obtaining a copy of this software and associated "
@@ -2186,6 +2282,20 @@ Ctrl-alt-click to polygon select)";
         dlg->SetOnDone([this](const char *path) {
             this->window_->CloseDialog();
             this->ExportCurrentImage(path);
+        });
+        window_->ShowDialog(dlg);
+    }
+
+    void OnExportDepth() {
+        auto dlg = std::make_shared<gui::FileDialog>(
+                gui::FileDialog::Mode::SAVE, "Save Depth File",
+                window_->GetTheme());
+        dlg->AddFilter(".png", "PNG images (.png)");
+        dlg->AddFilter("", "All files");
+        dlg->SetOnCancel([this]() { this->window_->CloseDialog(); });
+        dlg->SetOnDone([this](const char *path) {
+            this->window_->CloseDialog();
+            this->ExportCurrentDepthImage(path);
         });
         window_->ShowDialog(dlg);
     }
@@ -2275,6 +2385,7 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     if (Application::GetInstance().UsingNativeWindows()) {
         auto file_menu = std::make_shared<Menu>();
         file_menu->AddItem("Export Current Image...", MENU_EXPORT_RGB);
+        file_menu->AddItem("Export Current Depth Image...", MENU_EXPORT_DEPTH);
         file_menu->AddSeparator();
         file_menu->AddItem("Close Window", MENU_CLOSE, KeyName::KEY_W);
         menu->AddMenu("File", file_menu);
@@ -2286,17 +2397,28 @@ O3DVisualizer::O3DVisualizer(const std::string &title, int width, int height)
     menu->AddMenu("Actions", actions_menu);
     impl_->settings.actions_menu = actions_menu.get();
 
-#if !defined(__APPLE__)
     auto help_menu = std::make_shared<Menu>();
+    help_menu->AddItem("Show Controls...", MENU_HELP_CONTROLS);
+    help_menu->AddSeparator();
     help_menu->AddItem("About", MENU_ABOUT);
+#if defined(__APPLE__)
+    // macOS adds a Spotlight search field to menus literally named "Help";
+    // a trailing space avoids that while still appearing as "Help" to the user.
+    menu->AddMenu("Help ", help_menu);
+#else
     menu->AddMenu("Help", help_menu);
-#endif  // !__APPLE__
+#endif  // __APPLE__
 
     Application::GetInstance().SetMenubar(menu);
 
     SetOnMenuItemActivated(MENU_ABOUT, [this]() { this->impl_->OnAbout(); });
+    SetOnMenuItemActivated(MENU_HELP_CONTROLS, [this]() {
+        this->ShowDialog(gui::CreateControlsHelpDialog(this));
+    });
     SetOnMenuItemActivated(MENU_EXPORT_RGB,
                            [this]() { this->impl_->OnExportRGB(); });
+    SetOnMenuItemActivated(MENU_EXPORT_DEPTH,
+                           [this]() { this->impl_->OnExportDepth(); });
     SetOnMenuItemActivated(MENU_CLOSE, [this]() { this->impl_->OnClose(); });
     SetOnMenuItemActivated(MENU_SETTINGS,
                            [this]() { this->impl_->OnToggleSettings(); });
@@ -2572,6 +2694,8 @@ void O3DVisualizer::SetOnAnimationTick(
 void O3DVisualizer::ExportCurrentImage(const std::string &path) {
     impl_->ExportCurrentImage(path);
 }
+
+void O3DVisualizer::CopyViewToClipboard() { impl_->CopyViewToClipboard(); }
 
 void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;

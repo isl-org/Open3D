@@ -26,9 +26,11 @@
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4068 4146 4293)
-// Filament uses OPAQUE and TRANSPARENT as enums which conflicts with windows.h
+// Filament uses these as enums / local variables that conflict with windows.h
 #undef OPAQUE
 #undef TRANSPARENT
+#undef near
+#undef far
 #endif // _MSC_VER
 
 #include <filament/Box.h>
@@ -174,39 +176,6 @@ public:
 
 protected:
     t::geometry::PointCloud geometry_;
-};
-
-class TGaussianSplatBuffersBuilder : public TPointCloudBuffersBuilder {
-public:
-    /// \brief Constructs a TGaussianSplatBuffersBuilder object.
-    ///
-    /// Initializes the Gaussian Splat buffers from the provided \p geometry and
-    /// ensures that all necessary attributes are present and correctly
-    /// formatted. If the geometry is not a Gaussian Splat, a warning is issued.
-    /// Additionally, attributes like "f_dc", "opacity", "rot", "scale", and
-    /// "f_rest" are checked for their data type, and converted to Float32 if
-    /// they are not already in that format.
-    explicit TGaussianSplatBuffersBuilder(
-            const t::geometry::PointCloud& geometry);
-
-    /// \brief Constructs vertex and index buffers for Gaussian Splat rendering.
-    ///
-    /// This function creates and configures GPU buffers to represent a Gaussian
-    /// Splat point cloud. It extracts attributes like positions, colors,
-    /// rotation, scale, and spherical harmonics coefficients from the provided
-    /// \ref geometry_ and organizes them into separate vertex buffer
-    /// attributes.
-    ///
-    /// The vertex buffer contains the following attributes:
-    /// - POSITION: Vertex positions (FLOAT3)
-    /// - COLOR: DC component and opacity (FLOAT4)
-    /// - TANGENTS: Rotation quaternion (FLOAT4)
-    /// - CUSTOM0: Scale (FLOAT4)
-    /// - CUSTOM1 to CUSTOM6: SH coefficients (FLOAT4)
-    ///
-    /// Each attribute is checked and converted to the expected data type if
-    /// necessary, and missing attributes are initialized with default values.
-    Buffers ConstructBuffers() override;
 };
 
 class TLineSetBuffersBuilder : public GeometryBuffersBuilder {

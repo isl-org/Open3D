@@ -49,24 +49,28 @@ void pybind_geometry_declarations(py::module& m) {
     py::module m_geometry = m.def_submodule(
             "geometry", "Tensor-based geometry defining module.");
 
-    py::enum_<Metric>(
-            m_geometry, "Metric",
+    py::native_enum<Metric>(
+            m_geometry, "Metric", "enum.Enum",
             "Enum for metrics for comparing point clouds and triangle meshes.")
             .value("ChamferDistance", Metric::ChamferDistance,
                    "Chamfer Distance")
             .value("HausdorffDistance", Metric::HausdorffDistance,
                    "Hausdorff Distance")
             .value("FScore", Metric::FScore, "F-Score")
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<MetricParameters> metric_parameters(
             m_geometry, "MetricParameters",
             "Holder for various parameters required by metrics.");
 
-    py::enum_<MethodOBBCreate>(m_geometry, "MethodOBBCreate")
+    py::native_enum<MethodOBBCreate>(
+            m_geometry, "MethodOBBCreate", "enum.Enum",
+            "Methods for creating oriented bounding boxes.")
             .value("PCA", MethodOBBCreate::PCA)
             .value("MINIMAL_APPROX", MethodOBBCreate::MINIMAL_APPROX)
             .value("MINIMAL_JYLANKI", MethodOBBCreate::MINIMAL_JYLANKI)
-            .export_values();
+            .export_values()
+            .finalize();
 
     pybind_geometry_class_declarations(m_geometry);
     pybind_drawable_geometry_class_declarations(m_geometry);

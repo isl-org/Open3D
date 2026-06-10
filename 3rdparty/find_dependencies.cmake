@@ -161,12 +161,14 @@ endfunction()
 # CMake arguments for configuring ExternalProjects. Use the second _hidden
 # version by default.
 set(ExternalProject_CMAKE_ARGS
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5      # for VTK 9.1
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
     -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
+    -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
     -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
@@ -606,6 +608,24 @@ else()
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_eigen3)
 endif()
 
+# Vulkan-Headers
+include(${Open3D_3RDPARTY_DIR}/vulkan_headers/vulkan_headers.cmake)
+open3d_import_3rdparty_library(3rdparty_vulkan_headers
+    INCLUDE_DIRS ${VULKAN_HEADERS_INCLUDE_DIRS}
+    INCLUDE_ALL
+    DEPENDS      ext_vulkan_headers
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vulkan_headers)
+
+# Vulkan Memory Allocator
+include(${Open3D_3RDPARTY_DIR}/vkmemalloc/vkmemalloc.cmake)
+open3d_import_3rdparty_library(3rdparty_vkmemalloc
+    INCLUDE_DIRS ${VMA_INCLUDE_DIRS}
+    INCLUDE_ALL
+    DEPENDS      ext_vkmemalloc ext_vmahpp
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vkmemalloc)
+
 # Nanoflann
 if(USE_SYSTEM_NANOFLANN)
     open3d_find_package_3rdparty_library(3rdparty_nanoflann
@@ -851,6 +871,13 @@ if (BUILD_LIBREALSENSE)
                 DOC "Library provided by the deb package libudev-dev")
             target_link_libraries(3rdparty_librealsense INTERFACE ${UDEV_LIBRARY})
         endif()
+        # Link system libusb-1.0 (required when USE_EXTERNAL_USB=ON)
+        # Required on both Linux and macOS
+        if (UNIX)
+            find_library(USB1_LIBRARY usb-1.0 REQUIRED
+                DOC "Library provided by the deb package libusb-1.0-dev (Linux) or Homebrew libusb (macOS)")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${USB1_LIBRARY})
+        endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_librealsense)
     else()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_librealsense)
@@ -894,6 +921,9 @@ if(NOT USE_SYSTEM_OPENSSL)
 endif()
 
 if(NOT USE_SYSTEM_CURL)
+    if (APPLE)
+        message(SEND_ERROR "Please build with USE_SYSTEM_CURL=ON for macOS to prevent linker errors.")
+    endif()
     include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
     open3d_import_3rdparty_library(3rdparty_curl
         INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -912,7 +942,12 @@ if(NOT USE_SYSTEM_CURL)
         #     _Curl_resolv in libcurl.a(hostip.c.o)
         # ```
         # The "Foundation" framework is already linked by GLFW.
-        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration -framework Foundation")
+    elseif(UNIX)
+        find_library(LIBIDN2 NAMES idn2 libidn2 libidn2.so.0  )
+        if(LIBIDN2)
+            target_link_libraries(3rdparty_curl INTERFACE ${LIBIDN2})
+        endif()
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
@@ -939,6 +974,7 @@ if(NOT USE_SYSTEM_PNG)
         LIBRARIES    ${ZLIB_LIBRARIES}
         DEPENDS      ext_zlib
     )
+    add_dependencies(ext_assimp ext_zlib)
 
     include(${Open3D_3RDPARTY_DIR}/libpng/libpng.cmake)
     open3d_import_3rdparty_library(3rdparty_png
@@ -947,7 +983,6 @@ if(NOT USE_SYSTEM_PNG)
         LIBRARIES    ${LIBPNG_LIBRARIES}
         DEPENDS      ext_libpng
     )
-    add_dependencies(ext_libpng ext_zlib)
     target_link_libraries(3rdparty_png INTERFACE Open3D::3rdparty_zlib)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_png)
 else()
@@ -1101,9 +1136,10 @@ if(NOT USE_SYSTEM_FMT)
         LIBRARIES    ${FMT_LIBRARIES}
         DEPENDS      ext_fmt
     )
-    # FMT 6.0, newer versions may require different flags
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    if (WIN32)
+        target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    endif()
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
@@ -1306,21 +1342,24 @@ if(BUILD_GUI)
         else()
             message(STATUS "Using prebuilt third-party library Filament")
             include(${Open3D_3RDPARTY_DIR}/filament/filament_download.cmake)
-            # Set lib directory for filament v1.9.9 on Windows.
-            # Assume newer version if FILAMENT_PRECOMPILED_ROOT is set.
-            if (WIN32 AND NOT FILAMENT_PRECOMPILED_ROOT)
-                if (STATIC_WINDOWS_RUNTIME)
-                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
-                else()
-                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
-                endif()
-            endif()
         endif()
-        if (APPLE)
+        if (UNIX AND NOT APPLE)
+            if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+                set(FILAMENT_RUNTIME_VER aarch64)
+            else()
+                set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        elseif (APPLE)
             if (APPLE_AARCH64)
                 set(FILAMENT_RUNTIME_VER arm64)
             else()
                 set(FILAMENT_RUNTIME_VER x86_64)
+            endif()
+        else()  # WIN32
+            if (STATIC_WINDOWS_RUNTIME)
+                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            else()
+                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
             endif()
         endif()
         open3d_import_3rdparty_library(3rdparty_filament
@@ -1625,7 +1664,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             else()
                 message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
                                     "On Ubuntu, please install by `apt install gfortran`. "
-                                    "On macOS, please install by `brew install gfortran`. ")
+                                    "On macOS, please install by `brew install gcc`. ")
             endif()
 
             include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
@@ -1655,15 +1694,23 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             endif()
 
             if(LINUX_AARCH64 OR APPLE_AARCH64)
-                # Find libgfortran.a and libgcc.a inside the gfortran library search
-                # directories. This ensures that the library matches the compiler.
-                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-                find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-                find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-                target_link_libraries(3rdparty_blas INTERFACE
-                    ${gfortran_lib}
-                    ${gcc_lib}
-                )
+                if(APPLE_AARCH64)
+                    # Find libgfortran.a and libgcc.a inside the gfortran library search
+                    # directories. This ensures that the library matches the compiler.
+                    # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                    find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                if(LINUX_AARCH64)
+                    # On some aarch64 systems, libgfortran.a is not compiled with -fPIC,
+                    # which prevents it from being used in a shared library.
+                    # We link the shared version (-lgfortran) instead.
+                    # TODO: This requires packaging libgfortran with the Python
+                    # wheel
+                    find_library(gfortran_lib NAMES libgfortran${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS ${gfortran_lib_dirs} REQUIRED)
+                    find_library(gcc_lib      NAMES libgcc_s${CMAKE_SHARED_LIBRARY_SUFFIX}      PATHS ${gfortran_lib_dirs} REQUIRED)
+                endif()
+                target_link_libraries(3rdparty_blas INTERFACE ${gfortran_lib} ${gcc_lib})
                 if(APPLE_AARCH64)
                     find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                     target_link_libraries(3rdparty_blas INTERFACE
@@ -1750,7 +1797,7 @@ if(BUILD_CUDA_MODULE)
         # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
         # cudatoolkit conda package), or have a mechanism to locate the CUDA
         # toolkit from the system.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cusolver CUDA::cublas)
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
         # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
@@ -1781,6 +1828,7 @@ if(BUILD_CUDA_MODULE)
                     CUDA::cublas_static
                     CUDA::cublasLt_static
                     CUDA::culibos
+                    CUDA::cudart_static
                 )
             else()
                 # Use shared CUDA libraries.
@@ -1904,6 +1952,7 @@ if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
         PACKAGE embree
         TARGETS embree
+        VERSION 4.4.0
     )
     if(NOT 3rdparty_embree_FOUND)
         set(USE_SYSTEM_EMBREE OFF)

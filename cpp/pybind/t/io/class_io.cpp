@@ -5,8 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <string>
 #include <unordered_map>
+namespace fs = std::filesystem;
 
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
@@ -134,7 +136,18 @@ void pybind_class_io_definitions(py::module &m_io) {
                                 remove_infinite_points, print_progress});
                 return pcd;
             },
-            "Function to read PointCloud with tensor attributes from file.",
+            R"(Read a tensor :class:`open3d.t.geometry.PointCloud` from file.
+
+For 3D Gaussian splat data (``.ply`` / ``.splat`` with the usual attributes):
+
+- **In-memory ``scale``** on the returned point cloud is always **linear** (axis
+  lengths), which matches the Filament / rendering path.
+- **PLY** files follow the common convention of storing **log-scale** per axis;
+  the reader applies ``exp`` so the tensor attribute ``scale`` is linear.
+- **SPLAT** files store **linear** scales already; no conversion is applied.
+
+When writing PLY from a Gaussian splat cloud, ``write_point_cloud`` converts
+``scale`` back to log-space for the same file convention.)",
             "filename"_a, "format"_a = "auto", "remove_nan_points"_a = false,
             "remove_infinite_points"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
@@ -150,7 +163,12 @@ void pybind_class_io_definitions(py::module &m_io) {
                         filename.string(), pointcloud,
                         {write_ascii, compressed, print_progress});
             },
-            "Function to write PointCloud with tensor attributes to file.",
+            R"(Write a tensor :class:`open3d.t.geometry.PointCloud` to file.
+
+For Gaussian splat clouds written as **PLY**, per-point ``scale`` is converted
+from the in-memory **linear** representation to **log-scale** in the file, matching
+common 3DGS PLY conventions (see :meth:`read_point_cloud`). SPLAT output writes
+linear scales directly.)",
             "filename"_a, "pointcloud"_a, "write_ascii"_a = false,
             "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
@@ -171,34 +189,46 @@ void pybind_class_io_definitions(py::module &m_io) {
             },
             "Function to read TriangleMesh from file", "filename"_a,
             "enable_post_processing"_a = false, "print_progress"_a = false,
-            R"doc(The general entrance for reading a TriangleMesh from a file.
-The function calls read functions based on the extension name of filename.
-Supported formats are `obj, ply, stl, off, gltf, glb, fbx`.
+            R"doc(Read a TriangleMesh from a file.
+
+The format is inferred from the file extension.
+
+Supported formats:
+
+- ``ply`` -- native Open3D reader (geometry + colors/normals).
+- ``npz`` -- Open3D NPZ format (full round-trip including materials and
+  texture maps).
+- ``obj``, ``stl``, ``off``, ``gltf``, ``glb``, ``fbx`` -- via ASSIMP
+  (geometry; optional vertex normals/colors, UVs, and material/PBR data
+  depending on format, e.g. STL is geometry-only).
 
 The following example reads a triangle mesh with the .ply extension::
+
     import open3d as o3d
     mesh = o3d.t.io.read_triangle_mesh('mesh.ply')
 
 Args:
     filename (str): Path to the mesh file.
-    enable_post_processing (bool): If True enables post-processing.
-        Post-processing will
+    enable_post_processing (bool): If True enables post-processing for
+        ASSIMP-read formats. Post-processing will
+
           - triangulate meshes with polygonal faces
           - remove redundant materials
           - pretransform vertices
           - generate face normals if needed
 
-        For more information see ASSIMPs documentation on the flags
-        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials,
-        aiProcess_OptimizeMeshes, aiProcess_PreTransformVertices`.
+        For more information see ASSIMP's documentation on the flags
+        ``aiProcessPreset_TargetRealtime_Fast``,
+        ``aiProcess_RemoveRedundantMaterials``,
+        ``aiProcess_OptimizeMeshes``, ``aiProcess_PreTransformVertices``.
 
-        Note that identical vertices will always be joined regardless of whether
-        post-processing is enabled or not, which changes the number of vertices
-        in the mesh.
+        Note that identical vertices will always be joined regardless of
+        whether post-processing is enabled or not, which changes the number
+        of vertices in the mesh. The ``ply`` format is not affected by
+        post-processing.
 
-        The `ply`-format is not affected by the post-processing.
-
-    print_progress (bool): If True print the reading progress to the terminal.
+    print_progress (bool): If True print the reading progress to the
+        terminal.
 
 Returns:
     Returns the mesh object. On failure an empty mesh is returned.
@@ -219,7 +249,60 @@ Returns:
             "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
             "write_ascii"_a = false, "compressed"_a = false,
             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
-            "write_triangle_uvs"_a = true, "print_progress"_a = false);
+            "write_triangle_uvs"_a = true, "print_progress"_a = false,
+            R"doc(Write a TriangleMesh to a file.
+
+The format is inferred from the file extension.
+
+Supported formats and material/texture export:
+
+- ``npz`` -- full round-trip (geometry + material + all texture maps).
+- ``glb``  -- via ASSIMP; full PBR single material with embedded textures.
+- ``gltf`` -- via ASSIMP; full PBR single material with external textures.
+- ``obj``  -- via ASSIMP; single material exported; texture maps written as
+  external PNG sidecars (``<stem>_albedo.png``, ``<stem>_normal.png``,
+  ``<stem>_roughness.png``, ``<stem>_metallic.png``,
+  ``<stem>_ambient_occlusion.png``, ``<stem>_ao_rough_metal.png``).
+- ``fbx``  -- via ASSIMP; best-effort geometry export; texture maps may not
+  be reliably written by the ASSIMP FBX exporter.
+- ``stl``  -- via ASSIMP; geometry only (positions, faces, normals);
+  materials, UV coordinates, and vertex colors are not supported by STL.
+- ``ply``, ``off`` -- via legacy Open3D writer; geometry + colors/normals
+  only; materials and UV coordinates are not exported.
+
+Only a single material per mesh is supported. Multiple materials,
+``triangle_material_ids``, per-triangle normals, and animation are not
+supported.
+
+Example: write an OBJ with a textured material::
+
+    import open3d as o3d
+    import numpy as np
+
+    mesh = o3d.t.geometry.TriangleMesh.create_box()
+    mesh.material.set_default_properties()
+    albedo = o3d.t.geometry.Image(
+        np.random.randint(0, 256, (256, 256, 3), dtype=np.uint8))
+    mesh.material.texture_maps['albedo'] = albedo
+    o3d.t.io.write_triangle_mesh('/tmp/box.obj', mesh)
+
+Args:
+    filename (str): Path to the output file.
+    mesh (open3d.t.geometry.TriangleMesh): The mesh to write.
+    write_ascii (bool): If True, write in ASCII format where supported.
+        Not supported for glb or gltf.
+    compressed (bool): Reserved; not used by current writers.
+    write_vertex_normals (bool): If True, write vertex normals when present.
+    write_vertex_colors (bool): If True, write vertex colors when present
+        (not supported by STL).
+    write_triangle_uvs (bool): If True, write UV coordinates and associated
+        texture maps (not supported by STL or ply/off).
+    print_progress (bool): If True print the writing progress to the
+        terminal.
+
+Returns:
+    True on success, False on failure.
+)doc");
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 

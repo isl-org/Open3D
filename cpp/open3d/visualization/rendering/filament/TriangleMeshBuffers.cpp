@@ -127,7 +127,6 @@ VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine,
                                VertexBuffer::AttributeType::FLOAT3,
                                GetVertexPositionOffset<TexturedVertex>(),
                                stride)
-                    .normalized(VertexAttribute::TANGENTS)
                     .attribute(VertexAttribute::TANGENTS, 0,
                                VertexBuffer::AttributeType::FLOAT4,
                                GetVertexTangentOffset<TexturedVertex>(), stride)
@@ -137,10 +136,9 @@ VertexBuffer* BuildFilamentVertexBuffer(filament::Engine& engine,
                                stride);
 
     if (has_colors) {
-        builder.normalized(VertexAttribute::COLOR)
-                .attribute(VertexAttribute::COLOR, 0,
-                           VertexBuffer::AttributeType::FLOAT4,
-                           GetVertexColorOffset<TexturedVertex>(), stride);
+        builder.attribute(VertexAttribute::COLOR, 0,
+                          VertexBuffer::AttributeType::FLOAT4,
+                          GetVertexColorOffset<TexturedVertex>(), stride);
     }
 
     if (has_uvs) {
@@ -633,10 +631,8 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
                                  .vertexCount(uint32_t(n_vertices))
                                  .attribute(VertexAttribute::POSITION, 0,
                                             VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::COLOR)
                                  .attribute(VertexAttribute::COLOR, 1,
                                             VertexBuffer::AttributeType::FLOAT3)
-                                 .normalized(VertexAttribute::TANGENTS)
                                  .attribute(VertexAttribute::TANGENTS, 2,
                                             VertexBuffer::AttributeType::FLOAT4)
                                  .attribute(VertexAttribute::CUSTOM0, 2,

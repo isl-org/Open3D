@@ -299,7 +299,8 @@ class PyExampleDocsBuilder:
     @staticmethod
     def _generate_index(title, output_path):
         os.makedirs(output_path)
-        out_string = (f"{title}\n" f"{'-' * len(title)}\n\n")
+        out_string = (f"{title}\n"
+                      f"{'-' * len(title)}\n\n")
         with open(output_path / "index.rst", "w") as f:
             f.write(out_string)
 
@@ -330,7 +331,8 @@ class PyExampleDocsBuilder:
                 if (cat.stem == "geometry"):
                     self._generate_index(cat.stem.capitalize(), out_dir)
                     with open(out_dir / "index.rst", "a") as f:
-                        f.write(f".. toctree::\n" f"    :maxdepth: 2\n\n")
+                        f.write(f".. toctree::\n"
+                                f"    :maxdepth: 2\n\n")
                         for prefix, sub_cat in self.prefixes:
                             f.write(f"    {prefix}/index\n")
 
@@ -532,11 +534,9 @@ class JupyterDocsBuilder:
         # Execute Jupyter notebooks
         # Files that should not be executed.
         nb_direct_copy = [
-            'draw_plotly.ipynb',
-            'hashmap.ipynb',
-            'jupyter_visualization.ipynb',
-            't_icp_registration.ipynb',
-            'tensor.ipynb',
+            'draw_plotly.ipynb', 'hashmap.ipynb', 'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb', 'tensor.ipynb',
+            'gaussian_splatting.ipynb'
         ]
 
         for nb_path in nb_paths:

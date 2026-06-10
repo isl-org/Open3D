@@ -70,7 +70,7 @@ Returns:
 
     nns.def(
             "fixed_radius_index",
-            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+            [](NearestNeighborSearch &self, std::optional<double> radius) {
                 if (!radius.has_value()) {
                     return self.FixedRadiusIndex();
                 } else {
@@ -101,7 +101,7 @@ Returns:
 
     nns.def(
             "hybrid_index",
-            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+            [](NearestNeighborSearch &self, std::optional<double> radius) {
                 if (!radius.has_value()) {
                     return self.HybridIndex();
                 } else {
@@ -162,7 +162,7 @@ Returns:
     nns.def(
             "fixed_radius_search",
             [](NearestNeighborSearch &self, Tensor query_points, double radius,
-               utility::optional<bool> sort) {
+               std::optional<bool> sort) {
                 if (!sort.has_value()) {
                     return self.FixedRadiusSearch(query_points, radius, true);
                 } else {

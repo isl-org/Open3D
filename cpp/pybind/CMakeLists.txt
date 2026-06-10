@@ -48,9 +48,12 @@ if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
     # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
 elseif (APPLE)
+    # Symbol names in Apple's -exported_symbols_list must carry the leading
+    # underscore that the C ABI prepends to all extern "C" symbols on macOS.
+    # ld-prime (Xcode 16+) is strict about this; older ld-classic was lenient.
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
-open3d_core_cuda_device_count
+_open3d_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
@@ -116,7 +119,7 @@ if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
         COMMAND cut "-d\ " -f2
         OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
-        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
+        message(WARNING "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
     endif()
     file(GENERATE OUTPUT update_pybind_libomp.sh
         CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
@@ -165,8 +168,9 @@ endif()
 # add additional optional compiled modules
 if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
+    set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>")
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )

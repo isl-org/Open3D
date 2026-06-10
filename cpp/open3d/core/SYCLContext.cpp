@@ -83,11 +83,11 @@ SYCLContext::SYCLContext() {
         utility::LogWarning("SYCL GPU unavailable: {}", e.what());
     }
 
-    // SYCL CPU fallback.
-    // This could happen if the Intel GPGPU driver is not installed or if
-    // your CPU does not have integrated GPU.
+    // SYCL CPU fallback (last device).
     try {
         if (devices_.size() == 0) {
+            // This could happen if the Intel GPGPU driver is not installed or
+            // if your CPU does not have integrated GPU.
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "
                     "host device.");

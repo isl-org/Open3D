@@ -22,8 +22,8 @@ void ComputeFPFHFeature(
         const core::Tensor &distance2,
         const core::Tensor &counts,
         core::Tensor &fpfhs,
-        const utility::optional<core::Tensor> &mask,
-        const utility::optional<core::Tensor> &map_info_idx_to_point_idx) {
+        const std::optional<core::Tensor> &mask,
+        const std::optional<core::Tensor> &map_info_idx_to_point_idx) {
     if (mask.has_value()) {
         const int64_t size =
                 mask.value().To(core::Int64).Sum({0}).Item<int64_t>();

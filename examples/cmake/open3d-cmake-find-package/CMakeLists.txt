@@ -15,10 +15,6 @@ endif()
 
 # Find installed Open3D, which exports Open3D::Open3D
 find_package(Open3D REQUIRED)
-if (TARGET Open3D::3rdparty_cublas)
-    enable_language(CUDA)
-    set(CMAKE_CUDA_STANDARD 17)
-endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
@@ -33,8 +29,13 @@ if(WIN32)
     else() 
         set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll") 
     endif()
+    # For CUDA builds, we must also copy the CUDA DLLs. Alternately, add
+    # $Env:CUDA_PATH/bin to $Env:PATH to avoid this copy.
     add_custom_command(TARGET Draw POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
                         ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
                         COMMENT "Copying Open3D DLLs to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+endif()
+if (MSVC)
+    add_compile_options(/utf-8)  # fmt 12+ requires /utf-8 with MSVC
 endif()

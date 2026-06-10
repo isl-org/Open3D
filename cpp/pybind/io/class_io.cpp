@@ -5,8 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <string>
 #include <unordered_map>
+namespace fs = std::filesystem;
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/camera/PinholeCameraTrajectory.h"
@@ -84,18 +86,16 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io_declarations(py::module &m_io) {
-    py::enum_<FileGeometry> geom_type(m_io, "FileGeometry", py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geom_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Geometry types";
-            }),
-            py::none(), py::none(), "");
-    geom_type.value("CONTENTS_UNKNOWN", FileGeometry::CONTENTS_UNKNOWN)
+    py::native_enum<FileGeometry>(m_io, "FileGeometry", "enum.IntFlag",
+                                  "Geometry types")
+            .value("CONTENTS_UNKNOWN", FileGeometry::CONTENTS_UNKNOWN)
             .value("CONTAINS_POINTS", FileGeometry::CONTAINS_POINTS)
             .value("CONTAINS_LINES", FileGeometry::CONTAINS_LINES)
             .value("CONTAINS_TRIANGLES", FileGeometry::CONTAINS_TRIANGLES)
-            .export_values();
+            .value("CONTAINS_GAUSSIAN_SPLATS",
+                   FileGeometry::CONTAINS_GAUSSIAN_SPLATS)
+            .export_values()
+            .finalize();
 }
 void pybind_class_io_definitions(py::module &m_io) {
     m_io.def(
@@ -293,9 +293,11 @@ void pybind_class_io_definitions(py::module &m_io) {
                 ReadTriangleModel(filename.string(), model, opt);
                 return model;
             },
-            "Function to read visualization.rendering.TriangleMeshModel from "
-            "file",
-            "filename"_a, "print_progress"_a = false);
+            "Read a TriangleMeshModel from a file. Supported formats (via "
+            "Assimp): fbx, gltf, glb, obj, stl, off, usd, usda, usdc, usdz. "
+            "USD import is experimental: mesh geometry and PBR materials only. "
+            "filename"_a,
+            "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_model",
                                  map_shared_argument_docstrings);
 

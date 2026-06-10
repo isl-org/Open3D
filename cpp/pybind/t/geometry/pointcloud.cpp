@@ -615,6 +615,11 @@ Example:
     pointcloud.def(
             "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
             "Create an oriented bounding box from attribute 'positions'.");
+    pointcloud.def("get_oriented_bounding_ellipsoid",
+                   &PointCloud::GetOrientedBoundingEllipsoid,
+                   "Create an oriented bounding ellipsoid from attribute "
+                   "'positions'.",
+                   "robust"_a = false);
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
                                               bool) const) &

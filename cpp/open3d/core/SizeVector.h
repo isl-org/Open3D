@@ -8,11 +8,11 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "open3d/core/SmallVector.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -26,17 +26,17 @@ class SizeVector;
 ///
 /// Example: create a shape of (None, 3)
 /// ```
-/// core::DynamicSizeVector shape{utility::nullopt, 3};
+/// core::DynamicSizeVector shape{std::nullopt, 3};
 /// ```
-class DynamicSizeVector : public SmallVector<utility::optional<int64_t>, 4> {
+class DynamicSizeVector : public SmallVector<std::optional<int64_t>, 4> {
 public:
-    using super_t = SmallVector<utility::optional<int64_t>, 4>;
+    using super_t = SmallVector<std::optional<int64_t>, 4>;
     DynamicSizeVector() {}
 
     DynamicSizeVector(
-            const std::initializer_list<utility::optional<int64_t>>& dim_sizes);
+            const std::initializer_list<std::optional<int64_t>>& dim_sizes);
 
-    DynamicSizeVector(const std::vector<utility::optional<int64_t>>& dim_sizes);
+    DynamicSizeVector(const std::vector<std::optional<int64_t>>& dim_sizes);
 
     DynamicSizeVector(const DynamicSizeVector& other);
 

@@ -7,7 +7,9 @@
 
 #pragma once
 
-//#include "open3d/ml/impl/misc/VoxelPooling.h"
+#include <cstdint>
+
+// #include "open3d/ml/impl/misc/VoxelPooling.h"
 #include "open3d/ml/tensorflow/TensorFlowHelper.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -27,7 +29,7 @@ public:
         Tensor* tensor = 0;
         TensorShape shape({num});
         OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
-        auto flat_tensor = tensor->flat<int64>();
+        auto flat_tensor = tensor->flat<int64_t>();
         *ptr = (int64_t*)flat_tensor.data();
     }
 

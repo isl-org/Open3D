@@ -638,7 +638,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator(){};
+        Iterator() {};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 

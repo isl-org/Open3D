@@ -69,7 +69,7 @@ std::pair<double, double> Line3D::SlabAABBBase(
     return {t_min, t_max};
 }
 
-utility::optional<double> Line3D::ExactAABB(
+std::optional<double> Line3D::ExactAABB(
         const AxisAlignedBoundingBox& box) const {
     /* This is a naive, exact method of computing the intersection with a
      * bounding box.  It is much slower than the highly optimized slab method,
@@ -133,7 +133,7 @@ utility::optional<double> Line3D::ExactAABB(
     return minimum;
 }
 
-utility::optional<double> Line3D::SlabAABB(
+std::optional<double> Line3D::SlabAABB(
         const AxisAlignedBoundingBox& box) const {
     /* The base case of the Line/AABB intersection allows for any intersection
      * along the direction of the line at any distance, in accordance with the
@@ -150,7 +150,7 @@ utility::optional<double> Line3D::SlabAABB(
     return {};
 }
 
-utility::optional<double> Line3D::IntersectionParameter(
+std::optional<double> Line3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
     double value = intersectionParameter(plane);
     if (std::isinf(value)) {
@@ -281,8 +281,7 @@ double Line3D::DistanceTo(const Line3D& other) const {
 Ray3D::Ray3D(const Eigen::Vector3d& origin, const Eigen::Vector3d& direction)
     : Line3D(origin, direction, LineType::Ray) {}
 
-utility::optional<double> Ray3D::SlabAABB(
-        const AxisAlignedBoundingBox& box) const {
+std::optional<double> Ray3D::SlabAABB(const AxisAlignedBoundingBox& box) const {
     /* The ray case of the Line/AABB intersection allows for any intersection
      * along the positive direction of the line at any distance, in accordance
      * with the semantic meaning of a ray.
@@ -302,7 +301,7 @@ utility::optional<double> Ray3D::SlabAABB(
     return {};
 }
 
-utility::optional<double> Ray3D::IntersectionParameter(
+std::optional<double> Ray3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
     // On a ray, the intersection parameter cannot be negative as the ray does
     // not exist in that direction.
@@ -332,7 +331,7 @@ void Segment3D::Transform(const Eigen::Transform<double, 3, Eigen::Affine>& t) {
     end_point_ = t * end_point_;
 }
 
-utility::optional<double> Segment3D::SlabAABB(
+std::optional<double> Segment3D::SlabAABB(
         const AxisAlignedBoundingBox& box) const {
     /* The segment case of the Line/AABB intersection only allows intersections
      * along the positive direction of the line which are at a distance less
@@ -355,7 +354,7 @@ utility::optional<double> Segment3D::SlabAABB(
     return {};
 }
 
-utility::optional<double> Segment3D::ExactAABB(
+std::optional<double> Segment3D::ExactAABB(
         const AxisAlignedBoundingBox& box) const {
     // For a line segment, the result must additionally be less than the
     // overall length of the segment
@@ -376,7 +375,7 @@ AxisAlignedBoundingBox Segment3D::GetBoundingBox() const {
     return {min, max};
 }
 
-utility::optional<double> Segment3D::IntersectionParameter(
+std::optional<double> Segment3D::IntersectionParameter(
         const Eigen::Hyperplane<double, 3>& plane) const {
     // On a segment, the intersection parameter must be between zero and the
     // length of the segment

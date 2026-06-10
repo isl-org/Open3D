@@ -86,8 +86,8 @@ namespace fmt {
 template <>
 struct formatter<Json::Value> {
     template <typename FormatContext>
-    auto format(const Json::Value &value, FormatContext &ctx) const
-            -> decltype(ctx.out()) {
+    auto format(const Json::Value &value,
+                FormatContext &ctx) const -> decltype(ctx.out()) {
         return format_to(ctx.out(), "{}", open3d::utility::JsonToString(value));
     }
 

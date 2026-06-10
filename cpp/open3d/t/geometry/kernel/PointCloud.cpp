@@ -7,8 +7,6 @@
 
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
-#include <vector>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -20,16 +18,16 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void Unproject(const core::Tensor& depth,
-               utility::optional<std::reference_wrapper<const core::Tensor>>
-                       image_colors,
-               core::Tensor& points,
-               utility::optional<std::reference_wrapper<core::Tensor>> colors,
-               const core::Tensor& intrinsics,
-               const core::Tensor& extrinsics,
-               float depth_scale,
-               float depth_max,
-               int64_t stride) {
+void Unproject(
+        const core::Tensor& depth,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
+        core::Tensor& points,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
                 "Both or none of image_colors and colors must have values.");
@@ -59,15 +57,14 @@ void Unproject(const core::Tensor& depth,
     }
 }
 
-void Project(
-        core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
-        const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max) {
+void Project(core::Tensor& depth,
+             std::optional<std::reference_wrapper<core::Tensor>> image_colors,
+             const core::Tensor& points,
+             std::optional<std::reference_wrapper<const core::Tensor>> colors,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             float depth_scale,
+             float depth_max) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
                 "Both or none of image_colors and colors must have values.");

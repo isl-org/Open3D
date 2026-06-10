@@ -57,6 +57,11 @@ OrientedBoundingBox PointCloud::GetMinimalOrientedBoundingBox(
     return OrientedBoundingBox::CreateFromPointsMinimal(points_, robust);
 }
 
+OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(points_, robust);
+}
+
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
@@ -619,7 +624,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     utility::OMPProgressBar progress_bar(
             points_.size(), "Remove statistical outliers: ", print_progress);
 
-#pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for reduction(+ : valid_distances) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;

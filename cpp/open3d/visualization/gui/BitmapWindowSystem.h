@@ -27,6 +27,7 @@ struct TextInputEvent;
 
 class BitmapWindowSystem : public WindowSystem {
 public:
+    // Not needed anymore - may be removed
     enum class Rendering {
         NORMAL,   // normal OpenGL rendering, requires X11, Win32, or Cocoa
         HEADLESS  // uses EGL, does not require the OS to have a window system.
@@ -69,6 +70,8 @@ public:
 
     Size GetWindowSize(OSWindow w) const override;
     void SetWindowSize(OSWindow w, int width, int height) override;
+
+    Size GetWindowFrameSize(OSWindow w) const override;
 
     Size GetWindowSizePixels(OSWindow w) const override;
     void SetWindowSizePixels(OSWindow w, const Size& size) override;

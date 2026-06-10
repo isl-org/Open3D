@@ -129,16 +129,7 @@ struct BitmapWindowSystem::Impl {
 };
 
 BitmapWindowSystem::BitmapWindowSystem(Rendering mode /*= Rendering::NORMAL*/)
-    : impl_(new BitmapWindowSystem::Impl()) {
-    if (mode == Rendering::HEADLESS) {
-#if !defined(__APPLE__) && !defined(_WIN32) && !defined(_WIN64)
-        rendering::EngineInstance::EnableHeadless();
-#else
-        utility::LogWarning(
-                "BitmapWindowSystem(): HEADLESS is only supported on Linux.");
-#endif
-    }
-}
+    : impl_(new BitmapWindowSystem::Impl()) {}
 
 BitmapWindowSystem::~BitmapWindowSystem() {}
 
@@ -248,6 +239,11 @@ void BitmapWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
     hw->frame.width = width;
     hw->frame.height = height;
     hw->o3d_window->OnResize();
+}
+
+Size BitmapWindowSystem::GetWindowFrameSize(OSWindow w) const {
+    // Bitmap windows are offscreen, with no OS-drawn decorations.
+    return Size(0, 0);
 }
 
 Size BitmapWindowSystem::GetWindowSizePixels(OSWindow w) const {

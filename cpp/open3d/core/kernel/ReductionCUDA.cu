@@ -48,7 +48,7 @@ constexpr uint32_t CUDA_THREADS_PER_BLOCK_FALLBACK = 256;
 #define OPEN3D_MIN_BLOCKS_PER_SM(threads_per_block, blocks_per_sm)       \
     ((((threads_per_block) * (blocks_per_sm) <= CUDA_MAX_THREADS_PER_SM) \
               ? (blocks_per_sm)                                          \
-              : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block)-1) /     \
+              : ((CUDA_MAX_THREADS_PER_SM + (threads_per_block) - 1) /   \
                  (threads_per_block))))
 
 #define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \

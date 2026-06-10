@@ -5,8 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <optional>
+
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/utility/Optional.h"
 #include "pybind/core/core.h"
 
 namespace open3d {
@@ -28,7 +29,7 @@ void pybind_cuda_utils_definitions(py::module& m) {
                "debugging.");
     m_cuda.def(
             "synchronize",
-            [](const utility::optional<Device>& device) {
+            [](const std::optional<Device>& device) {
                 if (device.has_value()) {
                     cuda::Synchronize(device.value());
                 } else {

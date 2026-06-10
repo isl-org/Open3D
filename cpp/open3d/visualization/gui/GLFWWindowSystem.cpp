@@ -12,6 +12,7 @@
 #include <iostream>
 #include <unordered_map>
 
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/MenuImgui.h"
@@ -109,7 +110,23 @@ void GLFWWindowSystem::Initialize() {
     // if using a framework version of Python).
     glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
+#if defined(__linux__)
+    // Filament (April 2026) selects PlatformGLX exclusively on Linux
+    // (compile-time decision in PlatformFactory.cpp). Force GLFW to X11 so the
+    // native window handle is an X11 Window (XID), matching what PlatformGLX
+    // expects. On Wayland compositors, XWayland transparently provides X11
+    // compatibility.
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+    if (!glfwInit()) {
+        utility::LogWarning(
+                "GLFWWindowSystem: X11 GLFW init failed (XWayland not "
+                "available?). Falling back to headless mode.");
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
+        glfwInit();
+    }
+#else
     glfwInit();
+#endif
 }
 
 void GLFWWindowSystem::Uninitialize() { glfwTerminate(); }
@@ -130,16 +147,8 @@ Size GLFWWindowSystem::GetScreenSize(OSWindow w) {
         monitor = glfwGetPrimaryMonitor();
     }
     if (monitor) {
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        if (mode) {
-            screen_width = mode->width;
-            screen_height = mode->height;
-        }
-        // TODO: if we can update GLFW we can replace the above with this
-        //       Also, see below.
-        // int xpos, ypos;
-        // glfwGetMonitorWorkarea(monitor, &xpos, &ypos,
-        //                       &screen_width, &screen_height);
+        glfwGetMonitorWorkarea(monitor, nullptr, nullptr, &screen_width,
+                               &screen_height);
     }
 
     return Size(screen_width, screen_height);
@@ -150,16 +159,8 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
                                                             int height,
                                                             const char* title,
                                                             int flags) {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // NOTE: Setting alpha and stencil bits to match GLX standard default
-    // values. GLFW sets these internally to 8 and 8 respectively if not
-    // specified which causes problems with Filament on Linux with Nvidia binary
-    // driver
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
+    // Filament manages its own rendering context; tell GLFW not to create one.
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
@@ -191,7 +192,21 @@ void GLFWWindowSystem::DestroyWindow(OSWindow w) {
 }
 
 void GLFWWindowSystem::PostRedrawEvent(OSWindow w) {
+#if __APPLE__
+    // Layer-backed Metal views do not trigger GLFW's refresh callback when
+    // marked dirty. Call the draw callback directly so we actually render, but
+    // avoid doing that during AddWindow() before the app loop is running or
+    // before the native window becomes visible.
+    GLFWwindow* window = static_cast<GLFWwindow*>(w);
+    if (!window || glfwWindowShouldClose(window) ||
+        !Application::GetInstance().IsRunning() ||
+        !glfwGetWindowAttrib(window, GLFW_VISIBLE)) {
+        return;
+    }
+    DrawCallback(window);
+#else
     PostNativeExposeEvent((GLFWwindow*)w);
+#endif
 }
 
 bool GLFWWindowSystem::GetWindowIsVisible(OSWindow w) const {
@@ -216,12 +231,20 @@ bool GLFWWindowSystem::IsActiveWindow(OSWindow w) const {
 
 Point GLFWWindowSystem::GetWindowPos(OSWindow w) const {
     int x, y;
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] getWindowPos() is not supported on Wayland.");
+        return Point(0, 0);
+    }
     glfwGetWindowPos((GLFWwindow*)w, &x, &y);
     return Point(x, y);
 }
 
 void GLFWWindowSystem::SetWindowPos(OSWindow w, int x, int y) {
-    glfwSetWindowPos((GLFWwindow*)w, x, y);
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+        utility::LogDebug("[GLFW] setWindowPos() is not supported on Wayland.");
+    } else {
+        glfwSetWindowPos((GLFWwindow*)w, x, y);
+    }
 }
 
 Size GLFWWindowSystem::GetWindowSize(OSWindow w) const {
@@ -232,6 +255,13 @@ Size GLFWWindowSystem::GetWindowSize(OSWindow w) const {
 
 void GLFWWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
     glfwSetWindowSize((GLFWwindow*)w, width, height);
+}
+
+Size GLFWWindowSystem::GetWindowFrameSize(OSWindow w) const {
+    int left = 0, top = 0, right = 0, bottom = 0;
+    glfwGetWindowFrameSize(static_cast<GLFWwindow*>(w), &left, &top, &right,
+                           &bottom);
+    return Size(left + right, top + bottom);
 }
 
 Size GLFWWindowSystem::GetWindowSizePixels(OSWindow w) const {
@@ -525,6 +555,13 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
 #if __APPLE__
+    // Sync CAMetalLayer drawableSize to the new physical pixel dimensions
+    // before recreating the swap chain, so Filament's drawable and the GLFW
+    // framebuffer size (used for the Filament viewport) agree.  Without this,
+    // moving the window between Retina and non-Retina displays (or the initial
+    // window-show resize) leaves the layer at the wrong size, causing the
+    // rendered content to appear only in the lower-left quarter on Retina.
+    ResizeNativeWindow(static_cast<GLFWwindow*>(w));
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong. SwapChain does not need to be resized
     // on other platforms.
@@ -538,6 +575,10 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 #else
     return new MenuImgui();
 #endif
+}
+
+void GLFWWindowSystem::SetClipboardText(OSWindow w, const char* text) {
+    glfwSetClipboardString(static_cast<GLFWwindow*>(w), text);
 }
 
 }  // namespace gui

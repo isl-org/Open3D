@@ -70,7 +70,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinx_copybutton",
     "nbsphinx",
-    "m2r2",
+    "myst_parser",
 ]
 
 if os.environ.get("skip_notebooks", "false") == "true":

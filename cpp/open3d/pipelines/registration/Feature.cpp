@@ -96,8 +96,7 @@ static std::shared_ptr<Feature> ComputeSPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeFlann &kdtree,
         const geometry::KDTreeSearchParam &search_param,
-        const utility::optional<std::vector<size_t>> &indices =
-                utility::nullopt) {
+        const std::optional<std::vector<size_t>> &indices = std::nullopt) {
     const bool filter_spfh = indices.has_value();
     const auto spfh_indices = indices.value_or(std::vector<size_t>());
 
@@ -144,8 +143,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam
                 &search_param /* = geometry::KDTreeSearchParamKNN()*/,
-        const utility::optional<std::vector<size_t>>
-                &indices /* = utility::nullopt*/) {
+        const std::optional<std::vector<size_t>> &indices /* = std::nullopt*/) {
     if (!input.HasNormals()) {
         utility::LogError("Failed because input point cloud has no normal.");
     }

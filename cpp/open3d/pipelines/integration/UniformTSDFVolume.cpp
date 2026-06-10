@@ -257,28 +257,52 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+    // Create a vector to hold voxels for each thread in the parallel region,
+    // since access to voxel_grid->voxels_ (std::unordered_map) is not
+    // thread-safe.
+    std::vector<std::vector<std::pair<Eigen::Vector3i, geometry::Voxel>>>
+            per_thread_voxels;
+
+    int num_threads = utility::EstimateMaxThreads();
+    per_thread_voxels.resize(num_threads);
+
+#pragma omp parallel num_threads(num_threads)
+    {
+        auto &thread_voxels = per_thread_voxels[utility::GetThreadNum()];
+
 #ifdef _WIN32
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
+#pragma omp for schedule(static)
 #else
-#pragma omp parallel for collapse(2) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
+#pragma omp for collapse(2) schedule(static)
 #endif
-    for (int x = 0; x < resolution_; x++) {
-        for (int y = 0; y < resolution_; y++) {
-            for (int z = 0; z < resolution_; z++) {
-                const int ind = IndexOf(x, y, z);
-                const float w = voxels_[ind].weight_;
-                const float f = voxels_[ind].tsdf_;
-                if (w != 0.0f && f < 0.98f && f >= -0.98f) {
-                    double c = (f + 1.0) * 0.5;
-                    Eigen::Vector3d color = Eigen::Vector3d(c, c, c);
-                    Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
-                    voxel_grid->voxels_[index] = geometry::Voxel(index, color);
+        for (int x = 0; x < resolution_; x++) {
+            for (int y = 0; y < resolution_; y++) {
+                for (int z = 0; z < resolution_; z++) {
+                    const int ind = IndexOf(x, y, z);
+                    const float w = voxels_[ind].weight_;
+                    const float f = voxels_[ind].tsdf_;
+                    if (w != 0.0f && f < 0.98f && f >= -0.98f) {
+                        double c = (f + 1.0) * 0.5;
+                        Eigen::Vector3d color(c, c, c);
+                        Eigen::Vector3i index(x, y, z);
+                        thread_voxels.emplace_back(std::make_pair(
+                                index, geometry::Voxel(index, color)));
+                    }
                 }
             }
         }
     }
+
+    size_t total_voxels = 0;
+    for (const auto &thread_vector : per_thread_voxels) {
+        total_voxels += thread_vector.size();
+    }
+    voxel_grid->voxels_.reserve(total_voxels);
+
+    for (const auto &thread_vector : per_thread_voxels) {
+        voxel_grid->voxels_.insert(thread_vector.begin(), thread_vector.end());
+    }
+
     return voxel_grid;
 }
 

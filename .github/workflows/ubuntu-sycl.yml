@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NPROC: 2
   GCE_CLI_GHA_VERSION: "416.0.0"
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -61,7 +60,7 @@ jobs:
         with:
           name: open3d-sycl-linux-wheel-and-binary
           path: |
-            open3d-*.whl
+            open3d*.whl
             open3d-devel-*.tar.xz
           if-no-files-found: error
       - name: Update devel release
@@ -69,11 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ ${{ matrix.BUILD_SHARED_LIBS }} == 'ON' ] ; then
-            gh release upload main-devel open3d-*.whl --clobber
-            gh release upload main-devel open3d-devel-*.tar.xz --clobber
-          fi
-          gh release view main-devel
+          .github/workflows/update_release.sh open3d*.whl open3d-devel-*.tar.xz
 
       - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/main' }}

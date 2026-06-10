@@ -73,7 +73,7 @@ Image &Image::Reset(int64_t rows,
 
 Image Image::To(core::Dtype dtype,
                 bool copy /*= false*/,
-                utility::optional<double> scale_ /* = utility::nullopt */,
+                std::optional<double> scale_ /* = std::nullopt */,
                 double offset /* = 0.0 */) const {
     if (dtype == GetDtype() && !scale_.has_value() && offset == 0.0) {
         return copy ? Image(data_.Clone()) : *this;

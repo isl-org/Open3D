@@ -71,7 +71,7 @@ REGISTER_OP("Open3DSparseConvTransposeBackpropFilter")
             CHECK_SHAPE_HANDLE(c, out_features_gradient, num_out, out_channels);
 
             c->set_output(0, filters);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Computes the backrop for the filter of the SparseConvTranspose

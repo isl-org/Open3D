@@ -21,14 +21,14 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
-# Hide all 3rd party symbols, e.g. from header libraries.
-get_target_property(TARGET_TYPE ${target} TYPE)
-if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+    # Hide all 3rd party symbols, e.g. from header libraries.
+    get_target_property(TARGET_TYPE ${target} TYPE)
+    if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
         if (APPLE)
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[*open3d*
-                   *Open3D*
-                ]=])
+*Open3D*
+]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
                 -Wl,-exported_symbols_list
                 "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
@@ -38,7 +38,7 @@ if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
     global:
         *open3d*;
         extern "C++" {
-             open3d::*;
+            open3d::*;
         };
     local: *;
 };]=])
@@ -135,6 +135,21 @@ open3d_show_and_abort_on_warning(Open3D)
 open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
+
+# GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
+# Gaussian splatting.  The context class detects the display server at runtime
+# and uses GLX on X11, EGL on Wayland.
+if (NOT APPLE)
+    find_package(OpenGL COMPONENTS EGL)
+    if (OpenGL_EGL_FOUND)
+        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
+    endif()
+    find_package(X11 QUIET)
+    if (X11_FOUND)
+        target_link_libraries(Open3D PRIVATE X11::X11)
+    endif()
+endif()
+
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

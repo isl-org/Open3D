@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"
@@ -17,6 +18,7 @@
 #endif
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
+namespace fs = std::filesystem;
 
 namespace open3d {
 namespace t {
@@ -66,9 +68,10 @@ public:
 };
 
 void pybind_sensor_declarations(py::module &m) {
-    py::enum_<SensorType>(m, "SensorType", "Sensor type")
+    py::native_enum<SensorType>(m, "SensorType", "enum.Enum", "Sensor type")
             .value("AZURE_KINECT", SensorType::AZURE_KINECT)
-            .value("REAL_SENSE", SensorType::REAL_SENSE);
+            .value("REAL_SENSE", SensorType::REAL_SENSE)
+            .finalize();
     py::class_<RGBDVideoMetadata> rgbd_video_metadata(m, "RGBDVideoMetadata",
                                                       "RGBD Video metadata.");
     py::class_<RGBDVideoReader, PyRGBDVideoReader,

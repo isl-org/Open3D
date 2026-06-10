@@ -19,11 +19,9 @@ bool type_caster<open3d::core::Tensor>::load(handle src, bool convert) {
     }
 
     if (convert) {
-        std::string class_name(py::str(src.get_type()));
-        if (class_name == "<class 'bool'>" || class_name == "<class 'int'>" ||
-            class_name == "<class 'float'>" || class_name == "<class 'list'>" ||
-            class_name == "<class 'tuple'>" ||
-            class_name == "<class 'numpy.ndarray'>") {
+        if (py::isinstance<py::bool_>(src) || py::isinstance<py::int_>(src) ||
+            py::isinstance<py::float_>(src) || py::isinstance<py::list>(src) ||
+            py::isinstance<py::tuple>(src) || py::isinstance<py::array>(src)) {
             holder_ = std::make_unique<open3d::core::Tensor>(
                     open3d::core::PyHandleToTensor(src));
             value = holder_.get();

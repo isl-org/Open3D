@@ -404,10 +404,12 @@ RegistrationResult MultiScaleICP(
         // To calculate final `fitness` and `inlier_rmse` for the current
         // `transformation` stored in `result`.
         if (scale_idx == num_scales - 1) {
+            bool preserved_converged_flag = result.converged_;
             result = ComputeRegistrationResult(
                     source_down_pyramid[scale_idx], target_nns,
                     max_correspondence_distances[scale_idx],
                     result.transformation_);
+            result.converged_ = preserved_converged_flag;
         }
 
         // No correspondences.

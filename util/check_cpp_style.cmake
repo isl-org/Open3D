@@ -14,14 +14,7 @@
 
 option(APPLY "Apply style to files in-place." OFF)
 
-# Try to locate "clang-format-10" and then "clang-format"
-find_program(CLANG_FORMAT clang-format-10 PATHS ENV PATH)
-if(NOT CLANG_FORMAT)
-    find_program(CLANG_FORMAT clang-format-mp-10 PATHS ENV PATH)
-endif()
-if(NOT CLANG_FORMAT)
-    find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
-endif()
+find_program(CLANG_FORMAT clang-format PATHS ENV PATH)
 if(CLANG_FORMAT)
     message(STATUS "clang-format found at: ${CLANG_FORMAT}")
     execute_process(COMMAND ${CLANG_FORMAT} --version)
@@ -72,6 +65,10 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.ispc"
         # Generated files
         "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.h.in"
+        # Objective-C++
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.mm"
+        # GLSL compute shaders
+        "${PROJECT_SOURCE_DIR}/${DIRECTORY}/*.comp"
     )
     set(IGNOFRED_FILES
         "${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h"

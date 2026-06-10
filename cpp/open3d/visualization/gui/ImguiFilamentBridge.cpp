@@ -22,6 +22,11 @@
  * limitations under the License.
  */
 
+// clang-format off
+// NOTE: this must precede header files that bring in Filament headers
+#include <cstring>
+// clang-format on
+
 #include "open3d/visualization/gui/ImguiFilamentBridge.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
@@ -38,17 +43,17 @@
 #include <filament/TransformManager.h>
 #include <utils/EntityManager.h>
 
+#include <cerrno>
+#include <iostream>
+#include <map>
+#include <vector>
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
 
 #include <fcntl.h>
 #include <imgui.h>
-
-#include <cerrno>
-#include <iostream>
-#include <map>
-#include <vector>
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -87,7 +92,7 @@ static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
 
 class MaterialPool {
 public:
-    MaterialPool(){};
+    MaterialPool() {};
 
     MaterialPool(filament::Engine* engine,
                  filament::Material* material_template) {
@@ -369,11 +374,14 @@ void ImguiFilamentBridge::Update(ImDrawData* imgui_data) {
 
 void ImguiFilamentBridge::OnWindowResized(const Window& window) {
     auto size = window.GetSize();
-    impl_->view_->SetViewport(0, 0, size.width, size.height);
+    const auto width = (size.width > 0 ? size.width : 1);
+    const auto height = (size.height > 0 ? size.height : 1);
+
+    impl_->view_->SetViewport(0, 0, width, height);
 
     auto camera = impl_->view_->GetCamera();
     camera->SetProjection(visualization::rendering::Camera::Projection::Ortho,
-                          0.0, size.width, size.height, 0.0, 0.0, 1.0);
+                          0.0, width, height, 0.0, 0.0, 1.0);
 }
 
 void ImguiFilamentBridge::CreateVertexBuffer(size_t buffer_index,

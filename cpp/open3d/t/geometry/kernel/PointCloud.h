@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <optional>
 
 #include "open3d/core/Tensor.h"
 
@@ -17,26 +17,25 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void Unproject(const core::Tensor& depth,
-               utility::optional<std::reference_wrapper<const core::Tensor>>
-                       image_colors,
-               core::Tensor& points,
-               utility::optional<std::reference_wrapper<core::Tensor>> colors,
-               const core::Tensor& intrinsics,
-               const core::Tensor& extrinsics,
-               float depth_scale,
-               float depth_max,
-               int64_t stride);
-
-void Project(
-        core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
-        const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+void Unproject(
+        const core::Tensor& depth,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
+        core::Tensor& points,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
-        float depth_max);
+        float depth_max,
+        int64_t stride);
+
+void Project(core::Tensor& depth,
+             std::optional<std::reference_wrapper<core::Tensor>> image_colors,
+             const core::Tensor& points,
+             std::optional<std::reference_wrapper<const core::Tensor>> colors,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             float depth_scale,
+             float depth_max);
 
 void GetPointMaskWithinAABB(const core::Tensor& points,
                             const core::Tensor& min_bound,
@@ -51,10 +50,9 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
 
 void UnprojectCPU(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -63,9 +61,9 @@ void UnprojectCPU(
 
 void ProjectCPU(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -101,10 +99,9 @@ void ComputeBoundaryPointsCPU(const core::Tensor& points,
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -113,9 +110,9 @@ void UnprojectCUDA(
 
 void ProjectCUDA(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,

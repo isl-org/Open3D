@@ -9,14 +9,14 @@ endif()
 ExternalProject_Add(
     ext_openblas
     PREFIX openblas
-    URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.20/OpenBLAS-0.3.20.tar.gz
-    URL_HASH SHA256=8495c9affc536253648e942908e88e097f2ec7753ede55aca52e5dead3029e3c
+        URL https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.30/OpenBLAS-0.3.30.tar.gz
+        URL_HASH SHA256=27342cff518646afb4c2b976d809102e368957974c250a25ccc965e53063c95d
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openblas"
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
         -DTARGET=${OPENBLAS_TARGET}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    BUILD_BYPRODUCTS 
+    BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 

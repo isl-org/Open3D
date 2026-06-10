@@ -26,7 +26,7 @@ void Material::SetDefaultProperties() {
     SetTransmission(1.f);
     SetAbsorptionColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
     SetAbsorptionDistance(1.f);
-    SetEmissiveColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
+    SetEmissiveColor(Eigen::Vector4f(0.f, 0.f, 0.f, 1.f));
     SetPointSize(3.f);
     SetLineWidth(1.f);
 }

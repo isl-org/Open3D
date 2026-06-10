@@ -7,6 +7,7 @@
 
 #include "open3d/geometry/MeshBase.h"
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -22,15 +23,18 @@ void pybind_meshbase_declarations(py::module &m) {
                      "MeshBase class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "
                      "may also contain vertex normals and vertex colors.");
-    py::enum_<MeshBase::SimplificationContraction>(m,
-                                                   "SimplificationContraction")
+    py::native_enum<MeshBase::SimplificationContraction>(
+            m, "SimplificationContraction", "enum.Enum",
+            "Method for mesh simplification contraction.")
             .value("Average", MeshBase::SimplificationContraction::Average,
                    "The vertex positions are computed by the averaging.")
             .value("Quadric", MeshBase::SimplificationContraction::Quadric,
                    "The vertex positions are computed by minimizing the "
                    "distance to the adjacent triangle planes.")
-            .export_values();
-    py::enum_<MeshBase::FilterScope>(m, "FilterScope")
+            .export_values()
+            .finalize();
+    py::native_enum<MeshBase::FilterScope>(m, "FilterScope", "enum.Enum",
+                                           "Scope for mesh filtering.")
             .value("All", MeshBase::FilterScope::All,
                    "All properties (color, normal, vertex position) are "
                    "filtered.")
@@ -40,16 +44,19 @@ void pybind_meshbase_declarations(py::module &m) {
                    "Only the normal values are filtered.")
             .value("Vertex", MeshBase::FilterScope::Vertex,
                    "Only the vertex positions are filtered.")
-            .export_values();
-    py::enum_<MeshBase::DeformAsRigidAsPossibleEnergy>(
-            m, "DeformAsRigidAsPossibleEnergy")
+            .export_values()
+            .finalize();
+    py::native_enum<MeshBase::DeformAsRigidAsPossibleEnergy>(
+            m, "DeformAsRigidAsPossibleEnergy", "enum.Enum",
+            "Energy model for the as-rigid-as-possible mesh deformation.")
             .value("Spokes", MeshBase::DeformAsRigidAsPossibleEnergy::Spokes,
-                   "is the original energy as formulated in orkine and Alexa, "
+                   "Is the original energy as formulated in orkine and Alexa, "
                    "\"As-Rigid-As-Possible Surface Modeling\", 2007.")
             .value("Smoothed",
                    MeshBase::DeformAsRigidAsPossibleEnergy::Smoothed,
-                   "adds a rotation smoothing term to the rotations.")
-            .export_values();
+                   "Adds a rotation smoothing term to the rotations.")
+            .export_values()
+            .finalize();
 }
 
 void pybind_meshbase_definitions(py::module &m) {
@@ -80,6 +87,17 @@ void pybind_meshbase_definitions(py::module &m) {
                  "color"_a)
             .def("compute_convex_hull", &MeshBase::ComputeConvexHull,
                  "Computes the convex hull of the triangle mesh.")
+            .def("get_oriented_bounding_ellipsoid",
+                 &MeshBase::GetOrientedBoundingEllipsoid, "robust"_a = false,
+                 R"(Compute the minimum volume oriented bounding ellipsoid that
+encloses the mesh vertices, using Khachiyan's algorithm.
+
+Args:
+    robust (bool): If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+    open3d.geometry.OrientedBoundingEllipsoid)")
             .def_readwrite("vertices", &MeshBase::vertices_,
                            "``float64`` array of shape ``(num_vertices, 3)``, "
                            "use ``numpy.asarray()`` to access data: Vertex "

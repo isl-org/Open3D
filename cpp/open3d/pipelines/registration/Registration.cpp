@@ -252,7 +252,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                     }
                 }
             }  // if
-        }      // for loop
+        }  // for loop
 
 #pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
         {
