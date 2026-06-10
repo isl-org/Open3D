@@ -22,10 +22,15 @@ target_sources(tests PRIVATE
     SYCLUtils.cpp
 )
 
+if (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE)
+    target_sources(tests PRIVATE
+        KnnIndex.cpp
+    )
+endif()
+
 if (BUILD_CUDA_MODULE)
     target_sources(tests PRIVATE
         FixedRadiusIndex.cpp
-        KnnIndex.cpp
         ParallelFor.cu
     )
 endif()
@@ -38,10 +43,8 @@ if (BUILD_ISPC_MODULE)
 endif()
 
 # TODO: cmake does not currently build this test!
-# if (BUILD_SYCL_MODULE)
-#     target_sources(tests PRIVATE
-#         ParallelForSYCL.cpp
-#     )
-#     set_source_files_properties(ParallelForSYCL.cpp PROPERTIES
-#         COMPILE_OPTIONS "-fsycl;-fsycl-targets=spir64_gen")
-# endif()
+#if (BUILD_SYCL_MODULE)
+#    open3d_sycl_target_sources(tests PRIVATE
+#        ParallelForSYCL.cpp
+#    )
+#endif()
