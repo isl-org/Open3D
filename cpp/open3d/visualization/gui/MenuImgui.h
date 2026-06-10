@@ -35,6 +35,9 @@ public:
 
     int GetNumberOfItems() const override;
 
+    std::shared_ptr<MenuBase> GetMenu(const char* name) override;
+    std::shared_ptr<MenuBase> GetMenu(ItemId item_id) override;
+
     bool IsEnabled(ItemId item_id) const override;
     void SetEnabled(ItemId item_id, bool enabled) override;
 
