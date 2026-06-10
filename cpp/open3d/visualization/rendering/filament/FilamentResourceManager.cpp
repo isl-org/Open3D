@@ -461,6 +461,9 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path,
 TextureHandle FilamentResourceManager::CreateTexture(
         const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
+    if (!img) {
+        return handle;
+    }
     auto hash = fnv1a_block_hash(img->data_.data(), img->data_.size());
     if (texture_cache_.count(hash) > 0) {
         handle = texture_cache_[hash];

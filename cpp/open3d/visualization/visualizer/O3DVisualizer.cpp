@@ -1004,6 +1004,10 @@ Ctrl-alt-click to polygon select)";
                 mat.clearcoat_img = mesh_material.clearCoat;
                 mat.clearcoat_roughness_img = mesh_material.clearCoatRoughness;
                 mat.anisotropy_img = mesh_material.anisotropy;
+                if (mat.base_color.w() < 1.f) {
+                    mat.has_alpha = true;
+                    mat.shader = "defaultLitTransparency";
+                }
             }
         }
 
@@ -1604,10 +1608,18 @@ Ctrl-alt-click to polygon select)";
 
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
-            OverrideMaterial(o.name, o.material, shader);
+            if (o.model && shader == Shader::STANDARD) {
+                scene_->GetScene()->UpdateModelMaterial(o.name, *o.model);
+            } else {
+                OverrideMaterial(o.name, o.material, shader);
+            }
         }
         for (auto &o : inspection_objects_) {
-            OverrideMaterial(o.name, o.material, shader);
+            if (o.model && shader == Shader::STANDARD) {
+                scene_->GetScene()->UpdateModelMaterial(o.name, *o.model);
+            } else {
+                OverrideMaterial(o.name, o.material, shader);
+            }
         }
         scene_->ForceRedraw();
     }
