@@ -35,7 +35,11 @@ if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     try:  # StopIteration if cpu version not available
-        CDLL(str(next((Path(__file__).parent / "cpu").glob("pybind*"))))
+        
+        CDLL(str(next(
+            p for p in (Path(__file__).parent / "cpu").glob("pybind*")
+            if p.is_file()
+        )))
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CPU Python "
@@ -60,8 +64,10 @@ if _build_config["BUILD_CUDA_MODULE"]:
 
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = CDLL(
-            str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
+        _pybind_cuda = CDLL(str(next(
+                p for p in (Path(__file__).parent / "cuda").glob("pybind*")
+                if p.is_file()
+            )))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
             from open3d.cuda.pybind import (
                 core,
