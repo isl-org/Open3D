@@ -136,7 +136,7 @@ build_webrtc() {
             webrtc_release
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
-            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
+            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos-$(uname -m).tar.gz" \
             webrtc_release
     fi
     popd # PWD=Open3D
