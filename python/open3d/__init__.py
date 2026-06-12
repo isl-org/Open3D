@@ -27,6 +27,7 @@ from pathlib import Path
 import warnings
 from open3d._build_config import _build_config
 
+_added_dll_dirs = []
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
     # For oneAPI / SYCL on Windows, add oneAPI redist directories to DLL search path if they exist
@@ -39,7 +40,6 @@ if sys.platform == "win32":  # Unix: Use rpath to find libraries
         r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64\vc14",
         r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64_win\vc14",
     ]
-    _added_dll_dirs = []
     for _p in _oneapi_paths:
         if os.path.exists(_p):
             try:
@@ -102,7 +102,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
             )
     except OSError as os_error:
         warnings.warn(
-            f"Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            f"Open3D was built with CUDA support, but an error occurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
             ImportWarning,
         )
     except StopIteration:
@@ -130,7 +130,7 @@ if _build_config["BUILD_SYCL_MODULE"]:
         __DEVICE_API__ = "xpu"
     except OSError as os_error:
         warnings.warn(
-            f"Open3D was built with SYCL support, but an error ocurred while loading the Open3D SYCL Python bindings. Check your oneAPI installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            f"Open3D was built with SYCL support, but an error occurred while loading the Open3D SYCL Python bindings. Check your oneAPI installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
             ImportWarning,
         )
     except StopIteration:
@@ -256,7 +256,6 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
-    if "_added_dll_dirs" in locals():
-        for _d in _added_dll_dirs:
-            _d.close()
+    for _d in _added_dll_dirs:
+        _d.close()
 del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names

@@ -33,6 +33,8 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  ONEAPI_MKL_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
+  ONEAPI_COMPILER_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
 
 jobs:
   windows:
@@ -100,8 +102,8 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         run: |
-          $MKL_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
-          $COMPILER_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
           Write-Host "Downloading oneMKL..."
           Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
           Write-Host "Downloading Intel Compiler..."
@@ -330,8 +332,8 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         run: |
-          $MKL_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
-          $COMPILER_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
           Write-Host "Downloading oneMKL..."
           Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
           Write-Host "Downloading Intel Compiler..."
@@ -467,8 +469,8 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         run: |
-          $MKL_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
-          $COMPILER_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
           Write-Host "Downloading oneMKL..."
           Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
           Write-Host "Downloading Intel Compiler..."
