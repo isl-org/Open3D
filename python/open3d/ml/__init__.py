@@ -9,6 +9,8 @@ import os as _os
 import open3d as _open3d
 if _open3d.__DEVICE_API__ == 'cuda':
     from open3d.cuda.pybind.ml import *
+elif _open3d.__DEVICE_API__ == 'xpu':
+    from open3d.xpu.pybind.ml import *
 else:
     from open3d.cpu.pybind.ml import *
 

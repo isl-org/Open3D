@@ -33,6 +33,8 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  ONEAPI_MKL_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
+  ONEAPI_COMPILER_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
 
 jobs:
   windows:
@@ -44,23 +46,27 @@ jobs:
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
-        BUILD_CUDA_MODULE: [ON, OFF]
+        device: [cpu, cuda, xpu]
         CONFIG: [Release, Debug]
         exclude:
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: ON
-          - BUILD_CUDA_MODULE: ON   # FIXME
+          - device: cuda
+            CONFIG: Debug
+          - device: xpu
             CONFIG: Debug
     env:
+      BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
+      BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
+      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.device == 'xpu' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
 
       - name: Install CUDA
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
+        if: ${{ matrix.device == 'cuda' }}
         run: |
           # Define variables
           $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
@@ -92,6 +98,23 @@ jobs:
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
+      - name: Install Intel oneAPI
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        run: |
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
+          Write-Host "Downloading oneMKL..."
+          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
+          Write-Host "Downloading Intel Compiler..."
+          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
+          Write-Host "Installing oneMKL..."
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
+          Write-Host "Installing Intel Compiler..."
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
+
       - name: Install glslang via vcpkg
         run: |
           vcpkg install glslang[tools]:x64-windows
@@ -116,9 +139,11 @@ jobs:
 
       - name: Install PyTorch requirements
         run: |
-          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
+          if ( '${{ matrix.device }}' -eq 'cuda' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+          } elseif ( '${{ matrix.device }}' -eq 'xpu' ) {
+            # No PyTorch requirement for SYCL (xpu) since PyTorch ops are disabled
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -133,7 +158,19 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+            $CMAKE_ARGS += '-DCMAKE_PREFIX_PATH=C:\Program Files (x86)\Intel\oneAPI\mkl\latest\lib\cmake\mkl;C:\Program Files (x86)\Intel\oneAPI\tbb\latest'
+            $OpenCLLibFile = Get-ChildItem -Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest" -Filter "OpenCL.lib" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($OpenCLLibFile) {
+              $OpenCL_Library = $OpenCLLibFile.FullName.Replace('\', '/')
+              $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
+              $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
+              $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
+            }
+          }
+          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
@@ -143,7 +180,8 @@ jobs:
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
+            -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
 
@@ -158,7 +196,7 @@ jobs:
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.device != 'cuda' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -172,7 +210,7 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload Package
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.device != 'cuda' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.DEVEL_PKG_NAME }}
@@ -180,7 +218,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with package
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.device != 'cuda' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -190,7 +228,7 @@ jobs:
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -199,7 +237,7 @@ jobs:
             --target INSTALL
 
       - name: Upload Viewer
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
@@ -207,7 +245,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with viewer
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -217,7 +255,7 @@ jobs:
           bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
 
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.device != 'cuda' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
@@ -228,12 +266,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+          }
+          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
-          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
+          if ( '${{ matrix.device }}' -ne 'cuda' ) {    # FIXME
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
           Remove-Item "C:\Program Files\Open3D" -Recurse
@@ -250,10 +292,11 @@ jobs:
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
         # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}  # FIXME
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.device != 'cuda' }}  # FIXME
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+          python -c "import open3d; print('SYCL enabled: ', open3d.core.sycl.is_available() if hasattr(open3d.core, 'sycl') else False)"
       - name: Disk space used
         run: Get-PSDrive
 
@@ -267,6 +310,7 @@ jobs:
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        device: [cpu, xpu]
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -280,9 +324,28 @@ jobs:
             python_version: '3.13'
 
     env:
-      BUILD_PYTORCH_OPS: 'ON'
+      BUILD_CUDA_MODULE: 'OFF'
+      BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'xpu' && 'OFF' || 'ON' }}
 
     steps:
+
+      - name: Install Intel oneAPI
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        run: |
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
+          Write-Host "Downloading oneMKL..."
+          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
+          Write-Host "Downloading Intel Compiler..."
+          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
+          Write-Host "Installing oneMKL..."
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
+          Write-Host "Installing Intel Compiler..."
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
 
       - name: Install glslang via vcpkg
         run: |
@@ -330,7 +393,19 @@ jobs:
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+            $CMAKE_ARGS += '-DCMAKE_PREFIX_PATH=C:\Program Files (x86)\Intel\oneAPI\mkl\latest\lib\cmake\mkl;C:\Program Files (x86)\Intel\oneAPI\tbb\latest'
+            $OpenCLLibFile = Get-ChildItem -Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest" -Filter "OpenCL.lib" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($OpenCLLibFile) {
+              $OpenCL_Library = $OpenCLLibFile.FullName.Replace('\', '/')
+              $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
+              $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
+              $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
+            }
+          }
+          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
@@ -340,6 +415,8 @@ jobs:
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
+            -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
 
@@ -377,6 +454,7 @@ jobs:
       fail-fast: false
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        device: [cpu, xpu]
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -389,8 +467,25 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      BUILD_PYTORCH_OPS: 'ON'
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'xpu' && 'OFF' || 'ON' }}
     steps:
+      - name: Install Intel oneAPI
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        run: |
+          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
+          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
+          Write-Host "Downloading oneMKL..."
+          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
+          Write-Host "Downloading Intel Compiler..."
+          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
+          Write-Host "Installing oneMKL..."
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
+          Write-Host "Installing Intel Compiler..."
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
+
       - name: Checkout source code
         uses: actions/checkout@v4
 
@@ -425,15 +520,21 @@ jobs:
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          if (Test-Path -Path "pip_package") {
-            $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
+          $search_dir = if (Test-Path -Path "pip_package") { "pip_package" } else { "." }
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d_xpu*-$py_tag-*.whl") -ErrorAction SilentlyContinue).Name
           } else {
-            $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
+            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d-*-$py_tag-*.whl") -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike "open3d_xpu*" }).Name
+          }
+          if (-not $PIP_PKG_NAME) {
+            Write-Error "Could not find a valid Open3D wheel in $search_dir matching the python version $py_tag and device!"
+            exit 1
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
-          python -m pip install "$PIP_PKG_NAME"
+          python -m pip install (Join-Path $search_dir $PIP_PKG_NAME)
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+          python -c "import open3d; print('SYCL enabled: ', open3d.core.sycl.is_available() if hasattr(open3d.core, 'sycl') else False)"
           deactivate
 
       - name: Run Python unit tests
