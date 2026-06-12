@@ -58,10 +58,10 @@ install_dependencies_ubuntu() {
         git \
         gnupg \
         libglib2.0-dev \
-        python \
-        python-pip \
-        python-setuptools \
-        python-wheel \
+        python-is-python3 \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
         software-properties-common \
         tree \
         curl
