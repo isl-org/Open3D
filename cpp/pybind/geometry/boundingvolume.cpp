@@ -172,7 +172,6 @@ Example::
 
      import open3d as o3d
 
-     # Compute oriented bounding ellipsoid from a mesh
      mesh_path = o3d.data.MonkeyModel().path
      mesh = o3d.io.read_triangle_mesh(mesh_path)
      mesh.compute_triangle_normals()
