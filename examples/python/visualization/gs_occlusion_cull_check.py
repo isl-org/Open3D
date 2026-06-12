@@ -22,6 +22,8 @@ Default scene:
 """
 
 import sys
+import threading
+import time
 import numpy as np
 import open3d as o3d
 import open3d.visualization.rendering as rendering
@@ -61,92 +63,11 @@ START_VIEW = {
 }
 
 
-# renderer = None
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def make_renderer(occlusion_cull: bool) -> rendering.OffscreenRenderer:
-    """Create an OffscreenRenderer with or without occlusion culling."""
-    # global renderer
-    # if renderer is None:
-    renderer = rendering.OffscreenRenderer(WIDTH, HEIGHT)
-    # else:
-    #     renderer.scene.remove_geometry("splat")
-    gsplat = o3d.t.io.read_point_cloud(PLY_PATH)
+import open3d.visualization.gui as gui
 
-    mat = rendering.MaterialRecord()
-    mat.shader = "gaussianSplat"
-    mat.gaussian_splat_sh_degree = 2
-    mat.gaussian_splat_occlusion_cull = occlusion_cull
-
-    renderer.scene.add_geometry("splat", gsplat, mat)
-    return renderer
-
-
-def run_experiment(occlusion_cull: bool) -> list[dict]:
-    """Render NUM_FRAMES frames and return per-frame counter dicts."""
-    label = "WITH occlusion culling" if occlusion_cull else "WITHOUT occlusion culling"
-    print(f"\n{'='*60}")
-    print(f"  {label}")
-    print(f"{'='*60}")
-    print(f"  {'Frame':>5}  {'splat_count':>12}  {'total_entries':>14}  "
-          f"{'tile_count':>11}  {'error_flags':>12}")
-    print(f"  {'-'*5}  {'-'*12}  {'-'*14}  {'-'*11}  {'-'*12}")
-
-    render = make_renderer(occlusion_cull)
-
-    # Initialize camera from START_VIEW dictionary when available.
-    bbox = render.scene.bounding_box
-    extent = bbox.get_extent()
-    depth = float(np.linalg.norm(extent))
-
-    eye = np.array(START_VIEW.get("eye", [0.0, 0.0, depth * 0.8]), dtype=float)
-    centre = np.array(START_VIEW.get("lookat", bbox.get_center()), dtype=float)
-    up = np.array(START_VIEW.get("up", [0.0, 1.0, 0.0]), dtype=float)
-    fov = float(START_VIEW.get("field_of_view", 45.0))
-    near = float(START_VIEW.get("near_plane", 0.1))
-    far = float(START_VIEW.get("far_plane", max(depth * 5.0, 1.0)))
-
-    # Compute forward direction vector for dolly
-    forward = centre - eye
-    forward_norm = forward / np.linalg.norm(forward)
-
-    results = []
-    for frame in range(NUM_FRAMES):
-        # Set up camera view for the current frame
-        render.setup_camera(
-            fov,  # vertical FoV
-            centre.tolist(),  # look-at target
-            eye.tolist(),  # eye position
-            up.tolist(),  # up vector
-            near_clip=near,
-            far_clip=far,
-        )
-
-        # render_to_image triggers the full geometry + composite pipeline
-        render.render_to_image()
-        c = render.get_gs_frame_counters()
-        results.append(c)
-
-        print(
-            f"  {frame:>5}  {c['splat_count']:>12,}  {c['total_entries']:>14,}  "
-            f"{c['tile_count']:>11,}  {c['error_flags']:>12}")
-
-        if frame + 1 < NUM_FRAMES:
-            # Dolly forward along the calculated look direction
-            eye = eye + forward_norm * DOLLY_STEP
-            centre = centre + forward_norm * DOLLY_STEP
-
-    return results
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-def main() -> None:
-    print(f"Scene : {PLY_PATH}")
-    print(f"Size  : {WIDTH}×{HEIGHT}")
-
-    baseline = run_experiment(occlusion_cull=False)
-    culled = run_experiment(occlusion_cull=True)
-
-    # Summary: skip frame 0 for culled (no prior frame available yet)
+def print_summary(baseline, culled) -> None:
+    # Summary of culling efficiency
     print(f"\n{'='*60}")
     print("  Summary (frames 1-{}, after warm-up)".format(NUM_FRAMES - 1))
     print(f"{'='*60}")
@@ -174,10 +95,129 @@ def main() -> None:
         f"({total_base - total_cull:,} entries saved across {NUM_FRAMES-1} frames)"
     )
 
-    if baseline[0]["splat_count"] == 0:
+    if len(baseline) > 0 and baseline[0]["splat_count"] == 0:
         print(
             "\n  WARNING: splat_count=0 — Gaussian splat rendering may not be "
             "active (Vulkan required; CPU fallback does not support compute).")
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+def main() -> None:
+    print(f"Scene : {PLY_PATH}")
+    print(f"Size  : {WIDTH}×{HEIGHT}")
+
+    gsplat = o3d.t.io.read_point_cloud(PLY_PATH)
+    # Set up GUI Application and Window
+    app = gui.Application.instance
+    app.initialize()
+
+    window = app.create_window("Gaussian Splat Occlusion Culling Check", WIDTH, HEIGHT)
+    scene_widget = gui.SceneWidget()
+    window.add_child(scene_widget)
+
+    # Callback on windows resize or layout
+    def on_layout(layout_context):
+        scene_widget.frame = window.content_rect
+    window.set_on_layout(on_layout)
+
+    # Initialize scene and Gaussian splat geometry
+    scene_widget.scene = rendering.Open3DScene(window.renderer)
+    scene_widget.enable_scene_caching(False)  # Redraw dynamically without caching
+
+    mat = rendering.MaterialRecord()
+    mat.shader = "gaussianSplat"
+    mat.gaussian_splat_sh_degree = 2
+    mat.gaussian_splat_occlusion_cull = True  # Start without occlusion culling
+    scene_widget.scene.add_geometry("splat", gsplat, mat)
+
+    # Camera setup (matching starting view)
+    fov = float(START_VIEW.get("field_of_view", 60.0))
+    near = float(START_VIEW.get("near_plane", 1.0))
+    far = float(START_VIEW.get("far_plane", 534.86212158203125))
+    scene_widget.scene.camera.set_projection(
+        fov,
+        float(WIDTH) / float(HEIGHT),
+        near,
+        far,
+        rendering.Camera.FovType.Vertical
+    )
+
+    baseline_results = []
+    culled_results = []
+
+    # Experiment run inside background thread to coordinate frame steps safely
+    def run_experiment():
+        time.sleep(0.5)  # Let window fully open
+
+        for run in range(2):
+            occlusion_cull = (run == 0)
+            label = "WITH occlusion culling" if occlusion_cull else "WITHOUT occlusion culling"
+
+            # Update material property
+            def update_material():
+                mat.gaussian_splat_occlusion_cull = occlusion_cull
+                scene_widget.scene.modify_geometry_material("splat", mat)
+            app.post_to_main_thread(window, update_material)
+            time.sleep(0.05)
+
+            print(f"\n{'='*60}")
+            print(f"  {label}")
+            print(f"{'='*60}")
+            print(f"  {'Frame':>5}  {'splat_count':>12}  {'total_entries':>14}  "
+                  f"{'tile_count':>11}  {'error_flags':>12}")
+            print(f"  {'-'*5}  {'-'*12}  {'-'*14}  {'-'*11}  {'-'*12}")
+
+            eye = np.array(START_VIEW["eye"], dtype=float)
+            centre = np.array(START_VIEW["lookat"], dtype=float)
+            up = np.array(START_VIEW["up"], dtype=float)
+            forward = centre - eye
+            forward_norm = forward / np.linalg.norm(forward)
+
+            for frame in range(NUM_FRAMES):
+                current_eye = eye.tolist()
+                current_centre = centre.tolist()
+                current_up = up.tolist()
+
+                # 1. Update camera view on the main thread and trigger redraw
+                def set_view():
+                    scene_widget.scene.camera.look_at(current_centre, current_eye, current_up)
+                    scene_widget.force_redraw()
+                app.post_to_main_thread(window, set_view)
+
+                # Wait for the frame to be drawn completely on the GPU
+                time.sleep(0.12)
+
+                # 2. Get frame counters on the main thread
+                counters = [None]
+                def get_counters():
+                    counters[0] = window.renderer.get_gs_frame_counters()
+                app.post_to_main_thread(window, get_counters)
+
+                # Wait for counters retrieval
+                time.sleep(0.04)
+                c = counters[0]
+                if occlusion_cull:
+                    culled_results.append(c)
+                else:
+                    baseline_results.append(c)
+
+                print(
+                    f"  {frame:>5}  {c['splat_count']:>12,}  {c['total_entries']:>14,}  "
+                    f"{c['tile_count']:>11,}  {c['error_flags']:>12}")
+
+                # Dolly forward
+                if frame + 1 < NUM_FRAMES:
+                    eye += forward_norm * DOLLY_STEP
+                    centre += forward_norm * DOLLY_STEP
+
+        # Finish up and output comparison
+        def wrap_up():
+            window.close()
+            print_summary(baseline_results, culled_results)
+        app.post_to_main_thread(window, wrap_up)
+
+    threading.Thread(target=run_experiment).start()
+    app.run()
 
 
 if __name__ == "__main__":

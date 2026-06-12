@@ -1567,7 +1567,13 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
                                              bool shader_only) {
     // Compute-only geometries (Gaussian splats) have no Filament entity or
     // material instance; material overrides are not applicable.
-    if (geom->filament_entity.isNull()) return;
+    if (geom->filament_entity.isNull()) {
+        if (per_object_gs_attrs_.find(geom->name) != per_object_gs_attrs_.end()) {
+            geom->mat.properties = material;
+            RebuildMergedGaussianData();
+        }
+        return;
+    }
 
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {

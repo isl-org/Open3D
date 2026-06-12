@@ -255,6 +255,18 @@ void pybind_rendering_definitions(py::module &m) {
                  "Sets the background color for the renderer, [r, g, b, a]. "
                  "Applies to everything being rendered, so it essentially acts "
                  "as the background color of the window")
+            .def("get_gs_frame_counters", [](Renderer &self) {
+                py::dict d;
+                auto *fr = dynamic_cast<FilamentRenderer *>(&self);
+                auto *gcr = fr ? fr->GetGaussianSplatRenderer() : nullptr;
+                std::array<std::uint32_t, 4> c = gcr ? gcr->GetLastFrameCounters()
+                                                     : std::array<std::uint32_t, 4>{};
+                d["total_entries"] = c[0];  // tile-splat coverage pairs
+                d["error_flags"] = c[1];
+                d["tile_count"] = c[2];
+                d["splat_count"] = c[3];  // splats that generated sort entries
+                return d;
+            }, "Returns Gaussian splat GPU counters from the last rendered frame as a dict.")
             .def("add_texture",
                  (TextureHandle(Renderer::*)(
                          const std::shared_ptr<geometry::Image>, bool)) &
