@@ -205,7 +205,7 @@ jobs:
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
             "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
           echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `
