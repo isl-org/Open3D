@@ -31,14 +31,15 @@ _added_dll_dirs = []
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
     # For oneAPI / SYCL on Windows, add oneAPI redist directories to DLL search path if they exist
+    _oneapi_root = os.environ.get("ONEAPI_ROOT", r"C:\Program Files (x86)\Intel\oneAPI")
     _oneapi_paths = [
-        r"C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\redist\intel64_win\compiler",
-        r"C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin",
-        r"C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64",
-        r"C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin",
-        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\bin\intel64\vc14",
-        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64\vc14",
-        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64_win\vc14",
+        os.path.join(_oneapi_root, r"compiler\latest\windows\redist\intel64_win\compiler"),
+        os.path.join(_oneapi_root, r"compiler\latest\windows\bin"),
+        os.path.join(_oneapi_root, r"mkl\latest\bin\intel64"),
+        os.path.join(_oneapi_root, r"mkl\latest\bin"),
+        os.path.join(_oneapi_root, r"tbb\latest\bin\intel64\vc14"),
+        os.path.join(_oneapi_root, r"tbb\latest\redist\intel64\vc14"),
+        os.path.join(_oneapi_root, r"tbb\latest\redist\intel64_win\vc14"),
     ]
     for _p in _oneapi_paths:
         if os.path.exists(_p):

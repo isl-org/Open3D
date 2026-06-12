@@ -109,9 +109,11 @@ jobs:
           Write-Host "Downloading Intel Compiler..."
           Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
           Write-Host "Installing oneMKL..."
-          Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
           Write-Host "Installing Intel Compiler..."
-          Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
 
       - name: Install glslang via vcpkg
         run: |
@@ -339,9 +341,11 @@ jobs:
           Write-Host "Downloading Intel Compiler..."
           Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
           Write-Host "Installing oneMKL..."
-          Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
           Write-Host "Installing Intel Compiler..."
-          Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
 
       - name: Install glslang via vcpkg
         run: |
@@ -476,9 +480,11 @@ jobs:
           Write-Host "Downloading Intel Compiler..."
           Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
           Write-Host "Installing oneMKL..."
-          Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
           Write-Host "Installing Intel Compiler..."
-          Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait
+          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
 
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -516,9 +522,13 @@ jobs:
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           $search_dir = if (Test-Path -Path "pip_package") { "pip_package" } else { "." }
           if ('${{ matrix.device }}' -eq 'xpu') {
-            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d_xpu*-$py_tag-*.whl")).Name
+            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d_xpu*-$py_tag-*.whl") -ErrorAction SilentlyContinue).Name
           } else {
-            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d-*-$py_tag-*.whl") | Where-Object { $_.Name -notlike "open3d_xpu*" }).Name
+            $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d-*-$py_tag-*.whl") -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike "open3d_xpu*" }).Name
+          }
+          if (-not $PIP_PKG_NAME) {
+            Write-Error "Could not find a valid Open3D wheel in $search_dir matching the python version CP$py_tag and device!"
+            exit 1
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
           python -m pip install (Join-Path $search_dir $PIP_PKG_NAME)
