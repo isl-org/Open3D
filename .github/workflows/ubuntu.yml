@@ -22,6 +22,8 @@ jobs:
   ubuntu:
     permissions:
       contents: write  # Release upload
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -62,6 +64,12 @@ jobs:
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_test.sh cpu-shared-ml-release
           fi
+      - name: Generate package attestation
+        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/attest@v1
+        with:
+          subject-path: ${{ github.workspace }}/open3d-devel-*.tar.xz
+
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
@@ -69,6 +77,13 @@ jobs:
           name: open3d-devel-linux-x86_64
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+
+      - name: Generate viewer attestation
+        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        uses: actions/attest@v1
+        with:
+          subject-path: ${{ github.workspace }}/open3d-viewer-*-Linux.deb
+
       - name: Upload viewer to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/upload-artifact@v4
