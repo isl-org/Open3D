@@ -29,6 +29,23 @@ from open3d._build_config import _build_config
 
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
+    # For oneAPI / SYCL on Windows, add oneAPI redist directories to DLL search path if they exist
+    _oneapi_paths = [
+        r"C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\redist\intel64_win\compiler",
+        r"C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin",
+        r"C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin\intel64",
+        r"C:\Program Files (x86)\Intel\oneAPI\mkl\latest\bin",
+        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\bin\intel64\vc14",
+        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64\vc14",
+        r"C:\Program Files (x86)\Intel\oneAPI\tbb\latest\redist\intel64_win\vc14",
+    ]
+    _added_dll_dirs = []
+    for _p in _oneapi_paths:
+        if os.path.exists(_p):
+            try:
+                _added_dll_dirs.append(os.add_dll_directory(_p))
+            except Exception:
+                pass
 
 __DEVICE_API__ = "cpu"
 if _build_config["BUILD_CUDA_MODULE"]:
@@ -91,6 +108,34 @@ if _build_config["BUILD_CUDA_MODULE"]:
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
+            "binding library not found! Falling back to the CPU Python "
+            "binding library.",
+            ImportWarning,
+        )
+
+if _build_config["BUILD_SYCL_MODULE"]:
+    try:
+        from open3d.xpu.pybind import (
+            core,
+            camera,
+            data,
+            geometry,
+            io,
+            pipelines,
+            utility,
+            t,
+        )
+        from open3d.xpu import pybind
+
+        __DEVICE_API__ = "xpu"
+    except OSError as os_error:
+        warnings.warn(
+            f"Open3D was built with SYCL support, but an error ocurred while loading the Open3D SYCL Python bindings. Check your oneAPI installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            ImportWarning,
+        )
+    except StopIteration:
+        warnings.warn(
+            "Open3D was built with SYCL support, but Open3D SYCL Python "
             "binding library not found! Falling back to the CPU Python "
             "binding library.",
             ImportWarning,
@@ -211,4 +256,7 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
+    if "_added_dll_dirs" in locals():
+        for _d in _added_dll_dirs:
+            _d.close()
 del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names
