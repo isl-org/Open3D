@@ -9,6 +9,7 @@
 
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorFunction.h"
+#include "open3d/t/geometry/kernel/MinimumBS.h"
 #include "open3d/t/geometry/kernel/MinimumOBB.h"
 #include "open3d/t/geometry/kernel/MinimumOBE.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -904,6 +905,282 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
         utility::LogError("Input point set has less than 4 points.");
     }
     return kernel::minimum_obe::ComputeMinimumOBEKhachiyan(points, robust);
+}
+
+BoundingSphere::BoundingSphere(const core::Device &device)
+    : Geometry(Geometry::GeometryType::BoundingSphere, 3),
+      device_(device),
+      dtype_(core::Float32),
+      center_(core::Tensor::Zeros({3}, dtype_, device)),
+      radius_(core::Tensor::Zeros({1}, dtype_, device)),
+      color_(core::Tensor::Ones({3}, dtype_, device)) {}
+
+BoundingSphere::BoundingSphere(const core::Tensor &center,
+                               const core::Tensor &radius)
+    : BoundingSphere([&]() {
+          core::AssertTensorDevice(center, radius.GetDevice());
+          core::AssertTensorDtype(center, radius.GetDtype());
+          core::AssertTensorDtypes(radius, {core::Float32, core::Float64});
+          core::AssertTensorShape(center, {3});
+          core::AssertTensorShape(radius, {1});
+          return center.GetDevice();
+      }()) {
+    device_ = center.GetDevice();
+    dtype_ = center.GetDtype();
+
+    center_ = center;
+    radius_ = radius;
+    color_ = core::Tensor::Ones({3}, dtype_, device_);
+
+    // Check if the bounding sphere is valid.
+    // allow degenerate zero-radius sphere, but not negative radius
+    if (radius.To(core::Float64).Item<double>() < 0) {
+        utility::LogError(
+                "Invalid bounding sphere. Please make sure the radius is "
+                "non-negative.");
+    }
+}
+
+BoundingSphere BoundingSphere::To(const core::Device &device,
+                                  const core::Dtype &dtype,
+                                  bool copy) const {
+    if (!copy && GetDevice() == device && GetDtype() == dtype) {
+        return *this;
+    }
+    BoundingSphere sphere(center_.To(device, dtype, /*copy=*/true),
+                          radius_.To(device, dtype, /*copy=*/true));
+    sphere.SetColor(color_.To(device, dtype, /*copy=*/true));
+    return sphere;
+}
+
+BoundingSphere &BoundingSphere::Clear() {
+    center_ = core::Tensor::Zeros({3}, GetDtype(), GetDevice());
+    radius_ = core::Tensor::Zeros({1}, GetDtype(), GetDevice());
+    color_ = core::Tensor::Ones({3}, GetDtype(), GetDevice());
+    return *this;
+}
+
+void BoundingSphere::SetCenter(const core::Tensor &center) {
+    core::AssertTensorDevice(center, GetDevice());
+    core::AssertTensorShape(center, {3});
+    core::AssertTensorDtypes(center, {core::Float32, core::Float64});
+
+    center_ = center.To(GetDtype());
+}
+
+void BoundingSphere::SetRadius(const core::Tensor &radius) {
+    core::AssertTensorDevice(radius, GetDevice());
+    core::AssertTensorShape(radius, {1});
+    core::AssertTensorDtypes(radius, {core::Float32, core::Float64});
+
+    // allow degenerate zero-radius sphere, but not negative radius
+    if (radius.To(core::Float64).Item<double>() < 0) {
+        utility::LogError(
+                "Invalid bounding sphere. Please make sure the radius is "
+                "non-negative.");
+    }
+
+    radius_ = radius.To(GetDtype());
+}
+
+void BoundingSphere::SetColor(const core::Tensor &color) {
+    core::AssertTensorDevice(color, GetDevice());
+    core::AssertTensorShape(color, {3});
+
+    if (color.Max({0}).To(core::Float64).Item<double>() > 1.0 ||
+        color.Min({0}).To(core::Float64).Item<double>() < 0.0) {
+        utility::LogError(
+                "The color must be in the range [0, 1], but found in range "
+                "[{}, {}].",
+                color.Min({0}).To(core::Float64).Item<double>(),
+                color.Max({0}).To(core::Float64).Item<double>());
+    }
+
+    color_ = color.To(GetDtype());
+}
+
+core::Tensor BoundingSphere::GetMinBound() const {
+    return GetCenter() - GetRadius().Reshape({});
+}
+
+core::Tensor BoundingSphere::GetMaxBound() const {
+    return GetCenter() + GetRadius().Reshape({});
+}
+
+double BoundingSphere::Volume() const {
+    double r = radius_.To(core::Float64).Item<double>();
+    return 4.0 * M_PI * r * r * r / 3.0;
+}
+
+core::Tensor BoundingSphere::GetSpherePoints() const {
+    // Unit axis directions
+    core::Tensor offsets = core::Tensor::Init<float>({{1.f, 0.f, 0.f},
+                                                      {-1.f, 0.f, 0.f},
+                                                      {0.f, 1.f, 0.f},
+                                                      {0.f, -1.f, 0.f},
+                                                      {0.f, 0.f, 1.f},
+                                                      {0.f, 0.f, -1.f}},
+                                                     GetDevice())
+                                   .To(GetDtype());
+
+    // Shape: {6,3}
+    // offsets * radius broadcasts scalar radius to all entries
+    core::Tensor scaled_offsets = offsets * GetRadius();
+
+    // Center reshape allows broadcasting across rows
+    return GetCenter().Reshape({1, 3}) + scaled_offsets;
+}
+
+BoundingSphere &BoundingSphere::Translate(const core::Tensor &translation,
+                                          bool relative) {
+    core::AssertTensorDevice(translation, GetDevice());
+    core::AssertTensorShape(translation, {3});
+    core::AssertTensorDtypes(translation, {core::Float32, core::Float64});
+
+    const core::Tensor translation_d = translation.To(GetDtype());
+    if (relative) {
+        center_ += translation_d;
+    } else {
+        center_ = translation_d;
+    }
+    return *this;
+}
+
+BoundingSphere &BoundingSphere::Rotate(
+        const core::Tensor &rotation,
+        const std::optional<core::Tensor> &center) {
+    core::AssertTensorDevice(rotation, GetDevice());
+    core::AssertTensorShape(rotation, {3, 3});
+    core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
+
+    if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
+        utility::LogWarning(
+                "Invalid rotation matrix. Please make sure the rotation "
+                "matrix is orthogonal.");
+        return *this;
+    }
+
+    if (center.has_value()) {
+        core::AssertTensorDevice(center.value(), GetDevice());
+        core::AssertTensorShape(center.value(), {3});
+        core::AssertTensorDtypes(center.value(),
+                                 {core::Float32, core::Float64});
+
+        const core::Tensor rotation_d = rotation.To(GetDtype());
+        core::Tensor center_d = center.value().To(GetDtype());
+
+        center_ = rotation_d.Matmul(center_ - center_d).Flatten() + center_d;
+    }
+
+    return *this;
+}
+
+BoundingSphere &BoundingSphere::Scale(
+        double scale, const std::optional<core::Tensor> &center) {
+    radius_ *= scale;
+    if (center.has_value()) {
+        core::Tensor center_d = center.value();
+        core::AssertTensorDevice(center_d, GetDevice());
+        core::AssertTensorShape(center_d, {3});
+        core::AssertTensorDtypes(center_d, {core::Float32, core::Float64});
+
+        center_d = center_d.To(GetDtype());
+        center_ = scale * (center_ - center_d) + center_d;
+    }
+    return *this;
+}
+
+core::Tensor BoundingSphere::GetPointIndicesWithinBoundingSphere(
+        const core::Tensor &points) const {
+    core::AssertTensorDevice(points, GetDevice());
+    core::AssertTensorShape(points, {std::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+
+    // Calculate squared distance from center
+    core::Tensor diff = points - GetCenter();
+    core::Tensor dist_squared = (diff * diff).Sum({1});
+
+    // Get squared radius
+    core::Tensor radius_d = GetRadius().To(points.GetDtype());
+    core::Tensor radius_squared = radius_d * radius_d;
+
+    // Check if distance squared is <= radius squared
+    core::Tensor mask = dist_squared.Le(radius_squared.Reshape({}));
+
+    return mask.NonZero().Flatten();
+}
+
+std::string BoundingSphere::ToString() const {
+    return fmt::format("BoundingSphere[center: {}, radius: {}, {}, {}]",
+                       GetCenter().ToString(false), GetRadius().ToString(false),
+                       GetDtype().ToString(), GetDevice().ToString());
+}
+
+open3d::geometry::BoundingSphere BoundingSphere::ToLegacy() const {
+    open3d::geometry::BoundingSphere legacy_sphere;
+
+    legacy_sphere.center_ = core::eigen_converter::TensorToEigenVector3dVector(
+            GetCenter().Reshape({1, 3}))[0];
+    legacy_sphere.radius_ = GetRadius().To(core::Float64).Item<double>();
+    legacy_sphere.color_ = core::eigen_converter::TensorToEigenVector3dVector(
+            GetColor().Reshape({1, 3}))[0];
+    return legacy_sphere;
+}
+
+AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
+}
+
+OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
+OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
+BoundingSphere BoundingSphere::FromLegacy(
+        const open3d::geometry::BoundingSphere &sphere,
+        const core::Dtype &dtype,
+        const core::Device &device) {
+    if (dtype != core::Float32 && dtype != core::Float64) {
+        utility::LogError(
+                "Got data-type {}, but the supported data-type of the bounding "
+                "sphere are Float32 and Float64.",
+                dtype.ToString());
+    }
+
+    BoundingSphere t_sphere(
+            core::eigen_converter::EigenMatrixToTensor(sphere.center_)
+                    .Flatten()
+                    .To(device, dtype),
+            core::Tensor(std::vector<double>{sphere.radius_}, {1},
+                         core::Float64, device)
+                    .To(device, dtype));
+
+    t_sphere.SetColor(core::eigen_converter::EigenMatrixToTensor(sphere.color_)
+                              .Flatten()
+                              .To(device, dtype));
+    return t_sphere;
+}
+
+BoundingSphere BoundingSphere::CreateFromPoints(const core::Tensor &points,
+                                                bool exact,
+                                                bool robust) {
+    core::AssertTensorShape(points, {std::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
+    if (points.GetShape(0) < 1) {
+        utility::LogError("Input point set must have at least 1 point.");
+    }
+
+    if (exact) {
+        return kernel::bounding_sphere::ComputeMinimumBSWelzl(points, robust);
+    } else {
+        return kernel::bounding_sphere::ComputeApproximateBSRitter(points);
+    }
 }
 
 }  // namespace geometry

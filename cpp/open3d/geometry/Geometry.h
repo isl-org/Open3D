@@ -49,6 +49,8 @@ public:
         AxisAlignedBoundingBox = 12,
         /// OrientedBoundingEllipsoid
         OrientedBoundingEllipsoid = 13,
+        /// BoundingSphere
+        BoundingSphere = 14,
     };
 
 public:

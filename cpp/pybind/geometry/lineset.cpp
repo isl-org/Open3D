@@ -68,6 +68,11 @@ void pybind_lineset_definitions(py::module &m) {
                         "Factory function to create a LineSet from an "
                         "OrientedBoundingEllipsoid.",
                         "ellipsoid"_a)
+            .def_static("create_from_bounding_sphere",
+                        &LineSet::CreateFromBoundingSphere,
+                        "Factory function to create a LineSet from a "
+                        "BoundingSphere.",
+                        "sphere"_a)
             .def_static("create_from_axis_aligned_bounding_box",
                         &LineSet::CreateFromAxisAlignedBoundingBox,
                         "Factory function to create a LineSet from an "
@@ -133,6 +138,8 @@ void pybind_lineset_definitions(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "LineSet", "create_from_oriented_bounding_ellipsoid",
             {{"ellipsoid", "The input bounding ellipsoid."}});
+    docstring::ClassMethodDocInject(m, "LineSet", "create_from_bounding_sphere",
+                                    {{"sphere", "The input bounding sphere."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_triangle_mesh",
                                     {{"mesh", "The input triangle mesh."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_tetra_mesh",

@@ -1,4 +1,5 @@
 ## Main
+-   Add Minimum Bounding Sphere support, including exact (Welzl) and approximate (Ritter) methods. Supports PointCloud, TriangleMesh, and LineSet. (PR #7511)
 -   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).

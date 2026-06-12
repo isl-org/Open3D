@@ -20,6 +20,7 @@ class PointCloud;
 class OrientedBoundingEllipsoid;
 class OrientedBoundingBox;
 class AxisAlignedBoundingBox;
+class BoundingSphere;
 class TriangleMesh;
 class TetraMesh;
 
@@ -140,6 +141,11 @@ public:
     /// \param ellipsoid The input bounding ellipsoid.
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingEllipsoid(
             const OrientedBoundingEllipsoid &ellipsoid);
+
+    /// \brief Factory function to create a LineSet from a BoundingSphere.
+    /// \param sphere The input bounding sphere.
+    static std::shared_ptr<LineSet> CreateFromBoundingSphere(
+            const BoundingSphere &sphere);
 
     /// Factory function to create a LineSet from edges of a triangle mesh.
     ///

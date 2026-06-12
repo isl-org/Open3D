@@ -653,6 +653,20 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a solid TriangleMesh representing the surface of a
+    /// BoundingSphere.
+    /// \param sphere The bounding sphere.
+    /// \param resolution Resolution of the generated sphere surface mesh.
+    /// \param float_dtype The data type for vertex attributes.
+    /// \param int_dtype The data type for triangle indices.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateFromBoundingSphere(
+            const BoundingSphere &sphere,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -879,6 +893,10 @@ public:
     /// Create an oriented bounding ellipsoid from vertex attribute "positions".
     OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust = false) const;
+
+    /// Create a bounding sphere from vertex attribute "positions".
+    BoundingSphere GetBoundingSphere(bool exact = true,
+                                     bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.
     ///

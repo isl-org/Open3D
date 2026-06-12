@@ -583,6 +583,23 @@ Returns:
     open3d.t.geometry.TriangleMesh: Solid surface mesh of the ellipsoid.)");
 
     triangle_mesh.def_static(
+            "create_from_bounding_sphere",
+            &TriangleMesh::CreateFromBoundingSphere, "sphere"_a,
+            "resolution"_a = 20, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
+            R"(Create a solid TriangleMesh representing the surface of a BoundingSphere.
+
+Args:
+    sphere (open3d.t.geometry.BoundingSphere): The bounding sphere.
+    resolution (int): Resolution of the generated sphere surface mesh.
+    float_dtype (open3d.core.Dtype): Float32 or Float64, for vertex attributes.
+    int_dtype (open3d.core.Dtype): Int32 or Int64, for triangle indices.
+    device (open3d.core.Device): The device for the returned mesh.
+
+Returns:
+    open3d.t.geometry.TriangleMesh: Solid surface mesh of the sphere.)");
+
+    triangle_mesh.def_static(
             "create_isosurfaces",
             // Accept anything for contour_values that pybind can convert to
             // std::list. This also avoids o3d.utility.DoubleVector.
@@ -778,6 +795,10 @@ Example:
                       "Create an oriented bounding ellipsoid from vertex "
                       "attribute 'positions'.",
                       "robust"_a = false);
+    triangle_mesh.def("get_bounding_sphere", &TriangleMesh::GetBoundingSphere,
+                      "Create a bounding sphere from vertex "
+                      "attribute 'positions'.",
+                      py::kw_only(), "exact"_a = true, "robust"_a = false);
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,

@@ -50,6 +50,21 @@ arbitrary frame of reference with the properties:
 - ``color``: Color of the bounding ellipsoid is a tensor with shape (3,) and
   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
   Values can only be in the range [0.0, 1.0].)");
+
+    py::class_<BoundingSphere, PyGeometry<BoundingSphere>,
+               std::shared_ptr<BoundingSphere>, Geometry>
+            bs(m, "BoundingSphere",
+               R"(A bounding sphere defined by a center point and a radius 
+               with the properties:
+
+- (``center``, ``radius``): The bounding sphere is defined by a center point 
+  (shape (3,)) and a radius (shape (1,)). Both tensors must have the same data 
+  type and device. The data type can only be ``open3d.core.float32`` (default) 
+  or ``open3d.core.float64``. The device of the tensor determines the device of
+  the sphere.
+- ``color``: Color of the bounding sphere is a tensor with shape (3,) and 
+   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
+   Values can only be in the range [0.0, 1.0].)");
 }
 void pybind_boundingvolume_definitions(py::module& m) {
     auto aabb = static_cast<py::class_<AxisAlignedBoundingBox,
@@ -339,7 +354,7 @@ Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or 
         float64 (N x 3 tensor, where N must be larger than 3).
     robust (bool): If set to true uses a more robust method which works in 
-        degenerate cases but introduces noise to the points coordinates.
+         degenerate cases but introduces noise to the points coordinates.    
     method (open3d.t.geometry.OrientedBoundingBox.Method): This is one of 
         ``PCA``, ``MINIMAL_APPROX``, ``MINIMAL_JYLANKI``. 
 
@@ -589,6 +604,185 @@ Example::
         o3d.visualization.draw([pcd, ellipsoid_mesh])
 )",
             "points"_a, "robust"_a = false);
+
+    // BoundingSphere
+    auto bs =
+            static_cast<py::class_<BoundingSphere, PyGeometry<BoundingSphere>,
+                                   std::shared_ptr<BoundingSphere>, Geometry>>(
+                    m.attr("BoundingSphere"));
+    bs.def(py::init<const core::Device&>(), "device"_a = core::Device("CPU:0"),
+           "Construct an empty BoundingSphere on the provided device.");
+    bs.def(py::init<const core::Tensor&, const core::Tensor&>(), "center"_a,
+           "radius"_a,
+           R"(Construct a BoundingSphere from center and radius.
+The BoundingSphere will be created on the device of the given tensors, which
+must be on the same device and have the same data type.)");
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "__init__",
+            {{"center",
+              "Center of the bounding sphere. Tensor of shape {3,}, and type "
+              "float32 or float64."},
+             {"radius",
+              "Radius of the bounding sphere. Tensor of shape {1,}, and type "
+              "float32 or float64."}});
+    py::detail::bind_copy_functions<BoundingSphere>(bs);
+    bs.def("__repr__", &BoundingSphere::ToString);
+
+    bs.def("to", &BoundingSphere::To,
+           "Transfer the bounding sphere to a specified device and "
+           "data type.",
+           "device"_a, "dtype"_a, "copy"_a = false);
+    bs.def("clone", &BoundingSphere::Clone,
+           "Returns a copy of the bounding sphere on the same "
+           "device.");
+    bs.def(
+            "cpu",
+            [](const BoundingSphere& bs) {
+                return bs.To(core::Device("CPU:0"), bs.GetDtype());
+            },
+            "Transfer the bounding sphere to CPU. No-op if already on CPU.");
+    bs.def(
+            "cuda",
+            [](const BoundingSphere& bs, int device_id) {
+                return bs.To(core::Device("CUDA", device_id), bs.GetDtype());
+            },
+            "Transfer the bounding sphere to a CUDA device.",
+            "device_id"_a = 0);
+
+    bs.def("set_center", &BoundingSphere::SetCenter, "center"_a,
+           "Set the center of the bounding sphere.");
+    bs.def("set_radius", &BoundingSphere::SetRadius, "radius"_a,
+           "Set the radius of the bounding sphere.");
+    bs.def("set_color", &BoundingSphere::SetColor, "color"_a,
+           "Set the color of the bounding sphere.");
+
+    bs.def_property_readonly("center", &BoundingSphere::GetCenter,
+                             "Center of the bounding sphere.");
+    bs.def_property_readonly("radius", &BoundingSphere::GetRadius,
+                             "Radius of the bounding sphere.");
+    bs.def_property_readonly("color", &BoundingSphere::GetColor,
+                             "Color of the bounding sphere.");
+
+    bs.def("translate", &BoundingSphere::Translate,
+           "Translate the bounding sphere.", "translation"_a,
+           "relative"_a = true);
+    bs.def("rotate", &BoundingSphere::Rotate, "Rotate the bounding sphere.",
+           "rotation"_a, "center"_a = std::nullopt);
+    bs.def("scale", &BoundingSphere::Scale, "Scale the bounding sphere.",
+           "scale"_a, "center"_a = std::nullopt);
+
+    bs.def("volume", &BoundingSphere::Volume,
+           "Returns the volume of the bounding sphere.");
+    bs.def("get_sphere_points", &BoundingSphere::GetSpherePoints,
+           "Returns the six critical points of the bounding sphere. "
+           "Return tensor has shape {6, 3}.");
+    bs.def("get_point_indices_within_bounding_sphere",
+           &BoundingSphere::GetPointIndicesWithinBoundingSphere,
+           "Indices to points that are within the bounding sphere.",
+           "points"_a);
+    bs.def("get_axis_aligned_bounding_box",
+           &BoundingSphere::GetAxisAlignedBoundingBox,
+           "Returns the axis-aligned bounding box that contains this "
+           "sphere.");
+    bs.def("get_oriented_bounding_box", &BoundingSphere::GetOrientedBoundingBox,
+           "Returns an oriented bounding box around the sphere.",
+           "robust"_a = false);
+    bs.def("get_minimal_oriented_bounding_box",
+           &BoundingSphere::GetMinimalOrientedBoundingBox,
+           "Returns the minimal oriented bounding box around the "
+           "sphere.",
+           "robust"_a = false);
+    bs.def("to_legacy", &BoundingSphere::ToLegacy,
+           "Convert to a legacy Open3D bounding sphere.");
+    bs.def_static("from_legacy", &BoundingSphere::FromLegacy, "sphere"_a,
+                  "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
+                  "Convert from a legacy Open3D bounding sphere.");
+    bs.def_static("create_from_points", &BoundingSphere::CreateFromPoints,
+                  R"(Creates a bounding sphere from a set of points.
+
+Args:
+    points (open3d.core.Tensor): A list of points with data type of float32 or
+        float64 (N x 3 tensor, where N must be larger than 3).
+    exact (bool): If true, computes the exact minimum bounding sphere using 
+    Welzl’s algorithm (expected O(n)).  
+    If false, uses Ritter’s algorithm for a faster approximation 
+    (~5% larger than optimal).
+    robust (bool): Only used when `exact=True`. 
+        If set to true uses a more robust method which works in
+        degenerate cases but introduces noise to the points coordinates.
+Returns:
+    BoundingSphere with same data type and device as input points.
+
+Example::
+
+        import open3d as o3d
+        import open3d.t.geometry as o3g
+        import numpy as np
+
+        pcd = o3g.PointCloud()
+        pcd.point["positions"] = o3d.core.Tensor(
+                np.random.randn(100, 3).astype(np.float32))
+        sphere = o3g.BoundingSphere.create_from_points(
+                pcd.point["positions"])
+        sphere.set_color((0.0, 0.44, 0.77))
+        print(f"Volume: {sphere.volume()}")
+        print(f"Center: {sphere.center}")
+        print(f"Radius: {sphere.radius}")
+)",
+                  "points"_a, py::kw_only(), "exact"_a = true,
+                  "robust"_a = false);
+
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "set_center",
+            {{"center",
+              "Tensor with {3,} shape, and type float32 or float64."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "set_radius",
+            {{"radius",
+              "Tensor with {1,} shape, and type float32 or float64."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "set_color",
+            {{"color",
+              "Tensor with {3,} shape, and type float32 or float64, with "
+              "values in range [0.0, 1.0]."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "translate",
+            {{"translation",
+              "Translation tensor of shape {3,}, type float32 or float64, "
+              "device same as the sphere."},
+             {"relative", "Whether to perform relative translation."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "rotate",
+            {{"rotation",
+              "Rotation matrix of shape {3, 3}, type float32 or float64, "
+              "device same as the sphere."},
+             {"center",
+              "Center of the rotation, default is null, which means use center "
+              "of the sphere as rotation center."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "scale",
+            {{"scale", "The scale parameter."},
+             {"center",
+              "Center used for the scaling operation. Tensor with {3,} shape, "
+              "and type float32 or float64"}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "get_point_indices_within_bounding_sphere",
+            {{"points",
+              "Tensor with {N, 3} shape, and type float32 or float64."}});
+    docstring::ClassMethodDocInject(
+            m, "BoundingSphere", "create_from_points",
+            {{"points",
+              "A list of points with data type of float32 or float64 (N x 3 "
+              "tensor, where N must be larger than 3)."},
+             {"exact",
+              "If true, computes the exact minimum bounding sphere "
+              "using Welzl’s algorithm (expected O(n))."
+              "If false, uses Ritter’s algorithm for a faster approximation "
+              "(~5% larger than optimal)."},
+             {"robust",
+              "If set to true uses a more robust method which works in "
+              "degenerate cases but introduces noise to the points "
+              "coordinates."}});
 }
 
 }  // namespace geometry

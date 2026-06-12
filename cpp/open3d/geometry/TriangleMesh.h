@@ -601,6 +601,15 @@ public:
             int resolution = 20,
             bool create_uv_map = false);
 
+    /// Factory function to create solid mesh from a BoundingSphere.
+    /// \param bs BoundingSphere object to create a mesh of
+    /// \param resolution defines the resolution of the sphere.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromBoundingSphere(
+            const BoundingSphere &bs,
+            int resolution = 20,
+            bool create_uv_map = false);
+
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.

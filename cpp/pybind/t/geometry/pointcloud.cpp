@@ -261,9 +261,10 @@ Example:
                    "non-negative number less than number of points in the "
                    "input pointcloud.",
                    "start_index"_a = 0);
-    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-                   "nb_points"_a, "search_radius"_a,
-                   R"(Remove points that have less than nb_points neighbors in a
+    pointcloud.def(
+            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+            "nb_points"_a, "search_radius"_a,
+            R"(Remove points that have less than nb_points neighbors in a
 sphere of a given search radius.
 
 Args:
@@ -620,6 +621,10 @@ Example:
                    "Create an oriented bounding ellipsoid from attribute "
                    "'positions'.",
                    "robust"_a = false);
+    pointcloud.def("get_bounding_sphere", &PointCloud::GetBoundingSphere,
+                   "Create a bounding sphere from attribute "
+                   "'positions'.",
+                   py::kw_only(), "exact"_a = true, "robust"_a = false);
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
                                               bool) const) &

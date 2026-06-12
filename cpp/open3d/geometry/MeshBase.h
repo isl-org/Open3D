@@ -23,6 +23,7 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 class OrientedBoundingEllipsoid;
+class BoundingSphere;
 
 /// \class MeshBase
 ///
@@ -96,6 +97,16 @@ public:
     ///               coordinates.
     virtual OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust = false) const;
+
+    /// Creates a bounding sphere around the points of the object.
+    /// Further details in BoundingSphere::CreateFromPoints()
+    /// \param exact If set to true uses the exact method.
+    /// \param robust Used only if exact is true.
+    ///      If set to true uses a more robust method which works
+    ///      in degenerate cases but introduces noise to the points
+    ///      coordinates.
+    virtual BoundingSphere GetBoundingSphere(bool exact = true,
+                                             bool robust = false) const;
 
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
