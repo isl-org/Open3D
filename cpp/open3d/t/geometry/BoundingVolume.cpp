@@ -1175,7 +1175,7 @@ BoundingSphere BoundingSphere::FromLegacy(
 
 BoundingSphere BoundingSphere::CreateFromPoints(
     const core::Tensor &points,
-    MethodBoundingSphereCreate method, 
+    bool exact,
     bool robust) {
     core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
@@ -1183,17 +1183,12 @@ BoundingSphere BoundingSphere::CreateFromPoints(
         utility::LogError("Input point set must have at least 1 point.");
     }
 
-    switch (method) {
-        case MethodBoundingSphereCreate::EXACT:
-            return kernel::bounding_sphere::ComputeMinimumBSWelzl(points, 
-                                                                  robust);
-        case MethodBoundingSphereCreate::APPROX:
-            return kernel::bounding_sphere::ComputeApproximateBSRitter(points);  
+    if (exact) {
+        return kernel::bounding_sphere::ComputeMinimumBSWelzl(points, robust);
+    } else {
+        return kernel::bounding_sphere::ComputeApproximateBSRitter(points);
     }
-    utility::LogError(
-        "Invalid method for computing bounding sphere. Supported methods are "
-        "EXACT and APPROXIMATE.");
-    return BoundingSphere();
+
 }
 
 }  // namespace geometry

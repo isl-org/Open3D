@@ -58,6 +58,7 @@ public:
     OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust = false) const;
     BoundingSphere GetBoundingSphere(
+            bool exact = true,
             bool robust = false) const;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,

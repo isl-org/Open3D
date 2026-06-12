@@ -234,9 +234,18 @@ std::vector<size_t> BoundingSphere::GetPointIndicesWithinBoundingSphere(
 }
 
 BoundingSphere BoundingSphere::CreateFromPoints(
-        const std::vector<Eigen::Vector3d>& points, bool robust) {
-    return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(points,
-    robust);
+        const std::vector<Eigen::Vector3d>& points,
+        bool exact,
+        bool robust) {
+    
+    if (exact) {
+        return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(
+            points, robust);
+    } else {
+        return t::geometry::kernel::bounding_sphere::ComputeApproximateBSRitter(
+            points);
+    }
+
 
 }
 

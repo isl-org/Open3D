@@ -51,14 +51,21 @@ arbitrary frame of reference with the properties:
   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
   Values can only be in the range [0.0, 1.0].)");
 
-     py::class_<BoundingSphere, PyGeometry<BoundingSphere>, std::shared_ptr<BoundingSphere>,
+     py::class_<BoundingSphere, PyGeometry<BoundingSphere>, 
+     std::shared_ptr<BoundingSphere>,
                 Geometry>
             bs(m, "BoundingSphere",
-               R"(A bounding sphere defined by a center point and a radius with the properties:
+               R"(A bounding sphere defined by a center point and a radius 
+               with the properties:
 
-- ``center``: Center point of the bounding sphere. Tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the sphere.
-- ``radius``: Radius of the bounding sphere. Scalar tensor with a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. The device of the tensor determines the device of the sphere.
-- ``color``: Color of the bounding sphere is a tensor with shape (3,) and a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``. Values can only be in the range [0.0, 1.0].)");
+- (``center``, ``radius``): The bounding sphere is defined by a center point 
+  (shape (3,)) and a radius (shape (1,)). Both tensors must have the same data 
+  type and device. The data type can only be ``open3d.core.float32`` (default) 
+  or ``open3d.core.float64``. The device of the tensor determines the device of
+  the sphere.
+- ``color``: Color of the bounding sphere is a tensor with shape (3,) and 
+   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
+   Values can only be in the range [0.0, 1.0].)");
 }
 void pybind_boundingvolume_definitions(py::module& m) {
     auto aabb = static_cast<py::class_<AxisAlignedBoundingBox,
@@ -348,7 +355,7 @@ Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or 
         float64 (N x 3 tensor, where N must be larger than 3).
     robust (bool): If set to true uses a more robust method which works in 
-        degenerate cases but introduces noise to the points coordinates.
+         degenerate cases but introduces noise to the points coordinates.    
     method (open3d.t.geometry.OrientedBoundingBox.Method): This is one of 
         ``PCA``, ``MINIMAL_APPROX``, ``MINIMAL_JYLANKI``. 
 
@@ -697,7 +704,7 @@ must be on the same device and have the same data type.)");
             "from_legacy", &BoundingSphere::FromLegacy, "sphere"_a,
             "dtype"_a = core::Float32,
             "device"_a = core::Device("CPU:0"),
-            "Create a BoundingSphere from a legacy Open3D bounding sphere.");
+            "Convert from a legacy Open3D bounding sphere.");
     bs.def_static(
             "create_from_points", &BoundingSphere::CreateFromPoints,
             R"(Creates a bounding sphere from a set of points.
@@ -705,8 +712,12 @@ must be on the same device and have the same data type.)");
 Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or
         float64 (N x 3 tensor, where N must be larger than 3).
-    method (MethodBoundingSphereCreate): The method to use for creating the bounding sphere.
-    robust (bool): If set to true uses a more robust method which works in
+    exact (bool): If true, computes the exact minimum bounding sphere using 
+    Welzl’s algorithm (expected O(n)).  
+    If false, uses Ritter’s algorithm for a faster approximation 
+    (~5% larger than optimal).
+    robust (bool): Only used when `exact=True`. 
+        If set to true uses a more robust method which works in
         degenerate cases but introduces noise to the points coordinates.
 Returns:
     BoundingSphere with same data type and device as input points.
@@ -728,7 +739,8 @@ Example::
         print(f"Radius: {sphere.radius}")
 )",
             "points"_a,
-            "method"_a = MethodBoundingSphereCreate::EXACT, 
+            py::kw_only(),
+            "exact"_a = true, 
             "robust"_a = false);
 
     docstring::ClassMethodDocInject(
@@ -773,7 +785,10 @@ Example::
             {{"points",
               "A list of points with data type of float32 or float64 (N x 3 "
               "tensor, where N must be larger than 3)."},
-             {"method", "The method to use for creating the bounding sphere."},
+             {"exact", "If true, computes the exact minimum bounding sphere "
+              "using Welzl’s algorithm (expected O(n))."  
+              "If false, uses Ritter’s algorithm for a faster approximation "
+              "(~5% larger than optimal)."},
              {"robust", "If set to true uses a more robust method which works in "
                         "degenerate cases but introduces noise to the points coordinates."}});
 }

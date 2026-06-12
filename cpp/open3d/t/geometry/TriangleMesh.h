@@ -894,9 +894,9 @@ public:
     OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
             bool robust = false) const;
 
-    /// Create an oriented bounding sphere from vertex attribute "positions".
+    /// Create a bounding sphere from vertex attribute "positions".
     BoundingSphere GetBoundingSphere(
-        MethodBoundingSphereCreate method = MethodBoundingSphereCreate::EXACT,
+        bool exact = true,
         bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.

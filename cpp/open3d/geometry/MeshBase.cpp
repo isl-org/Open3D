@@ -60,8 +60,8 @@ OrientedBoundingEllipsoid MeshBase::GetOrientedBoundingEllipsoid(
 }
 
 BoundingSphere MeshBase::GetBoundingSphere(
-        bool robust) const {
-    return BoundingSphere::CreateFromPoints(vertices_, robust);
+        bool exact, bool robust) const {
+    return BoundingSphere::CreateFromPoints(vertices_, exact, robust);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {

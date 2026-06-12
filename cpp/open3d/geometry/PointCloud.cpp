@@ -62,8 +62,8 @@ OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
     return OrientedBoundingEllipsoid::CreateFromPoints(points_, robust);
 }
 
-BoundingSphere PointCloud::GetBoundingSphere(bool robust) const {
-    return BoundingSphere::CreateFromPoints(points_, robust);
+BoundingSphere PointCloud::GetBoundingSphere(bool exact, bool robust) const {
+    return BoundingSphere::CreateFromPoints(points_, exact, robust);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {

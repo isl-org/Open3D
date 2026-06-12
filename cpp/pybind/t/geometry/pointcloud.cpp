@@ -624,7 +624,8 @@ Example:
                    &PointCloud::GetBoundingSphere,
                    "Create a bounding sphere from attribute "
                    "'positions'.",
-                   "method"_a = MethodBoundingSphereCreate::EXACT,
+                   py::kw_only(),
+                   "exact"_a = true,
                    "robust"_a = false);
     pointcloud.def("crop",
                    (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,

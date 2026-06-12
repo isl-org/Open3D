@@ -72,15 +72,6 @@ void pybind_geometry_declarations(py::module& m) {
             .export_values()
             .finalize();
 
-    py::native_enum<MethodBoundingSphereCreate>(
-            m_geometry, "MethodBoundingSphereCreate", "enum.Enum",
-            "Methods for creating bounding spheres.")
-            .value("EXACT", MethodBoundingSphereCreate::EXACT,
-                   "Exact method for creating bounding spheres.")
-            .value("APPROX", MethodBoundingSphereCreate::APPROX,
-                   "Approximate method for creating bounding spheres.")
-            .finalize();       
-
     pybind_geometry_class_declarations(m_geometry);
     pybind_drawable_geometry_class_declarations(m_geometry);
     pybind_tensormap_declarations(m_geometry);

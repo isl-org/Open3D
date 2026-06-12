@@ -120,12 +120,20 @@ Args:
 Returns:
     open3d.geometry.OrientedBoundingEllipsoid)")
             .def("get_bounding_sphere",
-                 &PointCloud::GetBoundingSphere, "robust"_a = false,
+                 &PointCloud::GetBoundingSphere,
+                 py::kw_only(),
+                 "exact"_a = true,
+                 "robust"_a = false,
                  R"(Compute the minimum volume bounding sphere that
 encloses the point cloud using Welzl's algorithm.
 
 Args:
-    robust (bool): If set to true uses a more robust method which works in
+    exact (bool): If true, computes the exact minimum bounding sphere using 
+        Welzl’s algorithm (expected O(n)).  
+        If false, uses Ritter’s algorithm for a faster approximation 
+        (up to ~5% larger than optimal).
+    robust (bool): Only used when `exact=True`.  
+        If set to true uses a more robust method which works in
         degenerate cases but introduces noise to the points coordinates.
 
 Returns:

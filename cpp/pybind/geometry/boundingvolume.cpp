@@ -147,20 +147,26 @@ Example::
                   })
 
             .def_static("create_from_points",
-                         &BoundingSphere::CreateFromPoints, "points"_a,
+                         &BoundingSphere::CreateFromPoints,
+                         "points"_a,
+                         py::kw_only(),
+                         "exact"_a = true,
                          "robust"_a = false,
                          R"doc(
 Creates the bounding sphere that encloses the set of points.
 
-Uses Welzl's algorithm to compute the minimum enclosing sphere.
-
 Args:
      points (open3d.utility.Vector3dVector): Input points.
-     robust (bool): If set to true uses a more robust method which works in
-          degenerate cases but introduces noise to the points coordinates.
+         exact (bool): If true, computes the exact minimum bounding sphere using 
+         Welzl’s algorithm (expected O(n)).  
+         If false, uses Ritter’s algorithm for a faster approximation 
+         (up to ~5% larger than optimal).
+     robust (bool): Only used when `exact=True`.  
+         If set to true uses a more robust method which works in
+         degenerate cases but introduces noise to the points coordinates.
 
 Returns:
-     open3d.geometry.BoundingSphere: The minimum bounding sphere.
+     open3d.geometry.BoundingSphere: The bounding sphere.
 
 Example::
 

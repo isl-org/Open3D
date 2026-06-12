@@ -1507,10 +1507,10 @@ OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
 }
 
 BoundingSphere PointCloud::GetBoundingSphere(
-                                MethodBoundingSphereCreate method,
+                                bool exact,
                                 bool robust) const {
     return BoundingSphere::CreateFromPoints(GetPointPositions(),
-                                            method, 
+                                            exact,
                                             robust);
 }
 

@@ -125,12 +125,6 @@ enum class MethodOBBCreate {
     MINIMAL_JYLANKI  ///< Minimal OBB by Jylanki
 };
 
-
-enum class MethodBoundingSphereCreate {
-    EXACT,          ///< Exact bounding sphere using Welzl's algorithm
-    APPROX     ///< Approximate bounding sphere using Ritter's algorithm
-};
-
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

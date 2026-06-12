@@ -200,7 +200,9 @@ public:
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
     static BoundingSphere CreateFromPoints(
-            const std::vector<Eigen::Vector3d>& points, bool robust);
+            const std::vector<Eigen::Vector3d>& points,
+            bool exact = true,
+            bool robust = false);
 
 public:
     /// The center point of the bounding sphere.
