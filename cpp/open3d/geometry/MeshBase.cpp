@@ -59,8 +59,7 @@ OrientedBoundingEllipsoid MeshBase::GetOrientedBoundingEllipsoid(
     return OrientedBoundingEllipsoid::CreateFromPoints(vertices_, robust);
 }
 
-BoundingSphere MeshBase::GetBoundingSphere(
-        bool exact, bool robust) const {
+BoundingSphere MeshBase::GetBoundingSphere(bool exact, bool robust) const {
     return BoundingSphere::CreateFromPoints(vertices_, exact, robust);
 }
 

@@ -139,7 +139,7 @@ void pybind_lineset_definitions(py::module &m) {
             m, "LineSet", "create_from_oriented_bounding_ellipsoid",
             {{"ellipsoid", "The input bounding ellipsoid."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_bounding_sphere",
-                                   {{"sphere", "The input bounding sphere."}});
+                                    {{"sphere", "The input bounding sphere."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_triangle_mesh",
                                     {{"mesh", "The input triangle mesh."}});
     docstring::ClassMethodDocInject(m, "LineSet", "create_from_tetra_mesh",

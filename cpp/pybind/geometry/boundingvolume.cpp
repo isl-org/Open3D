@@ -37,14 +37,12 @@ void pybind_boundingvolume_declarations(py::module &m) {
                     m, "OrientedBoundingEllipsoid",
                     "Class that defines an oriented ellipsoid that can "
                     "be computed from 3D geometries.");
-     
-    py::class_<BoundingSphere, 
-               PyGeometry3D<BoundingSphere>,
+
+    py::class_<BoundingSphere, PyGeometry3D<BoundingSphere>,
                std::shared_ptr<BoundingSphere>, Geometry3D>
-            bounding_sphere(
-                    m, "BoundingSphere",
-                    "Class that defines a bounding sphere that can "
-                    "be computed from 3D geometries.");
+            bounding_sphere(m, "BoundingSphere",
+                            "Class that defines a bounding sphere that can "
+                            "be computed from 3D geometries.");
 }
 void pybind_boundingvolume_definitions(py::module &m) {
     auto oriented_bounding_ellipsoid = static_cast<py::class_<
@@ -130,29 +128,26 @@ Example::
             py::class_<BoundingSphere, PyGeometry3D<BoundingSphere>,
                        std::shared_ptr<BoundingSphere>, Geometry3D>>(
             m.attr("BoundingSphere"));
-     py::detail::bind_default_constructor<BoundingSphere>(bounding_sphere);
-     py::detail::bind_copy_functions<BoundingSphere>(bounding_sphere);
-     bounding_sphere
+    py::detail::bind_default_constructor<BoundingSphere>(bounding_sphere);
+    py::detail::bind_copy_functions<BoundingSphere>(bounding_sphere);
+    bounding_sphere
             .def(py::init<const Eigen::Vector3d &, double>(),
-                  "Create BoundingSphere from center and radius", "center"_a,
-                  "radius"_a)
+                 "Create BoundingSphere from center and radius", "center"_a,
+                 "radius"_a)
             .def("__repr__",
-                  [](const BoundingSphere &sphere) {
-                      std::stringstream s;
-                      auto c = sphere.center_;
-                      auto r = sphere.radius_;
-                      s << "BoundingSphere: center: (" << c.x() << ", "
-                        << c.y() << ", " << c.z() << "), radius: " << r;
-                      return s.str();
-                  })
+                 [](const BoundingSphere &sphere) {
+                     std::stringstream s;
+                     auto c = sphere.center_;
+                     auto r = sphere.radius_;
+                     s << "BoundingSphere: center: (" << c.x() << ", " << c.y()
+                       << ", " << c.z() << "), radius: " << r;
+                     return s.str();
+                 })
 
-            .def_static("create_from_points",
-                         &BoundingSphere::CreateFromPoints,
-                         "points"_a,
-                         py::kw_only(),
-                         "exact"_a = true,
-                         "robust"_a = false,
-                         R"doc(
+            .def_static("create_from_points", &BoundingSphere::CreateFromPoints,
+                        "points"_a, py::kw_only(), "exact"_a = true,
+                        "robust"_a = false,
+                        R"doc(
 Creates the bounding sphere that encloses the set of points.
 
 Args:
@@ -187,26 +182,26 @@ Example::
      sphere_mesh = o3d.geometry.TriangleMesh.create_from_bounding_sphere(sphere)
      o3d.visualization.draw([mesh, sphere_mesh])
 )doc")
-               .def("volume", &BoundingSphere::Volume,
-                    "Returns the volume of the bounding sphere.")
-               .def("get_sphere_points", &BoundingSphere::GetSpherePoints,
-                    "Returns six critical points on the surface of the sphere.")
-               .def("get_point_indices_within_bounding_sphere",
-                    &BoundingSphere::GetPointIndicesWithinBoundingSphere,
-                    "Return indices to points that are within the bounding sphere.",
-                    "points"_a)
-               .def_readwrite("center", &BoundingSphere::center_,
-                              "``float64`` array of shape ``(3, )``")
-               .def_readwrite("radius", &BoundingSphere::radius_,
-                              "float64: radius of the bounding sphere")
-               .def_readwrite("color", &BoundingSphere::color_,
-                              "``float64`` array of shape ``(3, )``");
-     docstring::ClassMethodDocInject(m, "BoundingSphere", "volume");
-     docstring::ClassMethodDocInject(m, "BoundingSphere",
-                                        "get_point_indices_within_bounding_sphere",
-                                        {{"points", "A list of points."}});
+            .def("volume", &BoundingSphere::Volume,
+                 "Returns the volume of the bounding sphere.")
+            .def("get_sphere_points", &BoundingSphere::GetSpherePoints,
+                 "Returns six critical points on the surface of the sphere.")
+            .def("get_point_indices_within_bounding_sphere",
+                 &BoundingSphere::GetPointIndicesWithinBoundingSphere,
+                 "Return indices to points that are within the bounding "
+                 "sphere.",
+                 "points"_a)
+            .def_readwrite("center", &BoundingSphere::center_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("radius", &BoundingSphere::radius_,
+                           "float64: radius of the bounding sphere")
+            .def_readwrite("color", &BoundingSphere::color_,
+                           "``float64`` array of shape ``(3, )``");
+    docstring::ClassMethodDocInject(m, "BoundingSphere", "volume");
+    docstring::ClassMethodDocInject(m, "BoundingSphere",
+                                    "get_point_indices_within_bounding_sphere",
+                                    {{"points", "A list of points."}});
 
-    
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
                        std::shared_ptr<OrientedBoundingBox>, Geometry3D>>(

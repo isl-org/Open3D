@@ -166,17 +166,18 @@ public:
     /// Creates an axis-aligned bounding box around the sphere.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     /// Returns an oriented bounding box around the sphere.
-    /// internally calls GetAxisAlignedBoundingBox() since the oriented 
+    /// internally calls GetAxisAlignedBoundingBox() since the oriented
     /// bounding box of a sphere is the same as its axis-aligned bounding box.
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
     /// Returns an oriented bounding box around the sphere.
-    /// internally calls GetAxisAlignedBoundingBox() since the minimum oriented 
+    /// internally calls GetAxisAlignedBoundingBox() since the minimum oriented
     /// bounding box of a sphere is the same as its axis-aligned bounding box.
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
 
-    virtual BoundingSphere& Transform(const Eigen::Matrix4d& transformation) override;
+    virtual BoundingSphere& Transform(
+            const Eigen::Matrix4d& transformation) override;
     virtual BoundingSphere& Translate(const Eigen::Vector3d& translation,
                                       bool relative = true) override;
     virtual BoundingSphere& Scale(const double scale,

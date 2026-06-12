@@ -268,8 +268,7 @@ Args:
 Returns:
     open3d.t.geometry.LineSet: Wireframe line set of the ellipsoid.)");
     line_set.def_static(
-            "create_from_bounding_sphere",
-            &LineSet::CreateFromBoundingSphere,
+            "create_from_bounding_sphere", &LineSet::CreateFromBoundingSphere,
             "sphere"_a, "resolution"_a = 20, "float_dtype"_a = core::Float32,
             "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
             R"(Create a wireframe LineSet representing the surface of a BoundingSphere.

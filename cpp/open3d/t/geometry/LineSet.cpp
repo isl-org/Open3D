@@ -238,19 +238,14 @@ LineSet LineSet::CreateFromOrientedBoundingEllipsoid(
 // TODO: This makes a round trip through the legacy API, since we don't have a
 // tensor t::LineSet::CreateFromTriangleMesh(). This needs tensor row hash set
 // support for de-deuplicating the edges of the triangle mesh.
-LineSet LineSet::CreateFromBoundingSphere(
-        const BoundingSphere &sphere,
-        int resolution,
-        core::Dtype float_dtype,
-        core::Dtype int_dtype,
-        const core::Device &device) {
+LineSet LineSet::CreateFromBoundingSphere(const BoundingSphere &sphere,
+                                          int resolution,
+                                          core::Dtype float_dtype,
+                                          core::Dtype int_dtype,
+                                          const core::Device &device) {
     // Build a solid sphere mesh then extract its wireframe edges.
     TriangleMesh mesh = TriangleMesh::CreateFromBoundingSphere(
-            sphere,
-            resolution,
-            float_dtype,
-            int_dtype,
-            device);
+            sphere, resolution, float_dtype, int_dtype, device);
     auto legacy_mesh = mesh.ToLegacy();
     auto legacy_lineset =
             open3d::geometry::LineSet::CreateFromTriangleMesh(legacy_mesh);

@@ -600,7 +600,7 @@ public:
             const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
             int resolution = 20,
             bool create_uv_map = false);
-    
+
     /// Factory function to create solid mesh from a BoundingSphere.
     /// \param bs BoundingSphere object to create a mesh of
     /// \param resolution defines the resolution of the sphere.

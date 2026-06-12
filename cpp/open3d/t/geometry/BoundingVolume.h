@@ -823,7 +823,6 @@ public:
     BoundingSphere &Translate(const core::Tensor &translation,
                               bool relative = true);
 
-
     /// \brief Rotate the sphere by the given rotation matrix. If
     /// the rotation matrix is not orthogonal, the rotation will not be applied.
     /// The rotation center will be the sphere center if it is not specified.
@@ -871,12 +870,12 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
     /// Returns an oriented bounding box around the sphere.
-    /// Internally calls GetAxisAlignedBoundingBox() since the oriented 
+    /// Internally calls GetAxisAlignedBoundingBox() since the oriented
     /// bounding box of a sphere is the same as its axis-aligned bounding box.
     OrientedBoundingBox GetOrientedBoundingBox(bool robust = false) const;
 
     /// Returns an oriented bounding box around the sphere.
-    /// Internally calls GetAxisAlignedBoundingBox() since the oriented 
+    /// Internally calls GetAxisAlignedBoundingBox() since the oriented
     /// bounding box of a sphere is the same as its axis-aligned bounding box.
     OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const;
@@ -888,27 +887,27 @@ public:
     /// The default is float32.
     /// \param device The device of the sphere. The default is CPU:0.
     static BoundingSphere FromLegacy(
-        const open3d::geometry::BoundingSphere &sphere,
+            const open3d::geometry::BoundingSphere &sphere,
             const core::Dtype &dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Creates the minimum bounding sphere.
     /// \param points A list of points with data type of float32 or float64 (N x
     /// 3 tensor, where N must be larger than 0).
-    /// \param exact If true, computes the exact minimum bounding sphere 
+    /// \param exact If true, computes the exact minimum bounding sphere
     ///     using Welzl's algorithm.
     ///     This algorithm is recursive and has an expected time
     ///     complexity of O(n).
-    ///     If false, computes a fast approximate minimum bounding sphere 
+    ///     If false, computes a fast approximate minimum bounding sphere
     ///     using Ritter's algorithm.
     ///     The sphere can be 5% bigger than the exact minimum bounding sphere.
-    /// \param robust Used only if exact is set to true. 
+    /// \param robust Used only if exact is set to true.
     ///     If set to true uses a more robust method which works in
-    ///     degenerate cases but introduces noise to the points coordinates.    
+    ///     degenerate cases but introduces noise to the points coordinates.
     /// \return BoundingSphere with same data type and device as input points.
     static BoundingSphere CreateFromPoints(const core::Tensor &points,
-        bool exact = true, 
-        bool robust = false);
+                                           bool exact = true,
+                                           bool robust = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

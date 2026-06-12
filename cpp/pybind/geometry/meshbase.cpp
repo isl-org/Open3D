@@ -99,11 +99,8 @@ Args:
 Returns:
     open3d.geometry.OrientedBoundingEllipsoid)")
 
-            .def("get_bounding_sphere",
-                 &MeshBase::GetBoundingSphere, 
-                 py::kw_only(),
-                 "exact"_a = true,
-                 "robust"_a = false,
+            .def("get_bounding_sphere", &MeshBase::GetBoundingSphere,
+                 py::kw_only(), "exact"_a = true, "robust"_a = false,
                  R"(Compute the minimum volume bounding sphere that
 encloses the mesh vertices using Welzl's algorithm.
 

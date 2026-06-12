@@ -895,9 +895,8 @@ public:
             bool robust = false) const;
 
     /// Create a bounding sphere from vertex attribute "positions".
-    BoundingSphere GetBoundingSphere(
-        bool exact = true,
-        bool robust = false) const;
+    BoundingSphere GetBoundingSphere(bool exact = true,
+                                     bool robust = false) const;
 
     /// Fill holes by triangulating boundary edges.
     ///

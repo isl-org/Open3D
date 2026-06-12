@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/kernel/MinimumBS.h"
 
 #include <Eigen/Dense>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -151,34 +153,26 @@ constexpr double kRankTol = 1e-9;
 // sphere surface for valid small-dimension enclosing spheres).
 struct EigenSphere {
     EigenSphere()
-        : center_(Eigen::Vector3d::Zero()),
-          radius_(0.0),
-          boundary_() {}
+        : center_(Eigen::Vector3d::Zero()), radius_(0.0), boundary_() {}
 
     EigenSphere(const Eigen::Vector3d& c, double r)
-        : center_(c),
-          radius_(r),
-          boundary_() {}
+        : center_(c), radius_(r), boundary_() {}
 
     EigenSphere(const Eigen::Vector3d& c,
                 double r,
                 const std::vector<Eigen::Vector3d>& b)
-        : center_(c),
-          radius_(r),
-          boundary_(b) {}
+        : center_(c), radius_(r), boundary_(b) {}
 
     // Check if point is inside or on the sphere surface (within tolerance eps).
     // Uses squared-norm to avoid expensive sqrt operations.
-    bool IsInside(const Eigen::Vector3d& point,
-                  double eps = kEps) const {
+    bool IsInside(const Eigen::Vector3d& point, double eps = kEps) const {
         return (point - center_).squaredNorm() <=
                (radius_ + eps) * (radius_ + eps);
     }
 
     // Compute sphere volume: (4/3) * π * r³
     double Volume() const {
-        return (4.0 / 3.0) * std::acos(-1.0) *
-               radius_ * radius_ * radius_;
+        return (4.0 / 3.0) * std::acos(-1.0) * radius_ * radius_ * radius_;
     }
 
     Eigen::Vector3d center_;
@@ -204,42 +198,28 @@ bool ContainsAll(const EigenSphere& sphere,
 }
 
 static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
-        const Eigen::MatrixXd &points);
+        const Eigen::MatrixXd& points);
 
-static EigenSphere ComputeCircumsphere2(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2);
+static EigenSphere ComputeCircumsphere2(const Eigen::Vector3d& p1,
+                                        const Eigen::Vector3d& p2);
 
-static EigenSphere ComputeCircumsphere3(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2,
-        const Eigen::Vector3d& p3);
+static EigenSphere ComputeCircumsphere3(const Eigen::Vector3d& p1,
+                                        const Eigen::Vector3d& p2,
+                                        const Eigen::Vector3d& p3);
 
-static EigenSphere ComputeCircumsphere4(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2,
-        const Eigen::Vector3d& p3,
-        const Eigen::Vector3d& p4);
+static EigenSphere ComputeCircumsphere4(const Eigen::Vector3d& p1,
+                                        const Eigen::Vector3d& p2,
+                                        const Eigen::Vector3d& p3,
+                                        const Eigen::Vector3d& p4);
 
-static int ComputeIntrinsicRank(
-        const Eigen::MatrixXd &mat,
-        double tol = kRankTol);
+static int ComputeIntrinsicRank(const Eigen::MatrixXd& mat,
+                                double tol = kRankTol);
 
-static const std::array<std::array<int, 3>, 4> kSubTriangles = {{
-    {0, 1, 2},
-    {0, 1, 3},
-    {0, 2, 3},
-    {1, 2, 3}
-}};
+static const std::array<std::array<int, 3>, 4> kSubTriangles = {
+        {{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3}}};
 
-static const std::array<std::array<int, 2>, 6> kSubPairs = {{
-    {0, 1},
-    {0, 2},
-    {0, 3},
-    {1, 2},
-    {1, 3},
-    {2, 3}
-}};
+static const std::array<std::array<int, 2>, 6> kSubPairs = {
+        {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}}};
 
 static EigenSphere ComputeBestLowerDimensionalSphere(
         const std::vector<Eigen::Vector3d>& pts) {
@@ -247,10 +227,7 @@ static EigenSphere ComputeBestLowerDimensionalSphere(
     best.radius_ = std::numeric_limits<double>::infinity();
 
     for (const auto& c : kSubTriangles) {
-        EigenSphere s = ComputeCircumsphere3(
-                pts[c[0]],
-                pts[c[1]],
-                pts[c[2]]);
+        EigenSphere s = ComputeCircumsphere3(pts[c[0]], pts[c[1]], pts[c[2]]);
         if (ContainsAll(s, pts, 1e-9) && s.radius_ < best.radius_) {
             best = s;
         }
@@ -261,9 +238,7 @@ static EigenSphere ComputeBestLowerDimensionalSphere(
     }
 
     for (const auto& c : kSubPairs) {
-        EigenSphere s = ComputeCircumsphere2(
-                pts[c[0]],
-                pts[c[1]]);
+        EigenSphere s = ComputeCircumsphere2(pts[c[0]], pts[c[1]]);
         if (ContainsAll(s, pts, 1e-9) && s.radius_ < best.radius_) {
             best = s;
         }
@@ -275,9 +250,7 @@ static EigenSphere ComputeBestLowerDimensionalSphere(
 
     EigenSphere fallback = ComputeCircumsphere2(pts[0], pts[1]);
     for (const auto& c : kSubPairs) {
-        EigenSphere s = ComputeCircumsphere2(
-                pts[c[0]],
-                pts[c[1]]);
+        EigenSphere s = ComputeCircumsphere2(pts[c[0]], pts[c[1]]);
         if (s.radius_ > fallback.radius_) {
             fallback = s;
         }
@@ -286,14 +259,13 @@ static EigenSphere ComputeBestLowerDimensionalSphere(
 }
 
 static std::pair<Eigen::VectorXd, double> WelzlNDRecursive(
-        std::vector<Eigen::VectorXd> &points,
+        std::vector<Eigen::VectorXd>& points,
         std::vector<Eigen::VectorXd> boundary,
         size_t n,
         double eps);
 
-static int ComputeIntrinsicRank(
-        const Eigen::VectorXd &svals,
-        double tol = kRankTol) {
+static int ComputeIntrinsicRank(const Eigen::VectorXd& svals,
+                                double tol = kRankTol) {
     int rank = 0;
     for (int i = 0; i < static_cast<int>(svals.size()); ++i) {
         if (svals(i) > tol) {
@@ -303,9 +275,7 @@ static int ComputeIntrinsicRank(
     return rank;
 }
 
-static int ComputeIntrinsicRank(
-        const Eigen::MatrixXd &mat,
-        double tol) {
+static int ComputeIntrinsicRank(const Eigen::MatrixXd& mat, double tol) {
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(
             mat, Eigen::ComputeThinU | Eigen::ComputeThinV);
     return ComputeIntrinsicRank(svd.singularValues(), tol);
@@ -315,10 +285,8 @@ static int ComputeIntrinsicRank(
 // 2-point sphere
 // ----------------------------------------------------------------------------
 
-EigenSphere ComputeCircumsphere2(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2) {
-
+EigenSphere ComputeCircumsphere2(const Eigen::Vector3d& p1,
+                                 const Eigen::Vector3d& p2) {
     Eigen::Vector3d center = 0.5 * (p1 + p2);
     double radius = 0.5 * (p2 - p1).norm();
 
@@ -330,11 +298,9 @@ EigenSphere ComputeCircumsphere2(
 // Robust against collinear points
 // ----------------------------------------------------------------------------
 
-EigenSphere ComputeCircumsphere3(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2,
-        const Eigen::Vector3d& p3) {
-
+EigenSphere ComputeCircumsphere3(const Eigen::Vector3d& p1,
+                                 const Eigen::Vector3d& p2,
+                                 const Eigen::Vector3d& p3) {
     Eigen::Vector3d a = p2 - p1;
     Eigen::Vector3d b = p3 - p1;
 
@@ -346,7 +312,6 @@ EigenSphere ComputeCircumsphere3(
     // ------------------------------------------------------------------------
 
     if (n2 < kEps) {
-
         double d12 = (p2 - p1).squaredNorm();
         double d13 = (p3 - p1).squaredNorm();
         double d23 = (p3 - p2).squaredNorm();
@@ -377,12 +342,10 @@ EigenSphere ComputeCircumsphere3(
 // Robust against coplanar tetrahedra
 // ----------------------------------------------------------------------------
 
-EigenSphere ComputeCircumsphere4(
-        const Eigen::Vector3d& p1,
-        const Eigen::Vector3d& p2,
-        const Eigen::Vector3d& p3,
-        const Eigen::Vector3d& p4) {
-
+EigenSphere ComputeCircumsphere4(const Eigen::Vector3d& p1,
+                                 const Eigen::Vector3d& p2,
+                                 const Eigen::Vector3d& p3,
+                                 const Eigen::Vector3d& p4) {
     Eigen::Matrix3d M;
     M.row(0) = p2 - p1;
     M.row(1) = p3 - p1;
@@ -408,10 +371,10 @@ EigenSphere ComputeCircumsphere4(
     b(1) = p3.squaredNorm() - p1.squaredNorm();
     b(2) = p4.squaredNorm() - p1.squaredNorm();
 
-    // Find the unique point in 3D that is equidistant from the 
+    // Find the unique point in 3D that is equidistant from the
     // four tetrahedron vertices -> center of the circumsphere.
-    Eigen::Vector3d center = A.jacobiSvd(
-        Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
+    Eigen::Vector3d center =
+            A.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV).solve(b);
     double radius = (center - p1).norm();
 
     EigenSphere sphere(center, radius, pts);
@@ -426,44 +389,26 @@ EigenSphere ComputeCircumsphere4(
 // Boundary sphere
 // ----------------------------------------------------------------------------
 
-EigenSphere SphereFromBoundary(
-        const std::vector<Eigen::Vector3d>& boundary) {
-
+EigenSphere SphereFromBoundary(const std::vector<Eigen::Vector3d>& boundary) {
     switch (boundary.size()) {
-
         case 0:
-            return EigenSphere(
-                    Eigen::Vector3d::Zero(),
-                    0.0,
-                    boundary);
+            return EigenSphere(Eigen::Vector3d::Zero(), 0.0, boundary);
 
         case 1:
-            return EigenSphere(
-                    boundary[0],
-                    0.0,
-                    boundary);
+            return EigenSphere(boundary[0], 0.0, boundary);
 
         case 2:
-            return ComputeCircumsphere2(
-                    boundary[0],
-                    boundary[1]);
+            return ComputeCircumsphere2(boundary[0], boundary[1]);
 
         case 3:
-            return ComputeCircumsphere3(
-                    boundary[0],
-                    boundary[1],
-                    boundary[2]);
+            return ComputeCircumsphere3(boundary[0], boundary[1], boundary[2]);
 
         case 4:
-            return ComputeCircumsphere4(
-                    boundary[0],
-                    boundary[1],
-                    boundary[2],
-                    boundary[3]);
+            return ComputeCircumsphere4(boundary[0], boundary[1], boundary[2],
+                                        boundary[3]);
 
         default:
-            utility::LogError(
-                    "Boundary size > 4 is invalid.");
+            utility::LogError("Boundary size > 4 is invalid.");
     }
 }
 
@@ -473,22 +418,16 @@ EigenSphere SphereFromBoundary(
 // - shuffle once globally
 // ----------------------------------------------------------------------------
 
-EigenSphere WelzlRecursive(
-        std::vector<Eigen::Vector3d>& points,
-        std::vector<Eigen::Vector3d> boundary,
-        size_t n) {
-
+EigenSphere WelzlRecursive(std::vector<Eigen::Vector3d>& points,
+                           std::vector<Eigen::Vector3d> boundary,
+                           size_t n) {
     if (n == 0 || boundary.size() == 4) {
         return SphereFromBoundary(boundary);
     }
 
     const Eigen::Vector3d p = points[n - 1];
 
-    EigenSphere sphere =
-            WelzlRecursive(
-                    points,
-                    boundary,
-                    n - 1);
+    EigenSphere sphere = WelzlRecursive(points, boundary, n - 1);
 
     if (sphere.IsInside(p)) {
         return sphere;
@@ -496,12 +435,8 @@ EigenSphere WelzlRecursive(
 
     boundary.push_back(p);
 
-    return WelzlRecursive(
-            points,
-            boundary,
-            n - 1);
+    return WelzlRecursive(points, boundary, n - 1);
 }
-
 
 // ----------------------------------------------------------------------------
 // Generic N-D Welzl (small helper for projecting degenerate 3D sets)
@@ -513,12 +448,13 @@ EigenSphere WelzlRecursive(
 // Typically exercised for D=1 or D=2 degenerate 3D point sets,
 // but mathematically valid for arbitrary small D.
 static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
-        const Eigen::MatrixXd &points) {
+        const Eigen::MatrixXd& points) {
     const int M = static_cast<int>(points.rows());
     const int D = static_cast<int>(points.cols());
 
     if (M == 0) {
-        return {Eigen::VectorXd::Constant(D, std::numeric_limits<double>::quiet_NaN()),
+        return {Eigen::VectorXd::Constant(
+                        D, std::numeric_limits<double>::quiet_NaN()),
                 std::numeric_limits<double>::quiet_NaN()};
     }
     if (M == 1) {
@@ -526,14 +462,15 @@ static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
     }
 
     if (M == 2) {
-        Eigen::VectorXd c = 0.5 * (points.row(0).transpose() + points.row(1).transpose());
+        Eigen::VectorXd c =
+                0.5 * (points.row(0).transpose() + points.row(1).transpose());
         double r = (points.row(0).transpose() - c).norm();
         return {c, r};
     }
 
     // General small linear solve: 2*(p_i - p_0) · c = |p_i|^2 - |p_0|^2
-    Eigen::MatrixXd V = points.block(1, 0, M - 1, D) -
-                       points.row(0).replicate(M - 1, 1);
+    Eigen::MatrixXd V =
+            points.block(1, 0, M - 1, D) - points.row(0).replicate(M - 1, 1);
     Eigen::MatrixXd A = 2.0 * V;
     Eigen::VectorXd b(M - 1);
     for (int i = 1; i < M; ++i) {
@@ -544,7 +481,8 @@ static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
     if (A.fullPivLu().rank() == D) {
         center = A.colPivHouseholderQr().solve(b);
     } else {
-        center = A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+        center =
+                A.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
     }
 
     double radius = (points.row(0).transpose() - center).norm();
@@ -553,11 +491,10 @@ static std::pair<Eigen::VectorXd, double> FitCircumsphereND(
 
 // Recursive ND Welzl (points passed as Eigen vectors)
 static std::pair<Eigen::VectorXd, double> WelzlNDRecursive(
-        std::vector<Eigen::VectorXd> &points,
+        std::vector<Eigen::VectorXd>& points,
         std::vector<Eigen::VectorXd> boundary,
         size_t n,
         double eps = kEps) {
-
     const int D = static_cast<int>(points[0].size());
 
     if (n == 0 || boundary.size() == static_cast<size_t>(D + 1)) {
@@ -573,14 +510,14 @@ static std::pair<Eigen::VectorXd, double> WelzlNDRecursive(
 
     auto [c, r] = WelzlNDRecursive(points, boundary, n - 1, eps);
 
-    if (std::isnan(r) == false && (p - c).squaredNorm() <= (r + eps) * (r + eps)) {
+    if (std::isnan(r) == false &&
+        (p - c).squaredNorm() <= (r + eps) * (r + eps)) {
         return {c, r};
     }
 
     boundary.push_back(p);
     return WelzlNDRecursive(points, boundary, n - 1, eps);
 }
-
 
 }  // namespace
 
@@ -589,17 +526,13 @@ static std::pair<Eigen::VectorXd, double> WelzlNDRecursive(
 // ----------------------------------------------------------------------------
 
 open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
-        const std::vector<Eigen::Vector3d>& points,
-        bool robust) {
-
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
     if (points.empty()) {
-        utility::LogError(
-                "Input point set is empty.");
+        utility::LogError("Input point set is empty.");
     }
 
     if (static_cast<int>(points.size()) < 2) {
-        utility::LogError(
-                "Input point set has less than 2 points.");
+        utility::LogError("Input point set has less than 2 points.");
     }
 
     // ------------------------------------------------------------------------
@@ -609,18 +542,15 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     open3d::geometry::PointCloud pcd;
     pcd.points_ = points;
 
-    auto [hull_mesh, hull_indices] =
-            pcd.ComputeConvexHull(robust);
+    auto [hull_mesh, hull_indices] = pcd.ComputeConvexHull(robust);
 
     if (hull_mesh->vertices_.empty()) {
-        utility::LogWarning(
-                "Failed to compute convex hull.");
+        utility::LogWarning("Failed to compute convex hull.");
 
         return open3d::geometry::BoundingSphere();
     }
 
-    std::vector<Eigen::Vector3d> pts =
-            hull_mesh->vertices_;
+    std::vector<Eigen::Vector3d> pts = hull_mesh->vertices_;
 
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -659,11 +589,11 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     if (rank < 3 && rank > 0) {
         // LOWER-DIMENSIONAL PATH: Points lie in a rank-D subspace (D < 3)
         // Strategy: Project to intrinsic subspace, solve there, lift back
-        
+
         // Extract basis: top 'rank' right singular vectors (columns of V)
         // These span the subspace containing the points
-        Eigen::MatrixXd V = svd.matrixV();           // 3x3, orthonormal columns
-        Eigen::MatrixXd basis = V.transpose().block(0, 0, rank, 3); // rank x 3
+        Eigen::MatrixXd V = svd.matrixV();  // 3x3, orthonormal columns
+        Eigen::MatrixXd basis = V.transpose().block(0, 0, rank, 3);  // rank x 3
 
         // Project centered points onto basis: X_sub = centered * basis^T
         // Result: M x rank matrix of coordinates in intrinsic subspace
@@ -702,41 +632,29 @@ open3d::geometry::BoundingSphere ComputeMinimumBSWelzl(
     return open3d::geometry::BoundingSphere(bs.center_, bs.radius_);
 }
 
-BoundingSphere ComputeMinimumBSWelzl(
-        const core::Tensor& points,
-        bool robust) {
-
+BoundingSphere ComputeMinimumBSWelzl(const core::Tensor& points, bool robust) {
     core::AssertTensorShape(points, {std::nullopt, 3});
 
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
 
     if (points.GetShape(0) < 1) {
-        utility::LogError(
-                "Input point set must have at least 1 point.");
+        utility::LogError("Input point set must have at least 1 point.");
     }
 
     const std::vector<Eigen::Vector3d> eigen_points =
-            core::eigen_converter::
-                    TensorToEigenVector3dVector(
-                            points.To(
-                                    core::Device("CPU:0"),
-                                    core::Float64));
+            core::eigen_converter::TensorToEigenVector3dVector(
+                    points.To(core::Device("CPU:0"), core::Float64));
 
     open3d::geometry::BoundingSphere sphere =
-            ComputeMinimumBSWelzl(
-                    eigen_points,
-                    robust);
+            ComputeMinimumBSWelzl(eigen_points, robust);
 
-    return open3d::t::geometry::BoundingSphere::
-            FromLegacy(
-                    sphere,
-                    points.GetDtype(),
-                    points.GetDevice());
+    return open3d::t::geometry::BoundingSphere::FromLegacy(
+            sphere, points.GetDtype(), points.GetDevice());
 }
 
-
-// // Approximate bounding sphere, based on "An Efficient Bounding Sphere" by Jack Ritter, from "Graphics Gems"
-// Sphere nv::approximateSphere_Ritter(const Vector3 * pointArray, const uint pointCount) {
+// // Approximate bounding sphere, based on "An Efficient Bounding Sphere" by
+// Jack Ritter, from "Graphics Gems" Sphere nv::approximateSphere_Ritter(const
+// Vector3 * pointArray, const uint pointCount) {
 //     nvDebugCheck(pointArray != NULL);
 //     nvDebugCheck(pointCount > 0);
 
@@ -763,7 +681,7 @@ BoundingSphere ComputeMinimumBSWelzl(
 //     float zspan = lengthSquared(zmax - zmin);
 
 //     // Set points dia1 & dia2 to the maximally separated pair.
-//     Vector3 dia1 = xmin; 
+//     Vector3 dia1 = xmin;
 //     Vector3 dia2 = xmax;
 //     float maxspan = xspan;
 //     if (yspan > maxspan) {
@@ -786,7 +704,6 @@ BoundingSphere ComputeMinimumBSWelzl(
 //     float rad_sq = lengthSquared(dia2 - sphere.center);
 //     sphere.radius = sqrtf(rad_sq);
 
-
 //     // SECOND PASS: increment current sphere
 //     for (uint i = 0; i < pointCount; i++) {
 //         const Vector3 & p = pointArray[i];
@@ -794,18 +711,20 @@ BoundingSphere ComputeMinimumBSWelzl(
 //         float old_to_p_sq = lengthSquared(p - sphere.center);
 
 //         if (old_to_p_sq > rad_sq) {    // do r**2 test first
-            
+
 //             // this point is outside of current sphere
 //             float old_to_p = sqrtf(old_to_p_sq);
 
 //             // calc radius of new sphere
 //             sphere.radius = (sphere.radius + old_to_p) / 2.0f;
-//             rad_sq = sphere.radius * sphere.radius;     // for next r**2 compare
-            
+//             rad_sq = sphere.radius * sphere.radius;     // for next r**2
+//             compare
+
 //             float old_to_new = old_to_p - sphere.radius;
 
 //             // calc center of new sphere
-//             sphere.center = (sphere.radius * sphere.center + old_to_new * p) / old_to_p;
+//             sphere.center = (sphere.radius * sphere.center + old_to_new * p)
+//             / old_to_p;
 //         }
 //     }
 
@@ -814,122 +733,103 @@ BoundingSphere ComputeMinimumBSWelzl(
 //     return sphere;
 // }
 
-EigenSphere RitterBSApproximation(
-        const std::vector<Eigen::Vector3d>& points,
-        size_t n) {
+EigenSphere RitterBSApproximation(const std::vector<Eigen::Vector3d>& points,
+                                  size_t n) {
+    Eigen::Vector3d xmin, xmax, ymin, ymax, zmin, zmax;
+    xmin = xmax = ymin = ymax = zmin = zmax = points[0];
 
-            Eigen::Vector3d xmin, xmax, ymin, ymax, zmin, zmax;
-            xmin = xmax = ymin = ymax = zmin = zmax = points[0];
+    // FIRST PASS: find 6 minima/maxima points
+    for (size_t i = 0; i < n; i++) {
+        const Eigen::Vector3d& p = points[i];
+        if (p.x() < xmin.x()) xmin = p;
+        if (p.x() > xmax.x()) xmax = p;
+        if (p.y() < ymin.y()) ymin = p;
+        if (p.y() > ymax.y()) ymax = p;
+        if (p.z() < zmin.z()) zmin = p;
+        if (p.z() > zmax.z()) zmax = p;
+    }
 
-            // FIRST PASS: find 6 minima/maxima points
-            for (size_t i = 0; i < n; i++) {
-                const Eigen::Vector3d & p = points[i];
-                if (p.x() < xmin.x()) xmin = p;
-                if (p.x() > xmax.x()) xmax = p;
-                if (p.y() < ymin.y()) ymin = p;
-                if (p.y() > ymax.y()) ymax = p;
-                if (p.z() < zmin.z()) zmin = p;
-                if (p.z() > zmax.z()) zmax = p;
-            }
+    double x_span_sq = (xmax - xmin).squaredNorm();
+    double y_span_sq = (ymax - ymin).squaredNorm();
+    double z_span_sq = (zmax - zmin).squaredNorm();
 
-            double x_span_sq = (xmax - xmin).squaredNorm();
-            double y_span_sq = (ymax - ymin).squaredNorm();
-            double z_span_sq = (zmax - zmin).squaredNorm();
+    // Set points extreme_point1 & extreme_point2 to
+    // the maximally separated pair.
+    Eigen::Vector3d extreme_point1 = xmin;
+    Eigen::Vector3d extreme_point2 = xmax;
+    double max_span_sq = x_span_sq;
+    if (y_span_sq > max_span_sq) {
+        max_span_sq = y_span_sq;
+        extreme_point1 = ymin;
+        extreme_point2 = ymax;
+    }
+    if (z_span_sq > max_span_sq) {
+        extreme_point1 = zmin;
+        extreme_point2 = zmax;
+    }
 
-            // Set points extreme_point1 & extreme_point2 to 
-            // the maximally separated pair.
-            Eigen::Vector3d extreme_point1 = xmin;
-            Eigen::Vector3d extreme_point2 = xmax;
-            double max_span_sq = x_span_sq;
-            if (y_span_sq > max_span_sq) {
-                max_span_sq = y_span_sq;
-                extreme_point1 = ymin;
-                extreme_point2 = ymax;
-            }
-            if (z_span_sq > max_span_sq) {
-                extreme_point1 = zmin;
-                extreme_point2 = zmax;
-            }
+    // Initial sphere from extrema pair
+    Eigen::Vector3d center = 0.5 * (extreme_point1 + extreme_point2);
+    double radius = (extreme_point2 - extreme_point1).norm() / 2.0;
 
-            // Initial sphere from extrema pair
-            Eigen::Vector3d center = 0.5 * (extreme_point1 + extreme_point2);
-            double radius = (extreme_point2 - extreme_point1).norm() / 2.0;
+    EigenSphere sphere(center, radius);
 
-            EigenSphere sphere(center, radius);
+    // SECOND PASS: increment current sphere
+    for (size_t i = 0; i < n; i++) {
+        const Eigen::Vector3d& p = points[i];
 
-            // SECOND PASS: increment current sphere
-            for (size_t i = 0; i < n; i++) {
-                const Eigen::Vector3d & p = points[i];
-                
-                if (!sphere.IsInside(p)) {
-                    
-                    double center_to_point = (p - center).norm();
+        if (!sphere.IsInside(p)) {
+            double center_to_point = (p - center).norm();
 
-                    // update radius
-                    radius = 0.5 * (radius + center_to_point);
+            // update radius
+            radius = 0.5 * (radius + center_to_point);
 
-                    double center_shift = center_to_point - radius;
-                    
-                    // update center
-                    center = (radius * center + center_shift * p) / 
-                                center_to_point;
-                    
-                    // update sphere for next iteration
-                    sphere = EigenSphere(center, radius);
-                }
+            double center_shift = center_to_point - radius;
 
-            }
+            // update center
+            center = (radius * center + center_shift * p) / center_to_point;
 
-            return sphere;
+            // update sphere for next iteration
+            sphere = EigenSphere(center, radius);
+        }
+    }
 
+    return sphere;
 }
 
 open3d::geometry::BoundingSphere ComputeApproximateBSRitter(
         const std::vector<Eigen::Vector3d>& points) {
-
     if (points.empty()) {
-        utility::LogError(
-                "Input point set is empty.");
+        utility::LogError("Input point set is empty.");
     }
 
     if (static_cast<int>(points.size()) < 2) {
-        utility::LogError(
-                "Input point set has less than 2 points.");
+        utility::LogError("Input point set has less than 2 points.");
     }
-    
+
     EigenSphere bs = RitterBSApproximation(points, points.size());
 
     return open3d::geometry::BoundingSphere(bs.center_, bs.radius_);
 }
 
-BoundingSphere ComputeApproximateBSRitter(
-        const core::Tensor& points) {
-
+BoundingSphere ComputeApproximateBSRitter(const core::Tensor& points) {
     core::AssertTensorShape(points, {std::nullopt, 3});
 
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
 
     if (points.GetShape(0) < 1) {
-        utility::LogError(
-                "Input point set must have at least 1 point.");
+        utility::LogError("Input point set must have at least 1 point.");
     }
 
     const std::vector<Eigen::Vector3d> eigen_points =
-            core::eigen_converter::
-                    TensorToEigenVector3dVector(
-                            points.To(
-                                    core::Device("CPU:0"),
-                                    core::Float64));
+            core::eigen_converter::TensorToEigenVector3dVector(
+                    points.To(core::Device("CPU:0"), core::Float64));
 
     open3d::geometry::BoundingSphere sphere =
-            ComputeApproximateBSRitter(
-                    eigen_points);
+            ComputeApproximateBSRitter(eigen_points);
 
-    return open3d::t::geometry::BoundingSphere::
-            FromLegacy(
-                    sphere,
-                    points.GetDtype(),
-                    points.GetDevice());
+    return open3d::t::geometry::BoundingSphere::FromLegacy(
+            sphere, points.GetDtype(), points.GetDevice());
 }
 
 }  // namespace bounding_sphere

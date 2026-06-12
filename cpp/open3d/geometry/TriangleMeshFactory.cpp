@@ -170,9 +170,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromBoundingSphere(
         const BoundingSphere &bs,
         int resolution /* = 20 */,
         bool create_uv_map /*= false*/) {
-
-    auto mesh = CreateSphere(bs.radius_, resolution,
-                                create_uv_map);
+    auto mesh = CreateSphere(bs.radius_, resolution, create_uv_map);
     mesh->Translate(bs.center_);
     mesh->PaintUniformColor(bs.color_);
     return mesh;

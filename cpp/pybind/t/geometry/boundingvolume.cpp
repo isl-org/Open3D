@@ -51,9 +51,8 @@ arbitrary frame of reference with the properties:
   a data type ``open3d.core.float32`` (default) or ``open3d.core.float64``.
   Values can only be in the range [0.0, 1.0].)");
 
-     py::class_<BoundingSphere, PyGeometry<BoundingSphere>, 
-     std::shared_ptr<BoundingSphere>,
-                Geometry>
+    py::class_<BoundingSphere, PyGeometry<BoundingSphere>,
+               std::shared_ptr<BoundingSphere>, Geometry>
             bs(m, "BoundingSphere",
                R"(A bounding sphere defined by a center point and a radius 
                with the properties:
@@ -605,18 +604,17 @@ Example::
         o3d.visualization.draw([pcd, ellipsoid_mesh])
 )",
             "points"_a, "robust"_a = false);
-    
+
     // BoundingSphere
-    auto bs = static_cast<py::class_<
-            BoundingSphere, PyGeometry<BoundingSphere>,
-            std::shared_ptr<BoundingSphere>, Geometry>>(
-            m.attr("BoundingSphere"));
-    bs.def(py::init<const core::Device&>(),
-                        "device"_a = core::Device("CPU:0"),
-                        "Construct an empty BoundingSphere on the provided device.");
-    bs.def(py::init<const core::Tensor&, const core::Tensor&>(),
-                        "center"_a, "radius"_a,
-                        R"(Construct a BoundingSphere from center and radius.
+    auto bs =
+            static_cast<py::class_<BoundingSphere, PyGeometry<BoundingSphere>,
+                                   std::shared_ptr<BoundingSphere>, Geometry>>(
+                    m.attr("BoundingSphere"));
+    bs.def(py::init<const core::Device&>(), "device"_a = core::Device("CPU:0"),
+           "Construct an empty BoundingSphere on the provided device.");
+    bs.def(py::init<const core::Tensor&, const core::Tensor&>(), "center"_a,
+           "radius"_a,
+           R"(Construct a BoundingSphere from center and radius.
 The BoundingSphere will be created on the device of the given tensors, which
 must be on the same device and have the same data type.)");
     docstring::ClassMethodDocInject(
@@ -631,12 +629,12 @@ must be on the same device and have the same data type.)");
     bs.def("__repr__", &BoundingSphere::ToString);
 
     bs.def("to", &BoundingSphere::To,
-                        "Transfer the bounding sphere to a specified device and "
-                        "data type.",
-                        "device"_a, "dtype"_a, "copy"_a = false);
+           "Transfer the bounding sphere to a specified device and "
+           "data type.",
+           "device"_a, "dtype"_a, "copy"_a = false);
     bs.def("clone", &BoundingSphere::Clone,
-                        "Returns a copy of the bounding sphere on the same "
-                        "device.");
+           "Returns a copy of the bounding sphere on the same "
+           "device.");
     bs.def(
             "cpu",
             [](const BoundingSphere& bs) {
@@ -652,62 +650,55 @@ must be on the same device and have the same data type.)");
             "device_id"_a = 0);
 
     bs.def("set_center", &BoundingSphere::SetCenter, "center"_a,
-                        "Set the center of the bounding sphere.");
+           "Set the center of the bounding sphere.");
     bs.def("set_radius", &BoundingSphere::SetRadius, "radius"_a,
-                        "Set the radius of the bounding sphere.");
+           "Set the radius of the bounding sphere.");
     bs.def("set_color", &BoundingSphere::SetColor, "color"_a,
-                        "Set the color of the bounding sphere.");
+           "Set the color of the bounding sphere.");
 
-    bs.def_property_readonly("center",
-                                          &BoundingSphere::GetCenter,
-                                          "Center of the bounding sphere.");
+    bs.def_property_readonly("center", &BoundingSphere::GetCenter,
+                             "Center of the bounding sphere.");
     bs.def_property_readonly("radius", &BoundingSphere::GetRadius,
-                                          "Radius of the bounding sphere.");
+                             "Radius of the bounding sphere.");
     bs.def_property_readonly("color", &BoundingSphere::GetColor,
-                                          "Color of the bounding sphere.");
+                             "Color of the bounding sphere.");
 
     bs.def("translate", &BoundingSphere::Translate,
-                        "Translate the bounding sphere.", "translation"_a,
-                        "relative"_a = true);
-    bs.def("rotate", &BoundingSphere::Rotate,
-                        "Rotate the bounding sphere.", "rotation"_a,
-                        "center"_a = std::nullopt);
-    bs.def("scale", &BoundingSphere::Scale,
-                        "Scale the bounding sphere.", "scale"_a,
-                        "center"_a = std::nullopt);
+           "Translate the bounding sphere.", "translation"_a,
+           "relative"_a = true);
+    bs.def("rotate", &BoundingSphere::Rotate, "Rotate the bounding sphere.",
+           "rotation"_a, "center"_a = std::nullopt);
+    bs.def("scale", &BoundingSphere::Scale, "Scale the bounding sphere.",
+           "scale"_a, "center"_a = std::nullopt);
 
     bs.def("volume", &BoundingSphere::Volume,
-                        "Returns the volume of the bounding sphere.");
+           "Returns the volume of the bounding sphere.");
     bs.def("get_sphere_points", &BoundingSphere::GetSpherePoints,
-                        "Returns the six critical points of the bounding sphere. "
-                        "Return tensor has shape {6, 3}.");
+           "Returns the six critical points of the bounding sphere. "
+           "Return tensor has shape {6, 3}.");
     bs.def("get_point_indices_within_bounding_sphere",
-                        &BoundingSphere::GetPointIndicesWithinBoundingSphere,
-                        "Indices to points that are within the bounding sphere.",
-                        "points"_a);
+           &BoundingSphere::GetPointIndicesWithinBoundingSphere,
+           "Indices to points that are within the bounding sphere.",
+           "points"_a);
     bs.def("get_axis_aligned_bounding_box",
-                        &BoundingSphere::GetAxisAlignedBoundingBox,
-                        "Returns the axis-aligned bounding box that contains this "
-                        "sphere.");
-    bs.def("get_oriented_bounding_box",
-                        &BoundingSphere::GetOrientedBoundingBox,
-                        "Returns an oriented bounding box around the sphere.",
-                        "robust"_a = false);
+           &BoundingSphere::GetAxisAlignedBoundingBox,
+           "Returns the axis-aligned bounding box that contains this "
+           "sphere.");
+    bs.def("get_oriented_bounding_box", &BoundingSphere::GetOrientedBoundingBox,
+           "Returns an oriented bounding box around the sphere.",
+           "robust"_a = false);
     bs.def("get_minimal_oriented_bounding_box",
-                        &BoundingSphere::GetMinimalOrientedBoundingBox,
-                        "Returns the minimal oriented bounding box around the "
-                        "sphere.",
-                        "robust"_a = false);
+           &BoundingSphere::GetMinimalOrientedBoundingBox,
+           "Returns the minimal oriented bounding box around the "
+           "sphere.",
+           "robust"_a = false);
     bs.def("to_legacy", &BoundingSphere::ToLegacy,
-                        "Convert to a legacy Open3D bounding sphere.");
-    bs.def_static(
-            "from_legacy", &BoundingSphere::FromLegacy, "sphere"_a,
-            "dtype"_a = core::Float32,
-            "device"_a = core::Device("CPU:0"),
-            "Convert from a legacy Open3D bounding sphere.");
-    bs.def_static(
-            "create_from_points", &BoundingSphere::CreateFromPoints,
-            R"(Creates a bounding sphere from a set of points.
+           "Convert to a legacy Open3D bounding sphere.");
+    bs.def_static("from_legacy", &BoundingSphere::FromLegacy, "sphere"_a,
+                  "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
+                  "Convert from a legacy Open3D bounding sphere.");
+    bs.def_static("create_from_points", &BoundingSphere::CreateFromPoints,
+                  R"(Creates a bounding sphere from a set of points.
 
 Args:
     points (open3d.core.Tensor): A list of points with data type of float32 or
@@ -738,10 +729,8 @@ Example::
         print(f"Center: {sphere.center}")
         print(f"Radius: {sphere.radius}")
 )",
-            "points"_a,
-            py::kw_only(),
-            "exact"_a = true, 
-            "robust"_a = false);
+                  "points"_a, py::kw_only(), "exact"_a = true,
+                  "robust"_a = false);
 
     docstring::ClassMethodDocInject(
             m, "BoundingSphere", "set_center",
@@ -785,12 +774,15 @@ Example::
             {{"points",
               "A list of points with data type of float32 or float64 (N x 3 "
               "tensor, where N must be larger than 3)."},
-             {"exact", "If true, computes the exact minimum bounding sphere "
-              "using Welzl’s algorithm (expected O(n))."  
+             {"exact",
+              "If true, computes the exact minimum bounding sphere "
+              "using Welzl’s algorithm (expected O(n))."
               "If false, uses Ritter’s algorithm for a faster approximation "
               "(~5% larger than optimal)."},
-             {"robust", "If set to true uses a more robust method which works in "
-                        "degenerate cases but introduces noise to the points coordinates."}});
+             {"robust",
+              "If set to true uses a more robust method which works in "
+              "degenerate cases but introduces noise to the points "
+              "coordinates."}});
 }
 
 }  // namespace geometry

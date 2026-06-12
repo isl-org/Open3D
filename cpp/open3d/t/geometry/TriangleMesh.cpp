@@ -795,11 +795,8 @@ TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
     return mesh;
 }
 
-BoundingSphere TriangleMesh::GetBoundingSphere(
-        bool exact,
-        bool robust) const {
-    return BoundingSphere::CreateFromPoints(GetVertexPositions(),
-                                            exact,
+BoundingSphere TriangleMesh::GetBoundingSphere(bool exact, bool robust) const {
+    return BoundingSphere::CreateFromPoints(GetVertexPositions(), exact,
                                             robust);
 }
 
@@ -810,15 +807,10 @@ TriangleMesh TriangleMesh::CreateFromBoundingSphere(
         core::Dtype int_dtype,
         const core::Device &device) {
     // Extract radii scaled by the per-axis scale factors.
-    double radius =
-            sphere.GetRadius().To(core::Float64).Item<double>();
+    double radius = sphere.GetRadius().To(core::Float64).Item<double>();
 
-    TriangleMesh mesh = CreateSphere(
-        radius, 
-        resolution,
-        float_dtype,
-        int_dtype,
-        device);
+    TriangleMesh mesh =
+            CreateSphere(radius, resolution, float_dtype, int_dtype, device);
     // Apply the sphere translation.
     core::Tensor center = sphere.GetCenter().To(device, float_dtype);
     mesh.Translate(center);

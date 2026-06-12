@@ -62,8 +62,7 @@ open3d::geometry::BoundingSphere ComputeApproximateBSRitter(
 /// any device. Converts to Eigen on the CPU, calls the Eigen core above,
 /// and converts the result back to a tensor BoundingSphere with the *same*
 /// dtype and device as the input points.
-BoundingSphere ComputeApproximateBSRitter(
-        const core::Tensor &points);
+BoundingSphere ComputeApproximateBSRitter(const core::Tensor &points);
 
 }  // namespace bounding_sphere
 }  // namespace kernel

@@ -941,14 +941,14 @@ BoundingSphere::BoundingSphere(const core::Tensor &center,
     }
 }
 
-BoundingSphere BoundingSphere::To(
-    const core::Device &device, const core::Dtype &dtype, bool copy) const {
+BoundingSphere BoundingSphere::To(const core::Device &device,
+                                  const core::Dtype &dtype,
+                                  bool copy) const {
     if (!copy && GetDevice() == device && GetDtype() == dtype) {
         return *this;
     }
-    BoundingSphere sphere(
-        center_.To(device, dtype, /*copy=*/true),
-        radius_.To(device, dtype, /*copy=*/true));
+    BoundingSphere sphere(center_.To(device, dtype, /*copy=*/true),
+                          radius_.To(device, dtype, /*copy=*/true));
     sphere.SetColor(color_.To(device, dtype, /*copy=*/true));
     return sphere;
 }
@@ -1014,14 +1014,14 @@ double BoundingSphere::Volume() const {
 
 core::Tensor BoundingSphere::GetSpherePoints() const {
     // Unit axis directions
-    core::Tensor offsets = core::Tensor::Init<float>(
-            {{ 1.f,  0.f,  0.f},
-             {-1.f,  0.f,  0.f},
-             { 0.f,  1.f,  0.f},
-             { 0.f, -1.f,  0.f},
-             { 0.f,  0.f,  1.f},
-             { 0.f,  0.f, -1.f}},
-            GetDevice()).To(GetDtype());
+    core::Tensor offsets = core::Tensor::Init<float>({{1.f, 0.f, 0.f},
+                                                      {-1.f, 0.f, 0.f},
+                                                      {0.f, 1.f, 0.f},
+                                                      {0.f, -1.f, 0.f},
+                                                      {0.f, 0.f, 1.f},
+                                                      {0.f, 0.f, -1.f}},
+                                                     GetDevice())
+                                   .To(GetDtype());
 
     // Shape: {6,3}
     // offsets * radius broadcasts scalar radius to all entries
@@ -1049,7 +1049,6 @@ BoundingSphere &BoundingSphere::Translate(const core::Tensor &translation,
 BoundingSphere &BoundingSphere::Rotate(
         const core::Tensor &rotation,
         const std::optional<core::Tensor> &center) {
-
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
@@ -1076,9 +1075,8 @@ BoundingSphere &BoundingSphere::Rotate(
     return *this;
 }
 
-
-BoundingSphere &BoundingSphere::Scale(double scale,
-                                      const std::optional<core::Tensor> &center) {
+BoundingSphere &BoundingSphere::Scale(
+        double scale, const std::optional<core::Tensor> &center) {
     radius_ *= scale;
     if (center.has_value()) {
         core::Tensor center_d = center.value();
@@ -1121,23 +1119,19 @@ std::string BoundingSphere::ToString() const {
 open3d::geometry::BoundingSphere BoundingSphere::ToLegacy() const {
     open3d::geometry::BoundingSphere legacy_sphere;
 
-    legacy_sphere.center_ =
-            core::eigen_converter::TensorToEigenVector3dVector(
-                    GetCenter().Reshape({1, 3}))[0];
+    legacy_sphere.center_ = core::eigen_converter::TensorToEigenVector3dVector(
+            GetCenter().Reshape({1, 3}))[0];
     legacy_sphere.radius_ = GetRadius().To(core::Float64).Item<double>();
-    legacy_sphere.color_ =
-            core::eigen_converter::TensorToEigenVector3dVector(
-                    GetColor().Reshape({1, 3}))[0];
+    legacy_sphere.color_ = core::eigen_converter::TensorToEigenVector3dVector(
+            GetColor().Reshape({1, 3}))[0];
     return legacy_sphere;
 }
 
-AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox()
-        const {
+AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
 }
 
-OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(
-        bool robust) const {
+OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
             GetAxisAlignedBoundingBox());
 }
@@ -1149,9 +1143,9 @@ OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
 }
 
 BoundingSphere BoundingSphere::FromLegacy(
-    const open3d::geometry::BoundingSphere &sphere,
-    const core::Dtype &dtype,
-    const core::Device &device) {
+        const open3d::geometry::BoundingSphere &sphere,
+        const core::Dtype &dtype,
+        const core::Device &device) {
     if (dtype != core::Float32 && dtype != core::Float64) {
         utility::LogError(
                 "Got data-type {}, but the supported data-type of the bounding "
@@ -1163,20 +1157,19 @@ BoundingSphere BoundingSphere::FromLegacy(
             core::eigen_converter::EigenMatrixToTensor(sphere.center_)
                     .Flatten()
                     .To(device, dtype),
-            core::Tensor(std::vector<double>{sphere.radius_}, {1}, 
-                core::Float64, device).To(device, dtype));
-
-    t_sphere.SetColor(
-            core::eigen_converter::EigenMatrixToTensor(sphere.color_)
-                    .Flatten()
+            core::Tensor(std::vector<double>{sphere.radius_}, {1},
+                         core::Float64, device)
                     .To(device, dtype));
+
+    t_sphere.SetColor(core::eigen_converter::EigenMatrixToTensor(sphere.color_)
+                              .Flatten()
+                              .To(device, dtype));
     return t_sphere;
 }
 
-BoundingSphere BoundingSphere::CreateFromPoints(
-    const core::Tensor &points,
-    bool exact,
-    bool robust) {
+BoundingSphere BoundingSphere::CreateFromPoints(const core::Tensor &points,
+                                                bool exact,
+                                                bool robust) {
     core::AssertTensorShape(points, {std::nullopt, 3});
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     if (points.GetShape(0) < 1) {
@@ -1188,7 +1181,6 @@ BoundingSphere BoundingSphere::CreateFromPoints(
     } else {
         return kernel::bounding_sphere::ComputeApproximateBSRitter(points);
     }
-
 }
 
 }  // namespace geometry

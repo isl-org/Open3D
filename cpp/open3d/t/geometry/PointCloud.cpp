@@ -1506,12 +1506,8 @@ OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
                                                        robust);
 }
 
-BoundingSphere PointCloud::GetBoundingSphere(
-                                bool exact,
-                                bool robust) const {
-    return BoundingSphere::CreateFromPoints(GetPointPositions(),
-                                            exact,
-                                            robust);
+BoundingSphere PointCloud::GetBoundingSphere(bool exact, bool robust) const {
+    return BoundingSphere::CreateFromPoints(GetPointPositions(), exact, robust);
 }
 
 LineSet PointCloud::ExtrudeRotation(double angle,

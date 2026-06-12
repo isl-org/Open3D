@@ -117,19 +117,20 @@ OrientedBoundingEllipsoid OrientedBoundingEllipsoid::CreateFromPoints(
                                                                         robust);
 }
 
-std::vector<size_t> OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingEllipsoid(
+std::vector<size_t>
+OrientedBoundingEllipsoid::GetPointIndicesWithinBoundingEllipsoid(
         const std::vector<Eigen::Vector3d>& points) const {
     std::vector<size_t> indices;
     for (size_t idx = 0; idx < points.size(); idx++) {
         // Transform point to ellipsoid's local frame
         Eigen::Vector3d p_centered = points[idx] - center_;
         Eigen::Vector3d p_local = R_.transpose() * p_centered;
-        
+
         // Normalize by radii
         Eigen::Vector3d p_normalized(p_local(0) / radii_(0),
-                                      p_local(1) / radii_(1),
-                                      p_local(2) / radii_(2));
-        
+                                     p_local(1) / radii_(1),
+                                     p_local(2) / radii_(2));
+
         // Check if norm squared is <= 1
         if (p_normalized.squaredNorm() <= 1.0) {
             indices.push_back(idx);
@@ -161,16 +162,15 @@ AxisAlignedBoundingBox BoundingSphere::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetSpherePoints());
 }
 
-OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(
-        bool) const {
+OrientedBoundingBox BoundingSphere::GetOrientedBoundingBox(bool) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-        GetAxisAlignedBoundingBox());
+            GetAxisAlignedBoundingBox());
 }
 
 OrientedBoundingBox BoundingSphere::GetMinimalOrientedBoundingBox(
         bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-        GetAxisAlignedBoundingBox());
+            GetAxisAlignedBoundingBox());
 }
 
 BoundingSphere& BoundingSphere::Transform(
@@ -234,19 +234,14 @@ std::vector<size_t> BoundingSphere::GetPointIndicesWithinBoundingSphere(
 }
 
 BoundingSphere BoundingSphere::CreateFromPoints(
-        const std::vector<Eigen::Vector3d>& points,
-        bool exact,
-        bool robust) {
-    
+        const std::vector<Eigen::Vector3d>& points, bool exact, bool robust) {
     if (exact) {
         return t::geometry::kernel::bounding_sphere::ComputeMinimumBSWelzl(
-            points, robust);
+                points, robust);
     } else {
         return t::geometry::kernel::bounding_sphere::ComputeApproximateBSRitter(
-            points);
+                points);
     }
-
-
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Clear() {

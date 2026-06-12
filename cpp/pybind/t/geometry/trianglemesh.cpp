@@ -795,13 +795,10 @@ Example:
                       "Create an oriented bounding ellipsoid from vertex "
                       "attribute 'positions'.",
                       "robust"_a = false);
-    triangle_mesh.def("get_bounding_sphere",
-                      &TriangleMesh::GetBoundingSphere,
+    triangle_mesh.def("get_bounding_sphere", &TriangleMesh::GetBoundingSphere,
                       "Create a bounding sphere from vertex "
                       "attribute 'positions'.",
-                      py::kw_only(),
-                      "exact"_a = true,
-                      "robust"_a = false);
+                      py::kw_only(), "exact"_a = true, "robust"_a = false);
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,
