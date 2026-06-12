@@ -134,7 +134,7 @@ either due to lack of resources or GPU quota exhaustion.
 
 The custom VM image has NVIDIA drivers, `nvidia-container-toolkit` and `docker`
 installed. It contains today's date in the name and the image family is set to
-`ubuntu-os-docker-gpu-2004-lts`. The latest image from this family is
+`ubuntu-os-docker-gpu-2204-lts`. The latest image from this family is
 used for running CI.
 
 #### Step 3: GitHub
