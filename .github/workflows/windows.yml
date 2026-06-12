@@ -527,7 +527,7 @@ jobs:
             $PIP_PKG_NAME=(Get-ChildItem (Join-Path $search_dir "open3d-*-$py_tag-*.whl") -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike "open3d_xpu*" }).Name
           }
           if (-not $PIP_PKG_NAME) {
-            Write-Error "Could not find a valid Open3D wheel in $search_dir matching the python version CP$py_tag and device!"
+            Write-Error "Could not find a valid Open3D wheel in $search_dir matching the python version $py_tag and device!"
             exit 1
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
