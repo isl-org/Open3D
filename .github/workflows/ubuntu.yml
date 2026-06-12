@@ -68,7 +68,7 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v1
         with:
-          subject-path: open3d-devel-*.tar.xz
+          subject-path: ${{ github.workspace }}/open3d-devel-*.tar.xz
 
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
@@ -82,7 +82,7 @@ jobs:
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v1
         with:
-          subject-path: open3d-viewer-*-Linux.deb
+          subject-path: ${{ github.workspace }}/open3d-viewer-*-Linux.deb
 
       - name: Upload viewer to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}

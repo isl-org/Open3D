@@ -157,7 +157,7 @@ jobs:
         if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/attest@v1
         with:
-          subject-path: open3d-devel-linux*.tar.xz
+          subject-path: ${{ github.workspace }}/open3d-devel-linux*.tar.xz
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}

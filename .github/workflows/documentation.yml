@@ -54,7 +54,7 @@ jobs:
       - name: Generate docs attestation
         uses: actions/attest@v1
         with:
-          subject-path: open3d-${{ github.sha }}-docs.tar.gz
+          subject-path: ${{ github.workspace }}/open3d-${{ github.sha }}-docs.tar.gz
 
       - name: Upload docs
         uses: actions/upload-artifact@v4

@@ -205,12 +205,17 @@ jobs:
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
+            "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
+          echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `
+            $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate viewer attestation
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/attest@v1
         with:
-          subject-path: C:\Program Files\Open3D\bin\Open3D\**\*
+          subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
@@ -225,10 +230,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
-          Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
-            "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
+          bash .github/workflows/update_release.sh "${{ env.VIEWER_ZIP_NAME }}"
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}

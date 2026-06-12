@@ -61,8 +61,8 @@ jobs:
         uses: actions/attest@v1
         with:
           subject-path: |
-            open3d*.whl
-            open3d-devel-*.tar.xz
+            ${{ github.workspace }}/open3d*.whl
+            ${{ github.workspace }}/open3d-devel-*.tar.xz
 
       - name: Upload Python wheel and C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}

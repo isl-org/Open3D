@@ -94,8 +94,8 @@ jobs:
         uses: actions/attest@v1
         with:
           subject-path: |
-            ${{ env.PIP_PKG_NAME }}
-            ${{ env.PIP_CPU_PKG_NAME }}
+            ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
+            ${{ github.workspace }}/${{ env.PIP_CPU_PKG_NAME }}
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
         with:

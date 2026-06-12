@@ -88,7 +88,7 @@ jobs:
       - name: Generate wheel attestation
         uses: actions/attest@v1
         with:
-          subject-path: ${{ env.PIP_PKG_NAME }}
+          subject-path: ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
