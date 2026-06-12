@@ -47,6 +47,8 @@ jobs:
     name: Build and run
     permissions:
       contents: write   # upload
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
@@ -150,6 +152,12 @@ jobs:
             gcloud compute scp --zone="${GCE_ZONE}" \
               "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
           fi
+
+      - name: Generate package attestation
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        uses: actions/attest@v1
+        with:
+          subject-path: open3d-devel-linux*.tar.xz
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}
