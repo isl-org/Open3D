@@ -65,13 +65,13 @@ jobs:
             docker/docker_test.sh cpu-shared-ml-release
           fi
       - name: Generate package attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v1
         with:
           subject-path: ${{ github.workspace }}/open3d-devel-*.tar.xz
 
       - name: Upload package to GitHub artifacts
-        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-devel-linux-x86_64
@@ -79,13 +79,13 @@ jobs:
           if-no-files-found: error
 
       - name: Generate viewer attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v1
         with:
           subject-path: ${{ github.workspace }}/open3d-viewer-*-Linux.deb
 
       - name: Upload viewer to GitHub artifacts
-        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-viewer-Linux
