@@ -17,7 +17,7 @@ Address Copilot workflow reviews for `ubuntu.yml` and `windows.yml` to make them
 - [x] Modify `.github/workflows/windows.yml` to define `INSTALL_DIR: "C:\\Program Files\\Open3D"` in the workflow environment.
 - [x] Replace hard-coded `"C:/Open3D/build/CMakeCache.txt"` in `windows.yml` with a path joined dynamically via `Join-Path`.
 - [x] Replace hard-coded `"C:/Program Files/Open3D"` references with the `INSTALL_DIR` environment variable.
-- [ ] Run validation.
+- [x] Run validation.
 
 ## Test Method
 Since we are only modifying CI/CD workflows and cannot run GitHub Actions locally, we will:
