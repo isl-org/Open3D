@@ -31,7 +31,7 @@ env:
   CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
-  INSTALL_DIR: "C:\\Program Files\\Open3D"
+  INSTALL_DIR: "C:/Program Files/Open3D"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -208,7 +208,7 @@ jobs:
             --target INSTALL
           $cmakeCachePath = Join-Path $env:BUILD_DIR "CMakeCache.txt"
           $Env:OPEN3D_VERSION_FULL = (Select-String -Path $cmakeCachePath -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
-          $open3dAppPath = Join-Path $env:INSTALL_DIR "bin\Open3D"
+          $open3dAppPath = Join-Path $env:INSTALL_DIR "bin/Open3D"
           Compress-Archive -Path $open3dAppPath -DestinationPath `
             "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
           echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `

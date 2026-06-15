@@ -13,10 +13,10 @@ Address Copilot workflow reviews for `ubuntu.yml` and `windows.yml` to make them
 
 ## Implementation Steps
 - [x] Create `workflow_fixes_plan.md` to document research and decisions.
-- [ ] Modify `.github/workflows/ubuntu.yml` to replace `env.BUILD_SHARED_LIBS` with `matrix.BUILD_SHARED_LIBS` in `if:` expressions of the attestation/upload steps.
-- [ ] Modify `.github/workflows/windows.yml` to define `INSTALL_DIR: "C:\\Program Files\\Open3D"` in the workflow environment.
-- [ ] Replace hard-coded `"C:/Open3D/build/CMakeCache.txt"` in `windows.yml` with a path joined dynamically via `Join-Path`.
-- [ ] Replace hard-coded `"C:/Program Files/Open3D"` references with the `INSTALL_DIR` environment variable.
+- [x] Modify `.github/workflows/ubuntu.yml` to replace `env.BUILD_SHARED_LIBS` with `matrix.BUILD_SHARED_LIBS` in `if:` expressions of the attestation/upload steps.
+- [x] Modify `.github/workflows/windows.yml` to define `INSTALL_DIR: "C:\\Program Files\\Open3D"` in the workflow environment.
+- [x] Replace hard-coded `"C:/Open3D/build/CMakeCache.txt"` in `windows.yml` with a path joined dynamically via `Join-Path`.
+- [x] Replace hard-coded `"C:/Program Files/Open3D"` references with the `INSTALL_DIR` environment variable.
 - [ ] Run validation.
 
 ## Test Method
