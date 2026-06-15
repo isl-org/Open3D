@@ -31,6 +31,7 @@ env:
   CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
+  INSTALL_DIR: "C:\\Program Files\\Open3D"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -138,7 +139,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -205,8 +206,10 @@ jobs:
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
-          Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
+          $cmakeCachePath = Join-Path $env:BUILD_DIR "CMakeCache.txt"
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path $cmakeCachePath -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          $open3dAppPath = Join-Path $env:INSTALL_DIR "bin\Open3D"
+          Compress-Archive -Path $open3dAppPath -DestinationPath `
             "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
           echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `
             $Env:GITHUB_ENV -Encoding utf8 -Append
@@ -222,7 +225,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
-          path: C:\Program Files\Open3D\bin\Open3D
+          path: ${{ env.INSTALL_DIR }}/bin/Open3D
           if-no-files-found: error
 
       - name: Update devel release with viewer
@@ -245,14 +248,14 @@ jobs:
           mkdir build
           cd build
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
-          Remove-Item "C:\Program Files\Open3D" -Recurse
+          Remove-Item $env:INSTALL_DIR -Recurse
       - name: Install Open3D python build requirements
         working-directory: ${{ env.SOURCE_DIR }}
         run: |
@@ -349,7 +352,7 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
