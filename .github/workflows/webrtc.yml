@@ -9,9 +9,9 @@ on:
         required: false
         default: 'e8b4d4c5952a8fb7b35c2a6cba4e8c3de2ea2e1e'
       depot_tools_commit:
-        description: 'depot_tools commit (empty = HEAD).'
+        description: 'depot_tools commit (override pin in webrtc_build.sh).'
         required: false
-        default: ''
+        default: '10eda50a3fd9c34ad8d31ec74e5f4eb5823d60f6'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,13 +20,14 @@ concurrency:
 env:
   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
-  NPROC: 4
+  WEBRTC_WORK_ROOT: ${{ github.workspace }}/..
+  GCLIENT_JOBS: 8
 
 jobs:
 
   Unix:
     permissions:
-      contents: write
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -73,7 +74,7 @@ jobs:
 
   Windows:
     permissions:
-      contents: write
+      contents: read
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -94,9 +95,9 @@ jobs:
     env:
       WORK_DIR: 'C:\WebRTC'
       OPEN3D_DIR: ${{ github.workspace }}
-      DEPOT_TOOLS_UPDATE: 1
-      DEPOT_TOOLS_WIN_TOOLCHAIN: 0
-      NPROC: 2
+      WEBRTC_WORK_ROOT: 'C:\WebRTC'
+      DEPOT_TOOLS_UPDATE: 0        # belt-and-suspenders; also set by webrtc_setup_path
+      DEPOT_TOOLS_WIN_TOOLCHAIN: 0 # use locally installed VS, not the Chromium toolchain
 
     steps:
       - name: Checkout source code
@@ -119,28 +120,13 @@ jobs:
           arch: x64
 
       - name: Download WebRTC sources
-        shell: pwsh
-        working-directory: ${{ env.WORK_DIR }}
+        # shell: bash uses Git Bash on Windows, which transparently converts
+        # Windows-style env paths (e.g. OPEN3D_DIR, WEBRTC_WORK_ROOT) so they
+        # work in bash string and pushd contexts.
+        shell: bash
         run: |
-          $ErrorActionPreference = 'Stop'
-          if (-not (Test-Path depot_tools)) {
-            git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          }
-          if ($env:DEPOT_TOOLS_COMMIT) {
-            git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
-          }
-          $env:Path = (Get-Item depot_tools).FullName + ';' + $env:Path
-          if (-not (Test-Path webrtc/src)) {
-            New-Item -ItemType Directory -Force -Path webrtc | Out-Null
-            Push-Location webrtc
-            fetch webrtc
-            Pop-Location
-          }
-          git -C webrtc/src checkout $env:WEBRTC_COMMIT
-          git -C webrtc/src submodule update --init --recursive
-          Push-Location webrtc
-          gclient sync -D --force --reset
-          Pop-Location
+          source "$OPEN3D_DIR/3rdparty/webrtc/webrtc_build.sh"
+          download_webrtc_sources
 
       - name: Patch WebRTC
         shell: pwsh

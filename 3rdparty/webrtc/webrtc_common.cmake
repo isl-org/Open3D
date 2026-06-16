@@ -1,10 +1,13 @@
-# Common configs for building WebRTC from source. Used in both native build
-# and building inside docker.
+# Common GN args and ninja target lists for building WebRTC from source.
+# Included by CMakeLists.txt (which is driven by webrtc_build.sh on Unix CI and
+# by webrtc.yml PowerShell steps on Windows CI).
+#
+# Callers must set WEBRTC_NINJA_ROOT before including this file.
 #
 # Exports:
-# - get_webrtc_args(WEBRTC_ARGS) function
-# - NINJA_TARGETS
-# - EXTRA_WEBRTC_OBJS  # You have to define WEBRTC_NINJA_ROOT before including this file
+#   get_webrtc_args(OUT_VAR)  - function: returns a newline-separated args.gn string
+#   NINJA_TARGETS             - list of gn targets to build
+#   EXTRA_WEBRTC_OBJS         - object files not in libwebrtc.a, packed into libwebrtc_extra.a
 
 function(get_webrtc_args WEBRTC_ARGS)
     set(WEBRTC_ARGS "")
@@ -38,6 +41,8 @@ function(get_webrtc_args WEBRTC_ARGS)
         endif()
     else()
         set(WEBRTC_ARGS is_debug=false\n${WEBRTC_ARGS})
+        # Smaller static libs for prebuilt packages (no need for debug symbols).
+        set(WEBRTC_ARGS symbol_level=0\n${WEBRTC_ARGS})
     endif()
 
     # H.264 (replaces deprecated is_chrome_branded on recent milestones).

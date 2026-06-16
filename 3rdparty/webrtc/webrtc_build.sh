@@ -1,43 +1,83 @@
 #!/usr/bin/env bash
-set -euox pipefail
-
-# Builds WebRTC static libraries for Open3D (Ubuntu/macOS). Windows: webrtc.yml
+# Build WebRTC static libraries for Open3D (Ubuntu/macOS).
+# Windows uses download_webrtc_sources() from this file via Git Bash;
+# the cmake/ninja build itself is driven by the webrtc.yml PowerShell steps.
 #
-# Layout (default: repo parent holds depot_tools + webrtc):
+# This file is sourced (not executed) by CI steps so that functions are
+# available as shell commands. Sourcing applies `set -euo pipefail` to the
+# calling shell for strict error checking across the entire CI step.
+#
+# Expected directory layout (<work> = parent of the Open3D checkout, or
+# $WEBRTC_WORK_ROOT if set):
 #   <work>/
 #   ├── Open3D/          # this repository
-#   ├── depot_tools/
+#   ├── depot_tools/     # fetched by clone_depot_tools()
 #   └── webrtc/
-#       └── src/
+#       ├── .gclient     # created by `fetch --nohooks --no-history webrtc`
+#       └── src/         # WebRTC source tree, pinned to WEBRTC_COMMIT
 #
-# Usage:
-#   cd /path/to/Open3D
-#   export WEBRTC_COMMIT=...   # optional
+# Usage (Unix):
 #   source 3rdparty/webrtc/webrtc_build.sh
-#   install_dependencies_ubuntu  # optional on Ubuntu
-#   download_webrtc_sources
-#   build_webrtc
+#   install_dependencies_ubuntu   # Ubuntu only
+#   download_webrtc_sources       # fetches depot_tools + runs gclient sync
+#   build_webrtc                  # cmake/ninja build, installs, packages tar.gz
+
+set -euo pipefail
 
 # libwebrtc-bin M149 / Open3D target milestone
 WEBRTC_COMMIT=${WEBRTC_COMMIT:-e8b4d4c5952a8fb7b35c2a6cba4e8c3de2ea2e1e}
-# Optional pin; unset uses depot_tools HEAD.
-DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-}
+# Pinned depot_tools (update intentionally when refreshing the WebRTC toolchain).
+DEPOT_TOOLS_COMMIT=${DEPOT_TOOLS_COMMIT:-10eda50a3fd9c34ad8d31ec74e5f4eb5823d60f6}
+DEPOT_TOOLS_URL="https://chromium.googlesource.com/chromium/tools/depot_tools"
 
 GLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI:-1}
-NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)}
+NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 SUDO=${SUDO:-sudo}
+# Parallel gclient git operations (speeds DEPS fetch on CI).
+GCLIENT_JOBS=${GCLIENT_JOBS:-${NPROC}}
+
+_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 webrtc_work_root() {
     if [[ -n "${WEBRTC_WORK_ROOT:-}" ]]; then
         echo "$WEBRTC_WORK_ROOT"
     else
-        dirname "$PWD"
+        dirname "$_OPEN3D_ROOT"
     fi
 }
 
 webrtc_setup_path() {
     export PATH="$(webrtc_work_root)/depot_tools:${PATH}"
     export DEPOT_TOOLS_UPDATE=0
+}
+
+# Fetch a pinned depot_tools tree via Gitiles tarball.
+clone_depot_tools() {
+    local root="$1"
+    local dest="$root/depot_tools"
+    local commit="$DEPOT_TOOLS_COMMIT"
+    local stamp="$dest/.open3d_pinned_commit"
+
+    if [[ -f "$stamp" && "$(cat "$stamp")" == "$commit" && -x "$dest/fetch" ]]; then
+        return 0
+    fi
+
+    local tmp archive
+    tmp="$(mktemp -d)"
+    archive="$tmp/depot_tools.tar.gz"
+    curl -fL --retry 3 --retry-delay 5 \
+        -o "$archive" "${DEPOT_TOOLS_URL}/+archive/${commit}.tar.gz"
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    # Gitiles +archive tarballs unpack flat (fetch at archive root, not in a subdir).
+    tar -xzf "$archive" -C "$dest"
+    rm -rf "$tmp"
+
+    if [[ ! -x "$dest/fetch" ]]; then
+        echo "ERROR: depot_tools archive at ${commit} is missing fetch" >&2
+        exit 1
+    fi
+    echo "$commit" > "$stamp"
 }
 
 install_dependencies_ubuntu() {
@@ -79,34 +119,31 @@ install_dependencies_ubuntu() {
 download_webrtc_sources() {
     local root
     root="$(webrtc_work_root)"
+
     pushd "$root"
-    if [[ ! -d depot_tools ]]; then
-        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-    fi
-    if [[ -n "$DEPOT_TOOLS_COMMIT" ]]; then
-        git -C depot_tools checkout "$DEPOT_TOOLS_COMMIT"
-    fi
+    clone_depot_tools "$root"
     webrtc_setup_path
+    # Verify fetch is on PATH (exits non-zero under set -e if not found).
     command -V fetch
 
     if [[ ! -d webrtc/src ]]; then
         mkdir -p webrtc
         pushd webrtc
-        fetch --nohooks webrtc
+        fetch --nohooks --no-history webrtc
         popd
     fi
 
-    git -C webrtc/src checkout "$WEBRTC_COMMIT"
-    git -C webrtc/src submodule update --init --recursive
     pushd webrtc
-    gclient sync -D --force --reset --no-history
+    gclient sync -D --force --reset --no-history \
+        --jobs="${GCLIENT_JOBS}" \
+        --revision "src@${WEBRTC_COMMIT}"
     popd
     popd
 }
 
 build_webrtc() {
     local root open3d_dir
-    open3d_dir="$PWD"
+    open3d_dir="$_OPEN3D_ROOT"
     root="$(webrtc_work_root)"
     webrtc_setup_path
 
@@ -122,8 +159,7 @@ build_webrtc() {
         -DCMAKE_INSTALL_PREFIX="$root/webrtc_release" \
         -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
         ..
-    ninja -j"${NPROC}"
-    ninja install
+    ninja -j"${NPROC}" install
     popd
 
     pushd "$root"

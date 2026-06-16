@@ -1,16 +1,7 @@
-From c47a1b6c0faa2206395647cb83cb1a0542101847 Mon Sep 17 00:00:00 2001
-From: Yixing Lao <yixing.lao@gmail.com>
-Date: Wed, 7 Apr 2021 16:17:39 -0700
-Subject: [PATCH] build: enable rtc_use_cxx11_abi option
-
----
- config/BUILDCONFIG.gn | 6 ++++++
- 1 file changed, 6 insertions(+)
-
 diff --git a/config/BUILDCONFIG.gn b/config/BUILDCONFIG.gn
 --- a/config/BUILDCONFIG.gn
 +++ b/config/BUILDCONFIG.gn
-@@ -171,6 +171,12 @@ declare_args() {
+@@ -171,6 +171,11 @@ declare_args() {
        is_debug && current_os != "ios" && current_os != "watchos"
  }
  
