@@ -34,7 +34,9 @@ env:
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
   ONEAPI_MKL_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
-  ONEAPI_COMPILER_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/79e069e4-f844-43df-8d73-3674c024b043/intel-fortran-compiler-2025.3.1.15_offline.exe"
+  # Intel oneAPI DPC++/C++ Compiler 2025.3.1 offline (MSVC toolset). Not the Fortran compiler package.
+  # https://www.intel.com/content/www/us/en/developer/articles/tool/oneapi-standalone-components.html
+  ONEAPI_COMPILER_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/efc6b239-2694-4938-bf45-3b8fb9f0c5b1/intel-dpcpp-cpp-2025.3.1.18_offline.exe"
 
 jobs:
   windows:
@@ -98,22 +100,14 @@ jobs:
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
       - name: Install Intel oneAPI
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
-        run: |
-          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
-          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
-          Write-Host "Downloading oneMKL..."
-          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
-          Write-Host "Downloading Intel Compiler..."
-          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
-          Write-Host "Installing oneMKL..."
-          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
-          Write-Host "Installing Intel Compiler..."
-          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
+        working-directory: ${{ env.SRC_DIR }}
+        run: ./util/ci_install_oneapi_windows_sycl.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -122,9 +116,6 @@ jobs:
           $glslangBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\tools\glslang"
           $glslangBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
   
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
@@ -330,22 +321,14 @@ jobs:
 
     steps:
 
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
       - name: Install Intel oneAPI
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
-        run: |
-          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
-          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
-          Write-Host "Downloading oneMKL..."
-          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
-          Write-Host "Downloading Intel Compiler..."
-          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
-          Write-Host "Installing oneMKL..."
-          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
-          Write-Host "Installing Intel Compiler..."
-          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
+        working-directory: ${{ env.SRC_DIR }}
+        run: ./util/ci_install_oneapi_windows_sycl.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -353,9 +336,6 @@ jobs:
           # Write install path to GITHUB_PATH to persist for future steps
           $glslangBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\tools\glslang"
           $glslangBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Checkout source code
-        uses: actions/checkout@v4
 
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
