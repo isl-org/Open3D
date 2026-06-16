@@ -70,7 +70,12 @@ clone_depot_tools() {
     rm -rf "$dest"
     mkdir -p "$dest"
     # Gitiles +archive tarballs unpack flat (fetch at archive root, not in a subdir).
-    tar -xzf "$archive" -C "$dest"
+    # On Windows (Git Bash), symlinks in the archive fail to extract because
+    # symlink creation requires elevated privileges. Those symlinks are
+    # Linux-only helper scripts (cbuildbot, luci-auth-fido2-plugin, etc.) and
+    # are not needed for WebRTC builds. The 'fetch' check below validates the
+    # critical tools were extracted.
+    tar -xzf "$archive" -C "$dest" || true
     rm -rf "$tmp"
 
     if [[ ! -x "$dest/fetch" ]]; then

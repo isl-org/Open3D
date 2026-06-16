@@ -1,7 +1,7 @@
 diff --git a/p2p/base/port_interface.h b/p2p/base/port_interface.h
 --- a/p2p/base/port_interface.h
 +++ b/p2p/base/port_interface.h
-@@ -52,7 +52,11 @@ class PortInterface {
+@@ -52,7 +52,14 @@ class PortInterface {
    virtual ~PortInterface();
  
    virtual IceCandidateType Type() const = 0;
@@ -15,3 +15,4 @@ diff --git a/p2p/base/port_interface.h b/p2p/base/port_interface.h
 +#endif
  
    // Methods to set/get ICE role and tiebreaker values.
+   virtual void SetIceRole(IceRole role) = 0;

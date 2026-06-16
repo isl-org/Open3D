@@ -1,7 +1,16 @@
 diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
 --- a/call/payload_type_picker.cc
 +++ b/call/payload_type_picker.cc
-@@ -354,7 +354,7 @@ RTCErrorOr<int> RtpHeaderExtensionRecorder::LookupId(absl::string_view uri,
+@@ -338,7 +338,7 @@
+ RTCError RtpHeaderExtensionRecorder::AddMapping(int id,
+                                                 absl::string_view uri,
+                                                 bool encrypt) {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it != uri_to_id_.end()) {
+     if (it->second != id) {
+       // TODO: https://issues.webrtc.org/41480892 - This will return an error in
+@@ -354,7 +354,7 @@
  
  RTCErrorOr<int> RtpHeaderExtensionRecorder::LookupId(absl::string_view uri,
                                                       bool encrypt) const {
