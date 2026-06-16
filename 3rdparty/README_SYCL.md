@@ -98,9 +98,11 @@ Open3D is designed to make use of the SYCL GPU devices.
 
 ## List of oneAPI Python packages
 
-To make `pip install open3d` works out-of-the box on SYCL-enabled platforms,
-we can utilize runtime libraries released via PyPI. This feature needs to be
-implemented.
+Open3D SYCL wheels declare a dependency on `dpcpp-cpp-rt` (see
+`python/requirements_sycl.txt`). Pip installs the transitive Intel runtime
+packages into the same Python environment. On Linux, ``pybind`` RPATH finds
+``<venv>/lib``; on Windows, ``open3d/__init__.py`` registers
+``site-packages/*.data/data/Library/bin`` with ``add_dll_directory``.
 
 User:
 - https://pypi.org/user/IntelAutomationEngineering/

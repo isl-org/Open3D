@@ -469,23 +469,6 @@ jobs:
     env:
       BUILD_PYTORCH_OPS: ${{ matrix.device == 'xpu' && 'OFF' || 'ON' }}
     steps:
-      - name: Install Intel oneAPI
-        if: ${{ matrix.device == 'xpu' }}
-        shell: pwsh
-        run: |
-          $MKL_URL = "${{ env.ONEAPI_MKL_URL }}"
-          $COMPILER_URL = "${{ env.ONEAPI_COMPILER_URL }}"
-          Write-Host "Downloading oneMKL..."
-          Invoke-WebRequest -Uri $MKL_URL -OutFile "intel-onemkl.exe"
-          Write-Host "Downloading Intel Compiler..."
-          Invoke-WebRequest -Uri $COMPILER_URL -OutFile "intel-fortran-compiler.exe"
-          Write-Host "Installing oneMKL..."
-          $p1 = Start-Process -FilePath ".\intel-onemkl.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p1.ExitCode -ne 0) { throw "oneMKL installation failed with exit code $($p1.ExitCode)" }
-          Write-Host "Installing Intel Compiler..."
-          $p2 = Start-Process -FilePath ".\intel-fortran-compiler.exe" -ArgumentList "-s -a --silent --eula accept" -Wait -PassThru
-          if ($p2.ExitCode -ne 0) { throw "Intel Compiler installation failed with exit code $($p2.ExitCode)" }
-
       - name: Checkout source code
         uses: actions/checkout@v4
 

@@ -16,6 +16,7 @@
 import os
 import sys
 import re
+import site
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
@@ -30,21 +31,27 @@ from open3d._build_config import _build_config
 _added_dll_dirs = []
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
-    # For oneAPI / SYCL on Windows, add oneAPI redist directories to DLL search path if they exist
-    _oneapi_root = os.environ.get("ONEAPI_ROOT", r"C:\Program Files (x86)\Intel\oneAPI")
-    _oneapi_paths = [
-        os.path.join(_oneapi_root, r"compiler\latest\windows\redist\intel64_win\compiler"),
-        os.path.join(_oneapi_root, r"compiler\latest\windows\bin"),
-        os.path.join(_oneapi_root, r"mkl\latest\bin\intel64"),
-        os.path.join(_oneapi_root, r"mkl\latest\bin"),
-        os.path.join(_oneapi_root, r"tbb\latest\bin\intel64\vc14"),
-        os.path.join(_oneapi_root, r"tbb\latest\redist\intel64\vc14"),
-        os.path.join(_oneapi_root, r"tbb\latest\redist\intel64_win\vc14"),
-    ]
-    for _p in _oneapi_paths:
-        if os.path.exists(_p):
+    # SYCL wheels depend on Intel DPC++ runtime packages (dpcpp-cpp-rt) installed
+    # in the same environment. Their DLLs live under site-packages/*.data/...
+    if _build_config["BUILD_SYCL_MODULE"]:
+        _intel_pip_dll_dirs = set()
+        _site_package_roots = [Path(_p) for _p in site.getsitepackages()]
+        _user_site = site.getusersitepackages()
+        if _user_site:
+            _site_package_roots.append(Path(_user_site))
+        for _site_root in _site_package_roots:
+            if not _site_root.is_dir():
+                continue
+            for _lib_bin in _site_root.glob("*.data/data/Library/bin"):
+                if not _lib_bin.is_dir():
+                    continue
+                _intel_pip_dll_dirs.add(_lib_bin)
+                for _child in _lib_bin.iterdir():
+                    if _child.is_dir():
+                        _intel_pip_dll_dirs.add(_child)
+        for _p in sorted(_intel_pip_dll_dirs):
             try:
-                _added_dll_dirs.append(os.add_dll_directory(_p))
+                _added_dll_dirs.append(os.add_dll_directory(str(_p)))
             except Exception:
                 pass
 
@@ -131,7 +138,7 @@ if _build_config["BUILD_SYCL_MODULE"]:
         __DEVICE_API__ = "xpu"
     except OSError as os_error:
         warnings.warn(
-            f"Open3D was built with SYCL support, but an error occurred while loading the Open3D SYCL Python bindings. Check your oneAPI installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            f"Open3D was built with SYCL support, but an error occurred while loading the Open3D SYCL Python bindings. Ensure the DPC++ runtime (dpcpp-cpp-rt) is installed in this Python environment. Falling back to the CPU pybind library. Reported error: {os_error}.",
             ImportWarning,
         )
     except StopIteration:
