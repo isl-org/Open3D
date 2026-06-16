@@ -24,6 +24,7 @@ jobs:
       contents: write  # Release upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -66,7 +67,7 @@ jobs:
           fi
       - name: Generate package attestation
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-devel-*.tar.xz
 
@@ -80,7 +81,7 @@ jobs:
 
       - name: Generate viewer attestation
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-viewer-*-Linux.deb
 

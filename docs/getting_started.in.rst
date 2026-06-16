@@ -20,6 +20,29 @@ version (``HEAD`` of ``main`` branch) viewer app is provided here [#]_:
 .. [#] Please use these links from the `latest version of this page <https://www.open3d.org/docs/latest/getting_started.html>`__ only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 
+.. _supply_chain_attestations:
+
+Supply chain attestations
+=========================
+
+Development artifacts linked on this page—viewer packages, pip wheels, C++
+devel archives, and documentation tarballs—are produced by GitHub Actions with
+signed `SLSA build provenance <https://slsa.dev>`__ attestations (`GitHub
+Artifact Attestations
+<https://docs.github.com/en/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds>`__),
+consistent with `OpenSSF <https://openssf.org>`__ supply-chain recommendations.
+
+After saving a file locally, verify it with the `GitHub CLI
+<https://cli.github.com/>`__:
+
+.. code-block:: bash
+
+    gh attestation verify /path/to/<artifact> -R isl-org/Open3D
+
+Replace ``/path/to/<artifact>`` with the wheel, ``.deb``, ``.zip``, ``.tar.xz``,
+or docs ``.tar.gz`` you downloaded. A successful check confirms the file matches
+provenance recorded for this repository.
+
 Python
 ======
 

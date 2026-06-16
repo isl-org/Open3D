@@ -41,6 +41,7 @@ jobs:
       contents: write  # upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -176,7 +177,7 @@ jobs:
 
       - name: Generate package attestation
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
 
@@ -216,7 +217,7 @@ jobs:
 
       - name: Generate viewer attestation
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
 
@@ -225,7 +226,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
-          path: ${{ env.INSTALL_DIR }}/bin/Open3D
+          path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
           if-no-files-found: error
 
       - name: Update devel release with viewer
@@ -255,9 +256,9 @@ jobs:
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
-          Remove-Item $env:INSTALL_DIR -Recurse
+          Remove-Item -LiteralPath $env:INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
       - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
@@ -282,6 +283,7 @@ jobs:
       contents: write  # upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -373,7 +375,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate wheel attestation
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 

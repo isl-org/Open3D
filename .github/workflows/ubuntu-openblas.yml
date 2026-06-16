@@ -39,6 +39,7 @@ jobs:
       contents: write  # Release upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-24.04-arm   # latest
     strategy:
       fail-fast: false
@@ -86,7 +87,7 @@ jobs:
         run: docker/docker_test.sh "${DOCKER_TAG}"
 
       - name: Generate wheel attestation
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
 

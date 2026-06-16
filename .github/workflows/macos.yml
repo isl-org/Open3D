@@ -31,6 +31,7 @@ jobs:
       contents: write  # upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -90,7 +91,7 @@ jobs:
 
       - name: Generate package attestation
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: build/package/${{ env.DEVEL_PKG_NAME }}
 
@@ -104,7 +105,7 @@ jobs:
 
       - name: Generate viewer attestation
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
 
@@ -133,6 +134,7 @@ jobs:
       contents: write  # upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -216,7 +218,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Generate wheel attestation
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 

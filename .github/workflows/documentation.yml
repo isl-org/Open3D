@@ -24,6 +24,7 @@ jobs:
       contents: write  # Artifact upload and release upload
       id-token: write
       attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
@@ -52,7 +53,7 @@ jobs:
           mv open3d-*-docs.tar.gz open3d-${GITHUB_SHA}-docs.tar.gz
 
       - name: Generate docs attestation
-        uses: actions/attest@v1
+        uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-${{ github.sha }}-docs.tar.gz
 
