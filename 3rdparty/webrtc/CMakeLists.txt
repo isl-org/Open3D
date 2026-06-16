@@ -31,6 +31,9 @@ cmake_dependent_option(WEBRTC_IS_DEBUG
     "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" ON)
+if(MSVC)
+    option(WEBRTC_STATIC_MSVC_RUNTIME "Use /MT /MTd for WebRTC (Windows)" ON)
+endif()
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
@@ -55,12 +58,10 @@ set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 # Common configs for WebRTC
 include(${PROJECT_SOURCE_DIR}/webrtc_common.cmake)
 
-# Generate build/args.gn
-if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
-    get_webrtc_args(WEBRTC_ARGS)
-    file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
-    message(STATUS "Configs written to ${WEBRTC_NINJA_ROOT}/args.gn")
-endif()
+get_webrtc_args(WEBRTC_ARGS)
+file(MAKE_DIRECTORY "${WEBRTC_NINJA_ROOT}")
+file(WRITE "${WEBRTC_NINJA_ROOT}/args.gn" "${WEBRTC_ARGS}")
+message(STATUS "WebRTC args.gn -> ${WEBRTC_NINJA_ROOT}/args.gn")
 
 # libwebrtc.a
 add_custom_target(webrtc
@@ -95,6 +96,8 @@ set_target_properties(webrtc_extra PROPERTIES
 #     `-- libwebrtc_extra.a
 file(GLOB_RECURSE WEBRTC_INCLUDES RELATIVE ${WEBRTC_ROOT}/src
     ${WEBRTC_ROOT}/src/*.h
+    ${WEBRTC_ROOT}/src/*.hpp
+    ${WEBRTC_ROOT}/src/*.inc
     )
 foreach(header ${WEBRTC_INCLUDES})
     get_filename_component(dir ${header} DIRECTORY)

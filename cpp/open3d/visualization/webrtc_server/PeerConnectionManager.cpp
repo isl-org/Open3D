@@ -15,6 +15,11 @@
 
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
+#include <api/create_modular_peer_connection_factory.h>
+#include <api/jsep.h>
+#include <api/enable_media_with_defaults.h>
+#include <api/environment/environment_factory.h>
+#include <api/field_trials.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
@@ -24,10 +29,11 @@
 #include <media/engine/webrtc_media_engine.h>
 #include <modules/audio_device/include/fake_audio_device.h>
 #include <p2p/client/basic_port_allocator.h>
-#include <system_wrappers/include/field_trial.h>
+#include <rtc_base/thread.h>
 
 #include <fstream>
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "open3d/utility/IJsonConvertible.h"
@@ -86,52 +92,41 @@ static IceServer GetIceServerFromUrl(const std::string &url) {
     return srv;
 }
 
+static bool PeerConnectionHasStreamForWindow(
+        webrtc::PeerConnectionInterface* peer_connection,
+        const std::string& window_uid) {
+    if (!peer_connection) {
+        return false;
+    }
+    for (const auto& sender : peer_connection->GetSenders()) {
+        if (!sender) {
+            continue;
+        }
+        for (const std::string& stream_id : sender->stream_ids()) {
+            if (stream_id == window_uid) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static webrtc::PeerConnectionFactoryDependencies
-CreatePeerConnectionFactoryDependencies() {
-    // Disable WebRTC's pacing delay and allow the pacer to drain its queue
-    // immediately. This reduces the added latency from packet smoothing, which
-    // is unnecessary for a local interactive streaming use case.
-    // Force playout delay to zero in the RTP header extension so the receiver
-    // renders frames immediately rather than buffering for jitter smoothing.
-    // Disable automatic resolution reduction so quality is only degraded if the
-    // encoder is genuinely overloaded (content hint kFluid still allows it).
-    webrtc::field_trial::InitFieldTrialsFromString(
-            "WebRTC-Pacer-DrainQueue/Enabled/"
-            "WebRTC-ForceSendPlayoutDelay/min_ms:0,max_ms:0/"
-            "WebRTC-Video-DisableAutomaticResize/Enabled/");
-
+CreatePeerConnectionFactoryDependencies(
+        webrtc::FieldTrials* field_trials) {
+    (void)field_trials;
     webrtc::PeerConnectionFactoryDependencies dependencies;
+    dependencies.worker_thread = webrtc::Thread::Current();
     dependencies.network_thread = nullptr;
-    dependencies.worker_thread = rtc::Thread::Current();
     dependencies.signaling_thread = nullptr;
-    dependencies.call_factory = webrtc::CreateCallFactory();
-    dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
-    dependencies.event_log_factory =
-            absl::make_unique<webrtc::RtcEventLogFactory>(
-                    dependencies.task_queue_factory.get());
 
-    cricket::MediaEngineDependencies media_dependencies;
-    media_dependencies.task_queue_factory =
-            dependencies.task_queue_factory.get();
+    webrtc::EnvironmentFactory env_factory;
+    env_factory.Set(field_trials);
+    dependencies.env = env_factory.Create();
 
-    // Dummy audio factory.
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> audio_device_module(
+    dependencies.adm = webrtc::scoped_refptr<webrtc::AudioDeviceModule>(
             new webrtc::FakeAudioDeviceModule());
-    media_dependencies.adm = std::move(audio_device_module);
-    media_dependencies.audio_encoder_factory =
-            webrtc::CreateBuiltinAudioEncoderFactory();
-    media_dependencies.audio_decoder_factory =
-            webrtc::CreateBuiltinAudioDecoderFactory();
-    media_dependencies.audio_processing =
-            webrtc::AudioProcessingBuilder().Create();
-
-    media_dependencies.video_encoder_factory =
-            webrtc::CreateBuiltinVideoEncoderFactory();
-    media_dependencies.video_decoder_factory =
-            webrtc::CreateBuiltinVideoDecoderFactory();
-
-    dependencies.media_engine =
-            cricket::CreateMediaEngine(std::move(media_dependencies));
+    webrtc::EnableMediaWithDefaults(dependencies);
 
     return dependencies;
 }
@@ -141,12 +136,16 @@ PeerConnectionManager::PeerConnectionManager(
         const Json::Value &config,
         const std::string &publish_filter,
         const std::string &webrtc_udp_port_range)
-    : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+    : field_trials_(webrtc::FieldTrials::Create(
+              "WebRTC-Pacer-DrainQueue/Enabled/"
+              "WebRTC-ForceSendPlayoutDelay/min_ms:0,max_ms:0/"
+              "WebRTC-Video-DisableAutomaticResize/Enabled/")),
       peer_connection_factory_(webrtc::CreateModularPeerConnectionFactory(
-              CreatePeerConnectionFactoryDependencies())),
+              CreatePeerConnectionFactoryDependencies(field_trials_.get()))),
       ice_server_list_(ice_server_list),
       config_(config),
       publish_filter_(publish_filter) {
+    webrtc_worker_thread_ = webrtc::Thread::Current();
     // Set the webrtc port range.
     webrtc_port_range_ = webrtc_udp_port_range;
 
@@ -260,9 +259,9 @@ const Json::Value PeerConnectionManager::GetIceServers() {
 }
 
 // Get PeerConnection associated with peerid.
-rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionManager::GetPeerConnection(const std::string &peerid) {
-    rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
+    webrtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection;
     auto it = peerid_to_connection_.find(peerid);
     if (it != peerid_to_connection_.end()) {
         peer_connection = it->second->GetPeerConnection();
@@ -277,12 +276,12 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
     std::string sdp_mid;
     int sdp_mlineindex = 0;
     std::string sdp;
-    if (!rtc::GetStringFromJsonObject(json_message, k_candidate_sdp_mid_name,
+    if (!webrtc::GetStringFromJsonObject(json_message, k_candidate_sdp_mid_name,
                                       &sdp_mid) ||
-        !rtc::GetIntFromJsonObject(json_message,
+        !webrtc::GetIntFromJsonObject(json_message,
                                    k_candidate_sdp_mline_index_name,
                                    &sdp_mlineindex) ||
-        !rtc::GetStringFromJsonObject(json_message, k_candidate_sdp_name,
+        !webrtc::GetStringFromJsonObject(json_message, k_candidate_sdp_name,
                                       &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
@@ -304,7 +303,7 @@ const Json::Value PeerConnectionManager::AddIceCandidate(
             } else {
                 std::lock_guard<std::mutex> mutex_lock(
                         peerid_to_connection_mutex_);
-                rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+                webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
                         peer_connection = this->GetPeerConnection(peerid);
                 if (peer_connection) {
                     if (!peer_connection->AddIceCandidate(candidate.get())) {
@@ -334,9 +333,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
     std::string type;
     std::string sdp;
 
-    if (!rtc::GetStringFromJsonObject(json_message,
+    if (!webrtc::GetStringFromJsonObject(json_message,
                                       k_session_description_type_name, &type) ||
-        !rtc::GetStringFromJsonObject(json_message,
+        !webrtc::GetStringFromJsonObject(json_message,
                                       k_session_description_sdp_name, &sdp)) {
         utility::LogWarning("Can't parse received message.");
     } else {
@@ -348,12 +347,11 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             utility::LogError("Failed to initialize PeerConnection");
             delete peer_connection_observer;
         } else {
-            rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection =
-                            peer_connection_observer->GetPeerConnection();
-            utility::LogDebug("nbStreams local: {}, remote: {}",
-                              peer_connection->local_streams()->count(),
-                              peer_connection->remote_streams()->count());
+            webrtc::PeerConnectionInterface* peer_connection_ptr =
+                    peer_connection_observer->GetPeerConnection().get();
+            utility::LogDebug("nbSenders: {}, nbReceivers: {}",
+                              peer_connection_ptr->GetSenders().size(),
+                              peer_connection_ptr->GetReceivers().size());
 
             // Register peerid.
             {
@@ -371,19 +369,27 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             }
 
             // Set remote offer.
-            webrtc::SessionDescriptionInterface *session_description(
-                    webrtc::CreateSessionDescription(type, sdp, nullptr));
+            std::optional<webrtc::SdpType> sdp_type =
+                    webrtc::SdpTypeFromString(type);
+            std::unique_ptr<webrtc::SessionDescriptionInterface>
+                    session_description;
+            if (!sdp_type) {
+                utility::LogError("Unknown session description type: {}.", type);
+            } else {
+                session_description =
+                        webrtc::CreateSessionDescription(*sdp_type, sdp);
+            }
             if (!session_description) {
                 utility::LogError(
                         "Can't parse received session description message. "
                         "Cannot create session description.");
             } else {
-                std::promise<const webrtc::SessionDescriptionInterface *>
+                std::promise<const webrtc::SessionDescriptionInterface*>
                         remote_promise;
-                peer_connection->SetRemoteDescription(
-                        SetSessionDescriptionObserver::Create(peer_connection,
-                                                              remote_promise),
-                        session_description);
+                peer_connection_ptr->SetRemoteDescription(
+                        SetSessionDescriptionObserver::Create(
+                                peer_connection_ptr, remote_promise),
+                        session_description.release());
                 // Waiting for remote description.
                 std::future<const webrtc::SessionDescriptionInterface *>
                         remote_future = remote_promise.get_future();
@@ -398,7 +404,7 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             }
 
             // Add local stream.
-            if (!this->AddStreams(peer_connection, window_uid, options)) {
+            if (!this->AddStreams(peer_connection_ptr, window_uid, options)) {
                 utility::LogError("Can't add stream {}, {}.", window_uid,
                                   options);
             }
@@ -407,9 +413,9 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
             webrtc::PeerConnectionInterface::RTCOfferAnswerOptions rtc_options;
             std::promise<const webrtc::SessionDescriptionInterface *>
                     local_promise;
-            peer_connection->CreateAnswer(
-                    CreateSessionDescriptionObserver::Create(peer_connection,
-                                                             local_promise),
+            peer_connection_ptr->CreateAnswer(
+                    CreateSessionDescriptionObserver::Create(
+                            peer_connection_ptr, local_promise),
                     rtc_options);
 
             // Waiting for answer.
@@ -438,26 +444,20 @@ const Json::Value PeerConnectionManager::Call(const std::string &peerid,
 }
 
 bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
-    bool still_used = false;
     for (auto it : peerid_to_connection_) {
-        rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection =
-                it.second->GetPeerConnection();
-        rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
-                peer_connection->local_streams());
-        for (unsigned int i = 0; i < local_streams->count(); i++) {
-            if (local_streams->at(i)->id() == window_uid) {
-                still_used = true;
-                break;
-            }
+        if (PeerConnectionHasStreamForWindow(
+                    it.second->GetPeerConnection().get(), window_uid)) {
+            return true;
         }
     }
-    return still_used;
+    return false;
 }
 
 // Hangup a call.
 const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     bool result = false;
     PeerConnectionObserver *pc_observer = nullptr;
+    std::string hangup_window_uid;
     {
         std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
         auto it = peerid_to_connection_.find(peerid);
@@ -469,37 +469,27 @@ const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
         if (peerid_to_window_uid_.count(peerid) != 0) {
             std::lock_guard<std::mutex> mutex_lock(
                     window_uid_to_peerids_mutex_);
-            const std::string window_uid = peerid_to_window_uid_.at(peerid);
+            hangup_window_uid = peerid_to_window_uid_.at(peerid);
             peerid_to_window_uid_.erase(peerid);
 
             // After window_uid_to_peerids_[window_uid] becomes empty, we don't
             // remove the window_uid from the map here. We remove window_uid
             // from window_uid_to_peerids_ when the Window is closed.
-            window_uid_to_peerids_[window_uid].erase(peerid);
+            window_uid_to_peerids_[hangup_window_uid].erase(peerid);
         }
 
         if (pc_observer) {
-            rtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                    peer_connection = pc_observer->GetPeerConnection();
-
-            rtc::scoped_refptr<webrtc::StreamCollectionInterface> local_streams(
-                    peer_connection->local_streams());
-            for (unsigned int i = 0; i < local_streams->count(); i++) {
-                auto stream = local_streams->at(i);
-
-                std::string window_uid = stream->id();
-                bool still_used = this->WindowStillUsed(window_uid);
-                if (!still_used) {
-                    std::lock_guard<std::mutex> mlock(
-                            window_uid_to_track_source_mutex_);
-                    auto it = window_uid_to_track_source_.find(window_uid);
-                    if (it != window_uid_to_track_source_.end()) {
-                        window_uid_to_track_source_.erase(it);
-                    }
-                    utility::LogDebug("HangUp stream closed {}.", window_uid);
+            if (!hangup_window_uid.empty() &&
+                !this->WindowStillUsed(hangup_window_uid)) {
+                std::lock_guard<std::mutex> mlock(
+                        window_uid_to_track_source_mutex_);
+                auto track_it =
+                        window_uid_to_track_source_.find(hangup_window_uid);
+                if (track_it != window_uid_to_track_source_.end()) {
+                    window_uid_to_track_source_.erase(track_it);
                 }
-
-                peer_connection->RemoveStream(stream);
+                utility::LogDebug("HangUp stream closed {}.",
+                                  hangup_window_uid);
             }
 
             delete pc_observer;
@@ -540,9 +530,35 @@ bool PeerConnectionManager::InitializePeerConnection() {
     return (peer_connection_factory_.get() != nullptr);
 }
 
+PeerConnectionManager::PeerConnectionObserver::PeerConnectionObserver(
+        PeerConnectionManager* peer_connection_manager,
+        const std::string& peerid)
+    : peer_connection_manager_(peer_connection_manager),
+      peerid_(peerid),
+      local_channel_(nullptr),
+      remote_channel_(nullptr),
+      ice_candidate_list_(Json::arrayValue),
+      deleting_(false) {
+    stats_callback_ =
+            new webrtc::RefCountedObject<PeerConnectionStatsCollectorCallback>();
+}
+
+void PeerConnectionManager::PeerConnectionObserver::Initialize(
+        webrtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection) {
+    pc_ = peer_connection;
+    if (pc_.get()) {
+        auto channel_result =
+                pc_->CreateDataChannelOrError("ServerDataChannel", nullptr);
+        if (channel_result.ok()) {
+            local_channel_ = new DataChannelObserver(
+                    peer_connection_manager_, channel_result.value(), peerid_);
+        }
+    }
+}
+
 // Create a new PeerConnection.
-PeerConnectionManager::PeerConnectionObserver *
-PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
+PeerConnectionManager::PeerConnectionObserver*
+PeerConnectionManager::CreatePeerConnection(const std::string& peerid) {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     // Max bundle multiplexes all media and data channels on a single transport,
     // eliminating separate ICE/DTLS handshakes per track and reducing latency.
@@ -569,24 +585,30 @@ PeerConnectionManager::CreatePeerConnection(const std::string &peerid) {
             max_port = std::stoi(port);
         }
     }
-    std::unique_ptr<cricket::PortAllocator> port_allocator(
-            new cricket::BasicPortAllocator(new rtc::BasicNetworkManager()));
-    port_allocator->SetPortRange(min_port, max_port);
+    config.set_min_port(min_port);
+    config.set_max_port(max_port);
     utility::LogDebug("CreatePeerConnection webrtcPortRange: {}:{}.", min_port,
                       max_port);
     utility::LogDebug("CreatePeerConnection peerid: {}.", peerid);
-    PeerConnectionObserver *obs = new PeerConnectionObserver(
-            this, peerid, config, std::move(port_allocator));
-    if (!obs) {
-        utility::LogError("CreatePeerConnection failed.");
-    } else {
-        utility::LogDebug("CreatePeerConnection success!");
+
+    PeerConnectionObserver* obs =
+            new PeerConnectionObserver(this, peerid);
+    webrtc::PeerConnectionDependencies dependencies(obs);
+    auto pc_result = peer_connection_factory_->CreatePeerConnectionOrError(
+            config, std::move(dependencies));
+    if (!pc_result.ok()) {
+        utility::LogError("CreatePeerConnection failed: {}.",
+                          pc_result.error().message());
+        delete obs;
+        return nullptr;
     }
+    obs->Initialize(pc_result.MoveValue());
+    utility::LogDebug("CreatePeerConnection success!");
     return obs;
 }
 
 // Get the capturer from its URL.
-rtc::scoped_refptr<BitmapTrackSourceInterface>
+webrtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::CreateVideoSource(
         const std::string &window_uid,
         const std::map<std::string, std::string> &opts) {
@@ -652,52 +674,42 @@ bool PeerConnectionManager::AddStreams(
 
     if (!existing_stream) {
         // Create a new stream and add to window_uid_to_track_source_.
-        rtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
+        webrtc::scoped_refptr<BitmapTrackSourceInterface> video_source(
                 this->CreateVideoSource(video, opts));
         std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
         window_uid_to_track_source_[window_uid] = video_source;
     }
 
-    // AddTrack and AddStream to peer_connection.
+    // Add local video track (Unified Plan).
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
         auto it = window_uid_to_track_source_.find(window_uid);
         if (it != window_uid_to_track_source_.end()) {
-            rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-                    peer_connection_factory_->CreateLocalMediaStream(
-                            window_uid);
-            if (!stream.get()) {
-                utility::LogError("Cannot create stream.");
+            webrtc::scoped_refptr<BitmapTrackSourceInterface> video_source =
+                    it->second;
+            webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
+            if (!video_source) {
+                utility::LogError("Cannot create capturer video: {}.",
+                                  window_uid);
             } else {
-                rtc::scoped_refptr<BitmapTrackSourceInterface> video_source =
-                        it->second;
-                rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track;
-                if (!video_source) {
-                    utility::LogError("Cannot create capturer video: {}.",
-                                      window_uid);
-                } else {
-                    rtc::scoped_refptr<BitmapTrackSourceInterface> videoScaled =
-                            VideoFilter<VideoScaler>::Create(video_source,
-                                                             opts);
-                    video_track = peer_connection_factory_->CreateVideoTrack(
-                            window_uid + "_video", videoScaled);
-                    // Prefer framerate over resolution when the encoder
-                    // is under pressure (bandwidth or CPU constrained).
-                    // For interactive 3D rendering, motion smoothness
-                    // matters more than pixel-perfect resolution.
-                    video_track->set_content_hint(
-                            webrtc::VideoTrackInterface::ContentHint::kFluid);
-                }
+                webrtc::scoped_refptr<BitmapTrackSourceInterface> videoScaled =
+                        VideoFilter<VideoScaler>::Create(video_source, opts);
+                video_track = peer_connection_factory_->CreateVideoTrack(
+                        videoScaled, window_uid + "_video");
+                video_track->set_content_hint(
+                        webrtc::VideoTrackInterface::ContentHint::kFluid);
+            }
 
-                if ((video_track) && (!stream->AddTrack(video_track))) {
-                    utility::LogError(
-                            "Adding VideoTrack to MediaStream failed.");
-                }
-
-                if (!peer_connection->AddStream(stream)) {
-                    utility::LogError("Adding stream to PeerConnection failed");
+            if (video_track) {
+                webrtc::RTCErrorOr<webrtc::scoped_refptr<
+                        webrtc::RtpSenderInterface>>
+                        add_result = peer_connection->AddTrack(
+                                video_track, {window_uid});
+                if (!add_result.ok()) {
+                    utility::LogError("Adding track to PeerConnection failed: {}",
+                                      add_result.error().message());
                 } else {
-                    utility::LogDebug("Stream added to PeerConnection.");
+                    utility::LogDebug("Track added to PeerConnection.");
                     ret = true;
                 }
             }
@@ -725,7 +737,7 @@ void PeerConnectionManager::PeerConnectionObserver::OnIceCandidate(
     }
 }
 
-rtc::scoped_refptr<BitmapTrackSourceInterface>
+webrtc::scoped_refptr<BitmapTrackSourceInterface>
 PeerConnectionManager::GetVideoTrackSource(const std::string &window_uid) {
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_track_source_mutex_);
@@ -763,8 +775,8 @@ void PeerConnectionManager::CloseWindowConnections(
 }
 
 // Encoder thread: wakes on each new frame, drains the per-window latest-frame
-// map, and calls video_track_source->OnFrame() (libyuv + WebRTC encode)
-// off the render thread so frame delivery never blocks GUI redraws.
+// map, and posts OnFrame to the WebRTC worker thread. libyuv conversion and
+// VideoBroadcaster must run on the worker thread (same as PCM creation).
 void PeerConnectionManager::EncoderThreadLoop() {
     while (encoder_running_) {
         std::unordered_map<std::string, std::shared_ptr<core::Tensor>> snapshot;
@@ -779,11 +791,23 @@ void PeerConnectionManager::EncoderThreadLoop() {
             // encode only the latest per window (implicit frame coalescing).
             snapshot = std::move(pending_frames_);
         }
-        for (const auto &kv : snapshot) {
-            auto video_track_source = GetVideoTrackSource(kv.first);
-            if (video_track_source && kv.second) {
-                video_track_source->OnFrame(kv.second);
+        webrtc::Thread* worker = webrtc_worker_thread_;
+        if (!worker) {
+            continue;
+        }
+        for (const auto& kv : snapshot) {
+            const std::shared_ptr<core::Tensor>& frame = kv.second;
+            if (!frame) {
+                continue;
             }
+            webrtc::scoped_refptr<BitmapTrackSourceInterface> track_source =
+                    GetVideoTrackSource(kv.first);
+            if (!track_source) {
+                continue;
+            }
+            worker->PostTask([track_source, frame]() {
+                track_source->OnFrame(frame);
+            });
         }
     }
 }

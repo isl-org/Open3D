@@ -1,0 +1,11 @@
+diff --git a/build.gni b/build.gni
+--- a/build.gni
++++ b/build.gni
+@@ -10,6 +10,7 @@ enable_java_templates = true
+ 
+ # Enables assertions on safety checks in libc++.
+ enable_safe_libcxx = true
++enable_safe_libstdcxx = true
+ 
+ # Don't set this variable to true when building standalone WebRTC, it is
+ # only needed to support both WebRTC standalone and Chromium builds.

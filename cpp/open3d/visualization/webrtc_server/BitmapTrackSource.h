@@ -71,15 +71,15 @@ public:
         return absl::nullopt;
     }
     bool GetStats(Stats* stats) override { return false; }
-    void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants) override;
-    void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+    void AddOrUpdateSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+                         const webrtc::VideoSinkWants& wants) override;
+    void RemoveSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
     bool SupportsEncodedOutput() const override { return false; }
     void GenerateKeyFrame() override {}
-    void AddEncodedSink(rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>*
+    void AddEncodedSink(webrtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>*
                                 sink) override {}
     void RemoveEncodedSink(
-            rtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
+            webrtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
             override {}
 
     virtual void OnFrame(const std::shared_ptr<core::Tensor>& frame) override {
@@ -88,7 +88,7 @@ public:
     }
 
 protected:
-    virtual rtc::VideoSourceInterface<webrtc::VideoFrame>* source() = 0;
+    virtual webrtc::VideoSourceInterface<webrtc::VideoFrame>* source() = 0;
 
 private:
     webrtc::SequenceChecker worker_thread_checker_;

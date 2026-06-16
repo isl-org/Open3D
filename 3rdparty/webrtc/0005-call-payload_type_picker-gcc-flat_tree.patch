@@ -1,0 +1,12 @@
+diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
+--- a/call/payload_type_picker.cc
++++ b/call/payload_type_picker.cc
+@@ -354,7 +354,7 @@ RTCErrorOr<int> RtpHeaderExtensionRecorder::LookupId(absl::string_view uri,
+ 
+ RTCErrorOr<int> RtpHeaderExtensionRecorder::LookupId(absl::string_view uri,
+                                                      bool encrypt) const {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it == uri_to_id_.end()) {
+     return RTCError(RTCErrorType::INVALID_PARAMETER,
+                     "No ID found for extension");

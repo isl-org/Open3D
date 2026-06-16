@@ -13,12 +13,34 @@ webrtc_download.cmake # Used by Open3D CMake. Consume pre-compiled WebRTC. (Meth
 webrtc_build.cmake    # Used by Open3D CMake. Build and consume WebRTC.    (Method 2)
 
 # Other files
-0001-xxx.patch x3     # Git patch for -DBUILD_WEBRTC_FROM_SOURCE=ON.       (Method 1 Prepare-Phase & Method 2)
+000*.patch            # Git patches applied before building WebRTC.        (Method 1 Prepare-Phase & Method 2)
+apply_webrtc_patches.sh # Applies the patches to the WebRTC checkout.      (Method 1 Prepare-Phase & Method 2)
 CMakeLists.txt        # Used by `webrtc_build.sh` to compile WebRTC.       (Method 1 Prepare-Phase)
 Dockerfile.webrtc     # Calls `webrtc_build.sh` to compile WebRTC.         (Method 1 Prepare-Phase)
 webrtc_build.sh       # Used by `Dockerfile.webrtc`.                       (Method 1 Prepare-Phase)
-webrtc_common.cmake   # Specifies Common WebRTC targets.                   (Method 1 Prepare-Phase)
+webrtc_common.cmake   # Specifies Common WebRTC targets and gn args.       (Method 1 Prepare-Phase)
 ```
+
+## Patches
+
+Applied by `apply_webrtc_patches.sh` (each is skipped if it does not apply
+cleanly to the pinned WebRTC commit):
+
+```
+0001-src-enable-rtc_use_cxx11_abi-option.patch         # -> src
+0001-build-enable-rtc_use_cxx11_abi-option.patch       # -> src/build
+0001-third_party-enable-rtc_use_cxx11_abi-option.patch # -> src/third_party
+0002-build-enable_safe_libstdcxx.patch                 # -> src/build_overrides
+0003-src-fix-nullptr_t-with-libstdcxx.patch            # -> src (GCC)
+0004-src-gcc-suppress-port-interface-network.patch     # -> src (GCC)
+0005-call-payload_type_picker-gcc-flat_tree.patch      # -> src (GCC)
+0006-build-win-dynamic-crt.patch                       # -> src/build (Windows /MD)
+```
+
+`0006-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
+non-component (static) Windows build can use the dynamic MSVC runtime
+(`/MD[d]`). This lets Open3D ship a static `libwebrtc` for both
+`STATIC_WINDOWS_RUNTIME=ON` (`/MT[d]`) and `OFF` (`/MD[d]`).
 
 ## Method 1
 

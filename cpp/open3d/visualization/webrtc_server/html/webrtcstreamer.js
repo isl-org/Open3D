@@ -12,18 +12,6 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
-(function() {
-const enableLogging = false;
-if (enableLogging === false) {
-    if (typeof window.console === 'undefined') {
-        window.console = {};
-    }
-    window.console.log = window.console.info = window.console.debug =
-            window.console.warning = window.console.assert =
-                    window.console.error = function() {};
-}
-}());
-
 let WebRtcStreamer = (function() {
     // Immediately-executing anonymous functions to enforce variable scope.
 
@@ -58,6 +46,7 @@ let WebRtcStreamer = (function() {
 
         this.iceServers = null;
         this.earlyCandidates = [];
+        this.remoteStream = null;
 
         // Open3D-specific functions.
         this.onClose = onClose;
@@ -466,8 +455,9 @@ let WebRtcStreamer = (function() {
      */
     WebRtcStreamer.prototype.disconnect = function() {
         if (this.videoElt) {
-            this.videoElt.src = '';
+            this.videoElt.srcObject = null;
         }
+        this.remoteStream = null;
         if (this.pc) {
             WebRtcStreamer
                     .remoteCall(
@@ -626,7 +616,7 @@ let WebRtcStreamer = (function() {
                 'createPeerConnection  config: ' +
                 JSON.stringify(this.pcConfig) +
                 ' option:' + JSON.stringify(this.pcOptions));
-        this.pc = new RTCPeerConnection(this.pcConfig, this.pcOptions);
+        this.pc = new RTCPeerConnection(this.pcConfig);
         var pc = this.pc;
         pc.peerid = Math.random();
 
@@ -634,9 +624,8 @@ let WebRtcStreamer = (function() {
         pc.onicecandidate = function(evt) {
             bind.onIceCandidate.call(bind, evt);
         };
-        pc.onaddstream = function(
-                evt) {  // TODO: Deprecated. Switch to ontrack.
-            bind.onAddStream.call(bind, evt);
+        pc.ontrack = function(evt) {
+            bind.onTrack.call(bind, evt);
         };
         pc.oniceconnectionstatechange = function(evt) {
             console.log(
@@ -768,12 +757,27 @@ let WebRtcStreamer = (function() {
     };
 
     /*
-     * RTCPeerConnection AddTrack callback
+     * RTCPeerConnection ontrack callback (Unified Plan).
      */
-    WebRtcStreamer.prototype.onAddStream = function(event) {
-        console.log('Remote track added:' + JSON.stringify(event));
+    WebRtcStreamer.prototype.onTrack = function(event) {
+        console.log('Remote track added: ' + event.track.kind);
 
-        this.videoElt.srcObject = event.stream;
+        if (event.track.kind !== 'video') {
+            return;
+        }
+
+        var stream = event.streams && event.streams[0];
+        if (!stream) {
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+            }
+            this.remoteStream.addTrack(event.track);
+            stream = this.remoteStream;
+        } else {
+            this.remoteStream = stream;
+        }
+
+        this.videoElt.srcObject = stream;
         var promise = this.videoElt.play();
         if (typeof promise !== 'undefined') {
             var bind = this;
