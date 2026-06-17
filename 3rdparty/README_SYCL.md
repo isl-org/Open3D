@@ -104,6 +104,10 @@ packages into the same Python environment. On Linux, ``pybind`` RPATH finds
 ``<venv>/lib``; on Windows, ``open3d/__init__.py`` registers
 ``site-packages/*.data/data/Library/bin`` with ``add_dll_directory``.
 
+Windows CI (xpu) installs build-time oneAPI from Intel Base + HPC webimages with
+selective components only (``util/ci_install_oneapi_windows_sycl.ps1``, aligned
+with `oneapi-ci <https://github.com/oneapi-src/oneapi-ci/tree/0804a4c9281440d8a91ac0680388b101e5f673ad>`_).
+
 User:
 - https://pypi.org/user/IntelAutomationEngineering/
 

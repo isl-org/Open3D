@@ -33,10 +33,9 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  ONEAPI_MKL_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/ae472ff5-aa01-4a72-a452-ce7b559ef041/intel-onemkl-2025.3.1.10_offline.exe"
-  # Intel oneAPI DPC++/C++ Compiler 2025.3.1 offline (MSVC toolset). Not the Fortran compiler package.
-  # https://www.intel.com/content/www/us/en/developer/articles/tool/oneapi-standalone-components.html
-  ONEAPI_COMPILER_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/efc6b239-2694-4938-bf45-3b8fb9f0c5b1/intel-dpcpp-cpp-2025.3.1.18_offline.exe"
+  # oneAPI 2025.3 offline webimages (oneapi-src/oneapi-ci @ 0804a4c9281440d8a91ac0680388b101e5f673ad)
+  ONEAPI_BASEKIT_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372_offline.exe"
+  ONEAPI_HPCKIT_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/3a871580-f839-46ed-aeae-685084127279/intel-oneapi-hpc-toolkit-2025.3.0.378_offline.exe"
 
 jobs:
   windows:
@@ -45,18 +44,57 @@ jobs:
     runs-on: windows-2022
     strategy:
       fail-fast: false
+      # Eight matrix legs (S=BUILD_SHARED_LIBS, R=STATIC_RUNTIME) plus build-wheel/test-wheel.
+      # Covers cpu/cuda/xpu once where needed; devel zips, viewer, SYCL, and /MD static smoke.
       matrix:
-        BUILD_SHARED_LIBS: [ON, OFF]
-        STATIC_RUNTIME: [ON, OFF]
-        device: [cpu, cuda, xpu]
-        CONFIG: [Release, Debug]
-        exclude:
-          - BUILD_SHARED_LIBS: ON
+        include:
+          # OFF/ON: static lib + /MT (WebRTC on Release); wheel-like linkage
+          - BUILD_SHARED_LIBS: OFF
             STATIC_RUNTIME: ON
-          - device: cuda
+            device: cpu
+            CONFIG: Release
+
+          # Debug /MT, tests, import
+          - BUILD_SHARED_LIBS: OFF 
+            STATIC_RUNTIME: ON
+            device: cpu
             CONFIG: Debug
-          - device: xpu
+
+          # SYCL, oneAPI install, tests, import
+          - BUILD_SHARED_LIBS: OFF
+            STATIC_RUNTIME: ON
+            device: xpu
+            CONFIG: Release
+
+          # Single Windows CUDA compile leg
+          - BUILD_SHARED_LIBS: OFF
+            STATIC_RUNTIME: ON
+            device: cuda
+            CONFIG: Release
+
+          # ON/OFF: shared + /MD devel packages (cpu Debug -> *-dbg.zip)
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: cpu
+            CONFIG: Release
+
+          # Shared SYCL devel zip
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: xpu
+            CONFIG: Release 
+
+          # open3d-devel-*-dbg.zip
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: cpu
             CONFIG: Debug
+
+          # OFF/OFF: static lib + /MD linkage smoke
+          - BUILD_SHARED_LIBS: OFF
+            STATIC_RUNTIME: OFF
+            device: cpu
+            CONFIG: Release
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
