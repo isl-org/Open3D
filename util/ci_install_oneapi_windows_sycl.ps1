@@ -62,17 +62,17 @@ if (-not $BaseUrl -or -not $HpcUrl) {
 $BaseComponents = $env:ONEAPI_WIN_BASE_COMPONENTS
 if (-not $BaseComponents) {
     $BaseComponents = @(
-        "intel.oneapi.win.dpcpp-compiler",
-        "intel.oneapi.win.tbb.devel",
-        "intel.oneapi.win.dpl.devel",
-        "intel.oneapi.win.ipp.devel"
+        "intel.oneapi.win.dpcpp",
+        "intel.oneapi.win.tbb",
+        "intel.oneapi.win.dpl",
+        "intel.oneapi.win.ipp"
     ) -join ","
 }
 
 # HPC kit: oneMKL only (SYCL build uses OPEN3D_USE_ONEAPI_PACKAGES / static MKL).
 $HpcComponents = $env:ONEAPI_WIN_HPC_COMPONENTS
 if (-not $HpcComponents) {
-    $HpcComponents = "intel.oneapi.win.mkl.devel"
+    $HpcComponents = "intel.oneapi.win.mkl"
 }
 
 Install-OneApiWebimage -Url $BaseUrl -Components $BaseComponents -Label "oneAPI Base Toolkit"
