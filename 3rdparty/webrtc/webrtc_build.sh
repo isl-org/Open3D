@@ -47,7 +47,18 @@ webrtc_work_root() {
 }
 
 webrtc_setup_path() {
-    export PATH="$(webrtc_work_root)/depot_tools:${PATH}"
+    local root
+    root="$(webrtc_work_root)"
+    # On Windows the work root is a native path like 'C:\WebRTC'. The colon in
+    # the drive letter is bash's PATH separator, which would split
+    # 'C:\WebRTC/depot_tools' into the two entries 'C' and '\WebRTC/depot_tools'.
+    # '\WebRTC/...' then causes sha256sum to prefix its output with '\' (GNU
+    # coreutils escapes paths that contain backslashes), making the CIPD hash
+    # check fail. cygpath is available in Git Bash / MSYS2; convert to POSIX.
+    if command -v cygpath >/dev/null 2>&1; then
+        root="$(cygpath -u "$root")"
+    fi
+    export PATH="${root}/depot_tools:${PATH}"
     export DEPOT_TOOLS_UPDATE=0
 }
 
@@ -82,6 +93,16 @@ clone_depot_tools() {
         echo "ERROR: depot_tools archive at ${commit} is missing fetch" >&2
         exit 1
     fi
+
+    # Bootstrap the depot_tools Python runtime. This creates
+    # python3_bin_reldir.txt which is required by the gn and ninja wrappers.
+    # On Unix, ensure_bootstrap calls bootstrap_python3 which downloads a
+    # hermetic Python 3 via CIPD and writes python3_bin_reldir.txt.
+    # On Windows (Git Bash/MINGW), win_tools.bat handles the Python bootstrap
+    # when gn.bat / ninja.bat are first invoked, so ensure_bootstrap skips it.
+    # DEPOT_TOOLS_DIR must be set so ensure_bootstrap resolves scripts correctly.
+    DEPOT_TOOLS_DIR="$dest" "$dest/ensure_bootstrap"
+
     echo "$commit" > "$stamp"
 }
 
