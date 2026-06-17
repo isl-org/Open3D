@@ -94,14 +94,28 @@ clone_depot_tools() {
         exit 1
     fi
 
-    # Bootstrap the depot_tools Python runtime. This creates
-    # python3_bin_reldir.txt which is required by the gn and ninja wrappers.
-    # On Unix, ensure_bootstrap calls bootstrap_python3 which downloads a
-    # hermetic Python 3 via CIPD and writes python3_bin_reldir.txt.
-    # On Windows (Git Bash/MINGW), win_tools.bat handles the Python bootstrap
-    # when gn.bat / ninja.bat are first invoked, so ensure_bootstrap skips it.
-    # DEPOT_TOOLS_DIR must be set so ensure_bootstrap resolves scripts correctly.
-    DEPOT_TOOLS_DIR="$dest" "$dest/ensure_bootstrap"
+    # Bootstrap depot_tools.
+    # We must temporarily prepend depot_tools to PATH so that python scripts
+    # and subprocesses launched during bootstrap (like gsutil.py calling luci-auth)
+    # can find the depot_tools executables on both Unix and Windows.
+    local old_path="$PATH"
+    export PATH="${dest}:${PATH}"
+
+    if [[ "$(uname -s)" == *"MINGW"* || "$(uname -s)" == *"MSYS"* || "$(uname -s)" == *"CYGWIN"* ]]; then
+        # On Windows, bootstrap Python and Git via the batch files.
+        # This creates git.bat, python3.bat, and downloads cipd tools.
+        # We must run them using cmd.exe inside the depot_tools directory.
+        pushd "$dest"
+        cmd.exe //c "cipd_bin_setup.bat"
+        cmd.exe //c "bootstrap\\win_tools.bat"
+        popd
+    else
+        # On Unix (Ubuntu/macOS), ensure_bootstrap downloads Python 3 via CIPD and writes python3_bin_reldir.txt.
+        # DEPOT_TOOLS_DIR must be set so ensure_bootstrap resolves scripts correctly.
+        DEPOT_TOOLS_DIR="$dest" "$dest/ensure_bootstrap"
+    fi
+
+    export PATH="$old_path"
 
     echo "$commit" > "$stamp"
 }
