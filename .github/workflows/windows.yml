@@ -14,6 +14,10 @@ on:
         description: "Set to OFF for Release wheels"
         required: false
         default: "ON"
+      oneapi_cmake_debug:
+        description: "Verbose oneAPI path diagnostics and CMAKE_FIND_DEBUG_MODE on xpu legs"
+        required: false
+        default: "OFF"
 
   push:
     branches:
@@ -32,6 +36,8 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  # workflow_dispatch oneapi_cmake_debug=ON enables -Verbose install logs and cmake --debug-find
+  OPEN3D_ONEAPI_DEBUG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oneapi_cmake_debug == 'ON' && '1' || '0' }}
 
 jobs:
   windows:
@@ -141,7 +147,17 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
+        env:
+          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
         run: ./util/install_oneapi_windows.ps1
+
+      - name: Debug oneAPI layout before CMake
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        env:
+          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
+        run: ./util/print_oneapi_windows_paths.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -193,9 +209,20 @@ jobs:
               $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
               $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
               $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
+              Write-Host "OpenCL for CMake: LIB=$OpenCL_Library INC=$OpenCL_Include"
+            } else {
+              Write-Host "WARNING: OpenCL.lib not found under compiler\latest; find_package(OpenCL) may fail. Run util/print_oneapi_windows_paths.ps1 for search paths."
+            }
+            if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
+              Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
+              $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
             }
           }
-          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
+          $cmakeExtraArgs = @()
+          if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
+            $cmakeExtraArgs += '--debug-find'
+          }
+          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS @cmakeExtraArgs `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
@@ -362,7 +389,17 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
+        env:
+          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
         run: ./util/install_oneapi_windows.ps1
+
+      - name: Debug oneAPI layout before CMake
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        env:
+          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
+        run: ./util/print_oneapi_windows_paths.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -417,9 +454,20 @@ jobs:
               $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
               $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
               $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
+              Write-Host "OpenCL for CMake: LIB=$OpenCL_Library INC=$OpenCL_Include"
+            } else {
+              Write-Host "WARNING: OpenCL.lib not found under compiler\latest; find_package(OpenCL) may fail. Run util/print_oneapi_windows_paths.ps1 for search paths."
+            }
+            if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
+              Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
+              $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
             }
           }
-          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
+          $cmakeExtraArgs = @()
+          if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
+            $cmakeExtraArgs += '--debug-find'
+          }
+          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS @cmakeExtraArgs `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
