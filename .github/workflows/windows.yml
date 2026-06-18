@@ -4,7 +4,6 @@
 # - PyTorch Ops in debug mode - DLL initialization error while loading open3d_torch_ops.dll
 # - CUDA - Draw.exe does not run due to CUDA DLL path issues
 
-
 name: Windows
 permissions: {}
 
@@ -33,9 +32,6 @@ env:
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  # oneAPI 2025.3 offline webimages (oneapi-src/oneapi-ci @ 0804a4c9281440d8a91ac0680388b101e5f673ad)
-  ONEAPI_BASEKIT_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372_offline.exe"
-  ONEAPI_HPCKIT_URL: "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/3a871580-f839-46ed-aeae-685084127279/intel-oneapi-hpc-toolkit-2025.3.0.378_offline.exe"
 
 jobs:
   windows:
@@ -145,7 +141,7 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
-        run: ./util/ci_install_oneapi_windows_sycl.ps1
+        run: ./util/install_oneapi_windows.ps1
 
       - name: Install glslang via vcpkg
         run: |
