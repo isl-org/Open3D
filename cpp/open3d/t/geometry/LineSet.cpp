@@ -212,6 +212,29 @@ OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+// TODO: This makes a round trip through the legacy API, since we don't have a
+// tensor t::LineSet::CreateFromTriangleMesh(). This needs tensor row hash set
+// support for de-deuplicating the edges of the triangle mesh.
+LineSet LineSet::CreateFromOrientedBoundingEllipsoid(
+        const OrientedBoundingEllipsoid &ellipsoid,
+        int resolution,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    // Build a solid ellipsoid mesh then extract its wireframe edges.
+    TriangleMesh mesh = TriangleMesh::CreateFromOrientedBoundingEllipsoid(
+            ellipsoid,
+            core::Tensor::Ones({3}, core::Float64, core::Device("CPU:0")),
+            resolution, float_dtype, int_dtype, device);
+    auto legacy_mesh = mesh.ToLegacy();
+    auto legacy_lineset =
+            open3d::geometry::LineSet::CreateFromTriangleMesh(legacy_mesh);
+    legacy_lineset->PaintUniformColor(legacy_mesh.vertex_colors_.empty()
+                                              ? Eigen::Vector3d::Ones()
+                                              : legacy_mesh.vertex_colors_[0]);
+    return FromLegacy(*legacy_lineset, float_dtype, int_dtype, device);
+}
+
 LineSet &LineSet::PaintUniformColor(const core::Tensor &color) {
     core::AssertTensorShape(color, {3});
     core::Tensor clipped_color = color.To(GetDevice());

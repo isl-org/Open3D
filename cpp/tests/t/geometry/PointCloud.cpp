@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 
 #include <limits>
+#include <numeric>
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
@@ -245,6 +246,172 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({3, 3, 2}));
     EXPECT_EQ(pcd.GetPointNormals().ToFlatVector<float>(),
               std::vector<float>({2, 2, 1}));
+}
+
+// ---------------------------------------------------------------------------
+// Gaussian splat transform tests
+// ---------------------------------------------------------------------------
+
+// Helper: build a minimal two-splat GS cloud with configurable SH data.
+// Positions: [[0,0,0], [1,0,0]]
+// scale: [[1,1,1], [1,1,1]] (linear, isotropic)
+// rot: [[1,0,0,0], [1,0,0,0]] (identity quaternion, w-first)
+// opacity: [[0], [0]]
+// f_dc: [[0,0,0], [0,0,0]]
+// f_rest: {2, Nc, 3} flattened row-major, where Nc = ((sh_degree+1)^2 - 1).
+static t::geometry::PointCloud MakeGSSplatCloud(
+        const std::vector<float>& f_rest_data = {1, 0, 0, 0, 1, 0, 0, 0, 1, 1,
+                                                 0, 0, 0, 1, 0, 0, 0, 1}) {
+    core::Device cpu("CPU:0");
+    const int64_t num_rest_coeffs =
+            static_cast<int64_t>(f_rest_data.size() / (2 * 3));
+    auto positions =
+            core::Tensor::Init<float>({{0.f, 0.f, 0.f}, {1.f, 0.f, 0.f}}, cpu);
+    auto scale =
+            core::Tensor::Init<float>({{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}}, cpu);
+    auto rot = core::Tensor::Init<float>(
+            {{1.f, 0.f, 0.f, 0.f}, {1.f, 0.f, 0.f, 0.f}}, cpu);
+    auto opacity = core::Tensor::Init<float>({{0.f}, {0.f}}, cpu);
+    auto f_dc =
+            core::Tensor::Init<float>({{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}}, cpu);
+    auto f_rest = core::Tensor(f_rest_data, {2, num_rest_coeffs, 3},
+                               core::Float32, cpu);
+
+    t::geometry::PointCloud pcd(positions);
+    pcd.SetPointAttr("scale", scale);
+    pcd.SetPointAttr("rot", rot);
+    pcd.SetPointAttr("opacity", opacity);
+    pcd.SetPointAttr("f_dc", f_dc);
+    pcd.SetPointAttr("f_rest", f_rest);
+    return pcd;
+}
+
+TEST(GaussianSplatTransform, RotateProper90Z_UpdatesQuatAndSH) {
+    // 90° rotation around Z: R = [[0,-1,0],[1,0,0],[0,0,1]]
+    // Quaternion: (cos45°, 0, 0, sin45°) = (√2/2, 0, 0, √2/2)
+    // IR degree-1 matrix for this R in (y,z,x) ordering:
+    //   R1[i,j] = R[idx[i], idx[j]], idx={1,2,0}
+    //   R1 = [[0,0,1],[0,1,0],[-1,0,0]]
+    // Applied to old f_rest[n,0:3,c] = [c0, c1, c2]:
+    //   new = R1 @ old = [c2, c1, -c0]
+    auto pcd = MakeGSSplatCloud();
+
+    core::Tensor R = core::Tensor::Init<float>(
+            {{0.f, -1.f, 0.f}, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}},
+            core::Device("CPU:0"));
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    pcd.Rotate(R, center);
+
+    // Quaternion: q_R * identity = q_R = (√2/2, 0, 0, √2/2)
+    auto rot_data = pcd.GetPointAttr("rot").ToFlatVector<float>();
+    const float s = static_cast<float>(std::sqrt(2.0) / 2.0);
+    EXPECT_NEAR(rot_data[0], s, 1e-5f);    // w
+    EXPECT_NEAR(rot_data[1], 0.f, 1e-5f);  // x
+    EXPECT_NEAR(rot_data[2], 0.f, 1e-5f);  // y
+    EXPECT_NEAR(rot_data[3], s, 1e-5f);    // z
+    // Both splats have same rot, check second splat too.
+    EXPECT_NEAR(rot_data[4], s, 1e-5f);
+
+    // f_rest: old [1,0,0] per (k,c)=(0,R), (1,G), (2,B) → apply R1:
+    // new[k=0,R] = old[k=2,R] = 0  (R1 row0 = [0,0,1] → picks k=2)
+    // new[k=1,R] = old[k=1,R] = 0  (R1 row1 = [0,1,0])
+    // new[k=2,R] = -old[k=0,R] = -1 (R1 row2 = [-1,0,0])
+    // f_rest[n, k, c]: n=0, k=0,1,2, c=0(R),1(G),2(B)
+    // Old f_rest for splat 0: [[1,0,0],[0,1,0],[0,0,1]]
+    // After R1: [[0,0,1],[0,1,0],[-1,0,0]] @ [[1,0,0],[0,1,0],[0,0,1]]
+    // row0: 0*[1,0,0] + 0*[0,1,0] + 1*[0,0,1] = [0,0,1]
+    // row1: 0*[1,0,0] + 1*[0,1,0] + 0*[0,0,1] = [0,1,0]
+    // row2: -1*[1,0,0] + 0*[0,1,0] + 0*[0,0,1] = [-1,0,0]
+    auto f_rest_data = pcd.GetPointAttr("f_rest").ToFlatVector<float>();
+    // Splat 0: f_rest[0,0,0..2] = [0,0,1], [0,1,0], [-1,0,0]
+    EXPECT_NEAR(f_rest_data[0], 0.f, 1e-5f);   // [0,0,R]
+    EXPECT_NEAR(f_rest_data[1], 0.f, 1e-5f);   // [0,0,G]
+    EXPECT_NEAR(f_rest_data[2], 1.f, 1e-5f);   // [0,0,B]
+    EXPECT_NEAR(f_rest_data[3], 0.f, 1e-5f);   // [0,1,R]
+    EXPECT_NEAR(f_rest_data[4], 1.f, 1e-5f);   // [0,1,G]
+    EXPECT_NEAR(f_rest_data[5], 0.f, 1e-5f);   // [0,1,B]
+    EXPECT_NEAR(f_rest_data[6], -1.f, 1e-5f);  // [0,2,R]
+    EXPECT_NEAR(f_rest_data[7], 0.f, 1e-5f);   // [0,2,G]
+    EXPECT_NEAR(f_rest_data[8], 0.f, 1e-5f);   // [0,2,B]
+
+    // Linear scales must be unchanged.
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    EXPECT_NEAR(scale_data[0], 1.f, 1e-5f);
+    EXPECT_NEAR(scale_data[3], 1.f, 1e-5f);
+}
+
+TEST(GaussianSplatTransform, ScaleUniformUpdatesLinearScales) {
+    auto pcd = MakeGSSplatCloud();
+    auto rot_before = pcd.GetPointAttr("rot").Clone();
+    auto f_rest_before = pcd.GetPointAttr("f_rest").Clone();
+    auto opacity_before = pcd.GetPointAttr("opacity").Clone();
+
+    double s = 3.0;
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    pcd.Scale(s, center);
+
+    // Linear scales multiplied by 3.
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    for (float v : scale_data) {
+        EXPECT_NEAR(v, 3.f, 1e-5f);
+    }
+
+    // Quaternion, SH, opacity unchanged.
+    EXPECT_TRUE(pcd.GetPointAttr("rot").AllClose(rot_before, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("f_rest").AllClose(f_rest_before, 1e-5, 1e-5));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("opacity").AllClose(opacity_before, 1e-5, 1e-5));
+
+    // Positions scaled: [0,0,0] stays, [1,0,0] → [3,0,0].
+    auto pos_data = pcd.GetPointPositions().ToFlatVector<float>();
+    EXPECT_NEAR(pos_data[0], 0.f, 1e-5f);
+    EXPECT_NEAR(pos_data[3], 3.f, 1e-5f);
+}
+
+TEST(GaussianSplatTransform, ScaleNegativeUsesAbsValueAndNegatesOddSHDegrees) {
+    std::vector<float> f_rest_data(2 * 15 * 3);
+    std::iota(f_rest_data.begin(), f_rest_data.end(), 1.0f);
+    auto pcd = MakeGSSplatCloud(f_rest_data);
+    auto rot_before = pcd.GetPointAttr("rot").Clone();
+    auto f_dc_before = pcd.GetPointAttr("f_dc").Clone();
+    auto opacity_before = pcd.GetPointAttr("opacity").Clone();
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    // s = -2 means point inversion plus positive scaling. Linear scales use
+    // |s| and odd-degree SH blocks (l = 1, 3) negate under -I.
+    pcd.Scale(-2.0, center);
+
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    for (float v : scale_data) {
+        EXPECT_NEAR(v, 2.f, 1e-5f);  // |−2| = 2
+    }
+
+    std::vector<float> expected = f_rest_data;
+    for (int l : {1, 3}) {
+        const int offset = l * l - 1;
+        const int size_l = 2 * l + 1;
+        for (int n = 0; n < 2; ++n) {
+            for (int k = 0; k < size_l; ++k) {
+                for (int c = 0; c < 3; ++c) {
+                    expected[((n * 15) + offset + k) * 3 + c] *= -1.0f;
+                }
+            }
+        }
+    }
+    core::Tensor expected_f_rest(expected, {2, 15, 3}, core::Float32,
+                                 core::Device("CPU:0"));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("f_rest").AllClose(expected_f_rest, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("rot").AllClose(rot_before, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("f_dc").AllClose(f_dc_before, 1e-5, 1e-5));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("opacity").AllClose(opacity_before, 1e-5, 1e-5));
+
+    auto pos_data = pcd.GetPointPositions().ToFlatVector<float>();
+    EXPECT_NEAR(pos_data[0], 0.f, 1e-5f);
+    EXPECT_NEAR(pos_data[3], -2.f, 1e-5f);
 }
 
 TEST_P(PointCloudPermuteDevices, NormalizeNormals) {

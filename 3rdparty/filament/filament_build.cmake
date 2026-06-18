@@ -30,9 +30,12 @@ set(filament_LIBRARIES
         vkshaders
 )
 
+set(FILAMENT_VER "v1.54.0")
+
 # Locate byproducts
 set(lib_dir lib)
 if(APPLE)
+    set(FILAMENT_VER "v1.57.2")    # Metal shared texture support for 3DGS
     if(APPLE_AARCH64)
         set(lib_dir lib/arm64)
     else()
@@ -53,8 +56,7 @@ endif()
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/google/filament/archive/refs/tags/v1.54.0.tar.gz
-    URL_HASH SHA256=f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a8389e8d
+    URL https://github.com/google/filament/archive/refs/tags/${FILAMENT_VER}.tar.gz
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS

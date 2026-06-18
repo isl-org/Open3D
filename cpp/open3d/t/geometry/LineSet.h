@@ -368,6 +368,20 @@ public:
     /// Create an oriented bounding box from point attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
+    /// Create a wireframe LineSet representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param resolution Resolution of the generated ellipsoid wireframe.
+    /// \param float_dtype The data type for point attributes.
+    /// \param int_dtype The data type for line indices.
+    /// \param device The device for the returned line set.
+    static LineSet CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
     /// Sweeps the line set rotationally about an axis.
     /// \param angle The rotation angle in degree.
     /// \param axis The rotation axis.

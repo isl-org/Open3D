@@ -10,6 +10,7 @@ target_sources(tgeometry_kernel PRIVATE
     PointCloudCPU.cpp
     Metrics.cpp
     MinimumOBB.cpp
+    MinimumOBE.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp
@@ -17,6 +18,7 @@ target_sources(tgeometry_kernel PRIVATE
     UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
+    mikktspace.c
 )
 
 if (BUILD_CUDA_MODULE)

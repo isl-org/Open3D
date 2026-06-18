@@ -20,6 +20,7 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename);
 
 /// Factory function to create an image from memory.
+/// \p image_format is ignored; format is detected from the buffer signature.
 std::shared_ptr<geometry::Image> CreateImageFromMemory(
         const std::string &image_format,
         const unsigned char *image_data_ptr,
@@ -30,9 +31,9 @@ std::shared_ptr<geometry::Image> CreateImageFromMemory(
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImage(const std::string &filename, geometry::Image &image);
 
-/// The general entrance for reading an Image from memory
-/// The function calls read functions based on format of image.
-/// \param image_format the format of image, "png" or "jpg".
+/// The general entrance for reading an Image from memory.
+/// \p image_format is ignored; format is detected from the buffer signature
+/// (PNG or JPG).
 /// \param image_data_ptr the pointer to image data in memory.
 /// \param image_data_size the size of image data in memory.
 /// \return return true if the read function is successful, false otherwise.
