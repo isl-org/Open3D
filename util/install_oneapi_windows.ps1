@@ -50,9 +50,3 @@ try {
     Pop-Location
     Remove-Item -Recurse -Force $WorkDir -ErrorAction SilentlyContinue
 }
-
-$toolsetProps = Get-ChildItem "C:\Program Files (x86)\Microsoft Visual Studio" -Recurse -Filter "*Intel*oneAPI*Compiler*.props" -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $toolsetProps) {
-    throw "Intel oneAPI DPC++ Visual Studio toolset was not installed correctly."
-}
-Write-Host "Found Intel DPC++ VS toolset: $($toolsetProps.FullName)"

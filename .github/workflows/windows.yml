@@ -362,7 +362,7 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
-        run: ./util/ci_install_oneapi_windows_sycl.ps1
+        run: ./util/install_oneapi_windows.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -468,7 +468,7 @@ jobs:
       fail-fast: false
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        device: [cpu, xpu]
+        device: [cpu, xpu, cuda]
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -481,7 +481,7 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      BUILD_PYTORCH_OPS: ${{ matrix.device == 'xpu' && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cpu' && 'ON' || 'OFF' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
