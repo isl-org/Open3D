@@ -147,12 +147,12 @@ public:
 ///
 /// \brief Class to limit the rotation of the source object.
 ///
-/// It checks if the transformation is rotated too much from its initial, 
-/// unrotated state (identity matrix). 
-/// Rotations are checked by comparing the components of the angle-axis 
-/// representation (SO(3) log vector) of the estimated transformation 
-/// to the given thresholds. It is assumed that the user is aware of the 
-/// x, y, z axes of the source object when setting these tolerances. 
+/// It checks if the transformation is rotated too much from its initial,
+/// unrotated state (identity matrix).
+/// Rotations are checked by comparing the components of the angle-axis
+/// representation (SO(3) log vector) of the estimated transformation
+/// to the given thresholds. It is assumed that the user is aware of the
+/// x, y, z axes of the source object when setting these tolerances.
 class CorrespondenceCheckerBasedOnSourceRotation
     : public CorrespondenceChecker {
 public:
@@ -182,7 +182,7 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-    /// \brief 3-element vector [rx, ry, rz] representing the rotation angle 
+    /// \brief 3-element vector [rx, ry, rz] representing the rotation angle
     /// thresholds in radians. A value < 0 means unconstrained.
     Eigen::Vector3d rotation_threshold_;
 };
