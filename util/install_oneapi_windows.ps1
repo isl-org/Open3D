@@ -3,8 +3,8 @@
 # Pattern from oneapi-src/oneapi-ci (2025.3.0 URLs @ 0804a4c):
 #   https://github.com/oneapi-src/oneapi-ci/tree/0804a4c9281440d8a91ac0680388b101e5f673ad
 #
-# Open3D uses CMake -T "Intel(R) oneAPI DPC++ Compiler", so VS 2022 integration is enabled
-# (oneapi-ci samples disable it because they invoke icx via setvars).
+# Open3D uses the setvars.bat script to set up the oneAPI environment for icx compiler.
+# VS 2022 integration is enabled for cmake -T Intel DPC++ toolset support.
 param(
     [switch]$Verbose
 )

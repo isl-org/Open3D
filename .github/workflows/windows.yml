@@ -201,18 +201,17 @@ jobs:
           cmake --version
           $CMAKE_ARGS = @()
           if ('${{ matrix.device }}' -eq 'xpu') {
-            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
-            $CMAKE_ARGS += '-DCMAKE_PREFIX_PATH=C:\Program Files (x86)\Intel\oneAPI\mkl\latest\lib\cmake\mkl;C:\Program Files (x86)\Intel\oneAPI\tbb\latest'
-            $OpenCLLibFile = Get-ChildItem -Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest" -Filter "OpenCL.lib" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($OpenCLLibFile) {
-              $OpenCL_Library = $OpenCLLibFile.FullName.Replace('\', '/')
-              $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
-              $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
-              $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
-              Write-Host "OpenCL for CMake: LIB=$OpenCL_Library INC=$OpenCL_Include"
-            } else {
-              Write-Host "WARNING: OpenCL.lib not found under compiler\latest; find_package(OpenCL) may fail. Run util/print_oneapi_windows_paths.ps1 for search paths."
+            # Runs setvars.bat via cmd and imports
+            # all resulting env vars into the current PowerShell process.
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
+              }
             }
+            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
@@ -320,6 +319,17 @@ jobs:
           cd build
           $CMAKE_ARGS = @()
           if ('${{ matrix.device }}' -eq 'xpu') {
+            # Initialize oneAPI environment in the same step as cmake (env vars
+            # don't persist across steps). Runs setvars.bat via cmd and imports
+            # all resulting env vars into the current PowerShell process.
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
+              }
+            }
             $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
           }
           cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
@@ -435,29 +445,29 @@ jobs:
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
 
-
       - name: Config
+        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
-          cd ${{ env.BUILD_DIR }}
+          New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory
+          cd '${{ env.BUILD_DIR }}'
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
+          cmake --version
           $CMAKE_ARGS = @()
           if ('${{ matrix.device }}' -eq 'xpu') {
-            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
-            $CMAKE_ARGS += '-DCMAKE_PREFIX_PATH=C:\Program Files (x86)\Intel\oneAPI\mkl\latest\lib\cmake\mkl;C:\Program Files (x86)\Intel\oneAPI\tbb\latest'
-            $OpenCLLibFile = Get-ChildItem -Path "C:\Program Files (x86)\Intel\oneAPI\compiler\latest" -Filter "OpenCL.lib" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($OpenCLLibFile) {
-              $OpenCL_Library = $OpenCLLibFile.FullName.Replace('\', '/')
-              $OpenCL_Include = (Join-Path $OpenCLLibFile.Directory.Parent "include").Replace('\', '/')
-              $CMAKE_ARGS += "-DOpenCL_LIBRARY=$OpenCL_Library"
-              $CMAKE_ARGS += "-DOpenCL_INCLUDE_DIR=$OpenCL_Include"
-              Write-Host "OpenCL for CMake: LIB=$OpenCL_Library INC=$OpenCL_Include"
-            } else {
-              Write-Host "WARNING: OpenCL.lib not found under compiler\latest; find_package(OpenCL) may fail. Run util/print_oneapi_windows_paths.ps1 for search paths."
+            # Runs setvars.bat via cmd and imports
+            # all resulting env vars into the current PowerShell process.
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
+              }
             }
+            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
