@@ -136,6 +136,19 @@ open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
+if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
+    # Static libraries do not perform the SYCL device link step themselves.
+    # Propagate the SYCL link target so final executables link with -fsycl and
+    # bundle device images from Open3D object files.
+    target_link_libraries(Open3D INTERFACE Open3D::3rdparty_sycl)
+    target_link_options(Open3D INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=${OPEN3D_SYCL_TARGETS}>)
+    if (OPEN3D_SYCL_TARGET_BACKEND_OPTIONS)
+        target_link_options(Open3D INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
+    endif()
+endif()
+
 # GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
 # Gaussian splatting.  The context class detects the display server at runtime
 # and uses GLX on X11, EGL on Wayland.
