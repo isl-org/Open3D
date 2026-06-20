@@ -211,9 +211,9 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_GENERATOR = "Ninja"
             $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
-              "-DCMAKE_CONFIGURATION_TYPES=${{ matrix.CONFIG }}"
+              "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
@@ -245,18 +245,23 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target build-examples-iteratively
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target INSTALL
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs --target build-examples-iteratively
+          cmake @buildArgs --target INSTALL
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.device != 'cuda' }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target package
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs --target package
           if ("${{ matrix.CONFIG }}" -eq "Debug") {
               Get-ChildItem package/open3d-devel-*.zip | Rename-Item -NewName `
                   {$_.name -Replace '.zip','-dbg.zip'}
@@ -315,7 +320,8 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
-          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          $testExe = if ('${{ matrix.device }}' -eq 'xpu') { ".\bin\tests.exe" } else { ".\bin\${{ matrix.CONFIG }}\tests.exe" }
+          & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
       - name: Linking to Open3D
         working-directory: ${{ env.SRC_DIR }}/examples/cmake/open3d-cmake-find-package
         run: |
@@ -335,9 +341,9 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_GENERATOR = "Ninja"
             $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
-              "-DCMAKE_CONFIGURATION_TYPES=${{ matrix.CONFIG }}"
+              "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
           } else {
             $CMAKE_GENERATOR = "Visual Studio 17 2022"
             $CMAKE_ARGS += "-A", "x64"
@@ -346,9 +352,14 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
-          cmake --build . --config ${{ matrix.CONFIG }}
+          $buildArgs = @("--build", ".")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs
           if ( '${{ matrix.device }}' -ne 'cuda' ) {    # FIXME
-            .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
+            $drawExe = if ('${{ matrix.device }}' -eq 'xpu') { ".\Draw.exe" } else { ".\${{ matrix.CONFIG }}\Draw.exe" }
+            & $drawExe --skip-for-unit-test
           }
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
@@ -361,7 +372,11 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
+          $buildArgs = @("--build", ".", "--target", "install-pip-package")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs
       - name: Import python package
         # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.device != 'cuda' }}  # FIXME
@@ -477,9 +492,9 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_GENERATOR = "Ninja"
             $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
-              "-DCMAKE_CONFIGURATION_TYPES=Release"
+              "-DCMAKE_BUILD_TYPE=Release"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
@@ -511,7 +526,11 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}", "--target", "pip-package")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "Release"
+          }
+          cmake @buildArgs
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
