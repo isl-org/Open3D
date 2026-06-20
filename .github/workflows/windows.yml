@@ -211,17 +211,22 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+              "-DCMAKE_CONFIGURATION_TYPES=${{ matrix.CONFIG }}"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
             }
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
           }
           $cmakeExtraArgs = @()
           if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
             $cmakeExtraArgs += '--debug-find'
           }
-          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS @cmakeExtraArgs `
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
@@ -330,9 +335,14 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+              "-DCMAKE_CONFIGURATION_TYPES=${{ matrix.CONFIG }}"
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
           }
-          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS `
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
@@ -467,17 +477,22 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
               }
             }
-            $CMAKE_ARGS += '-T', 'Intel(R) oneAPI DPC++ Compiler'
+            $CMAKE_GENERATOR = "Ninja Multi-Config"
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+              "-DCMAKE_CONFIGURATION_TYPES=Release"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
               $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
             }
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
           }
           $cmakeExtraArgs = @()
           if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
             $cmakeExtraArgs += '--debug-find'
           }
-          cmake -G "Visual Studio 17 2022" -A x64 @CMAKE_ARGS @cmakeExtraArgs `
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
