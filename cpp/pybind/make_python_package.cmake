@@ -23,7 +23,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
     get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
     get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
     get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
-    foreach(ARCH cpu cuda)
+    foreach(ARCH cpu cuda xpu)
         if(IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
             file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
                 "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}"

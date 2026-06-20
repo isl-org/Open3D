@@ -75,9 +75,9 @@ endif()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
-# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda|xpu}`
 set(PYTHON_COMPILED_MODULE_DIR
-    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,$<IF:$<BOOL:${BUILD_SYCL_MODULE}>,xpu,cpu>>")
 
 if (UNIX AND NOT APPLE)
     # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH

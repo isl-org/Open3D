@@ -10,6 +10,10 @@ if open3d.__DEVICE_API__ == "cuda":
     if open3d._build_config["BUILD_GUI"]:
         from open3d.cuda.pybind.visualization import gui
     from open3d.cuda.pybind.visualization import *
+elif open3d.__DEVICE_API__ == "xpu":
+    if open3d._build_config["BUILD_GUI"]:
+        from open3d.xpu.pybind.visualization import gui
+    from open3d.xpu.pybind.visualization import *
 else:
     if open3d._build_config["BUILD_GUI"]:
         from open3d.cpu.pybind.visualization import gui

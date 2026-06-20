@@ -16,6 +16,7 @@
 import os
 import sys
 import re
+import site
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 # Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
@@ -27,8 +28,32 @@ from pathlib import Path
 import warnings
 from open3d._build_config import _build_config
 
+_added_dll_dirs = []
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
+    # SYCL wheels depend on Intel DPC++ runtime packages (dpcpp-cpp-rt) installed
+    # in the same environment. Their DLLs live under site-packages/*.data/...
+    if _build_config["BUILD_SYCL_MODULE"]:
+        _intel_pip_dll_dirs = set()
+        _site_package_roots = [Path(_p) for _p in site.getsitepackages()]
+        _user_site = site.getusersitepackages()
+        if _user_site:
+            _site_package_roots.append(Path(_user_site))
+        for _site_root in _site_package_roots:
+            if not _site_root.is_dir():
+                continue
+            for _lib_bin in _site_root.glob("*.data/data/Library/bin"):
+                if not _lib_bin.is_dir():
+                    continue
+                _intel_pip_dll_dirs.add(_lib_bin)
+                for _child in _lib_bin.iterdir():
+                    if _child.is_dir():
+                        _intel_pip_dll_dirs.add(_child)
+        for _p in sorted(_intel_pip_dll_dirs):
+            try:
+                _added_dll_dirs.append(os.add_dll_directory(str(_p)))
+            except Exception:
+                pass
 
 __DEVICE_API__ = "cpu"
 if _build_config["BUILD_CUDA_MODULE"]:
@@ -85,12 +110,40 @@ if _build_config["BUILD_CUDA_MODULE"]:
             )
     except OSError as os_error:
         warnings.warn(
-            f"Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            f"Open3D was built with CUDA support, but an error occurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
             ImportWarning,
         )
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
+            "binding library not found! Falling back to the CPU Python "
+            "binding library.",
+            ImportWarning,
+        )
+
+if _build_config["BUILD_SYCL_MODULE"]:
+    try:
+        from open3d.xpu.pybind import (
+            core,
+            camera,
+            data,
+            geometry,
+            io,
+            pipelines,
+            utility,
+            t,
+        )
+        from open3d.xpu import pybind
+
+        __DEVICE_API__ = "xpu"
+    except OSError as os_error:
+        warnings.warn(
+            f"Open3D was built with SYCL support, but an error occurred while loading the Open3D SYCL Python bindings. Ensure the DPC++ runtime (dpcpp-cpp-rt) is installed in this Python environment. Falling back to the CPU pybind library. Reported error: {os_error}.",
+            ImportWarning,
+        )
+    except StopIteration:
+        warnings.warn(
+            "Open3D was built with SYCL support, but Open3D SYCL Python "
             "binding library not found! Falling back to the CPU Python "
             "binding library.",
             ImportWarning,
@@ -211,4 +264,6 @@ def _jupyter_nbextension_paths():
 
 if sys.platform == "win32":
     _win32_dll_dir.close()
+    for _d in _added_dll_dirs:
+        _d.close()
 del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names
