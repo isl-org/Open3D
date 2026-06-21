@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <list>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 
@@ -212,6 +213,7 @@ struct TreeView::Impl {
         std::shared_ptr<Widget> cell;
         Item *parent = nullptr;
         std::list<Item> children;
+        std::optional<bool> expanded;
     };
     int id_;
     Item root_;
@@ -361,6 +363,21 @@ void TreeView::Layout(const LayoutContext &context) {
     // to defer layout to Draw().
 }
 
+void TreeView::Expand(ItemId id) {
+    auto it = impl_->id2item_.find(id);
+    if (it != impl_->id2item_.end()) {
+        it->second->expanded = true;
+    }
+    // Invalidate();
+}
+
+void TreeView::Collapse(ItemId id) {
+    auto it = impl_->id2item_.find(id);
+    if (it != impl_->id2item_.end()) {
+        it->second->expanded = false;
+    }
+}
+
 Widget::DrawResult TreeView::Draw(const DrawContext &context) {
     auto result = Widget::DrawResult::NONE;
     auto &frame = GetFrame();
@@ -417,8 +434,12 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                     colorToImguiRGBA(context.theme.tree_selected_color));
         }
 
-        int flags = ImGuiTreeNodeFlags_DefaultOpen |
-                    ImGuiTreeNodeFlags_AllowItemOverlap;
+        int flags = ImGuiTreeNodeFlags_AllowItemOverlap;
+        bool expanded = item.expanded.value_or(true);
+
+        if (expanded) {
+            flags |= ImGuiTreeNodeFlags_DefaultOpen;
+        }
         if (impl_->can_select_parents_) {
             flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
             flags |= ImGuiTreeNodeFlags_OpenOnArrow;
@@ -465,7 +486,10 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
             }
         };
 
-        if (ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", "")) {
+        bool open = ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", "");
+        item.expanded = open;
+
+        if (open) {
             DrawThis(item, height, is_selectable);
 
             for (auto &child : item.children) {
