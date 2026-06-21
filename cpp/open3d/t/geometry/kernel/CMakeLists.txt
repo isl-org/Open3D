@@ -34,6 +34,8 @@ endif()
 
 if (BUILD_SYCL_MODULE)
     open3d_sycl_target_sources(tgeometry_kernel PRIVATE
+        ImageSYCL.cpp
+        PointCloudSYCL.cpp
         TransformSYCL.cpp
     )
 endif()

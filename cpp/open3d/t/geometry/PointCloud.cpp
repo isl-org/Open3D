@@ -764,6 +764,12 @@ PointCloud& PointCloud::NormalizeNormals() {
         kernel::pointcloud::NormalizeNormalsCPU(normals);
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::NormalizeNormalsSYCL(normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -825,6 +831,13 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
                   normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::ComputeBoundaryPointsSYCL(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -872,6 +885,15 @@ void PointCloud::EstimateNormals(
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value(),
+                    max_knn.value());
+#else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -886,6 +908,14 @@ void PointCloud::EstimateNormals(
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn.value());
+#else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -901,6 +931,14 @@ void PointCloud::EstimateNormals(
                               EstimateCovariancesUsingRadiusSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value());
+#else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -917,6 +955,14 @@ void PointCloud::EstimateNormals(
         CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
                   this->GetPointAttr("covariances"), this->GetPointNormals(),
                   has_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::EstimateNormalsFromCovariancesSYCL(
+                this->GetPointAttr("covariances"), this->GetPointNormals(),
+                has_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -948,6 +994,13 @@ void PointCloud::OrientNormalsToAlignWithDirection(
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::OrientNormalsToAlignWithDirectionCUDA,
                   normals, reference);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::OrientNormalsToAlignWithDirectionSYCL(normals,
+                                                                  reference);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -974,6 +1027,13 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::OrientNormalsTowardsCameraLocationCUDA,
                   GetPointPositions().Contiguous(), normals, reference);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::OrientNormalsTowardsCameraLocationSYCL(
+                GetPointPositions().Contiguous(), normals, reference);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -1040,6 +1100,17 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+    #ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingHybridSearchSYCL(
+                this->GetPointPositions().Contiguous(),
+                this->GetPointNormals().Contiguous(),
+                this->GetPointColors().Contiguous(),
+                this->GetPointAttr("color_gradients"), radius.value(),
+                max_knn.value());
+    #else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+    #endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -1058,6 +1129,16 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), max_knn.value());
+        } else if (IsSYCL()) {
+    #ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingKNNSearchSYCL(
+                this->GetPointPositions().Contiguous(),
+                this->GetPointNormals().Contiguous(),
+                this->GetPointColors().Contiguous(),
+                this->GetPointAttr("color_gradients"), max_knn.value());
+    #else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+    #endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -1076,6 +1157,16 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsSYCL()) {
+    #ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchSYCL(
+                this->GetPointPositions().Contiguous(),
+                this->GetPointNormals().Contiguous(),
+                this->GetPointColors().Contiguous(),
+                this->GetPointAttr("color_gradients"), radius.value());
+    #else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+    #endif
         } else {
             utility::LogError("Unimplemented device");
         }

@@ -5,6 +5,7 @@ target_sources(core PRIVATE
     CUDAUtils.cpp
     Device.cpp
     Dtype.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCached.cpp
@@ -22,7 +23,6 @@ target_sources(core PRIVATE
 
 # Compile regardless BUILD_SYCL_MODULE == ON or OFF.
 open3d_sycl_target_sources(core PRIVATE
-    EigenConverter.cpp
     SYCLUtils.cpp
 )
 

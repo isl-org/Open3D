@@ -172,7 +172,6 @@ TEST_P(PointCloudPermuteDevices, Copy) {
 
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
@@ -229,7 +228,6 @@ TEST_P(PointCloudPermuteDevices, Scale) {
 
 TEST_P(PointCloudPermuteDevices, Rotate) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
     core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
@@ -416,7 +414,6 @@ TEST(GaussianSplatTransform, ScaleNegativeUsesAbsValueAndNegatesOddSHDegrees) {
 
 TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -450,7 +447,6 @@ TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
 
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -491,7 +487,6 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
 
 TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -531,7 +526,6 @@ TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
 
 TEST_P(PointCloudPermuteDevices, OrientNormalsTowardsCameraLocation) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>(
             {{0, 0, 0}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}}, device);
@@ -819,7 +813,6 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
     using ::testing::UnorderedElementsAreArray;
 
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
     float depth_scale = 1000.f, depth_max = 3.f;
     int stride = 1;
     core::Tensor im_depth =

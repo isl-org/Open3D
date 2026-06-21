@@ -24,11 +24,11 @@ static t::geometry::PointCloud CreateTPCDFromFile(
     return t::geometry::PointCloud::FromLegacy(*pcd, core::Float32, device);
 }
 
-class ControlGridPermuteDevices : public PermuteDevicesWithSYCL {};
+class ControlGridPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(
         ControlGrid,
         ControlGridPermuteDevices,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+        testing::ValuesIn(PermuteDevices::TestCases()));
 
 // TODO(wei): more well-designed test cases
 TEST_P(ControlGridPermuteDevices, Touch) {
