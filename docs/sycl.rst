@@ -11,9 +11,13 @@ provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+).
 Enabled features
 -----------------
 
-Many Tensor API operations and Tensor Geometry operations without custom kernels
-can now be offloaded to SYCL devices. In addition, HW accelerated raycasting
-queries in :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
+Many Tensor API operations and Tensor Geometry operations are supported on SYCL devices.
+This includes custom kernels for:
+
+* **TriangleMesh**: normal normalization, triangle normal computation, vertex normal accumulation, and triangle area computation.
+* **VoxelBlockGrid**: TSDF integration, ray casting, point-cloud extraction, and marching-cubes triangle mesh extraction.
+
+In addition, HW accelerated raycasting queries in :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
 will get an error if an operation is not supported. The implementation is tested
 on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
 (`SYCL:0`, if available) and the CPU (`SYCL:1` if a GPU is available, else

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/MiniVec.h"

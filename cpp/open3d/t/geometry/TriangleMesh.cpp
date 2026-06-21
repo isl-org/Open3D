@@ -204,6 +204,12 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
                       vertex_normals);
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::trianglemesh::NormalizeNormalsSYCL(vertex_normals);
+#else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -219,6 +225,12 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
                       triangle_normals);
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::trianglemesh::NormalizeNormalsSYCL(triangle_normals);
+#else
+            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -252,6 +264,13 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::trianglemesh::ComputeTriangleNormalsCUDA,
                   GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeTriangleNormalsSYCL(
+                GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -292,6 +311,13 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::trianglemesh::ComputeVertexNormalsCUDA,
                   GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeVertexNormalsSYCL(
+                GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -316,6 +342,14 @@ static core::Tensor ComputeTriangleAreasHelper(const TriangleMesh &mesh) {
         CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
                   mesh.GetVertexPositions().Contiguous(),
                   mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (mesh.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeTriangleAreasSYCL(
+                mesh.GetVertexPositions().Contiguous(),
+                mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }

@@ -40,6 +40,22 @@ std::array<core::Tensor, 3> SamplePointsUniformlyCPU(
         const core::Tensor& albedo,
         size_t number_of_points);
 
+#ifdef BUILD_SYCL_MODULE
+void NormalizeNormalsSYCL(core::Tensor& normals);
+
+void ComputeTriangleNormalsSYCL(const core::Tensor& vertices,
+                                const core::Tensor& triangles,
+                                core::Tensor& normals);
+
+void ComputeVertexNormalsSYCL(const core::Tensor& triangles,
+                              const core::Tensor& triangle_normals,
+                              core::Tensor& vertex_normals);
+
+void ComputeTriangleAreasSYCL(const core::Tensor& vertices,
+                              const core::Tensor& triangles,
+                              core::Tensor& triangle_areas);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void NormalizeNormalsCUDA(core::Tensor& normals);
 

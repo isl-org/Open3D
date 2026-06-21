@@ -27,6 +27,8 @@ using std::isnan;
 
 #if defined(__CUDACC__)
 void NormalizeNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void NormalizeNormalsSYCL
 #else
 void NormalizeNormalsCPU
 #endif
@@ -64,6 +66,8 @@ void NormalizeNormalsCPU
 
 #if defined(__CUDACC__)
 void ComputeTriangleNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeTriangleNormalsSYCL
 #else
 void ComputeTriangleNormalsCPU
 #endif
@@ -109,6 +113,8 @@ void ComputeTriangleNormalsCPU
 
 #if defined(__CUDACC__)
 void ComputeTriangleAreasCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeTriangleAreasSYCL
 #else
 void ComputeTriangleAreasCPU
 #endif

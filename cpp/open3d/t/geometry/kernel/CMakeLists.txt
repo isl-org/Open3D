@@ -37,6 +37,8 @@ if (BUILD_SYCL_MODULE)
         ImageSYCL.cpp
         PointCloudSYCL.cpp
         TransformSYCL.cpp
+        TriangleMeshSYCL.cpp
+        VoxelBlockGridSYCL.cpp
     )
 endif()
 

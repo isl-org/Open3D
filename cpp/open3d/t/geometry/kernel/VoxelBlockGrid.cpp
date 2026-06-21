@@ -33,6 +33,13 @@ void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
     } else if (hashmap->IsCUDA()) {
         CUDA_CALL(PointCloudTouchCUDA, hashmap, points, voxel_block_coords,
                   voxel_grid_resolution, voxel_size, sdf_trunc);
+    } else if (hashmap->IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        PointCloudTouchSYCL(hashmap, points, voxel_block_coords,
+                            voxel_grid_resolution, voxel_size, sdf_trunc);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -57,6 +64,14 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
         CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsic, extrinsic,
                   voxel_block_coords, voxel_grid_resolution, voxel_size,
                   sdf_trunc, depth_scale, depth_max, stride);
+    } else if (hashmap->IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DepthTouchSYCL(hashmap, depth, intrinsic, extrinsic, voxel_block_coords,
+                       voxel_grid_resolution, voxel_size, sdf_trunc, depth_scale,
+                       depth_max, stride);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -76,6 +91,14 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
         CUDA_CALL(GetVoxelCoordinatesAndFlattenedIndicesCUDA, buf_indices,
                   block_keys, voxel_coords, flattened_indices, block_resolution,
                   voxel_size);
+    } else if (block_keys.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        GetVoxelCoordinatesAndFlattenedIndicesSYCL(
+                buf_indices, block_keys, voxel_coords, flattened_indices,
+                block_resolution, voxel_size);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -185,6 +208,24 @@ void Integrate(const core::Tensor& depth,
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (depth.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
+                input_depth_dtype, input_color_dtype, [&] {
+                    DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                            block_weight_dtype, block_color_dtype, [&] {
+                                IntegrateSYCL<input_depth_t, input_color_t,
+                                              tsdf_t, weight_t, color_t>(
+                                        depth, color, block_indices, block_keys,
+                                        block_value_map, depth_intrinsic,
+                                        color_intrinsic, extrinsic, resolution,
+                                        voxel_size, sdf_trunc, depth_scale,
+                                        depth_max);
+                            });
+                });
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -217,6 +258,14 @@ void EstimateRange(const core::Tensor& block_keys,
                           voxel_size, depth_min, depth_max, fragment_buffer);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (block_keys.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        EstimateRangeSYCL(block_keys, range_minmax_map, intrinsics_d,
+                          extrinsics_d, h, w, down_factor, block_resolution,
+                          voxel_size, depth_min, depth_max, fragment_buffer);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device");
@@ -274,6 +323,20 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (hashmap->IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    RayCastSYCL<tsdf_t, weight_t, color_t>(
+                            hashmap, block_value_map, range_map, renderings_map,
+                            intrinsic, extrinsic, h, w, block_resolution,
+                            voxel_size, depth_scale, depth_min, depth_max,
+                            weight_threshold, trunc_voxel_multiplier,
+                            range_map_down_factor);
+                });
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -323,6 +386,19 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                 });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (block_indices.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractPointCloudSYCL<tsdf_t, weight_t, color_t>(
+                            block_indices, nb_block_indices, nb_block_masks,
+                            block_keys, block_value_map, points, normals,
+                            colors, block_resolution, voxel_size,
+                            weight_threshold, valid_size);
+                });
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device");
@@ -376,6 +452,20 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                 });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (block_indices.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
+                block_weight_dtype, block_color_dtype, [&] {
+                    ExtractTriangleMeshSYCL<tsdf_t, weight_t, color_t>(
+                            block_indices, inv_block_indices, nb_block_indices,
+                            nb_block_masks, block_keys, block_value_map,
+                            vertices, triangles, vertex_normals, vertex_colors,
+                            block_resolution, voxel_size, weight_threshold,
+                            vertex_count);
+                });
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device");

@@ -14,6 +14,9 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/Dispatch.h"
+#ifndef __CUDACC__
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
+#endif
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -32,6 +35,8 @@ using ArrayIndexer = TArrayIndexer<index_t>;
 
 #if defined(__CUDACC__)
 void GetVoxelCoordinatesAndFlattenedIndicesCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetVoxelCoordinatesAndFlattenedIndicesSYCL
 #else
 void GetVoxelCoordinatesAndFlattenedIndicesCPU
 #endif
@@ -143,6 +148,8 @@ template <typename input_depth_t,
           typename color_t>
 #if defined(__CUDACC__)
 void IntegrateCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void IntegrateSYCL
 #else
 void IntegrateCPU
 #endif
@@ -295,6 +302,8 @@ void IntegrateCPU
 
 #if defined(__CUDACC__)
 void EstimateRangeCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateRangeSYCL
 #else
 void EstimateRangeCPU
 #endif
@@ -337,7 +346,7 @@ void EstimateRangeCPU
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
@@ -434,7 +443,7 @@ void EstimateRangeCPU
                     }
                 }
             });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     int needed_frag_count = count[0].Item<int>();
 #else
     int needed_frag_count = (*count_ptr).load();
@@ -1085,7 +1094,7 @@ void ExtractPointCloudCPU
     index_t n = n_blocks * resolution3;
 
     // Output
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<index_t>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1139,7 +1148,7 @@ void ExtractPointCloudCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
         valid_size = count[0].Item<index_t>();
         count[0] = 0;
 #else
@@ -1274,7 +1283,7 @@ void ExtractPointCloudCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     index_t total_count = count.Item<index_t>();
 #else
     index_t total_count = (*count_ptr).load();
@@ -1434,7 +1443,7 @@ void ExtractTriangleMeshCPU
     });
 
     // Pass 1: determine valid number of vertices (if not preset)
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<index_t>{0}, {}, core::Int32, device);
 
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1473,7 +1482,7 @@ void ExtractTriangleMeshCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
         vertex_count = count.Item<index_t>();
 #else
         vertex_count = (*count_ptr).load();
@@ -1495,7 +1504,7 @@ void ExtractTriangleMeshCPU
     ArrayIndexer block_keys_indexer(block_keys, 1);
     ArrayIndexer vertex_indexer(vertices, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1620,7 +1629,7 @@ void ExtractTriangleMeshCPU
     triangles = core::Tensor({triangle_count, 3}, core::Int32, device);
     ArrayIndexer triangle_indexer(triangles, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1678,7 +1687,7 @@ void ExtractTriangleMeshCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     triangle_count = count.Item<index_t>();
 #else
     triangle_count = (*count_ptr).load();
