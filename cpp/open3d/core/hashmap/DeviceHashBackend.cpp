@@ -34,6 +34,13 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
                                      value_element_shapes, device, backend);
     }
 #endif
+#if defined(BUILD_SYCL_MODULE)
+    else if (device.IsSYCL()) {
+        return CreateSYCLHashBackend(init_capacity, key_dtype,
+                                     key_element_shape, value_dtypes,
+                                     value_element_shapes, device, backend);
+    }
+#endif
     else {
         utility::LogError("Unimplemented device");
     }

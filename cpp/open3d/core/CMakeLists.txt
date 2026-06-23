@@ -90,6 +90,8 @@ target_sources(core_impl PRIVATE
 
 if (BUILD_SYCL_MODULE)
 open3d_sycl_target_sources(core_impl PRIVATE
+    hashmap/SYCL/CreateSYCLHashBackend.cpp
+    hashmap/SYCL/SYCLHashBackendBuffer.cpp
     kernel/UnaryEWSYCL.cpp
     kernel/BinaryEWSYCL.cpp
     kernel/ArangeSYCL.cpp
