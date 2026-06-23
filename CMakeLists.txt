@@ -421,13 +421,10 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE AND USE_HIP)
     # AMD ROCm/HIP path. Mirror the CUDA enable but for the HIP language.
-    # enable_language(HIP) would auto-detect the host GPU architecture (via
-    # rocm_agent_enumerator) when CMAKE_HIP_ARCHITECTURES is unset; we pin
-    # gfx90a as a deterministic default instead. Pass -DCMAKE_HIP_ARCHITECTURES
-    # to build for another target.
-    if(NOT DEFINED CMAKE_HIP_ARCHITECTURES OR CMAKE_HIP_ARCHITECTURES STREQUAL "")
-        set(CMAKE_HIP_ARCHITECTURES "gfx90a")
-    endif()
+    # enable_language(HIP) honors an explicit -DCMAKE_HIP_ARCHITECTURES, otherwise
+    # auto-detects the host GPU(s) (via rocm_agent_enumerator) and fails with a
+    # fatal error if none is found -- so a build host with no AMD GPU must set the
+    # arch explicitly rather than getting a silently-wrong default.
     enable_language(HIP)
     set(CMAKE_HIP_STANDARD 17)
     message(STATUS "Building with HIP for AMD architectures: ${CMAKE_HIP_ARCHITECTURES}")
