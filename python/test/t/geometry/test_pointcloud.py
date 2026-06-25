@@ -153,16 +153,14 @@ def test_member_functions(device):
     assert pcd.point.positions.allclose(o3c.Tensor([[3, 3, 2]], dtype, device))
     assert pcd.point.normals.allclose(o3c.Tensor([[2, 2, 1]], dtype, device))
 
-    # voxel_down_sample (uses hashmaps which are not implemented in SYCL)
-    if device.get_type() != o3c.Device.DeviceType.SYCL:
-        pcd = o3d.t.geometry.PointCloud(device)
-        pcd.point.positions = o3c.Tensor(
-            [[0.1, 0.3, 0.9], [0.9, 0.2, 0.4], [0.3, 0.6, 0.8], [0.2, 0.4, 0.2]],
-            dtype, device)
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point.positions = o3c.Tensor(
+        [[0.1, 0.3, 0.9], [0.9, 0.2, 0.4], [0.3, 0.6, 0.8], [0.2, 0.4, 0.2]],
+        dtype, device)
 
-        pcd_small_down = pcd.voxel_down_sample(1)
-        assert pcd_small_down.point.positions.allclose(
-            o3c.Tensor([[0.375, 0.375, 0.575]], dtype, device))
+    pcd_small_down = pcd.voxel_down_sample(1)
+    assert pcd_small_down.point.positions.allclose(
+        o3c.Tensor([[0.375, 0.375, 0.575]], dtype, device))
 
 
 def test_extrude_rotation():

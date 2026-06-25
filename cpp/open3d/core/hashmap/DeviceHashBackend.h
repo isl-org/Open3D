@@ -133,5 +133,16 @@ std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         const Device& device,
         const HashBackendType& backend);
 
+#if defined(BUILD_SYCL_MODULE)
+std::shared_ptr<DeviceHashBackend> CreateSYCLHashBackend(
+        int64_t init_capacity,
+        const Dtype& key_dtype,
+        const SizeVector& key_element_shape,
+        const std::vector<Dtype>& value_dtypes,
+        const std::vector<SizeVector>& value_element_shapes,
+        const Device& device,
+        const HashBackendType& backend);
+#endif
+
 }  // namespace core
 }  // namespace open3d

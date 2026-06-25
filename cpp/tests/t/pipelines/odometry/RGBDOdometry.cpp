@@ -40,6 +40,9 @@ core::Tensor CreateIntrisicTensor() {
 
 TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Odometry/normals is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -107,6 +110,9 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Bilateral filter/normals is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -174,6 +180,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Sobel filter/Odometry is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -241,6 +250,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Sobel filter/hybrid Odometry is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }

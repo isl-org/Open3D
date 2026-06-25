@@ -46,7 +46,7 @@ sycl::queue SYCLContext::GetDefaultQueue(const Device &device) {
 SYCLDevice::SYCLDevice(const sycl::device &sycl_device) {
     namespace sid = sycl::info::device;
     device = sycl_device;
-    queue = sycl::queue(device);
+    queue = sycl::queue(device, sycl::property_list{sycl::property::queue::in_order()});
     name = device.get_info<sid::name>();
     device_type = GetDeviceTypeName(device);
     max_work_group_size = device.get_info<sid::max_work_group_size>();

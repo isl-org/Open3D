@@ -156,8 +156,8 @@ void GatherWithinThresholdQueriesSYCL(const Device& device,
     });
 }
 
-// Selects the smallest k distances per query with OneDPL partial_sort while
-// reusing scratch index buffers allocated by the caller.
+// Selects the smallest k distances per query with a high-performance parallel
+// SYCL kernel or OneDPL fallback for large knn.
 template <typename T, typename TIndex>
 void SelectTopKQueriesSYCL(const Device& device,
                            const T* distances_ptr,
@@ -180,64 +180,170 @@ void SelectTopKQueriesSYCL(const Device& device,
     const T inf = std::numeric_limits<T>::max();
     const int64_t actual_knn = std::min(knn, num_points);
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    auto policy = oneapi::dpl::execution::make_device_policy(queue);
 
-    queue.parallel_for(
-            sycl::range<2>(num_queries, num_points), [=](sycl::id<2> id) {
-                scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
-                        static_cast<TIndex>(id[1]);
-            });
+    if (knn <= 256) {
+        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
+            const int64_t query_idx = id[0];
+            const T* query_distances =
+                    distances_ptr + query_idx * distance_query_stride;
+            TIndex* query_out_indices =
+                    out_indices_ptr + query_idx * out_query_stride;
+            T* query_out_distances =
+                    out_distances_ptr + query_idx * out_query_stride;
 
-    for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
-        TIndex* query_indices =
-                scratch_indices_ptr + query_idx * scratch_query_stride;
-        const T* query_distances =
-                distances_ptr + query_idx * distance_query_stride;
-        std::partial_sort(policy, query_indices, query_indices + actual_knn,
-                          query_indices + num_points,
-                          [query_distances](TIndex lhs, TIndex rhs) {
-                              const T lhs_dist = query_distances[lhs];
-                              const T rhs_dist = query_distances[rhs];
-                              if (lhs_dist < rhs_dist) {
-                                  return true;
-                              }
-                              if (rhs_dist < lhs_dist) {
-                                  return false;
-                              }
-                              return lhs < rhs;
-                          });
+            // Simple Max-Heap representation inside local registers.
+            // Since compilers unroll arrays of small static bounds, 
+            // a fixed maximum size array is excellent.
+            T local_dists[256];
+            TIndex local_indices[256];
+
+            for (int k = 0; k < actual_knn; ++k) {
+                local_dists[k] = inf;
+                local_indices[k] = TIndex(-1);
+            }
+
+            // Maintain max-heap of the actual_knn smallest elements.
+            // local_dists[0] will always represent the largest distance currently in our heap of top-K.
+            for (TIndex p = 0; p < num_points; ++p) {
+                T dist = query_distances[p];
+                if (use_threshold && dist > threshold) {
+                    continue;
+                }
+
+                if (dist < local_dists[0] ||
+                    (dist == local_dists[0] && p < local_indices[0])) {
+                    local_dists[0] = dist;
+                    local_indices[0] = p;
+
+                    // Heapify down
+                    int i = 0;
+                    while (true) {
+                        int left = 2 * i + 1;
+                        int right = 2 * i + 2;
+                        int largest = i;
+
+                        if (left < actual_knn &&
+                            (local_dists[left] > local_dists[largest] ||
+                             (local_dists[left] == local_dists[largest] &&
+                              local_indices[left] > local_indices[largest]))) {
+                            largest = left;
+                        }
+
+                        if (right < actual_knn &&
+                            (local_dists[right] > local_dists[largest] ||
+                             (local_dists[right] == local_dists[largest] &&
+                              local_indices[right] > local_indices[largest]))) {
+                            largest = right;
+                        }
+
+                        if (largest != i) {
+                            T tmp_d = local_dists[i];
+                            local_dists[i] = local_dists[largest];
+                            local_dists[largest] = tmp_d;
+
+                            TIndex tmp_idx = local_indices[i];
+                            local_indices[i] = local_indices[largest];
+                            local_indices[largest] = tmp_idx;
+
+                            i = largest;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Since the heap has the largest element at root, we need to sort it 
+            // in ascending order before writing to out_indices and out_distances.
+            // A simple insertion sort is ideal for sorting size <= 256.
+            for (int i = 1; i < actual_knn; ++i) {
+                T key_dist = local_dists[i];
+                TIndex key_idx = local_indices[i];
+                int j = i - 1;
+                while (j >= 0 && (local_dists[j] > key_dist ||
+                                  (local_dists[j] == key_dist &&
+                                   local_indices[j] > key_idx))) {
+                    local_dists[j + 1] = local_dists[j];
+                    local_indices[j + 1] = local_indices[j];
+                    j = j - 1;
+                }
+                local_dists[j + 1] = key_dist;
+                local_indices[j + 1] = key_idx;
+            }
+
+            // Write output
+            for (int64_t k = 0; k < knn; ++k) {
+                if (k >= actual_knn || local_indices[k] == TIndex(-1)) {
+                    query_out_indices[k] = TIndex(-1);
+                    query_out_distances[k] = inf;
+                } else {
+                    query_out_indices[k] = index_offset + local_indices[k];
+                    query_out_distances[k] = local_dists[k];
+                }
+            }
+        });
+    } else {
+        auto policy = oneapi::dpl::execution::make_device_policy(queue);
+
+        queue.parallel_for(
+                sycl::range<2>(num_queries, num_points), [=](sycl::id<2> id) {
+                    scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
+                            static_cast<TIndex>(id[1]);
+                });
+
+        queue.wait_and_throw();
+
+        for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
+            TIndex* query_indices =
+                    scratch_indices_ptr + query_idx * scratch_query_stride;
+            const T* query_distances =
+                    distances_ptr + query_idx * distance_query_stride;
+            std::partial_sort(policy, query_indices, query_indices + actual_knn,
+                              query_indices + num_points,
+                              [query_distances](TIndex lhs, TIndex rhs) {
+                                  const T lhs_dist = query_distances[lhs];
+                                  const T rhs_dist = query_distances[rhs];
+                                  if (lhs_dist < rhs_dist) {
+                                      return true;
+                                  }
+                                  if (rhs_dist < lhs_dist) {
+                                      return false;
+                                  }
+                                  return lhs < rhs;
+                              });
+        }
+
+        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+            const int64_t query_idx = id[0];
+            const int64_t k = id[1];
+            TIndex* query_out_indices =
+                    out_indices_ptr + query_idx * out_query_stride;
+            T* query_out_distances =
+                    out_distances_ptr + query_idx * out_query_stride;
+
+            if (k >= actual_knn) {
+                query_out_indices[k] = TIndex(-1);
+                query_out_distances[k] = inf;
+                return;
+            }
+
+            const TIndex local_idx =
+                    scratch_indices_ptr[query_idx * scratch_query_stride + k];
+            const T dist =
+                    distances_ptr[query_idx * distance_query_stride + local_idx];
+            if (use_threshold && dist > threshold) {
+                query_out_indices[k] = TIndex(-1);
+                query_out_distances[k] = inf;
+                return;
+            }
+            query_out_indices[k] = index_offset + local_idx;
+            query_out_distances[k] = dist;
+        });
     }
-
-    queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
-        const int64_t query_idx = id[0];
-        const int64_t k = id[1];
-        TIndex* query_out_indices =
-                out_indices_ptr + query_idx * out_query_stride;
-        T* query_out_distances =
-                out_distances_ptr + query_idx * out_query_stride;
-
-        if (k >= actual_knn) {
-            query_out_indices[k] = TIndex(-1);
-            query_out_distances[k] = inf;
-            return;
-        }
-
-        const TIndex local_idx =
-                scratch_indices_ptr[query_idx * scratch_query_stride + k];
-        const T dist =
-                distances_ptr[query_idx * distance_query_stride + local_idx];
-        if (use_threshold && dist > threshold) {
-            query_out_indices[k] = TIndex(-1);
-            query_out_distances[k] = inf;
-            return;
-        }
-        query_out_indices[k] = index_offset + local_idx;
-        query_out_distances[k] = dist;
-    });
 }
 
 // Merges two sorted top-k query buffers into a new top-k query buffer with
-// OneDPL partial_sort over 2k candidates.
+// a high-performance parallel SYCL kernel or OneDPL fallback for large knn.
 template <typename T, typename TIndex>
 void MergeTopKQueriesSYCL(const Device& device,
                           const T* current_distances_ptr,
@@ -249,7 +355,7 @@ void MergeTopKQueriesSYCL(const Device& device,
                           int64_t num_queries,
                           int64_t knn,
                           TIndex* scratch_indices_ptr,
-                          int64_t scratch_query_stride,
+                    	  int64_t scratch_query_stride,
                           TIndex* out_indices_ptr,
                           T* out_distances_ptr,
                           int64_t out_query_stride) {
@@ -258,95 +364,165 @@ void MergeTopKQueriesSYCL(const Device& device,
     }
 
     const T inf = std::numeric_limits<T>::max();
-    const int64_t combined_cols = 2 * knn;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    auto policy = oneapi::dpl::execution::make_device_policy(queue);
 
-    queue.parallel_for(
-            sycl::range<2>(num_queries, combined_cols), [=](sycl::id<2> id) {
-                scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
-                        static_cast<TIndex>(id[1]);
-            });
+    if (knn <= 256) {
+        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
+            const int64_t query_idx = id[0];
+            const T* query_curr_dist =
+                    current_distances_ptr + query_idx * current_query_stride;
+            const TIndex* query_curr_idx =
+                    current_indices_ptr + query_idx * current_query_stride;
+            const T* query_cand_dist =
+                    candidate_distances_ptr + query_idx * candidate_query_stride;
+            const TIndex* query_cand_idx =
+                    candidate_indices_ptr + query_idx * candidate_query_stride;
 
-    for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
-        TIndex* query_indices =
-                scratch_indices_ptr + query_idx * scratch_query_stride;
-        const T* query_current_dist =
-                current_distances_ptr + query_idx * current_query_stride;
-        const TIndex* query_current_idx =
-                current_indices_ptr + query_idx * current_query_stride;
-        const T* query_candidate_dist =
-                candidate_distances_ptr + query_idx * candidate_query_stride;
-        const TIndex* query_candidate_idx =
-                candidate_indices_ptr + query_idx * candidate_query_stride;
+            TIndex* query_out_indices =
+                    out_indices_ptr + query_idx * out_query_stride;
+            T* query_out_distances =
+                    out_distances_ptr + query_idx * out_query_stride;
 
-        std::partial_sort(
-                policy, query_indices, query_indices + knn,
-                query_indices + combined_cols,
-                [query_current_dist, query_current_idx, query_candidate_dist,
-                 query_candidate_idx, knn](TIndex lhs, TIndex rhs) {
-                    const bool lhs_is_current = lhs < knn;
-                    const bool rhs_is_current = rhs < knn;
-                    const TIndex lhs_idx =
-                            lhs_is_current ? query_current_idx[lhs]
-                                           : query_candidate_idx[lhs - knn];
-                    const TIndex rhs_idx =
-                            rhs_is_current ? query_current_idx[rhs]
-                                           : query_candidate_idx[rhs - knn];
-                    const T lhs_dist =
-                            lhs_is_current ? query_current_dist[lhs]
-                                           : query_candidate_dist[lhs - knn];
-                    const T rhs_dist =
-                            rhs_is_current ? query_current_dist[rhs]
-                                           : query_candidate_dist[rhs - knn];
-                    const bool lhs_valid = lhs_idx >= 0;
-                    const bool rhs_valid = rhs_idx >= 0;
-                    if (lhs_valid != rhs_valid) {
-                        return lhs_valid;
+            // Two-pointer merge of two sorted arrays of size knn
+            int64_t i_curr = 0;
+            int64_t i_cand = 0;
+
+            for (int64_t k = 0; k < knn; ++k) {
+                bool take_curr = false;
+
+                const TIndex curr_idx =
+                        (i_curr < knn) ? query_curr_idx[i_curr] : TIndex(-1);
+                const TIndex cand_idx =
+                        (i_cand < knn) ? query_cand_idx[i_cand] : TIndex(-1);
+
+                const bool curr_valid = (curr_idx >= 0);
+                const bool cand_valid = (cand_idx >= 0);
+
+                if (!curr_valid && !cand_valid) {
+                    query_out_indices[k] = TIndex(-1);
+                    query_out_distances[k] = inf;
+                    continue;
+                } else if (!curr_valid) {
+                    take_curr = false;
+                } else if (!cand_valid) {
+                    take_curr = true;
+                } else {
+                    const T curr_dist = query_curr_dist[i_curr];
+                    const T cand_dist = query_cand_dist[i_cand];
+
+                    if (curr_dist < cand_dist) {
+                        take_curr = true;
+                    } else if (cand_dist < curr_dist) {
+                        take_curr = false;
+                    } else {
+                        // Tie breaker
+                        take_curr = (curr_idx < cand_idx);
                     }
-                    if (lhs_dist < rhs_dist) {
-                        return true;
-                    }
-                    if (rhs_dist < lhs_dist) {
-                        return false;
-                    }
-                    return lhs_idx < rhs_idx;
+                }
+
+                if (take_curr) {
+                    query_out_indices[k] = curr_idx;
+                    query_out_distances[k] = query_curr_dist[i_curr];
+                    i_curr++;
+                } else {
+                    query_out_indices[k] = cand_idx;
+                    query_out_distances[k] = query_cand_dist[i_cand];
+                    i_cand++;
+                }
+            }
+        });
+    } else {
+        const int64_t combined_cols = 2 * knn;
+        auto policy = oneapi::dpl::execution::make_device_policy(queue);
+
+        queue.parallel_for(
+                sycl::range<2>(num_queries, combined_cols), [=](sycl::id<2> id) {
+                    scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
+                            static_cast<TIndex>(id[1]);
                 });
-    }
 
-    queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
-        const int64_t query_idx = id[0];
-        const int64_t k = id[1];
-        TIndex* query_out_indices =
-                out_indices_ptr + query_idx * out_query_stride;
-        T* query_out_distances =
-                out_distances_ptr + query_idx * out_query_stride;
-        const TIndex source =
-                scratch_indices_ptr[query_idx * scratch_query_stride + k];
-        const bool is_current = source < knn;
-        const int64_t offset = is_current ? source : source - knn;
-        const TIndex idx =
-                is_current
-                        ? current_indices_ptr[query_idx * current_query_stride +
-                                              offset]
-                        : candidate_indices_ptr[query_idx *
-                                                        candidate_query_stride +
-                                                offset];
-        const T dist =
-                is_current
-                        ? current_distances_ptr[query_idx *
-                                                        current_query_stride +
-                                                offset]
-                        : candidate_distances_ptr
-                                  [query_idx * candidate_query_stride + offset];
-        if (idx < 0) {
-            query_out_indices[k] = TIndex(-1);
-            query_out_distances[k] = inf;
-        } else {
-            query_out_indices[k] = idx;
-            query_out_distances[k] = dist;
+        queue.wait_and_throw();
+
+        for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
+            TIndex* query_indices =
+                    scratch_indices_ptr + query_idx * scratch_query_stride;
+            const T* query_current_dist =
+                    current_distances_ptr + query_idx * current_query_stride;
+            const TIndex* query_current_idx =
+                    current_indices_ptr + query_idx * current_query_stride;
+            const T* query_candidate_dist =
+                    candidate_distances_ptr + query_idx * candidate_query_stride;
+            const TIndex* query_candidate_idx =
+                    candidate_indices_ptr + query_idx * candidate_query_stride;
+
+            std::partial_sort(
+                    policy, query_indices, query_indices + knn,
+                    query_indices + combined_cols,
+                    [query_current_dist, query_current_idx, query_candidate_dist,
+                     query_candidate_idx, knn](TIndex lhs, TIndex rhs) {
+                        const bool lhs_is_current = lhs < knn;
+                        const bool rhs_is_current = rhs < knn;
+                        const TIndex lhs_idx =
+                                lhs_is_current ? query_current_idx[lhs]
+                                               : query_candidate_idx[lhs - knn];
+                        const TIndex rhs_idx =
+                                rhs_is_current ? query_current_idx[rhs]
+                                               : query_candidate_idx[rhs - knn];
+                        const T lhs_dist =
+                                lhs_is_current ? query_current_dist[lhs]
+                                               : query_candidate_dist[lhs - knn];
+                        const T rhs_dist =
+                                rhs_is_current ? query_current_dist[rhs]
+                                               : query_candidate_dist[rhs - knn];
+                        const bool lhs_valid = lhs_idx >= 0;
+                        const bool rhs_valid = rhs_idx >= 0;
+                        if (lhs_valid != rhs_valid) {
+                            return lhs_valid;
+                        }
+                        if (lhs_dist < rhs_dist) {
+                            return true;
+                        }
+                        if (rhs_dist < lhs_dist) {
+                            return false;
+                        }
+                        return lhs_idx < rhs_idx;
+                    });
         }
-    });
+
+        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+            const int64_t query_idx = id[0];
+            const int64_t k = id[1];
+            TIndex* query_out_indices =
+                    out_indices_ptr + query_idx * out_query_stride;
+            T* query_out_distances =
+                    out_distances_ptr + query_idx * out_query_stride;
+            const TIndex source =
+                    scratch_indices_ptr[query_idx * scratch_query_stride + k];
+            const bool is_current = source < knn;
+            const int64_t offset = is_current ? source : source - knn;
+            const TIndex idx =
+                    is_current
+                            ? current_indices_ptr[query_idx * current_query_stride +
+                                                  offset]
+                            : candidate_indices_ptr[query_idx *
+                                                            candidate_query_stride +
+                                                    offset];
+            const T dist =
+                    is_current
+                            ? current_distances_ptr[query_idx *
+                                                            current_query_stride +
+                                                    offset]
+                            : candidate_distances_ptr
+                                      [query_idx * candidate_query_stride + offset];
+            if (idx < 0) {
+                query_out_indices[k] = TIndex(-1);
+                query_out_distances[k] = inf;
+            } else {
+                query_out_indices[k] = idx;
+                query_out_distances[k] = dist;
+            }
+        });
+    }
 }
 
 // Finalizes hybrid-search counts and clears any unused tail elements in the
@@ -587,7 +763,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                            const Metric metric,
                            const bool ignore_query_point,
                            const bool return_distances,
-                           const bool,
+                           const bool sort,
                            Tensor& neighbors_index,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance) {
@@ -682,7 +858,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     TIndex* neighbors_index_ptr;
     T* neighbors_distance_ptr;
     output_allocator.AllocIndices(&neighbors_index_ptr, row_splits.back());
-    if (return_distances) {
+    if (return_distances || sort) {
         output_allocator.AllocDistances(&neighbors_distance_ptr,
                                         row_splits.back());
     } else {
@@ -736,15 +912,50 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                         temp_distances_view.GetStride(0), num_queries_iter,
                         num_points_iter, threshold, TIndex(point_begin + p),
                         offsets_ptr, neighbors_index_ptr,
-                        return_distances ? neighbors_distance_ptr : nullptr);
+                        neighbors_distance_ptr);
             }
         }
     }
 
     queue.wait_and_throw();
 
+    if (sort && num_queries > 0) {
+        const int64_t* row_splits_ptr = neighbors_row_splits.GetDataPtr<int64_t>();
+        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
+            const int64_t q = id[0];
+            const int64_t start = row_splits_ptr[q];
+            const int64_t end = row_splits_ptr[q + 1];
+            const int64_t len = end - start;
+            if (len <= 1) {
+                return;
+            }
+
+            TIndex* segment_indices = neighbors_index_ptr + start;
+            T* segment_distances = neighbors_distance_ptr + start;
+
+            for (int64_t i = 1; i < len; ++i) {
+                T key_dist = segment_distances[i];
+                TIndex key_idx = segment_indices[i];
+                int64_t j = i - 1;
+                while (j >= 0 && (segment_distances[j] > key_dist ||
+                                  (segment_distances[j] == key_dist &&
+                                   segment_indices[j] > key_idx))) {
+                    segment_distances[j + 1] = segment_distances[j];
+                    segment_indices[j + 1] = segment_indices[j];
+                    j = j - 1;
+                }
+                segment_distances[j + 1] = key_dist;
+                segment_indices[j + 1] = key_idx;
+            }
+        });
+        queue.wait_and_throw();
+    }
+
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
+    if (!return_distances) {
+        neighbors_distance = Tensor({0}, Dtype::FromType<T>(), device);
+    }
 }
 
 // Hybrid search counts all neighbors within radius while keeping only the best

@@ -122,7 +122,7 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::FixedRadiusSearch(
         }
     } else {
         if (nanoflann_index_) {
-            return nanoflann_index_->SearchRadius(query_points, radius);
+            return nanoflann_index_->SearchRadius(query_points, radius, sort);
         } else {
             utility::LogError("Index is not set.");
         }
