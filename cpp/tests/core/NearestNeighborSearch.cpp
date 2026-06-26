@@ -13,6 +13,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Helper.h"
@@ -375,6 +376,39 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
     EXPECT_TRUE(distances.AllClose(gt_distances));
     EXPECT_TRUE(counts.AllClose(gt_counts));
 }
+
+#ifdef BUILD_SYCL_MODULE
+// Phase 7: KNN on SYCL:0 should match CPU indices/distances for fixed data.
+TEST(NearestNeighborSearchSYCLBackendParity, KnnSearchMatchesCPU) {
+    if (!core::sy::IsAvailable()) {
+        GTEST_SKIP() << "No SYCL device.";
+    }
+    const core::Device cpu("CPU:0");
+    const core::Device sycl("SYCL:0");
+
+    core::Tensor dataset = core::Tensor::Init<float>(
+            {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.1}, {0.0, 0.0, 0.2}, {0.0, 0.1, 0.0},
+             {0.0, 0.1, 0.1}, {0.0, 0.1, 0.2}, {0.0, 0.2, 0.0}, {0.0, 0.2, 0.1},
+             {0.0, 0.2, 0.2}, {0.1, 0.0, 0.0}, {0.1, 0.0, 0.1}, {0.1, 0.1, 0.0}},
+            cpu);
+    core::Tensor query =
+            core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
+
+    core::nns::NearestNeighborSearch nns_cpu(dataset, core::Int32);
+    nns_cpu.KnnIndex();
+    core::Tensor indices_cpu, distances_cpu;
+    std::tie(indices_cpu, distances_cpu) = nns_cpu.KnnSearch(query, 3);
+
+    core::nns::NearestNeighborSearch nns_sycl(dataset.To(sycl), core::Int32);
+    nns_sycl.KnnIndex();
+    core::Tensor indices_sycl, distances_sycl;
+    std::tie(indices_sycl, distances_sycl) =
+            nns_sycl.KnnSearch(query.To(sycl), 3);
+
+    EXPECT_TRUE(indices_sycl.To(cpu).AllClose(indices_cpu));
+    EXPECT_TRUE(distances_sycl.To(cpu).AllClose(distances_cpu, 1e-5, 1e-5));
+}
+#endif
 
 }  // namespace tests
 }  // namespace open3d

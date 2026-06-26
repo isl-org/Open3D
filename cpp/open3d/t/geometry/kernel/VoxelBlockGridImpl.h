@@ -17,6 +17,12 @@
 #ifndef __CUDACC__
 #include "open3d/core/hashmap/CPU/TBBHashBackend.h"
 #endif
+#if defined(SYCL_LANGUAGE_VERSION)
+#include "open3d/core/hashmap/SYCL/SYCLHashBackend.h"
+#endif
+#if defined(__CUDACC__)
+#include "open3d/core/hashmap/CUDA/StdGPUHashBackend.h"
+#endif
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -355,7 +361,11 @@ void EstimateRangeCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#ifndef __CUDACC__
+#if defined(__CUDACC__)
+#elif defined(SYCL_LANGUAGE_VERSION)
+    using sycl::max;
+    using sycl::min;
+#else
     using std::max;
     using std::min;
 #endif
@@ -495,9 +505,20 @@ void EstimateRangeCPU
                 float z_min = frag_ptr[0];
                 float z_max = frag_ptr[1];
                 float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
+#elif defined(SYCL_LANGUAGE_VERSION)
+                sycl::atomic_ref<float, sycl::memory_order::acq_rel,
+                                 sycl::memory_scope::device,
+                                 sycl::access::address_space::global_space>(
+                        range_ptr[0])
+                        .fetch_min(z_min);
+                sycl::atomic_ref<float, sycl::memory_order::acq_rel,
+                                 sycl::memory_scope::device,
+                                 sycl::access::address_space::global_space>(
+                        range_ptr[1])
+                        .fetch_max(z_max);
 #else
 #pragma omp critical(EstimateRangeCPU)
                 {
@@ -544,6 +565,8 @@ struct MiniVecCache {
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void RayCastCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void RayCastSYCL
 #else
 void RayCastCPU
 #endif
@@ -577,6 +600,16 @@ void RayCastCPU
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
     }
     auto hashmap_impl = cuda_hashmap->GetImpl();
+#elif defined(SYCL_LANGUAGE_VERSION)
+    auto sycl_hashmap =
+            std::dynamic_pointer_cast<core::SYCLHashBackend<Key, Hash, Eq>>(
+                    device_hashmap);
+    if (sycl_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: SYCL raycasting requires the SYCL "
+                "hash backend.");
+    }
+    auto sycl_hash_lookup = sycl_hashmap->GetDeviceLookup();
 #else
     auto cpu_hashmap =
             std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
@@ -687,6 +720,9 @@ void RayCastCPU
 #ifndef __CUDACC__
     using std::max;
     using std::sqrt;
+#elif defined(SYCL_LANGUAGE_VERSION)
+    using sycl::max;
+    using sycl::sqrt;
 #endif
 
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
@@ -711,9 +747,19 @@ void RayCastCPU
 
                 index_t block_buf_idx = cache.Check(key[0], key[1], key[2]);
                 if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                     auto iter = hashmap_impl.find(key);
                     if (iter == hashmap_impl.end()) return -1;
                     block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                    core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                    if (bi == static_cast<core::buf_index_t>(-1)) return -1;
+                    block_buf_idx = static_cast<index_t>(bi);
+#else
+                    auto iter = hashmap_impl.find(key);
+                    if (iter == hashmap_impl.end()) return -1;
+                    block_buf_idx = iter->second;
+#endif
                     cache.Update(key[0], key[1], key[2], block_buf_idx);
                 }
 
@@ -738,9 +784,19 @@ void RayCastCPU
             Key key(x_b, y_b, z_b);
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                 auto iter = hashmap_impl.find(key);
                 if (iter == hashmap_impl.end()) return -1;
                 block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                if (bi == static_cast<core::buf_index_t>(-1)) return -1;
+                block_buf_idx = static_cast<index_t>(bi);
+#else
+                auto iter = hashmap_impl.find(key);
+                if (iter == hashmap_impl.end()) return -1;
+                block_buf_idx = iter->second;
+#endif
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
 
@@ -937,9 +993,19 @@ void RayCastCPU
 
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                 auto iter = hashmap_impl.find(key);
                 if (iter == hashmap_impl.end()) return;
                 block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                if (bi == static_cast<core::buf_index_t>(-1)) return;
+                block_buf_idx = static_cast<index_t>(bi);
+#else
+                auto iter = hashmap_impl.find(key);
+                if (iter == hashmap_impl.end()) return;
+                block_buf_idx = iter->second;
+#endif
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
 
@@ -1025,7 +1091,7 @@ void RayCastCPU
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
                                       normal_ptr[2] * normal_ptr[2]);
-                    norm = std::max(norm, EPSILON);
+                    norm = max(norm, EPSILON);
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,
@@ -1043,6 +1109,8 @@ void RayCastCPU
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void ExtractPointCloudCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ExtractPointCloudSYCL
 #else
 void ExtractPointCloudCPU
 #endif
@@ -1237,9 +1305,11 @@ void ExtractPointCloudCPU
 
                 index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
                 if (idx >= valid_size) {
+#if defined(__CUDACC__)
                     printf("Point cloud size larger than "
                            "estimated, please increase the "
                            "estimation!\n");
+#endif
                     return;
                 }
 
@@ -1300,6 +1370,8 @@ void ExtractPointCloudCPU
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void ExtractTriangleMeshCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ExtractTriangleMeshSYCL
 #else
 void ExtractTriangleMeshCPU
 #endif

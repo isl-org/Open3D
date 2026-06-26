@@ -15,6 +15,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/SizeVector.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
@@ -1736,6 +1737,44 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
     //                            &mesh, [](t::geometry::TriangleMesh*) {})},
     //                    "Mesh with AO texture");
 }
+
+#ifdef BUILD_SYCL_MODULE
+TEST(TriangleMeshSYCLBackendParity, NormalsAndAreasMatchCPU) {
+    if (!core::sy::IsAvailable()) {
+        GTEST_SKIP() << "No SYCL device.";
+    }
+    const core::Device cpu("CPU:0");
+    const core::Device sycl("SYCL:0");
+
+    t::geometry::TriangleMesh mesh_cpu =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, cpu);
+    t::geometry::TriangleMesh mesh_sycl =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, sycl);
+
+    mesh_cpu.ComputeTriangleNormals();
+    mesh_cpu.ComputeVertexNormals();
+    mesh_cpu.NormalizeNormals();
+    mesh_cpu.ComputeTriangleAreas();
+
+    mesh_sycl.ComputeTriangleNormals();
+    mesh_sycl.ComputeVertexNormals();
+    mesh_sycl.NormalizeNormals();
+    mesh_sycl.ComputeTriangleAreas();
+
+    EXPECT_TRUE(mesh_sycl.GetTriangleNormals()
+                        .To(cpu)
+                        .AllClose(mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
+    EXPECT_TRUE(mesh_sycl.GetVertexNormals()
+                        .To(cpu)
+                        .AllClose(mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
+    EXPECT_TRUE(mesh_sycl.GetTriangleAttr("areas")
+                        .To(cpu)
+                        .AllClose(mesh_cpu.GetTriangleAttr("areas"), 1e-4,
+                                  1e-4));
+}
+#endif
 
 }  // namespace tests
 }  // namespace open3d

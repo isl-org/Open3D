@@ -299,3 +299,37 @@ def test_fixed_radius_search_random(dtype):
                                        atol=0)
             np.testing.assert_equal(indices.numpy(),
                                     indices_sycl.cpu().numpy())
+
+
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_knn_search_sycl_matches_cpu(dtype):
+    """KNN on SYCL:0 should match CPU for the canonical grid fixture."""
+    if len(o3c.sycl.get_available_devices()) <= 1:
+        pytest.skip("SYCL GPU not available.")
+
+    dataset_points = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.1], [0.0, 0.0, 0.2], [0.0, 0.1, 0.0],
+         [0.0, 0.1, 0.1], [0.0, 0.1, 0.2], [0.0, 0.2, 0.0], [0.0, 0.2, 0.1],
+         [0.0, 0.2, 0.2], [0.1, 0.0, 0.0]],
+        dtype=dtype,
+        device=o3c.Device("CPU:0"))
+    query_points = o3c.Tensor([[0.064705, 0.043921, 0.087843]],
+                              dtype=dtype,
+                              device=o3c.Device("CPU:0"))
+
+    nns_cpu = o3c.nns.NearestNeighborSearch(dataset_points)
+    nns_cpu.knn_index()
+    indices_cpu, distances_cpu = nns_cpu.knn_search(query_points, 3)
+
+    sycl = o3c.Device("SYCL:0")
+    nns_sycl = o3c.nns.NearestNeighborSearch(dataset_points.to(sycl))
+    nns_sycl.knn_index()
+    indices_sycl, distances_sycl = nns_sycl.knn_search(
+        query_points.to(sycl), 3)
+
+    np.testing.assert_equal(indices_cpu.numpy(),
+                            indices_sycl.cpu().numpy())
+    np.testing.assert_allclose(distances_cpu.numpy(),
+                               distances_sycl.cpu().numpy(),
+                               rtol=1e-5,
+                               atol=0)

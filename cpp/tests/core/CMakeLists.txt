@@ -41,10 +41,3 @@ if (BUILD_ISPC_MODULE)
         ParallelFor.ispc
     )
 endif()
-
-# TODO: cmake does not currently build this test!
-#if (BUILD_SYCL_MODULE)
-#    open3d_sycl_target_sources(tests PRIVATE
-#        ParallelForSYCL.cpp
-#    )
-#endif()

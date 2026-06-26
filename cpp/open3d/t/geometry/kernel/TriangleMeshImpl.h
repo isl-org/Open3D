@@ -22,7 +22,12 @@ namespace kernel {
 namespace trianglemesh {
 
 #ifndef __CUDACC__
-using std::isnan;
+    using std::isnan;
+#endif
+
+#if defined(SYCL_LANGUAGE_VERSION)
+#include <cmath>
+using sycl::isnan;
 #endif
 
 #if defined(__CUDACC__)

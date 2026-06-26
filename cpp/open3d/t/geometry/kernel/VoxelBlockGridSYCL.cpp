@@ -145,8 +145,8 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
                 float y_d = y_g - y_o;
                 float z_d = z_g - z_o;
 
-                const float t_min = std::max(d - sdf_trunc, 0.0f);
-                const float t_max = std::min(d + sdf_trunc, depth_max);
+                const float t_min = fmaxf(d - sdf_trunc, 0.0f);
+                const float t_max = fminf(d + sdf_trunc, depth_max);
                 const float t_step = (t_max - t_min) / step_size;
 
                 float t = t_min;
@@ -215,6 +215,8 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
                                       block_coordi_ptr[offset_rhs + 2];
                           }
                       });
+    index_t active_count = count[0].Item<index_t>();
+    voxel_block_coords = voxel_block_coords.Slice(0, 0, active_count);
 }
 
 #define FN_ARGUMENTS                                                      \
@@ -235,42 +237,6 @@ template void IntegrateSYCL<float, float, float, uint16_t, uint16_t>(
 template void IntegrateSYCL<float, float, float, float, float>(FN_ARGUMENTS);
 
 #undef FN_ARGUMENTS
-
-template <typename tsdf_t, typename weight_t, typename color_t>
-void RayCastSYCL(
-        std::shared_ptr<core::HashMap> &hashmap, const TensorMap &block_value_map,
-        const core::Tensor &range_map, TensorMap &renderings_map,
-        const core::Tensor &intrinsic, const core::Tensor &extrinsic,
-        index_t h, index_t w, index_t block_resolution, float voxel_size,
-        float depth_scale, float depth_min, float depth_max,
-        float weight_threshold, float trunc_voxel_multiplier,
-        int range_map_down_factor) {
-    utility::LogError("RayCastSYCL is not implemented because core::HashMap does not support SYCL yet.");
-}
-
-template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractPointCloudSYCL(
-        const core::Tensor &block_indices, const core::Tensor &nb_block_indices,
-        const core::Tensor &nb_block_masks,
-        const core::Tensor &block_keys, const TensorMap &block_value_map,
-        core::Tensor &points, core::Tensor &normals, core::Tensor &colors,
-        index_t block_resolution, float voxel_size,
-        float weight_threshold, index_t &valid_size) {
-    utility::LogError("ExtractPointCloudSYCL is not implemented because core::HashMap does not support SYCL yet.");
-}
-
-template <typename tsdf_t, typename weight_t, typename color_t>
-void ExtractTriangleMeshSYCL(
-        const core::Tensor &block_indices, const core::Tensor &inv_block_indices,
-        const core::Tensor &nb_block_indices,
-        const core::Tensor &nb_block_masks,
-        const core::Tensor &block_keys, const TensorMap &block_value_map,
-        core::Tensor &vertices, core::Tensor &triangles,
-        core::Tensor &vertex_normals, core::Tensor &vertex_colors,
-        index_t block_resolution, float voxel_size,
-        float weight_threshold, index_t &vertex_count) {
-    utility::LogError("ExtractTriangleMeshSYCL is not implemented because core::HashMap does not support SYCL yet.");
-}
 
 #define FN_ARGUMENTS                                                           \
     std::shared_ptr<core::HashMap> &hashmap, const TensorMap &block_value_map, \

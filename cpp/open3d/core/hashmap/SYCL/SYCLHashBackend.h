@@ -38,6 +38,43 @@ enum SYCLHashSlotState : int32_t {
     kSYCLSlotDeleted = 3,
 };
 
+/// Captured into SYCL kernels for read-only hash table lookup (e.g. VoxelBlockGrid).
+/// Used for RayCasting. Atomic to allow concurrent writes.
+template <typename Key, typename Hash, typename Eq>
+struct SYCLHashDeviceLookup {
+    int32_t* slot_state = nullptr;
+    buf_index_t* slot_buf_index = nullptr;
+    int64_t bucket_count = 0;
+    SYCLHashBackendBufferAccessor accessor;
+    Hash hash_fn{};
+    Eq eq_fn{};
+
+    /// Returns buffer index, or -1 if the key is not present.
+    buf_index_t Find(const Key& key) const {
+        const int64_t home = static_cast<int64_t>(
+                hash_fn(key) % static_cast<uint64_t>(bucket_count));
+        for (int64_t probe = 0; probe < bucket_count; ++probe) {
+            const int64_t idx = (home + probe) % bucket_count;
+            sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                             sycl::memory_scope::device>
+                    st(slot_state[idx]);
+            const int32_t s = st.load(sycl::memory_order::acquire);
+            if (s == kSYCLSlotEmpty) {
+                break;
+            }
+            if (s == kSYCLSlotOccupied) {
+                const buf_index_t bi = slot_buf_index[idx];
+                const Key* slot_key =
+                        static_cast<const Key*>(accessor.GetKeyPtr(bi));
+                if (eq_fn(*slot_key, key)) {
+                    return bi;
+                }
+            }
+        }
+        return static_cast<buf_index_t>(-1);
+    }
+};
+
 /// A native SYCL device hash backend implementing DeviceHashBackend.
 ///
 /// Design: a lock-free open-addressing hash table with linear probing and
@@ -93,12 +130,22 @@ public:
     void Allocate(int64_t capacity) override;
     void Free() override;
 
+    SYCLHashDeviceLookup<Key, Hash, Eq> GetDeviceLookup() const {
+        SYCLHashDeviceLookup<Key, Hash, Eq> view;
+        view.slot_state = slot_state_;
+        view.slot_buf_index = slot_buf_index_;
+        view.bucket_count = bucket_count_;
+        view.accessor = buffer_accessor_;
+        return view;
+    }
+
 protected:
     SYCLHashBackendBufferAccessor buffer_accessor_;
 
     // Open-addressing table arrays (USM device memory).
     int32_t* slot_state_ = nullptr;       /* [bucket_count_] */
     buf_index_t* slot_buf_index_ = nullptr; /* [bucket_count_] */
+    int* occupied_count_ = nullptr;       /* device: live OCCUPIED slots */
     int64_t bucket_count_ = 0;
 
     sycl::queue queue_;
@@ -122,7 +169,13 @@ SYCLHashBackend<Key, Hash, Eq>::~SYCLHashBackend() {
 
 template <typename Key, typename Hash, typename Eq>
 int64_t SYCLHashBackend<Key, Hash, Eq>::Size() const {
-    return this->buffer_->GetHeapTopIndex();
+    if (!occupied_count_) {
+        return 0;
+    }
+    int count = 0;
+    MemoryManager::MemcpyToHost(&count, occupied_count_, this->device_,
+                                sizeof(occupied_count_));
+    return static_cast<int64_t>(count);
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -163,6 +216,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     int32_t* slot_state = slot_state_;
     buf_index_t* slot_buf_index = slot_buf_index_;
     const int64_t bucket_count = bucket_count_;
+    int* occupied_count = occupied_count_;
     Hash hash_fn;
     Eq eq_fn;
 
@@ -251,6 +305,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
 
                          output_buf_indices[tid] = bi;
                          output_masks[tid] = true;
+                         sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                                          sycl::memory_scope::device>
+                                 oc(*occupied_count);
+                         oc.fetch_add(1);
                          finished = true;
                          break;
                      }
@@ -291,7 +349,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
              buf_index_t result = 0;
              for (int64_t probe = 0; probe < bucket_count; ++probe) {
                  const int64_t idx = (home + probe) % bucket_count;
-                 const int32_t s = slot_state[idx];
+                 sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                                  sycl::memory_scope::device>
+                         st(slot_state[idx]);
+                 const int32_t s = st.load(sycl::memory_order::acquire);
                  if (s == kSYCLSlotEmpty) {
                      break;  // Probe chain ended; key not present.
                  }
@@ -323,6 +384,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     int32_t* slot_state = slot_state_;
     buf_index_t* slot_buf_index = slot_buf_index_;
     const int64_t bucket_count = bucket_count_;
+    int* occupied_count = occupied_count_;
     Hash hash_fn;
     Eq eq_fn;
 
@@ -354,6 +416,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
                                      sycl::memory_order::relaxed)) {
                              accessor.DeviceFree(bi);
                              erased = true;
+                             sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                                              sycl::memory_scope::device>
+                                     oc(*occupied_count);
+                             oc.fetch_sub(1);
                          }
                          break;  // Found the key on this probe chain.
                      }
@@ -376,7 +442,10 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
     queue_.memset(d_count, 0, sizeof(int)).wait_and_throw();
 
     queue_.parallel_for(bucket_count, [=](int64_t idx) {
-             if (slot_state[idx] == kSYCLSlotOccupied) {
+             sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                              sycl::memory_scope::device>
+                     st(slot_state[idx]);
+             if (st.load(sycl::memory_order::acquire) == kSYCLSlotOccupied) {
                  sycl::atomic_ref<int, sycl::memory_order::relaxed,
                                   sycl::memory_scope::device>
                          counter(*d_count);
@@ -396,6 +465,9 @@ void SYCLHashBackend<Key, Hash, Eq>::Clear() {
     this->buffer_->ResetHeap();
     queue_.memset(slot_state_, 0, bucket_count_ * sizeof(int32_t))
             .wait_and_throw();
+    if (occupied_count_) {
+        queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
+    }
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -416,6 +488,9 @@ void SYCLHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
             bucket_count_ * sizeof(buf_index_t), this->device_));
     queue_.memset(slot_state_, 0, bucket_count_ * sizeof(int32_t))
             .wait_and_throw();
+    occupied_count_ = static_cast<int*>(
+            MemoryManager::Malloc(sizeof(int), this->device_));
+    queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -428,6 +503,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Free() {
     if (slot_buf_index_) {
         MemoryManager::Free(slot_buf_index_, this->device_);
         slot_buf_index_ = nullptr;
+    }
+    if (occupied_count_) {
+        MemoryManager::Free(occupied_count_, this->device_);
+        occupied_count_ = nullptr;
     }
 }
 

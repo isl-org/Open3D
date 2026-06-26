@@ -9,7 +9,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
-#include "open3d/core/ParallelForSYCL.h"
+#include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/BinaryEW.h"
@@ -119,6 +119,12 @@ void BinaryEWSYCL(const Tensor& lhs,
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     Device device = lhs.GetDevice();
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    sycl::queue queue =
+            sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
@@ -128,42 +134,71 @@ void BinaryEWSYCL(const Tensor& lhs,
             // floats.
             Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                switch (op_code) {
+
+                const int64_t n = indexer.NumWorkloads();
+                                switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
-                        ParallelForSYCL<LogicalAndElementKernel<scalar_t>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LogicalAndElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::LogicalOr:
-                        ParallelForSYCL<LogicalOrElementKernel<scalar_t>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LogicalOrElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::LogicalXor:
-                        ParallelForSYCL<LogicalXorElementKernel<scalar_t>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LogicalXorElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Gt:
-                        ParallelForSYCL<GtElementKernel<scalar_t>>(device,
-                                                                   indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                GtElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Lt:
-                        ParallelForSYCL<LtElementKernel<scalar_t>>(device,
-                                                                   indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LtElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Ge:
-                        ParallelForSYCL<GeqElementKernel<scalar_t>>(device,
-                                                                    indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                GeqElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Le:
-                        ParallelForSYCL<LeqElementKernel<scalar_t>>(device,
-                                                                    indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LeqElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Eq:
-                        ParallelForSYCL<EqElementKernel<scalar_t>>(device,
-                                                                   indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                EqElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Ne:
-                        ParallelForSYCL<NeqElementKernel<scalar_t>>(device,
-                                                                    indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                NeqElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     default:
                         break;
@@ -174,44 +209,72 @@ void BinaryEWSYCL(const Tensor& lhs,
             Indexer indexer({lhs, rhs}, dst,
                             DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+                const int64_t n = indexer.NumWorkloads();
                 switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
-                        ParallelForSYCL<
-                                LogicalAndElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                            queue.parallel_for(
+                                    n, [indexer](int64_t i) {
+                                        LogicalAndElementKernel<scalar_t, bool>
+                                                ef(indexer);
+                                        ef(i);
+                                    });
                         break;
                     case BinaryEWOpCode::LogicalOr:
-                        ParallelForSYCL<LogicalOrElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LogicalOrElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::LogicalXor:
-                        ParallelForSYCL<
-                                LogicalXorElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                            queue.parallel_for(
+                                    n, [indexer](int64_t i) {
+                                        LogicalXorElementKernel<scalar_t, bool>
+                                                ef(indexer);
+                                        ef(i);
+                                    });
                         break;
                     case BinaryEWOpCode::Gt:
-                        ParallelForSYCL<GtElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                GtElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Lt:
-                        ParallelForSYCL<LtElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LtElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Ge:
-                        ParallelForSYCL<GeqElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                GeqElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Le:
-                        ParallelForSYCL<LeqElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                LeqElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Eq:
-                        ParallelForSYCL<EqElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                EqElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     case BinaryEWOpCode::Ne:
-                        ParallelForSYCL<NeqElementKernel<scalar_t, bool>>(
-                                device, indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                NeqElementKernel<scalar_t, bool> ef(indexer);
+                                ef(i);
+                            });
                         break;
                     default:
                         break;
@@ -226,14 +289,22 @@ void BinaryEWSYCL(const Tensor& lhs,
                op_code == BinaryEWOpCode::Minimum) {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-            switch (op_code) {
+
+                const int64_t n = indexer.NumWorkloads();
+                            switch (op_code) {
                 case BinaryEWOpCode::Maximum:
-                    ParallelForSYCL<MaxElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                MaxElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 case BinaryEWOpCode::Minimum:
-                    ParallelForSYCL<MinElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                MinElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 default:
                     break;
@@ -242,28 +313,43 @@ void BinaryEWSYCL(const Tensor& lhs,
     } else {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
-            switch (op_code) {
+
+                const int64_t n = indexer.NumWorkloads();
+                            switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    ParallelForSYCL<AddElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                AddElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 case BinaryEWOpCode::Sub:
-                    ParallelForSYCL<SubElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                SubElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 case BinaryEWOpCode::Mul:
-                    ParallelForSYCL<MulElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                MulElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 case BinaryEWOpCode::Div:
-                    ParallelForSYCL<DivElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(
+                            n, [indexer](int64_t i) {
+                                DivElementKernel<scalar_t> ef(indexer);
+                                ef(i);
+                            });
                     break;
                 default:
                     break;
             }
         });
     }
+    queue.wait_and_throw();
 }
 }  // namespace kernel
 }  // namespace core

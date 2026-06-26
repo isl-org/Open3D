@@ -9,6 +9,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
@@ -23,10 +24,10 @@ namespace tests {
 
 using namespace t::geometry;
 
-class VoxelBlockGridPermuteDevices : public PermuteDevices {};
+class VoxelBlockGridPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(VoxelBlockGrid,
                          VoxelBlockGridPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 static core::Tensor GetIntrinsicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
@@ -65,6 +66,8 @@ static std::vector<core::HashBackendType> EnumerateBackends(
             backends.push_back(core::HashBackendType::Slab);
         }
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::StdGPU);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -86,6 +89,42 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
 
     data::SampleRedwoodRGBDImages redwood_data;
     for (size_t i = 0; i < extrinsics.size(); ++i) {
+        Image depth =
+                t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                        ->To(device);
+        Image color =
+                t::io::CreateImageFromFile(redwood_data.GetColorPaths()[i])
+                        ->To(device);
+
+        core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                /*trunc_multiplier=*/4.0);
+        vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
+                      extrinsics[i], depth_scale, depth_max,
+                      /*trunc multiplier*/ resolution * 0.5);
+    }
+
+    return vbg;
+}
+
+/// Integrate a subset of Redwood frames (for faster SYCL/CPU parity checks).
+static VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
+                                      const core::Device &device,
+                                      size_t num_frames,
+                                      int resolution = 8) {
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+
+    auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
+                              {core::Float32, core::Float32, core::Float32},
+                              {{1}, {1}, {3}}, 3.0 / 512, resolution, 10000,
+                              device, backend);
+
+    data::SampleRedwoodRGBDImages redwood_data;
+    const size_t n = std::min(num_frames, extrinsics.size());
+    for (size_t i = 0; i < n; ++i) {
         Image depth =
                 t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
                         ->To(device);
@@ -457,6 +496,41 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
         }
     }
 }
+
+#ifdef BUILD_SYCL_MODULE
+// SYCL VoxelBlockGrid: short Redwood integration should match CPU extraction.
+TEST(VoxelBlockGridSYCLBackendParity, IntegrateExtractMatchesCPU) {
+    if (!core::sy::IsAvailable()) {
+        GTEST_SKIP() << "No SYCL device.";
+    }
+    const core::Device cpu("CPU:0");
+    const core::Device sycl("SYCL:0");
+
+    const size_t k_frames = 2;
+    const int k_resolution = 8;
+    auto vbg_cpu = IntegrateFrames(core::HashBackendType::TBB, cpu, k_frames,
+                                   k_resolution);
+    auto vbg_sycl = IntegrateFrames(core::HashBackendType::StdGPU, sycl,
+                                    k_frames, k_resolution);
+
+    auto pcd_cpu = vbg_cpu.ExtractPointCloud();
+    auto pcd_sycl = vbg_sycl.ExtractPointCloud();
+
+    EXPECT_EQ(pcd_cpu.GetPointPositions().GetLength(),
+              pcd_sycl.GetPointPositions().GetLength());
+    EXPECT_TRUE(pcd_sycl.GetPointPositions().To(cpu).AllClose(
+            pcd_cpu.GetPointPositions(), 1e-3, 1e-3));
+    EXPECT_TRUE(pcd_sycl.GetPointNormals().To(cpu).AllClose(
+            pcd_cpu.GetPointNormals(), 1e-2, 1e-2));
+
+    auto mesh_cpu = vbg_cpu.ExtractTriangleMesh();
+    auto mesh_sycl = vbg_sycl.ExtractTriangleMesh();
+    EXPECT_EQ(mesh_cpu.GetVertexPositions().GetLength(),
+              mesh_sycl.GetVertexPositions().GetLength());
+    EXPECT_EQ(mesh_cpu.GetTriangleIndices().GetLength(),
+              mesh_sycl.GetTriangleIndices().GetLength());
+}
+#endif
 
 }  // namespace tests
 }  // namespace open3d

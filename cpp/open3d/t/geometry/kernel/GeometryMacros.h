@@ -35,6 +35,7 @@ __device__ double atomicAdd(double *address, double val) {
 #endif
 
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
+#define OPEN3D_ATOMIC_ADD_RELAXED(X, Y) atomicAdd(X, Y)
 #elif defined(SYCL_LANGUAGE_VERSION)
 #include <type_traits>
 #include <sycl/sycl.hpp>
@@ -43,8 +44,14 @@ __device__ double atomicAdd(double *address, double val) {
                      sycl::memory_order::acq_rel, \
                      sycl::memory_scope::device, \
                      sycl::access::address_space::global_space>(*(X)).fetch_add(Y)
+#define OPEN3D_ATOMIC_ADD_RELAXED(X, Y) \
+    sycl::atomic_ref<std::remove_pointer_t<decltype(X)>, \
+                     sycl::memory_order::relaxed, \
+                     sycl::memory_scope::device, \
+                     sycl::access::address_space::global_space>(*(X)).fetch_add(Y)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
+#define OPEN3D_ATOMIC_ADD_RELAXED(X, Y) (*X).fetch_add(Y)
 #endif
 
 namespace open3d {

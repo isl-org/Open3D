@@ -152,9 +152,9 @@ Image Image::RGBToGray() const {
         auto B = data_.Slice(2, 2, 3).To(core::Float32);
         auto gray = R * 0.299f + G * 0.587f + B * 0.114f;
         if (GetDtype() == core::UInt8) {
-            dst_im.data_ = gray.Round().Clamp(0, 255).To(core::UInt8);
+            dst_im.data_ = gray.Round_().Clip_(0, 255).To(core::UInt8);
         } else if (GetDtype() == core::UInt16) {
-            dst_im.data_ = gray.Round().Clamp(0, 65535).To(core::UInt16);
+            dst_im.data_ = gray.Round_().Clip_(0, 65535).To(core::UInt16);
         } else {
             dst_im.data_ = gray.To(GetDtype());
         }
