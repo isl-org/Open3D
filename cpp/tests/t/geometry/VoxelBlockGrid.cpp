@@ -25,9 +25,10 @@ namespace tests {
 using namespace t::geometry;
 
 class VoxelBlockGridPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(VoxelBlockGrid,
-                         VoxelBlockGridPermuteDevices,
-                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        VoxelBlockGrid,
+        VoxelBlockGridPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 static core::Tensor GetIntrinsicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
@@ -67,7 +68,7 @@ static std::vector<core::HashBackendType> EnumerateBackends(
         }
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -510,7 +511,7 @@ TEST(VoxelBlockGridSYCLBackendParity, IntegrateExtractMatchesCPU) {
     const int k_resolution = 8;
     auto vbg_cpu = IntegrateFrames(core::HashBackendType::TBB, cpu, k_frames,
                                    k_resolution);
-    auto vbg_sycl = IntegrateFrames(core::HashBackendType::StdGPU, sycl,
+    auto vbg_sycl = IntegrateFrames(core::HashBackendType::Default, sycl,
                                     k_frames, k_resolution);
 
     auto pcd_cpu = vbg_cpu.ExtractPointCloud();

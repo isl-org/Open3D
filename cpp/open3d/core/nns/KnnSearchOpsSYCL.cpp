@@ -192,7 +192,7 @@ void SelectTopKQueriesSYCL(const Device& device,
                     out_distances_ptr + query_idx * out_query_stride;
 
             // Simple Max-Heap representation inside local registers.
-            // Since compilers unroll arrays of small static bounds, 
+            // Since compilers unroll arrays of small static bounds,
             // a fixed maximum size array is excellent.
             T local_dists[256];
             TIndex local_indices[256];
@@ -203,7 +203,8 @@ void SelectTopKQueriesSYCL(const Device& device,
             }
 
             // Maintain max-heap of the actual_knn smallest elements.
-            // local_dists[0] will always represent the largest distance currently in our heap of top-K.
+            // local_dists[0] will always represent the largest distance
+            // currently in our heap of top-K.
             for (TIndex p = 0; p < num_points; ++p) {
                 T dist = query_distances[p];
                 if (use_threshold && dist > threshold) {
@@ -253,9 +254,10 @@ void SelectTopKQueriesSYCL(const Device& device,
                 }
             }
 
-            // Since the heap has the largest element at root, we need to sort it 
-            // in ascending order before writing to out_indices and out_distances.
-            // A simple insertion sort is ideal for sorting size <= 256.
+            // Since the heap has the largest element at root, we need to sort
+            // it in ascending order before writing to out_indices and
+            // out_distances. A simple insertion sort is ideal for sorting size
+            // <= 256.
             for (int i = 1; i < actual_knn; ++i) {
                 T key_dist = local_dists[i];
                 TIndex key_idx = local_indices[i];
@@ -313,7 +315,8 @@ void SelectTopKQueriesSYCL(const Device& device,
                               });
         }
 
-        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2>
+                                                                         id) {
             const int64_t query_idx = id[0];
             const int64_t k = id[1];
             TIndex* query_out_indices =
@@ -329,8 +332,8 @@ void SelectTopKQueriesSYCL(const Device& device,
 
             const TIndex local_idx =
                     scratch_indices_ptr[query_idx * scratch_query_stride + k];
-            const T dist =
-                    distances_ptr[query_idx * distance_query_stride + local_idx];
+            const T dist = distances_ptr[query_idx * distance_query_stride +
+                                         local_idx];
             if (use_threshold && dist > threshold) {
                 query_out_indices[k] = TIndex(-1);
                 query_out_distances[k] = inf;
@@ -355,7 +358,7 @@ void MergeTopKQueriesSYCL(const Device& device,
                           int64_t num_queries,
                           int64_t knn,
                           TIndex* scratch_indices_ptr,
-                    	  int64_t scratch_query_stride,
+                          int64_t scratch_query_stride,
                           TIndex* out_indices_ptr,
                           T* out_distances_ptr,
                           int64_t out_query_stride) {
@@ -373,8 +376,8 @@ void MergeTopKQueriesSYCL(const Device& device,
                     current_distances_ptr + query_idx * current_query_stride;
             const TIndex* query_curr_idx =
                     current_indices_ptr + query_idx * current_query_stride;
-            const T* query_cand_dist =
-                    candidate_distances_ptr + query_idx * candidate_query_stride;
+            const T* query_cand_dist = candidate_distances_ptr +
+                                       query_idx * candidate_query_stride;
             const TIndex* query_cand_idx =
                     candidate_indices_ptr + query_idx * candidate_query_stride;
 
@@ -436,7 +439,8 @@ void MergeTopKQueriesSYCL(const Device& device,
         auto policy = oneapi::dpl::execution::make_device_policy(queue);
 
         queue.parallel_for(
-                sycl::range<2>(num_queries, combined_cols), [=](sycl::id<2> id) {
+                sycl::range<2>(num_queries, combined_cols),
+                [=](sycl::id<2> id) {
                     scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
                             static_cast<TIndex>(id[1]);
                 });
@@ -450,16 +454,17 @@ void MergeTopKQueriesSYCL(const Device& device,
                     current_distances_ptr + query_idx * current_query_stride;
             const TIndex* query_current_idx =
                     current_indices_ptr + query_idx * current_query_stride;
-            const T* query_candidate_dist =
-                    candidate_distances_ptr + query_idx * candidate_query_stride;
+            const T* query_candidate_dist = candidate_distances_ptr +
+                                            query_idx * candidate_query_stride;
             const TIndex* query_candidate_idx =
                     candidate_indices_ptr + query_idx * candidate_query_stride;
 
             std::partial_sort(
                     policy, query_indices, query_indices + knn,
                     query_indices + combined_cols,
-                    [query_current_dist, query_current_idx, query_candidate_dist,
-                     query_candidate_idx, knn](TIndex lhs, TIndex rhs) {
+                    [query_current_dist, query_current_idx,
+                     query_candidate_dist, query_candidate_idx,
+                     knn](TIndex lhs, TIndex rhs) {
                         const bool lhs_is_current = lhs < knn;
                         const bool rhs_is_current = rhs < knn;
                         const TIndex lhs_idx =
@@ -469,11 +474,13 @@ void MergeTopKQueriesSYCL(const Device& device,
                                 rhs_is_current ? query_current_idx[rhs]
                                                : query_candidate_idx[rhs - knn];
                         const T lhs_dist =
-                                lhs_is_current ? query_current_dist[lhs]
-                                               : query_candidate_dist[lhs - knn];
+                                lhs_is_current
+                                        ? query_current_dist[lhs]
+                                        : query_candidate_dist[lhs - knn];
                         const T rhs_dist =
-                                rhs_is_current ? query_current_dist[rhs]
-                                               : query_candidate_dist[rhs - knn];
+                                rhs_is_current
+                                        ? query_current_dist[rhs]
+                                        : query_candidate_dist[rhs - knn];
                         const bool lhs_valid = lhs_idx >= 0;
                         const bool rhs_valid = rhs_idx >= 0;
                         if (lhs_valid != rhs_valid) {
@@ -489,7 +496,8 @@ void MergeTopKQueriesSYCL(const Device& device,
                     });
         }
 
-        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2>
+                                                                         id) {
             const int64_t query_idx = id[0];
             const int64_t k = id[1];
             TIndex* query_out_indices =
@@ -502,18 +510,19 @@ void MergeTopKQueriesSYCL(const Device& device,
             const int64_t offset = is_current ? source : source - knn;
             const TIndex idx =
                     is_current
-                            ? current_indices_ptr[query_idx * current_query_stride +
+                            ? current_indices_ptr[query_idx *
+                                                          current_query_stride +
                                                   offset]
-                            : candidate_indices_ptr[query_idx *
-                                                            candidate_query_stride +
-                                                    offset];
+                            : candidate_indices_ptr
+                                      [query_idx * candidate_query_stride +
+                                       offset];
             const T dist =
-                    is_current
-                            ? current_distances_ptr[query_idx *
-                                                            current_query_stride +
-                                                    offset]
-                            : candidate_distances_ptr
-                                      [query_idx * candidate_query_stride + offset];
+                    is_current ? current_distances_ptr
+                                         [query_idx * current_query_stride +
+                                          offset]
+                               : candidate_distances_ptr
+                                         [query_idx * candidate_query_stride +
+                                          offset];
             if (idx < 0) {
                 query_out_indices[k] = TIndex(-1);
                 query_out_distances[k] = inf;
@@ -920,7 +929,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     queue.wait_and_throw();
 
     if (sort && num_queries > 0) {
-        const int64_t* row_splits_ptr = neighbors_row_splits.GetDataPtr<int64_t>();
+        const int64_t* row_splits_ptr =
+                neighbors_row_splits.GetDataPtr<int64_t>();
         queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
             const int64_t q = id[0];
             const int64_t start = row_splits_ptr[q];

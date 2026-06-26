@@ -38,16 +38,15 @@ void Project(core::Tensor& depth,
              float depth_max);
 
 #ifdef BUILD_SYCL_MODULE
-void ProjectSYCL(core::Tensor& depth,
-                 std::optional<std::reference_wrapper<core::Tensor>>
-                         image_colors,
-                 const core::Tensor& points,
-                 std::optional<std::reference_wrapper<const core::Tensor>>
-                         colors,
-                 const core::Tensor& intrinsics,
-                 const core::Tensor& extrinsics,
-                 float depth_scale,
-                 float depth_max);
+void ProjectSYCL(
+        core::Tensor& depth,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        const core::Tensor& points,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max);
 #endif
 
 void GetPointMaskWithinAABB(const core::Tensor& points,
@@ -236,13 +235,12 @@ void EstimateColorGradientsUsingRadiusSearchCPU(const core::Tensor& points,
                                                 const double& radius);
 
 #ifdef BUILD_SYCL_MODULE
-void EstimateColorGradientsUsingHybridSearchSYCL(
-        const core::Tensor& points,
-        const core::Tensor& normals,
-        const core::Tensor& colors,
-        core::Tensor& color_gradient,
-        const double& radius,
-        const int64_t& max_nn);
+void EstimateColorGradientsUsingHybridSearchSYCL(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradient,
+                                                 const double& radius,
+                                                 const int64_t& max_nn);
 
 void EstimateColorGradientsUsingKNNSearchSYCL(const core::Tensor& points,
                                               const core::Tensor& normals,

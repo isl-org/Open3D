@@ -111,13 +111,15 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
 
 // Based on OneAPI GPU optimization guide code sample (Blocked access to
 // input data + SYCL builtin reduction ops for final reduction)
-// We launch exactly one work-group per output element to completely avoid any atomic lock!
+// We launch exactly one work-group per output element to completely avoid any
+// atomic lock!
 template <class ReductionOp, typename scalar_t>
 void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     auto queue = device_props.queue;
-    size_t work_group_size = std::min<size_t>(256, device_props.max_work_group_size);
+    size_t work_group_size =
+            std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;
 
     for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
@@ -128,8 +130,10 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         auto num_elements = scalar_out_indexer.NumWorkloads();
 
         auto arg_red_cg = [&](auto& cgh) {
-            sycl::local_accessor<int64_t, 1> local_idx(sycl::range<1>(work_group_size), cgh);
-            sycl::local_accessor<scalar_t, 1> local_val(sycl::range<1>(work_group_size), cgh);
+            sycl::local_accessor<int64_t, 1> local_idx(
+                    sycl::range<1>(work_group_size), cgh);
+            sycl::local_accessor<scalar_t, 1> local_val(
+                    sycl::range<1>(work_group_size), cgh);
             cgh.parallel_for(
                     sycl::nd_range<1>{work_group_size, work_group_size},
                     [=](sycl::nd_item<1> item) {
@@ -142,7 +146,8 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
 
                         int64_t it_idx = 0;
                         scalar_t it_val = identity;
-                        for (size_t idx = local_id; idx < num_elements; idx += work_group_size) {
+                        for (size_t idx = local_id; idx < num_elements;
+                             idx += work_group_size) {
                             auto val =
                                     *scalar_out_indexer.GetInputPtr<scalar_t>(
                                             0, idx);
@@ -159,14 +164,18 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                             stride *= 2;
                         }
                         for (stride /= 2; stride > 0; stride /= 2) {
-                            if (local_id < stride && local_id + stride < item.get_local_range(0)) {
+                            if (local_id < stride &&
+                                local_id + stride < item.get_local_range(0)) {
                                 auto other_idx = local_idx[local_id + stride];
                                 auto other_val = local_val[local_id + stride];
-                                std::tie(local_idx[local_id], local_val[local_id]) =
-                                        red_op(local_idx[local_id], local_val[local_id],
-                                               other_idx, other_val);
+                                std::tie(local_idx[local_id],
+                                         local_val[local_id]) =
+                                        red_op(local_idx[local_id],
+                                               local_val[local_id], other_idx,
+                                               other_val);
                             }
-                            item.barrier(sycl::access::fence_space::local_space);
+                            item.barrier(
+                                    sycl::access::fence_space::local_space);
                         }
 
                         if (local_id == 0) {

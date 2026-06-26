@@ -507,14 +507,24 @@ void HashReserveInt3(benchmark::State& state,
     ENUM_BM_CAPACITY(FN, 32, DEVICE, BACKEND)
 
 #ifdef BUILD_CUDA_MODULE
-#define ENUM_BM_BACKEND(FN)                                     \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)   \
+#define ENUM_BM_CUDA(FN)                                        \
     ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::Slab) \
     ENUM_BM_FACTOR(FN, Device("CUDA:0"), HashBackendType::StdGPU)
 #else
-#define ENUM_BM_BACKEND(FN) \
-    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB)
+#define ENUM_BM_CUDA(FN)
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+#define ENUM_BM_SYCL(FN) \
+    ENUM_BM_FACTOR(FN, Device("SYCL:0"), HashBackendType::Default)
+#else
+#define ENUM_BM_SYCL(FN)
+#endif
+
+#define ENUM_BM_BACKEND(FN)                                   \
+    ENUM_BM_FACTOR(FN, Device("CPU:0"), HashBackendType::TBB) \
+    ENUM_BM_CUDA(FN)                                          \
+    ENUM_BM_SYCL(FN)
 
 ENUM_BM_BACKEND(HashInsertInt)
 ENUM_BM_BACKEND(HashInsertInt3)

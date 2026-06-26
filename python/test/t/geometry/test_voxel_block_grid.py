@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2026 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -21,7 +21,9 @@ def _sycl_gpu_available():
     return len(o3c.sycl.get_available_devices()) > 1
 
 
-def _integrate_redwood_frames(device, num_frames: int, block_resolution: int = 8):
+def _integrate_redwood_frames(device,
+                              num_frames: int,
+                              block_resolution: int = 8):
     """Integrate the first ``num_frames`` Redwood RGB-D frames on ``device``."""
     dataset = o3d.data.SampleRedwoodRGBDImages()
     intrinsic = o3c.Tensor(
@@ -115,10 +117,10 @@ def test_voxel_block_grid_sycl_integrate_extract_matches_cpu():
 
     mesh_cpu = vbg_cpu.extract_triangle_mesh()
     mesh_sycl = vbg_sycl.extract_triangle_mesh()
-    assert mesh_cpu.vertex.positions.shape[0] == mesh_sycl.vertex.positions.shape[
-        0]
-    assert mesh_cpu.triangle.indices.shape[0] == mesh_sycl.triangle.indices.shape[
-        0]
+    assert mesh_cpu.vertex.positions.shape[
+        0] == mesh_sycl.vertex.positions.shape[0]
+    assert mesh_cpu.triangle.indices.shape[
+        0] == mesh_sycl.triangle.indices.shape[0]
 
 
 @pytest.mark.skipif(not _sycl_gpu_available(), reason="SYCL GPU required.")
@@ -141,8 +143,8 @@ def test_voxel_block_grid_sycl_raycast_runs():
         dtype=o3c.float64,
         device=o3c.Device("CPU:0"),
     )
-    frustum = vbg.compute_unique_block_coordinates(
-        depth, intrinsic, extrinsic, 1000.0, 3.0)
+    frustum = vbg.compute_unique_block_coordinates(depth, intrinsic, extrinsic,
+                                                   1000.0, 3.0)
     out = vbg.ray_cast(
         frustum,
         intrinsic,

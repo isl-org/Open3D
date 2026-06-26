@@ -21,13 +21,11 @@ namespace geometry {
 namespace kernel {
 namespace trianglemesh {
 
-#ifndef __CUDACC__
-    using std::isnan;
-#endif
-
 #if defined(SYCL_LANGUAGE_VERSION)
-#include <cmath>
 using sycl::isnan;
+#elif !defined(__CUDACC__)
+#include <cmath>
+using std::isnan;  // CPU only
 #endif
 
 #if defined(__CUDACC__)
@@ -50,7 +48,7 @@ void NormalizeNormalsCPU
                               scalar_t x = ptr[idx];
                               scalar_t y = ptr[idx + 1];
                               scalar_t z = ptr[idx + 2];
-                              if (isnan(x)) {
+                              if (trianglemesh::isnan(x)) {
                                   x = 0.0;
                                   y = 0.0;
                                   z = 1.0;

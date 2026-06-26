@@ -149,8 +149,7 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.fill(dst_ptr, scalar_element, num_elements)
-                        ;
+                queue.fill(dst_ptr, scalar_element, num_elements);
             });
         } else if (src_device == dst_device) {  // non-contiguous or broadcast
                                                 // on same SYCL device
@@ -171,12 +170,10 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                         using dst_t = scalar_t;
                         const int64_t n = indexer.NumWorkloads();
-                            queue.parallel_for(
-                                    n, [indexer](int64_t i) {
-                                        CopyElementKernel<src_t, dst_t> ef(
-                                                indexer);
-                                        ef(i);
-                                    });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            CopyElementKernel<src_t, dst_t> ef(indexer);
+                            ef(i);
+                        });
                     });
                 });
             }
@@ -209,29 +206,26 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (op_code == UnaryEWOpCode::LogicalNot) {
         if (dst_dtype == src_dtype) {
             Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
             const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalNotElementKernel<scalar_t, scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    LogicalNotElementKernel<scalar_t, scalar_t> ef(indexer);
+                    ef(i);
+                });
             });
         } else if (dst_dtype == Bool) {
             Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
             const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalNotElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    LogicalNotElementKernel<scalar_t, bool> ef(indexer);
+                    ef(i);
+                });
             });
         } else {
             utility::LogError(
@@ -245,23 +239,20 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         const int64_t n = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::IsNan) {
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                IsNanElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsNanElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             } else if (op_code == UnaryEWOpCode::IsInf) {
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                IsInfElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsInfElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             } else if (op_code == UnaryEWOpCode::IsFinite) {
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                IsFiniteElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsFiniteElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             }
         });
     } else {
@@ -270,74 +261,64 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                SqrtElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        SqrtElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Sin:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                SinElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        SinElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Cos:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                CosElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        CosElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Neg:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                NegElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        NegElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Exp:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                ExpElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        ExpElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Abs:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                AbsElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        AbsElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Floor:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                FloorElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        FloorElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Ceil:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                CeilElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        CeilElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Round:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                RoundElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        RoundElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Trunc:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                TruncElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        TruncElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 default:
                     utility::LogError("Unimplemented op_code for UnaryEWSYCL");

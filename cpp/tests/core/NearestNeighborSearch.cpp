@@ -12,8 +12,8 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/SizeVector.h"
 #include "open3d/core/SYCLUtils.h"
+#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/utility/Helper.h"
@@ -24,9 +24,10 @@ namespace open3d {
 namespace tests {
 
 class NNSPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
-                         NNSPermuteDevices,
-                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        NearestNeighborSearch,
+        NNSPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(NNSPermuteDevices, KnnSearch) {
     // Define test data.
@@ -386,11 +387,19 @@ TEST(NearestNeighborSearchSYCLBackendParity, KnnSearchMatchesCPU) {
     const core::Device cpu("CPU:0");
     const core::Device sycl("SYCL:0");
 
-    core::Tensor dataset = core::Tensor::Init<float>(
-            {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.1}, {0.0, 0.0, 0.2}, {0.0, 0.1, 0.0},
-             {0.0, 0.1, 0.1}, {0.0, 0.1, 0.2}, {0.0, 0.2, 0.0}, {0.0, 0.2, 0.1},
-             {0.0, 0.2, 0.2}, {0.1, 0.0, 0.0}, {0.1, 0.0, 0.1}, {0.1, 0.1, 0.0}},
-            cpu);
+    core::Tensor dataset = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                      {0.0, 0.0, 0.1},
+                                                      {0.0, 0.0, 0.2},
+                                                      {0.0, 0.1, 0.0},
+                                                      {0.0, 0.1, 0.1},
+                                                      {0.0, 0.1, 0.2},
+                                                      {0.0, 0.2, 0.0},
+                                                      {0.0, 0.2, 0.1},
+                                                      {0.0, 0.2, 0.2},
+                                                      {0.1, 0.0, 0.0},
+                                                      {0.1, 0.0, 0.1},
+                                                      {0.1, 0.1, 0.0}},
+                                                     cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
 

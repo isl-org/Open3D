@@ -220,10 +220,8 @@ def test_hybrid_search_random(dtype):
                                        distances_sycl.cpu().numpy(),
                                        rtol=1e-5,
                                        atol=0)
-            np.testing.assert_equal(indices.numpy(),
-                                    indices_sycl.cpu().numpy())
-            np.testing.assert_equal(counts.numpy(),
-                                    counts_sycl.cpu().numpy())
+            np.testing.assert_equal(indices.numpy(), indices_sycl.cpu().numpy())
+            np.testing.assert_equal(counts.numpy(), counts_sycl.cpu().numpy())
 
 
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
@@ -290,15 +288,13 @@ def test_fixed_radius_search_random(dtype):
                 neighbors_row_splits_sycl = nns_sycl.fixed_radius_search(
                     query_points_sycl, radius)
 
-            np.testing.assert_equal(
-                neighbors_row_splits.numpy(),
-                neighbors_row_splits_sycl.cpu().numpy())
+            np.testing.assert_equal(neighbors_row_splits.numpy(),
+                                    neighbors_row_splits_sycl.cpu().numpy())
             np.testing.assert_allclose(distances.numpy(),
                                        distances_sycl.cpu().numpy(),
                                        rtol=1e-5,
                                        atol=0)
-            np.testing.assert_equal(indices.numpy(),
-                                    indices_sycl.cpu().numpy())
+            np.testing.assert_equal(indices.numpy(), indices_sycl.cpu().numpy())
 
 
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
@@ -324,11 +320,9 @@ def test_knn_search_sycl_matches_cpu(dtype):
     sycl = o3c.Device("SYCL:0")
     nns_sycl = o3c.nns.NearestNeighborSearch(dataset_points.to(sycl))
     nns_sycl.knn_index()
-    indices_sycl, distances_sycl = nns_sycl.knn_search(
-        query_points.to(sycl), 3)
+    indices_sycl, distances_sycl = nns_sycl.knn_search(query_points.to(sycl), 3)
 
-    np.testing.assert_equal(indices_cpu.numpy(),
-                            indices_sycl.cpu().numpy())
+    np.testing.assert_equal(indices_cpu.numpy(), indices_sycl.cpu().numpy())
     np.testing.assert_allclose(distances_cpu.numpy(),
                                distances_sycl.cpu().numpy(),
                                rtol=1e-5,

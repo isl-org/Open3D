@@ -7,9 +7,8 @@
 
 #pragma once
 
-#include <sycl/sycl.hpp>
-
 #include <cstdint>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 #include "open3d/core/MemoryManager.h"
@@ -67,8 +66,7 @@ public:
         std::vector<uint8_t *> value_ptrs(n_values_);
         for (size_t i = 0; i < n_values_; ++i) {
             value_ptrs[i] = value_buffers[i].GetDataPtr<uint8_t>();
-            queue.memset(value_ptrs[i], 0,
-                         capacity_ * value_dsizes_host[i]);
+            queue.memset(value_ptrs[i], 0, capacity_ * value_dsizes_host[i]);
         }
         queue.wait_and_throw();
         values_ = static_cast<uint8_t **>(

@@ -37,9 +37,10 @@ static core::Tensor CreateIntrinsics(float down_factor = 1.0f) {
 }
 
 class ImagePermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(Image,
-                         ImagePermuteDevices,
-                         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        Image,
+        ImagePermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 class ImagePermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(

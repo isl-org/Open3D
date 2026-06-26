@@ -892,7 +892,8 @@ void PointCloud::EstimateNormals(
                     this->GetPointAttr("covariances"), radius.value(),
                     max_knn.value());
 #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
 #endif
         } else {
             utility::LogError("Unimplemented device");
@@ -914,7 +915,8 @@ void PointCloud::EstimateNormals(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), max_knn.value());
 #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
 #endif
         } else {
             utility::LogError("Unimplemented device");
@@ -937,7 +939,8 @@ void PointCloud::EstimateNormals(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), radius.value());
 #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
 #endif
         } else {
             utility::LogError("Unimplemented device");
@@ -1101,16 +1104,17 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointAttr("color_gradients"), radius.value(),
                       max_knn.value());
         } else if (IsSYCL()) {
-    #ifdef BUILD_SYCL_MODULE
+#ifdef BUILD_SYCL_MODULE
             kernel::pointcloud::EstimateColorGradientsUsingHybridSearchSYCL(
-                this->GetPointPositions().Contiguous(),
-                this->GetPointNormals().Contiguous(),
-                this->GetPointColors().Contiguous(),
-                this->GetPointAttr("color_gradients"), radius.value(),
-                max_knn.value());
-    #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
-    #endif
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value(),
+                    max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -1130,15 +1134,16 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), max_knn.value());
         } else if (IsSYCL()) {
-    #ifdef BUILD_SYCL_MODULE
+#ifdef BUILD_SYCL_MODULE
             kernel::pointcloud::EstimateColorGradientsUsingKNNSearchSYCL(
-                this->GetPointPositions().Contiguous(),
-                this->GetPointNormals().Contiguous(),
-                this->GetPointColors().Contiguous(),
-                this->GetPointAttr("color_gradients"), max_knn.value());
-    #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
-    #endif
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -1158,15 +1163,16 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value());
         } else if (IsSYCL()) {
-    #ifdef BUILD_SYCL_MODULE
+#ifdef BUILD_SYCL_MODULE
             kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchSYCL(
-                this->GetPointPositions().Contiguous(),
-                this->GetPointNormals().Contiguous(),
-                this->GetPointColors().Contiguous(),
-                this->GetPointAttr("color_gradients"), radius.value());
-    #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
-    #endif
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }

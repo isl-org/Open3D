@@ -27,7 +27,8 @@ void IndexGetSYCL(const Tensor& src,
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        queue.parallel_for(ai.NumWorkloads(), [ai, object_byte_size](int64_t idx) {
+        queue.parallel_for(ai.NumWorkloads(), [ai,
+                                               object_byte_size](int64_t idx) {
                  char* dst_bytes = ai.GetOutputPtr(idx);
                  const char* src_bytes = ai.GetInputPtr(idx);
                  for (int64_t i = 0; i < object_byte_size; ++i) {
@@ -58,7 +59,8 @@ void IndexSetSYCL(const Tensor& src,
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        queue.parallel_for(ai.NumWorkloads(), [ai, object_byte_size](int64_t idx) {
+        queue.parallel_for(ai.NumWorkloads(), [ai,
+                                               object_byte_size](int64_t idx) {
                  char* dst_bytes = ai.GetOutputPtr(idx);
                  const char* src_bytes = ai.GetInputPtr(idx);
                  for (int64_t i = 0; i < object_byte_size; ++i) {

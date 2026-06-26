@@ -67,8 +67,8 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
     } else if (hashmap->IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
         DepthTouchSYCL(hashmap, depth, intrinsic, extrinsic, voxel_block_coords,
-                       voxel_grid_resolution, voxel_size, sdf_trunc, depth_scale,
-                       depth_max, stride);
+                       voxel_grid_resolution, voxel_size, sdf_trunc,
+                       depth_scale, depth_max, stride);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

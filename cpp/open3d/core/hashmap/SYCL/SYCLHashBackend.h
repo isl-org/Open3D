@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include <sycl/sycl.hpp>
-
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <sycl/sycl.hpp>
 #include <vector>
 
 #include "open3d/core/MemoryManager.h"
@@ -38,8 +37,8 @@ enum SYCLHashSlotState : int32_t {
     kSYCLSlotDeleted = 3,
 };
 
-/// Captured into SYCL kernels for read-only hash table lookup (e.g. VoxelBlockGrid).
-/// Used for RayCasting. Atomic to allow concurrent writes.
+/// Captured into SYCL kernels for read-only hash table lookup (e.g.
+/// VoxelBlockGrid). Used for RayCasting. Atomic to allow concurrent writes.
 template <typename Key, typename Hash, typename Eq>
 struct SYCLHashDeviceLookup {
     int32_t* slot_state = nullptr;
@@ -143,9 +142,9 @@ protected:
     SYCLHashBackendBufferAccessor buffer_accessor_;
 
     // Open-addressing table arrays (USM device memory).
-    int32_t* slot_state_ = nullptr;       /* [bucket_count_] */
+    int32_t* slot_state_ = nullptr;         /* [bucket_count_] */
     buf_index_t* slot_buf_index_ = nullptr; /* [bucket_count_] */
-    int* occupied_count_ = nullptr;       /* device: live OCCUPIED slots */
+    int* occupied_count_ = nullptr;         /* device: live OCCUPIED slots */
     int64_t bucket_count_ = 0;
 
     sycl::queue queue_;
@@ -221,105 +220,103 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     Eq eq_fn;
 
     queue_.parallel_for(count, [=](int64_t tid) {
-             const Key key = keys[tid];
-             output_buf_indices[tid] = 0;
-             output_masks[tid] = false;
+              const Key key = keys[tid];
+              output_buf_indices[tid] = 0;
+              output_masks[tid] = false;
 
-             const int64_t home =
-                     static_cast<int64_t>(hash_fn(key) %
-                                          static_cast<uint64_t>(bucket_count));
+              const int64_t home = static_cast<int64_t>(
+                      hash_fn(key) % static_cast<uint64_t>(bucket_count));
 
-             while (true) {  // Restart on lost claim race.
-                 int64_t first_deleted = -1;
-                 bool finished = false;
-                 bool restart = false;
+              while (true) {  // Restart on lost claim race.
+                  int64_t first_deleted = -1;
+                  bool finished = false;
+                  bool restart = false;
 
-                 for (int64_t probe = 0; probe < bucket_count; ++probe) {
-                     const int64_t idx = (home + probe) % bucket_count;
-                     sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
-                                      sycl::memory_scope::device>
-                             st(slot_state[idx]);
+                  for (int64_t probe = 0; probe < bucket_count; ++probe) {
+                      const int64_t idx = (home + probe) % bucket_count;
+                      sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                                       sycl::memory_scope::device>
+                              st(slot_state[idx]);
 
-                     int32_t s = st.load(sycl::memory_order::acquire);
-                     // Wait out an in-progress writer so duplicates of the same
-                     // key are detected rather than inserted twice.
-                     while (s == kSYCLSlotLocked) {
-                         s = st.load(sycl::memory_order::acquire);
-                     }
+                      int32_t s = st.load(sycl::memory_order::acquire);
+                      // Wait out an in-progress writer so duplicates of the
+                      // same key are detected rather than inserted twice.
+                      while (s == kSYCLSlotLocked) {
+                          s = st.load(sycl::memory_order::acquire);
+                      }
 
-                     if (s == kSYCLSlotOccupied) {
-                         const buf_index_t bi = slot_buf_index[idx];
-                         const Key* slot_key =
-                                 static_cast<const Key*>(accessor.GetKeyPtr(bi));
-                         if (eq_fn(*slot_key, key)) {
-                             // Key already present: report existing slot.
-                             output_buf_indices[tid] = bi;
-                             output_masks[tid] = false;
-                             finished = true;
-                             break;
-                         }
-                         continue;
-                     }
+                      if (s == kSYCLSlotOccupied) {
+                          const buf_index_t bi = slot_buf_index[idx];
+                          const Key* slot_key = static_cast<const Key*>(
+                                  accessor.GetKeyPtr(bi));
+                          if (eq_fn(*slot_key, key)) {
+                              // Key already present: report existing slot.
+                              output_buf_indices[tid] = bi;
+                              output_masks[tid] = false;
+                              finished = true;
+                              break;
+                          }
+                          continue;
+                      }
 
-                     if (s == kSYCLSlotDeleted) {
-                         if (first_deleted < 0) first_deleted = idx;
-                         continue;
-                     }
+                      if (s == kSYCLSlotDeleted) {
+                          if (first_deleted < 0) first_deleted = idx;
+                          continue;
+                      }
 
-                     // s == kSYCLSlotEmpty: no existing key found. Claim the
-                     // first tombstone seen, otherwise this empty slot.
-                     const int64_t target =
-                             (first_deleted >= 0) ? first_deleted : idx;
-                     int32_t expected = (first_deleted >= 0) ? kSYCLSlotDeleted
-                                                             : kSYCLSlotEmpty;
-                     sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
-                                      sycl::memory_scope::device>
-                             tst(slot_state[target]);
-                     if (tst.compare_exchange_strong(
-                                 expected, kSYCLSlotLocked,
-                                 sycl::memory_order::acq_rel,
-                                 sycl::memory_order::relaxed)) {
-                         const buf_index_t bi = accessor.DeviceAllocate();
-                         Key* slot_key =
-                                 static_cast<Key*>(accessor.GetKeyPtr(bi));
-                         *slot_key = key;
+                      // s == kSYCLSlotEmpty: no existing key found. Claim the
+                      // first tombstone seen, otherwise this empty slot.
+                      const int64_t target =
+                              (first_deleted >= 0) ? first_deleted : idx;
+                      int32_t expected = (first_deleted >= 0) ? kSYCLSlotDeleted
+                                                              : kSYCLSlotEmpty;
+                      sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                                       sycl::memory_scope::device>
+                              tst(slot_state[target]);
+                      if (tst.compare_exchange_strong(
+                                  expected, kSYCLSlotLocked,
+                                  sycl::memory_order::acq_rel,
+                                  sycl::memory_order::relaxed)) {
+                          const buf_index_t bi = accessor.DeviceAllocate();
+                          Key* slot_key =
+                                  static_cast<Key*>(accessor.GetKeyPtr(bi));
+                          *slot_key = key;
 
-                         for (int j = 0; j < n_values; ++j) {
-                             const int64_t dsize = accessor.value_dsizes_[j];
-                             uint8_t* dst = static_cast<uint8_t*>(
-                                     accessor.GetValuePtr(bi, j));
-                             const uint8_t* src =
-                                     static_cast<const uint8_t*>(
-                                             d_values_soa[j]) +
-                                     dsize * tid;
-                             for (int64_t b = 0; b < dsize; ++b) {
-                                 dst[b] = src[b];
-                             }
-                         }
+                          for (int j = 0; j < n_values; ++j) {
+                              const int64_t dsize = accessor.value_dsizes_[j];
+                              uint8_t* dst = static_cast<uint8_t*>(
+                                      accessor.GetValuePtr(bi, j));
+                              const uint8_t* src = static_cast<const uint8_t*>(
+                                                           d_values_soa[j]) +
+                                                   dsize * tid;
+                              for (int64_t b = 0; b < dsize; ++b) {
+                                  dst[b] = src[b];
+                              }
+                          }
 
-                         slot_buf_index[target] = bi;
-                         // Publish: release so readers that acquire see the
-                         // key/value/buffer-index writes above.
-                         tst.store(kSYCLSlotOccupied,
-                                   sycl::memory_order::release);
+                          slot_buf_index[target] = bi;
+                          // Publish: release so readers that acquire see the
+                          // key/value/buffer-index writes above.
+                          tst.store(kSYCLSlotOccupied,
+                                    sycl::memory_order::release);
 
-                         output_buf_indices[tid] = bi;
-                         output_masks[tid] = true;
-                         sycl::atomic_ref<int, sycl::memory_order::relaxed,
-                                          sycl::memory_scope::device>
-                                 oc(*occupied_count);
-                         oc.fetch_add(1);
-                         finished = true;
-                         break;
-                     }
-                     // Lost the claim race: restart the probe from home.
-                     restart = true;
-                     break;
-                 }
+                          output_buf_indices[tid] = bi;
+                          output_masks[tid] = true;
+                          sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                                           sycl::memory_scope::device>
+                                  oc(*occupied_count);
+                          oc.fetch_add(1);
+                          finished = true;
+                          break;
+                      }
+                      // Lost the claim race: restart the probe from home.
+                      restart = true;
+                      break;
+                  }
 
-                 if (finished || !restart) break;
-             }
-         }).wait_and_throw();
+                  if (finished || !restart) break;
+              }
+          }).wait_and_throw();
 
     MemoryManager::Free(d_values_soa, this->device_);
 }
@@ -340,37 +337,36 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
     Eq eq_fn;
 
     queue_.parallel_for(count, [=](int64_t tid) {
-             const Key key = keys[tid];
-             const int64_t home =
-                     static_cast<int64_t>(hash_fn(key) %
-                                          static_cast<uint64_t>(bucket_count));
+              const Key key = keys[tid];
+              const int64_t home = static_cast<int64_t>(
+                      hash_fn(key) % static_cast<uint64_t>(bucket_count));
 
-             bool found = false;
-             buf_index_t result = 0;
-             for (int64_t probe = 0; probe < bucket_count; ++probe) {
-                 const int64_t idx = (home + probe) % bucket_count;
-                 sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
-                                  sycl::memory_scope::device>
-                         st(slot_state[idx]);
-                 const int32_t s = st.load(sycl::memory_order::acquire);
-                 if (s == kSYCLSlotEmpty) {
-                     break;  // Probe chain ended; key not present.
-                 }
-                 if (s == kSYCLSlotOccupied) {
-                     const buf_index_t bi = slot_buf_index[idx];
-                     const Key* slot_key =
-                             static_cast<const Key*>(accessor.GetKeyPtr(bi));
-                     if (eq_fn(*slot_key, key)) {
-                         found = true;
-                         result = bi;
-                         break;
-                     }
-                 }
-                 // kSYCLSlotDeleted: continue probing.
-             }
-             output_masks[tid] = found;
-             output_buf_indices[tid] = found ? result : 0;
-         }).wait_and_throw();
+              bool found = false;
+              buf_index_t result = 0;
+              for (int64_t probe = 0; probe < bucket_count; ++probe) {
+                  const int64_t idx = (home + probe) % bucket_count;
+                  sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                                   sycl::memory_scope::device>
+                          st(slot_state[idx]);
+                  const int32_t s = st.load(sycl::memory_order::acquire);
+                  if (s == kSYCLSlotEmpty) {
+                      break;  // Probe chain ended; key not present.
+                  }
+                  if (s == kSYCLSlotOccupied) {
+                      const buf_index_t bi = slot_buf_index[idx];
+                      const Key* slot_key =
+                              static_cast<const Key*>(accessor.GetKeyPtr(bi));
+                      if (eq_fn(*slot_key, key)) {
+                          found = true;
+                          result = bi;
+                          break;
+                      }
+                  }
+                  // kSYCLSlotDeleted: continue probing.
+              }
+              output_masks[tid] = found;
+              output_buf_indices[tid] = found ? result : 0;
+          }).wait_and_throw();
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -389,45 +385,44 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     Eq eq_fn;
 
     queue_.parallel_for(count, [=](int64_t tid) {
-             const Key key = keys[tid];
-             const int64_t home =
-                     static_cast<int64_t>(hash_fn(key) %
-                                          static_cast<uint64_t>(bucket_count));
+              const Key key = keys[tid];
+              const int64_t home = static_cast<int64_t>(
+                      hash_fn(key) % static_cast<uint64_t>(bucket_count));
 
-             bool erased = false;
-             for (int64_t probe = 0; probe < bucket_count; ++probe) {
-                 const int64_t idx = (home + probe) % bucket_count;
-                 sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
-                                  sycl::memory_scope::device>
-                         st(slot_state[idx]);
-                 int32_t s = st.load(sycl::memory_order::acquire);
-                 if (s == kSYCLSlotEmpty) {
-                     break;
-                 }
-                 if (s == kSYCLSlotOccupied) {
-                     const buf_index_t bi = slot_buf_index[idx];
-                     const Key* slot_key =
-                             static_cast<const Key*>(accessor.GetKeyPtr(bi));
-                     if (eq_fn(*slot_key, key)) {
-                         int32_t expected = kSYCLSlotOccupied;
-                         if (st.compare_exchange_strong(
-                                     expected, kSYCLSlotDeleted,
-                                     sycl::memory_order::acq_rel,
-                                     sycl::memory_order::relaxed)) {
-                             accessor.DeviceFree(bi);
-                             erased = true;
-                             sycl::atomic_ref<int, sycl::memory_order::relaxed,
-                                              sycl::memory_scope::device>
-                                     oc(*occupied_count);
-                             oc.fetch_sub(1);
-                         }
-                         break;  // Found the key on this probe chain.
-                     }
-                 }
-                 // kSYCLSlotDeleted or different key: continue probing.
-             }
-             output_masks[tid] = erased;
-         }).wait_and_throw();
+              bool erased = false;
+              for (int64_t probe = 0; probe < bucket_count; ++probe) {
+                  const int64_t idx = (home + probe) % bucket_count;
+                  sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                                   sycl::memory_scope::device>
+                          st(slot_state[idx]);
+                  int32_t s = st.load(sycl::memory_order::acquire);
+                  if (s == kSYCLSlotEmpty) {
+                      break;
+                  }
+                  if (s == kSYCLSlotOccupied) {
+                      const buf_index_t bi = slot_buf_index[idx];
+                      const Key* slot_key =
+                              static_cast<const Key*>(accessor.GetKeyPtr(bi));
+                      if (eq_fn(*slot_key, key)) {
+                          int32_t expected = kSYCLSlotOccupied;
+                          if (st.compare_exchange_strong(
+                                      expected, kSYCLSlotDeleted,
+                                      sycl::memory_order::acq_rel,
+                                      sycl::memory_order::relaxed)) {
+                              accessor.DeviceFree(bi);
+                              erased = true;
+                              sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                                               sycl::memory_scope::device>
+                                      oc(*occupied_count);
+                              oc.fetch_sub(1);
+                          }
+                          break;  // Found the key on this probe chain.
+                      }
+                  }
+                  // kSYCLSlotDeleted or different key: continue probing.
+              }
+              output_masks[tid] = erased;
+          }).wait_and_throw();
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -437,22 +432,22 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
     buf_index_t* slot_buf_index = slot_buf_index_;
     const int64_t bucket_count = bucket_count_;
 
-    int* d_count =
-            static_cast<int*>(MemoryManager::Malloc(sizeof(int), this->device_));
+    int* d_count = static_cast<int*>(
+            MemoryManager::Malloc(sizeof(int), this->device_));
     queue_.memset(d_count, 0, sizeof(int)).wait_and_throw();
 
     queue_.parallel_for(bucket_count, [=](int64_t idx) {
-             sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
-                              sycl::memory_scope::device>
-                     st(slot_state[idx]);
-             if (st.load(sycl::memory_order::acquire) == kSYCLSlotOccupied) {
-                 sycl::atomic_ref<int, sycl::memory_order::relaxed,
-                                  sycl::memory_scope::device>
-                         counter(*d_count);
-                 const int pos = counter.fetch_add(1);
-                 output_indices[pos] = slot_buf_index[idx];
-             }
-         }).wait_and_throw();
+              sycl::atomic_ref<int32_t, sycl::memory_order::relaxed,
+                               sycl::memory_scope::device>
+                      st(slot_state[idx]);
+              if (st.load(sycl::memory_order::acquire) == kSYCLSlotOccupied) {
+                  sycl::atomic_ref<int, sycl::memory_order::relaxed,
+                                   sycl::memory_scope::device>
+                          counter(*d_count);
+                  const int pos = counter.fetch_add(1);
+                  output_indices[pos] = slot_buf_index[idx];
+              }
+          }).wait_and_throw();
 
     int count = 0;
     MemoryManager::MemcpyToHost(&count, d_count, this->device_, sizeof(int));

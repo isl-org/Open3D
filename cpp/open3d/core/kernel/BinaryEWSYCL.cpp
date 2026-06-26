@@ -123,8 +123,7 @@ void BinaryEWSYCL(const Tensor& lhs,
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
@@ -134,71 +133,61 @@ void BinaryEWSYCL(const Tensor& lhs,
             // floats.
             Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-
                 const int64_t n = indexer.NumWorkloads();
-                                switch (op_code) {
+                switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalAndElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalAndElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::LogicalOr:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalOrElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalOrElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::LogicalXor:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalXorElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalXorElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Gt:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                GtElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            GtElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Lt:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LtElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LtElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Ge:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                GeqElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            GeqElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Le:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LeqElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LeqElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Eq:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                EqElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            EqElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Ne:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                NeqElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            NeqElementKernel<scalar_t> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     default:
                         break;
@@ -212,69 +201,58 @@ void BinaryEWSYCL(const Tensor& lhs,
                 const int64_t n = indexer.NumWorkloads();
                 switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
-                            queue.parallel_for(
-                                    n, [indexer](int64_t i) {
-                                        LogicalAndElementKernel<scalar_t, bool>
-                                                ef(indexer);
-                                        ef(i);
-                                    });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalAndElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::LogicalOr:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LogicalOrElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalOrElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::LogicalXor:
-                            queue.parallel_for(
-                                    n, [indexer](int64_t i) {
-                                        LogicalXorElementKernel<scalar_t, bool>
-                                                ef(indexer);
-                                        ef(i);
-                                    });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LogicalXorElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Gt:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                GtElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            GtElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Lt:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LtElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LtElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Ge:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                GeqElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            GeqElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Le:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                LeqElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            LeqElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Eq:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                EqElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            EqElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     case BinaryEWOpCode::Ne:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                NeqElementKernel<scalar_t, bool> ef(indexer);
-                                ef(i);
-                            });
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            NeqElementKernel<scalar_t, bool> ef(indexer);
+                            ef(i);
+                        });
                         break;
                     default:
                         break;
@@ -289,22 +267,19 @@ void BinaryEWSYCL(const Tensor& lhs,
                op_code == BinaryEWOpCode::Minimum) {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-
-                const int64_t n = indexer.NumWorkloads();
-                            switch (op_code) {
+            const int64_t n = indexer.NumWorkloads();
+            switch (op_code) {
                 case BinaryEWOpCode::Maximum:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                MaxElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        MaxElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case BinaryEWOpCode::Minimum:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                MinElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        MinElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 default:
                     break;
@@ -313,36 +288,31 @@ void BinaryEWSYCL(const Tensor& lhs,
     } else {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
-
-                const int64_t n = indexer.NumWorkloads();
-                            switch (op_code) {
+            const int64_t n = indexer.NumWorkloads();
+            switch (op_code) {
                 case BinaryEWOpCode::Add:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                AddElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        AddElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case BinaryEWOpCode::Sub:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                SubElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        SubElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case BinaryEWOpCode::Mul:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                MulElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        MulElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case BinaryEWOpCode::Div:
-                    queue.parallel_for(
-                            n, [indexer](int64_t i) {
-                                DivElementKernel<scalar_t> ef(indexer);
-                                ef(i);
-                            });
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        DivElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 default:
                     break;

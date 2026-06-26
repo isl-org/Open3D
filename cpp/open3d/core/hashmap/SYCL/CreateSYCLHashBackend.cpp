@@ -21,8 +21,7 @@ std::shared_ptr<DeviceHashBackend> CreateSYCLHashBackend(
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashBackendType& backend) {
-    if (backend != HashBackendType::Default &&
-        backend != HashBackendType::StdGPU) {
+    if (backend != HashBackendType::Default) {
         utility::LogError("Unsupported backend for SYCL hashmap.");
     }
 

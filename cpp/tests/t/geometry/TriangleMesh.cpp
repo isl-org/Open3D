@@ -14,8 +14,8 @@
 #include "gmock/gmock.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
-#include "open3d/core/SizeVector.h"
 #include "open3d/core/SYCLUtils.h"
+#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
@@ -1763,16 +1763,12 @@ TEST(TriangleMeshSYCLBackendParity, NormalsAndAreasMatchCPU) {
     mesh_sycl.NormalizeNormals();
     mesh_sycl.ComputeTriangleAreas();
 
-    EXPECT_TRUE(mesh_sycl.GetTriangleNormals()
-                        .To(cpu)
-                        .AllClose(mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
-    EXPECT_TRUE(mesh_sycl.GetVertexNormals()
-                        .To(cpu)
-                        .AllClose(mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
-    EXPECT_TRUE(mesh_sycl.GetTriangleAttr("areas")
-                        .To(cpu)
-                        .AllClose(mesh_cpu.GetTriangleAttr("areas"), 1e-4,
-                                  1e-4));
+    EXPECT_TRUE(mesh_sycl.GetTriangleNormals().To(cpu).AllClose(
+            mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
+    EXPECT_TRUE(mesh_sycl.GetVertexNormals().To(cpu).AllClose(
+            mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
+    EXPECT_TRUE(mesh_sycl.GetTriangleAttr("areas").To(cpu).AllClose(
+            mesh_cpu.GetTriangleAttr("areas"), 1e-4, 1e-4));
 }
 #endif
 

@@ -50,10 +50,10 @@ public:
 };
 
 class HashMapPermuteDevices : public PermuteDevicesWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(HashMap,
-                         HashMapPermuteDevices,
-             testing::ValuesIn(
-                 PermuteDevicesWithSYCL::TestCases()));
+INSTANTIATE_TEST_SUITE_P(
+        HashMap,
+        HashMapPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(HashMapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
@@ -63,7 +63,7 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -95,7 +95,7 @@ TEST_P(HashMapPermuteDevices, Find) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -141,7 +141,7 @@ TEST_P(HashMapPermuteDevices, Insert) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -196,7 +196,7 @@ TEST_P(HashMapPermuteDevices, Erase) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -261,7 +261,7 @@ TEST_P(HashMapPermuteDevices, Reserve) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -317,7 +317,7 @@ TEST_P(HashMapPermuteDevices, Clear) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -397,7 +397,7 @@ TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -458,7 +458,7 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -533,7 +533,7 @@ TEST_P(HashMapPermuteDevices, HashSet) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else if (device.IsSYCL()) {
-        backends.push_back(core::HashBackendType::StdGPU);
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }

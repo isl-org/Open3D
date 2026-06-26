@@ -1,14 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2026 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <sycl/sycl.hpp>
+
 #include "open3d/core/ParallelFor.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGridImpl.h"
-
-#include <sycl/sycl.hpp>
 
 namespace open3d {
 namespace t {
@@ -16,9 +16,9 @@ namespace geometry {
 namespace kernel {
 namespace voxel_grid {
 
-void PointCloudTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
-                         const core::Tensor& points,
-                         core::Tensor& voxel_block_coords,
+void PointCloudTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
+                         const core::Tensor &points,
+                         core::Tensor &voxel_block_coords,
                          index_t voxel_grid_resolution,
                          float voxel_size,
                          float sdf_trunc) {
@@ -26,50 +26,50 @@ void PointCloudTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
     float block_size = voxel_size * resolution;
 
     index_t n = points.GetLength();
-    const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
+    const float *pcd_ptr = static_cast<const float *>(points.GetDataPtr());
 
     core::Device device = points.GetDevice();
     core::Tensor block_coordi({8 * n, 3}, core::Int32, device);
-    index_t* block_coordi_ptr =
-            static_cast<index_t*>(block_coordi.GetDataPtr());
+    index_t *block_coordi_ptr =
+            static_cast<index_t *>(block_coordi.GetDataPtr());
     core::Tensor count(std::vector<index_t>{0}, {}, core::Int32, device);
-    index_t* count_ptr = static_cast<index_t*>(count.GetDataPtr());
+    index_t *count_ptr = static_cast<index_t *>(count.GetDataPtr());
 
-    core::ParallelFor(hashmap->GetDevice(), n,
-                      [=] OPEN3D_DEVICE(index_t workload_idx) {
-                          float x = pcd_ptr[3 * workload_idx + 0];
-                          float y = pcd_ptr[3 * workload_idx + 1];
-                          float z = pcd_ptr[3 * workload_idx + 2];
+    core::ParallelFor(
+            hashmap->GetDevice(), n, [=] OPEN3D_DEVICE(index_t workload_idx) {
+                float x = pcd_ptr[3 * workload_idx + 0];
+                float y = pcd_ptr[3 * workload_idx + 1];
+                float z = pcd_ptr[3 * workload_idx + 2];
 
-                          index_t xb_lo = static_cast<index_t>(
-                                  floorf((x - sdf_trunc) / block_size));
-                          index_t xb_hi = static_cast<index_t>(
-                                  floorf((x + sdf_trunc) / block_size));
-                          index_t yb_lo = static_cast<index_t>(
-                                  floorf((y - sdf_trunc) / block_size));
-                          index_t yb_hi = static_cast<index_t>(
-                                  floorf((y + sdf_trunc) / block_size));
-                          index_t zb_lo = static_cast<index_t>(
-                                  floorf((z - sdf_trunc) / block_size));
-                          index_t zb_hi = static_cast<index_t>(
-                                  floorf((z + sdf_trunc) / block_size));
+                index_t xb_lo = static_cast<index_t>(
+                        floorf((x - sdf_trunc) / block_size));
+                index_t xb_hi = static_cast<index_t>(
+                        floorf((x + sdf_trunc) / block_size));
+                index_t yb_lo = static_cast<index_t>(
+                        floorf((y - sdf_trunc) / block_size));
+                index_t yb_hi = static_cast<index_t>(
+                        floorf((y + sdf_trunc) / block_size));
+                index_t zb_lo = static_cast<index_t>(
+                        floorf((z - sdf_trunc) / block_size));
+                index_t zb_hi = static_cast<index_t>(
+                        floorf((z + sdf_trunc) / block_size));
 
-                          for (index_t xb = xb_lo; xb <= xb_hi; ++xb) {
-                              for (index_t yb = yb_lo; yb <= yb_hi; ++yb) {
-                                  for (index_t zb = zb_lo; zb <= zb_hi; ++zb) {
-                                      auto count_atomic_ref = sycl::atomic_ref<index_t,
-                                                                               sycl::memory_order::acq_rel,
-                                                                               sycl::memory_scope::device,
-                                                                               sycl::access::address_space::global_space>(
-                                              *count_ptr);
-                                      index_t idx = count_atomic_ref.fetch_add(1);
-                                      block_coordi_ptr[3 * idx + 0] = xb;
-                                      block_coordi_ptr[3 * idx + 1] = yb;
-                                      block_coordi_ptr[3 * idx + 2] = zb;
-                                  }
-                              }
-                          }
-                      });
+                for (index_t xb = xb_lo; xb <= xb_hi; ++xb) {
+                    for (index_t yb = yb_lo; yb <= yb_hi; ++yb) {
+                        for (index_t zb = zb_lo; zb <= zb_hi; ++zb) {
+                            auto count_atomic_ref = sycl::atomic_ref<
+                                    index_t, sycl::memory_order::acq_rel,
+                                    sycl::memory_scope::device,
+                                    sycl::access::address_space::global_space>(
+                                    *count_ptr);
+                            index_t idx = count_atomic_ref.fetch_add(1);
+                            block_coordi_ptr[3 * idx + 0] = xb;
+                            block_coordi_ptr[3 * idx + 1] = yb;
+                            block_coordi_ptr[3 * idx + 2] = zb;
+                        }
+                    }
+                }
+            });
 
     index_t total_block_count = count.Item<index_t>();
     if (total_block_count == 0) {
@@ -85,11 +85,11 @@ void PointCloudTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
 
-void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
-                    const core::Tensor& depth,
-                    const core::Tensor& intrinsic,
-                    const core::Tensor& extrinsic,
-                    core::Tensor& voxel_block_coords,
+void DepthTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
+                    const core::Tensor &depth,
+                    const core::Tensor &intrinsic,
+                    const core::Tensor &extrinsic,
+                    core::Tensor &voxel_block_coords,
                     index_t voxel_grid_resolution,
                     float voxel_size,
                     float sdf_trunc,
@@ -118,8 +118,8 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
     // Counter
     core::Tensor count(std::vector<index_t>{0}, {1}, core::Dtype::Int32,
                        device);
-    index_t* count_ptr = count.GetDataPtr<index_t>();
-    index_t* block_coordi_ptr = block_coordi.GetDataPtr<index_t>();
+    index_t *count_ptr = count.GetDataPtr<index_t>();
+    index_t *block_coordi_ptr = block_coordi.GetDataPtr<index_t>();
 
     index_t resolution = voxel_grid_resolution;
     float block_size = voxel_size * resolution;
@@ -150,11 +150,10 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
                 const float t_step = (t_max - t_min) / step_size;
 
                 float t = t_min;
-                auto count_atomic_ref = sycl::atomic_ref<index_t,
-                                                         sycl::memory_order::acq_rel,
-                                                         sycl::memory_scope::device,
-                                                         sycl::access::address_space::global_space>(
-                        *count_ptr);
+                auto count_atomic_ref = sycl::atomic_ref<
+                        index_t, sycl::memory_order::acq_rel,
+                        sycl::memory_scope::device,
+                        sycl::access::address_space::global_space>(*count_ptr);
                 index_t idx = count_atomic_ref.fetch_add(step_size + 1);
                 for (index_t step = 0; step <= step_size; ++step) {
                     index_t offset = (step + idx) * 3;
@@ -193,28 +192,28 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap>& hashmap,
     // Customized IndexGet (generic version too slow)
     voxel_block_coords =
             core::Tensor({hashmap->Size(), 3}, core::Int32, device);
-    index_t* voxel_block_coord_ptr = voxel_block_coords.GetDataPtr<index_t>();
-    bool* block_masks_ptr = block_masks.GetDataPtr<bool>();
+    index_t *voxel_block_coord_ptr = voxel_block_coords.GetDataPtr<index_t>();
+    bool *block_masks_ptr = block_masks.GetDataPtr<bool>();
     count[0] = 0;
-    core::ParallelFor(device, total_block_count,
-                      [=] OPEN3D_DEVICE(index_t workload_idx) {
-                          if (block_masks_ptr[workload_idx]) {
-                              auto count_atomic_ref = sycl::atomic_ref<index_t,
-                                                                       sycl::memory_order::acq_rel,
-                                                                       sycl::memory_scope::device,
-                                                                       sycl::access::address_space::global_space>(
-                                      *count_ptr);
-                              index_t idx = count_atomic_ref.fetch_add(1);
-                              index_t offset_lhs = 3 * idx;
-                              index_t offset_rhs = 3 * workload_idx;
-                              voxel_block_coord_ptr[offset_lhs + 0] =
-                                      block_coordi_ptr[offset_rhs + 0];
-                              voxel_block_coord_ptr[offset_lhs + 1] =
-                                      block_coordi_ptr[offset_rhs + 1];
-                              voxel_block_coord_ptr[offset_lhs + 2] =
-                                      block_coordi_ptr[offset_rhs + 2];
-                          }
-                      });
+    core::ParallelFor(
+            device, total_block_count, [=] OPEN3D_DEVICE(index_t workload_idx) {
+                if (block_masks_ptr[workload_idx]) {
+                    auto count_atomic_ref = sycl::atomic_ref<
+                            index_t, sycl::memory_order::acq_rel,
+                            sycl::memory_scope::device,
+                            sycl::access::address_space::global_space>(
+                            *count_ptr);
+                    index_t idx = count_atomic_ref.fetch_add(1);
+                    index_t offset_lhs = 3 * idx;
+                    index_t offset_rhs = 3 * workload_idx;
+                    voxel_block_coord_ptr[offset_lhs + 0] =
+                            block_coordi_ptr[offset_rhs + 0];
+                    voxel_block_coord_ptr[offset_lhs + 1] =
+                            block_coordi_ptr[offset_rhs + 1];
+                    voxel_block_coord_ptr[offset_lhs + 2] =
+                            block_coordi_ptr[offset_rhs + 2];
+                }
+            });
     index_t active_count = count[0].Item<index_t>();
     voxel_block_coords = voxel_block_coords.Slice(0, 0, active_count);
 }

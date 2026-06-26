@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2026 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -26,26 +26,26 @@ void ComputeVertexNormalsSYCL(const core::Tensor& triangles,
         const scalar_t* triangle_normals_ptr =
                 triangle_normals.GetDataPtr<scalar_t>();
         scalar_t* vertex_normals_ptr = vertex_normals.GetDataPtr<scalar_t>();
-        core::ParallelFor(
-                vertex_normals.GetDevice(), n,
-                [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    int64_t idx = 3 * workload_idx;
-                    const int64_t vertex_ids[3] = {triangle_ptr[idx],
-                                                   triangle_ptr[idx + 1],
-                                                   triangle_ptr[idx + 2]};
-                    const scalar_t n1 = triangle_normals_ptr[idx];
-                    const scalar_t n2 = triangle_normals_ptr[idx + 1];
-                    const scalar_t n3 = triangle_normals_ptr[idx + 2];
+        core::ParallelFor(vertex_normals.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              const int64_t vertex_ids[3] = {
+                                      triangle_ptr[idx], triangle_ptr[idx + 1],
+                                      triangle_ptr[idx + 2]};
+                              const scalar_t n1 = triangle_normals_ptr[idx];
+                              const scalar_t n2 = triangle_normals_ptr[idx + 1];
+                              const scalar_t n3 = triangle_normals_ptr[idx + 2];
 
-                    for (int vi = 0; vi < 3; ++vi) {
-                        const int64_t base = 3 * vertex_ids[vi];
-                        OPEN3D_ATOMIC_ADD_RELAXED(&vertex_normals_ptr[base], n1);
-                        OPEN3D_ATOMIC_ADD_RELAXED(&vertex_normals_ptr[base + 1],
-                                                  n2);
-                        OPEN3D_ATOMIC_ADD_RELAXED(&vertex_normals_ptr[base + 2],
-                                                  n3);
-                    }
-                });
+                              for (int vi = 0; vi < 3; ++vi) {
+                                  const int64_t base = 3 * vertex_ids[vi];
+                                  OPEN3D_ATOMIC_ADD_RELAXED(
+                                          &vertex_normals_ptr[base], n1);
+                                  OPEN3D_ATOMIC_ADD_RELAXED(
+                                          &vertex_normals_ptr[base + 1], n2);
+                                  OPEN3D_ATOMIC_ADD_RELAXED(
+                                          &vertex_normals_ptr[base + 2], n3);
+                              }
+                          });
     });
 }
 

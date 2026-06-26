@@ -208,7 +208,8 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
 #ifdef BUILD_SYCL_MODULE
             kernel::trianglemesh::NormalizeNormalsSYCL(vertex_normals);
 #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
 #endif
         } else {
             utility::LogError("Unimplemented device");
@@ -229,7 +230,8 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
 #ifdef BUILD_SYCL_MODULE
             kernel::trianglemesh::NormalizeNormalsSYCL(triangle_normals);
 #else
-            utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
 #endif
         } else {
             utility::LogError("Unimplemented device");

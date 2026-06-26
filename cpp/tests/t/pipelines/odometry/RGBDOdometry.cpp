@@ -251,7 +251,8 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Device device = GetParam();
     if (device.IsSYCL()) {
-        GTEST_SKIP() << "Sobel filter/hybrid Odometry is not implemented on SYCL.";
+        GTEST_SKIP()
+                << "Sobel filter/hybrid Odometry is not implemented on SYCL.";
     }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
