@@ -22,7 +22,7 @@
 namespace open3d {
 namespace tests {
 
-class NNSPermuteDevices : public PermuteDevices {};
+class NNSPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
                          NNSPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
