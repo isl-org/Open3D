@@ -92,6 +92,12 @@ public:
     virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
                                   const MaterialRecord& material) = 0;
+    /// Re-applies each submesh's per-mesh material from \p model in place,
+    /// without removing/recreating geometry (preserves transform and
+    /// visibility). Used to restore multi-material models after a single
+    /// override material was applied to the whole model.
+    virtual void OverrideMaterial(const std::string& object_name,
+                                  const TriangleMeshModel& model) = 0;
     virtual void GeometryShadows(const std::string& object_name,
                                  bool cast_shadows,
                                  bool receive_shadows) = 0;

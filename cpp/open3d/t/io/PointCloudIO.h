@@ -66,6 +66,9 @@ bool WritePointCloudToPCD(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
 
+/// Reads PLY; for Gaussian-splat point clouds, per-point \c "scale" in the file
+/// is interpreted as log-scale and converted to linear in the returned
+/// \c PointCloud (see \c t::geometry::PointCloud::IsGaussianSplat()).
 bool ReadPointCloudFromPLY(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);
@@ -74,6 +77,8 @@ bool WritePointCloudToPLY(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
 
+/// Reads the binary SPLAT format; per-point \c "scale" matches the in-memory
+/// representation (linear axis lengths).
 bool ReadPointCloudFromSPLAT(const std::string &filename,
                              geometry::PointCloud &pointcloud,
                              const ReadPointCloudOption &params);

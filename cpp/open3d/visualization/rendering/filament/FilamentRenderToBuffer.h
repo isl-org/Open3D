@@ -25,6 +25,7 @@ namespace rendering {
 class FilamentRenderer;
 class FilamentScene;
 class FilamentView;
+class GaussianSplatRenderer;
 
 class FilamentRenderToBuffer : public RenderToBuffer {
 public:
@@ -58,6 +59,8 @@ private:
     filament::SwapChain* swapchain_ = nullptr;
     FilamentView* view_ = nullptr;
     FilamentScene* scene_ = nullptr;
+    /// Set by FilamentRenderer::CreateBufferRenderer to mirror GS pipeline.
+    GaussianSplatRenderer* gaussian_splat_renderer_ = nullptr;
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;

@@ -241,6 +241,11 @@ void BitmapWindowSystem::SetWindowSize(OSWindow w, int width, int height) {
     hw->o3d_window->OnResize();
 }
 
+Size BitmapWindowSystem::GetWindowFrameSize(OSWindow w) const {
+    // Bitmap windows are offscreen, with no OS-drawn decorations.
+    return Size(0, 0);
+}
+
 Size BitmapWindowSystem::GetWindowSizePixels(OSWindow w) const {
     return GetWindowSize(w);
 }

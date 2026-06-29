@@ -73,6 +73,9 @@ if (BUILD_GUI)
 
     target_sources(visualization_impl PRIVATE
         rendering/filament/FilamentCamera.cpp
+        rendering/gaussian_splat/GaussianSplatRenderer.cpp
+        rendering/gaussian_splat/GaussianSplatDataPacking.cpp
+        rendering/gaussian_splat/GaussianSplatPassRunner.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
         rendering/filament/FilamentRenderToBuffer.cpp
@@ -82,8 +85,30 @@ if (BUILD_GUI)
         rendering/filament/LineSetBuffers.cpp
         rendering/filament/PointCloudBuffers.cpp
         rendering/filament/TriangleMeshBuffers.cpp
-        rendering/filament/GaussianSplatBuffers.cpp
     )
+
+    if (APPLE)
+        target_sources(visualization_impl PRIVATE
+            rendering/gaussian_splat/ComputeGPUMetal.mm
+            rendering/gaussian_splat/GaussianSplatMetalBackend.mm
+            rendering/filament/FilamentNativeInterop.mm
+            rendering/filament/FilamentResourceManagerApple.mm
+        )
+        set(O3D_GS_METAL_ARC_SOURCES
+            rendering/gaussian_splat/ComputeGPUMetal.mm
+            rendering/gaussian_splat/GaussianSplatMetalBackend.mm
+            rendering/filament/FilamentResourceManagerApple.mm
+        )
+        set_source_files_properties(${O3D_GS_METAL_ARC_SOURCES}
+            PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    else()
+        target_sources(visualization_impl PRIVATE
+            rendering/gaussian_splat/ComputeGPUVulkan.cpp
+            rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
+        )
+    endif()
 
     target_sources(visualization PRIVATE
         utility/Draw.cpp

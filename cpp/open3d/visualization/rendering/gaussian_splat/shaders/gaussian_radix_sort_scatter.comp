@@ -1,0 +1,163 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Gaussian radix sort — scatter pass (key-value).
+//
+// Performs a single-digit (8-bit) radix scatter of key-value pairs.
+// Keys are sorted by the 8-bit digit at `g_shift`, and values (indices)
+// are permuted in the same order.
+//
+// Adapted from VkRadixSort by Mirco Werner (MIT license):
+//   https://github.com/MircoWerner/VkRadixSort
+// Based on Intel Embree's GPU sort kernel.
+
+#version 460
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_shuffle : enable
+
+#define WORKGROUP_SIZE 256
+#define RADIX_SORT_BINS 256
+
+layout(local_size_x = WORKGROUP_SIZE) in;
+
+layout(std140, binding = 14) uniform RadixSortParams {
+    uint g_num_elements;
+    uint g_shift;
+    uint g_num_workgroups;
+    uint g_num_blocks_per_workgroup;
+};
+
+layout(std430, binding = 0) restrict buffer KeysIn { uint g_keys_in[]; };
+
+layout(std430, binding = 1) restrict buffer KeysOut { uint g_keys_out[]; };
+
+layout(std430, binding = 2) restrict buffer Histograms { uint g_histograms[]; };
+
+layout(std430, binding = 3) restrict buffer ValuesIn { uint g_values_in[]; };
+
+layout(std430, binding = 4) restrict buffer ValuesOut { uint g_values_out[]; };
+
+shared uint sums[WORKGROUP_SIZE];  // max subgroup count =
+                                   // WORKGROUP_SIZE/gl_SubgroupSize
+shared uint global_offsets[RADIX_SORT_BINS];
+
+struct BinFlags {
+    uint flags[WORKGROUP_SIZE / 32];
+};
+shared BinFlags bin_flags[RADIX_SORT_BINS];
+
+void main() {
+    uint lID = gl_LocalInvocationID.x;
+    uint wID = gl_WorkGroupID.x;
+    uint sID = gl_SubgroupID;
+    uint num_subgroups =
+            min(gl_NumSubgroups,
+                (gl_WorkGroupSize.x + gl_SubgroupSize - 1u) / gl_SubgroupSize);
+
+    // Phase 1: Compute global bin offsets.
+    // Each bin-thread (lID < 256) reads histograms from all workgroups,
+    // accumulates the total count, and computes its exclusive prefix sum.
+    uint local_histogram = 0u;  // This WG's histogram count for my bin
+    uint prefix_sum = 0u;       // Exclusive prefix over other subgroups
+    uint histogram_count = 0u;  // Total count across all WGs for my bin
+
+    if (lID < RADIX_SORT_BINS) {
+        uint count = 0u;
+        // Scan histograms from all workgroups to find this WG's local offset.
+        for (uint j = 0u; j < g_num_workgroups; j++) {
+            uint t = g_histograms[RADIX_SORT_BINS * j + lID];
+            local_histogram = (j == wID) ? count : local_histogram;
+            count += t;
+        }
+        histogram_count = count;
+
+        // Subgroup reduction: accumulate bin counts within subgroup.
+        uint sum = subgroupAdd(histogram_count);
+        prefix_sum = subgroupExclusiveAdd(histogram_count);
+        if (subgroupElect()) {
+            sums[sID] = sum;  // Only first lane writes subgroup total.
+        }
+    }
+    barrier();
+
+    // Thread 0: compute prefix sums over subgroup totals.
+    if (lID == 0u) {
+        uint running = 0u;
+        for (uint i = 0u; i < num_subgroups; ++i) {
+            uint value = sums[i];
+            sums[i] = running;
+            running += value;
+        }
+    }
+    barrier();
+
+    // Compute global offset for each bin: final prefix sum position.
+    if (lID < RADIX_SORT_BINS) {
+        uint global_histogram = sums[sID] + prefix_sum;
+        global_offsets[lID] = global_histogram + local_histogram;
+    }
+
+    // Phase 2: Scatter keys and values.
+    // For each input element, determine its bin, rank within bin, and output.
+    uint flags_bin = lID / 32u;  // Which uint32 word holds this thread's bit
+    uint flags_bit = 1u << (lID % 32u);  // Bit position within that word
+
+    for (uint index = 0u; index < g_num_blocks_per_workgroup; index++) {
+        uint elementId = wID * g_num_blocks_per_workgroup * WORKGROUP_SIZE +
+                         index * WORKGROUP_SIZE + lID;
+
+        // Initialize bin flags (per-thread bit tracking for local rank
+        // calculation).
+        if (lID < RADIX_SORT_BINS) {
+            for (uint i = 0u; i < WORKGROUP_SIZE / 32u; i++) {
+                bin_flags[lID].flags[i] = 0u;
+            }
+        }
+        barrier();
+
+        // Load key and value; extract bin ID; mark this thread in bin_flags.
+        uint key_in = 0u;
+        uint val_in = 0u;
+        uint binID = 0u;      // Which bin this element belongs to
+        uint binOffset = 0u;  // Global offset for start of this bin
+        if (elementId < g_num_elements) {
+            key_in = g_keys_in[elementId];
+            val_in = g_values_in[elementId];
+            binID = (key_in >> g_shift) & uint(RADIX_SORT_BINS - 1);
+            binOffset = global_offsets[binID];
+            atomicAdd(bin_flags[binID].flags[flags_bin], flags_bit);
+        }
+        barrier();
+
+        // Scatter: compute local rank and write to output at (binOffset +
+        // rank).
+        if (elementId < g_num_elements) {
+            uint prefix = 0u;  // Local rank: position within bin
+            uint count =
+                    0u;  // Total threads in my bin (for next block's offset)
+            // Count bits set before my position to compute rank.
+            for (uint i = 0u; i < WORKGROUP_SIZE / 32u; i++) {
+                uint bits = bin_flags[binID].flags[i];
+                uint full_count = bitCount(bits);
+                uint partial_count = bitCount(bits & (flags_bit - 1u));
+                prefix += (i < flags_bin) ? full_count : 0u;
+                prefix += (i == flags_bin) ? partial_count : 0u;
+                count += full_count;
+            }
+            g_keys_out[binOffset + prefix] = key_in;
+            g_values_out[binOffset + prefix] = val_in;
+            // Last lane in bin updates global offset for next block.
+            if (prefix == count - 1u) {
+                atomicAdd(global_offsets[binID], count);
+            }
+        }
+
+        barrier();
+    }
+}

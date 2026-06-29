@@ -27,6 +27,11 @@ void ShowNativeAlert(const char* message);
 #ifdef __APPLE__
 void MacTransformIntoApp();
 void SetNativeMenubar(void* menubar);
+// Synchronize the CAMetalLayer's drawableSize and contentsScale with the
+// window's current backing-store pixel dimensions after the window resizes
+// or moves to a different display (Retina ↔ non-Retina).  Must be called
+// before recreating the Filament swap chain so drawable and viewport agree.
+void ResizeNativeWindow(GLFWwindow* glfw_window);
 #endif  // __APPLE_
 
 #if defined(__APPLE__) || defined(_WIN32)
