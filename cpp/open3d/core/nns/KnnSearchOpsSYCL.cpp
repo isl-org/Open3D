@@ -5,6 +5,42 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+// SYCL NNS driver: tiled AddMM distance evaluation with fused top-K selection.
+//
+// Three search variants are implemented here:
+//   KnnSearchSYCL       – brute-force K nearest neighbors
+//   FixedRadiusSearchSYCL – all neighbors within radius (count + gather)
+//   HybridSearchSYCL    – neighbors within radius, keep best max_knn
+//
+// Common tiling strategy
+// ──────────────────────
+// All three variants loop over (query-tile, point-tile) pairs.  For each pair
+// AddMM computes the −2*q*p tile once (O(n·m·d) work, highly optimised by
+// oneMKL).  The remaining passes read the tile (O(n·m)) at most twice, keeping
+// computation well below the GEMM cost.
+//
+// KNN small-k path (k ≤ kSYCLKnnMidKMax)
+// ────────────────────────────────────────
+// UpdateTopKFromTileSYCL<K> fuses: Add_(point_norms) + SelectTopK + Merge
+// into a single per-query scan over the tile, maintaining a running max-heap
+// in global memory (fits in GRF for k ≤ kSYCLKnnSmallKMax).  No intermediate
+// tile_top or merged tensors are needed.  FinalizeTopKSYCL adds |q|² once (P2)
+// and heap-sorts into ascending order.
+//
+// KNN large-k path (k > kSYCLKnnMidKMax)
+// ────────────────────────────────────────
+// Falls back to the legacy SelectTopKQueriesSYCL + MergeTopKQueriesSYCL pair.
+// P2 applies: |q|² is NOT added to the tile; AddQueryNormsToDistancesSYCL adds
+// it once at the end.  P8 note: for k > kSYCLKnnMidKMax the SelectTopK path
+// launches one oneDPL partial_sort per query sequentially.
+//
+// Radius / Hybrid
+// ───────────────
+// P2 applies: CountWithinThresholdQueriesSYCL and
+// GatherWithinThresholdQueriesSYCL take the per-query adjusted threshold
+// (radius² − |q|²), avoiding the Add_(query_norms) tile pass.  Returned
+// distances are the full L2 (partial + |q|²), clamped ≥ 0 (C1).
+
 #include <algorithm>
 #include <limits>
 #include <oneapi/dpl/algorithm>
@@ -17,6 +53,7 @@
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/kernel/KnnSearchSYCLImpl.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -24,543 +61,16 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-// SYCL nearest-neighbor search uses tiled distance evaluation with AddMM,
-// batched threshold/count helpers, and query-local top-k selection/merge.
-namespace {
-
-// Chooses a query/point tile shape that limits temporary distance storage.
-inline void ChooseTileSizeSYCL(int64_t num_queries,
-                               int64_t num_points,
-                               int64_t element_size,
-                               int64_t& tile_queries,
-                               int64_t& tile_points) {
-    constexpr int64_t kTargetTileBytes = 8 * 1024 * 1024;
-    tile_queries = std::min<int64_t>(num_queries, 128);
-    tile_queries = std::max<int64_t>(tile_queries, 1);
-    tile_points = std::max<int64_t>(
-            kTargetTileBytes / (tile_queries * element_size), int64_t(256));
-    tile_points = std::min<int64_t>(tile_points, num_points);
-    tile_points = std::max<int64_t>(tile_points, 1);
-}
-
-// Computes squared L2 distances from one query to all points with a SYCL
-// kernel. This path is still used by the small single-row helpers below.
-template <typename T>
-void ComputeSquaredDistancesSYCL(const Device& device,
-                                 const T* points_ptr,
-                                 int64_t num_points,
-                                 int64_t dimension,
-                                 const T* query_ptr,
-                                 T* distances_ptr) {
-    if (num_points == 0) {
-        return;
-    }
-
-    constexpr int64_t kWorkGroupSize = 128;
-    const int64_t global_size =
-            utility::DivUp(num_points, kWorkGroupSize) * kWorkGroupSize;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-
-    queue.submit([&](sycl::handler& cgh) {
-        sycl::local_accessor<T, 1> local_query(sycl::range<1>(dimension), cgh);
-        cgh.parallel_for(
-                sycl::nd_range<1>(sycl::range<1>(global_size),
-                                  sycl::range<1>(kWorkGroupSize)),
-                [=](sycl::nd_item<1> item) {
-                    const int64_t lid = item.get_local_linear_id();
-                    for (int64_t d = lid; d < dimension;
-                         d += item.get_local_range(0)) {
-                        local_query[d] = query_ptr[d];
-                    }
-                    item.barrier(sycl::access::fence_space::local_space);
-
-                    const int64_t point_idx = item.get_global_linear_id();
-                    if (point_idx >= num_points) {
-                        return;
-                    }
-
-                    const T* point = points_ptr + point_idx * dimension;
-                    T dist = 0;
-                    for (int64_t d = 0; d < dimension; ++d) {
-                        const T diff = point[d] - local_query[d];
-                        dist += diff * diff;
-                    }
-                    distances_ptr[point_idx] = dist;
-                });
-    });
-}
-
-// Counts how many entries per query are within a threshold using one launch per
-// tile, avoiding per-query device algorithm dispatch.
-template <typename T>
-void CountWithinThresholdQueriesSYCL(const Device& device,
-                                     const T* distances_ptr,
-                                     int64_t distance_query_stride,
-                                     int64_t num_queries,
-                                     int64_t num_points,
-                                     T threshold,
-                                     int64_t* counts_ptr) {
-    if (num_queries == 0 || num_points == 0) {
-        return;
-    }
-
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t query_idx = id[0];
-        int64_t local_count = 0;
-        const T* query_distances =
-                distances_ptr + query_idx * distance_query_stride;
-        for (int64_t point_idx = 0; point_idx < num_points; ++point_idx) {
-            if (query_distances[point_idx] <= threshold) {
-                ++local_count;
-            }
-        }
-        counts_ptr[query_idx] += local_count;
-    });
-}
-
-// Appends per-query threshold matches into the final neighbor buffers using
-// caller-provided query offsets.
-template <typename T, typename TIndex>
-void GatherWithinThresholdQueriesSYCL(const Device& device,
-                                      const T* distances_ptr,
-                                      int64_t distance_query_stride,
-                                      int64_t num_queries,
-                                      int64_t num_points,
-                                      T threshold,
-                                      TIndex index_offset,
-                                      int64_t* offsets_ptr,
-                                      TIndex* out_indices_ptr,
-                                      T* out_distances_ptr) {
-    if (num_queries == 0 || num_points == 0) {
-        return;
-    }
-
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t query_idx = id[0];
-        const T* query_distances =
-                distances_ptr + query_idx * distance_query_stride;
-        int64_t offset = offsets_ptr[query_idx];
-        for (int64_t point_idx = 0; point_idx < num_points; ++point_idx) {
-            const T dist = query_distances[point_idx];
-            if (dist <= threshold) {
-                out_indices_ptr[offset] = index_offset + point_idx;
-                if (out_distances_ptr != nullptr) {
-                    out_distances_ptr[offset] = dist;
-                }
-                ++offset;
-            }
-        }
-        offsets_ptr[query_idx] = offset;
-    });
-}
-
-// Selects the smallest k distances per query with a high-performance parallel
-// SYCL kernel or OneDPL fallback for large knn.
-template <typename T, typename TIndex>
-void SelectTopKQueriesSYCL(const Device& device,
-                           const T* distances_ptr,
-                           int64_t distance_query_stride,
-                           int64_t num_queries,
-                           int64_t num_points,
-                           int64_t knn,
-                           TIndex index_offset,
-                           TIndex* scratch_indices_ptr,
-                           int64_t scratch_query_stride,
-                           TIndex* out_indices_ptr,
-                           T* out_distances_ptr,
-                           int64_t out_query_stride,
-                           bool use_threshold = false,
-                           T threshold = T(0)) {
-    if (num_queries == 0 || num_points == 0 || knn <= 0) {
-        return;
-    }
-
-    const T inf = std::numeric_limits<T>::max();
-    const int64_t actual_knn = std::min(knn, num_points);
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-
-    if (knn <= 256) {
-        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-            const int64_t query_idx = id[0];
-            const T* query_distances =
-                    distances_ptr + query_idx * distance_query_stride;
-            TIndex* query_out_indices =
-                    out_indices_ptr + query_idx * out_query_stride;
-            T* query_out_distances =
-                    out_distances_ptr + query_idx * out_query_stride;
-
-            // Simple Max-Heap representation inside local registers.
-            // Since compilers unroll arrays of small static bounds,
-            // a fixed maximum size array is excellent.
-            T local_dists[256];
-            TIndex local_indices[256];
-
-            for (int k = 0; k < actual_knn; ++k) {
-                local_dists[k] = inf;
-                local_indices[k] = TIndex(-1);
-            }
-
-            // Maintain max-heap of the actual_knn smallest elements.
-            // local_dists[0] will always represent the largest distance
-            // currently in our heap of top-K.
-            for (TIndex p = 0; p < num_points; ++p) {
-                T dist = query_distances[p];
-                if (use_threshold && dist > threshold) {
-                    continue;
-                }
-
-                if (dist < local_dists[0] ||
-                    (dist == local_dists[0] && p < local_indices[0])) {
-                    local_dists[0] = dist;
-                    local_indices[0] = p;
-
-                    // Heapify down
-                    int i = 0;
-                    while (true) {
-                        int left = 2 * i + 1;
-                        int right = 2 * i + 2;
-                        int largest = i;
-
-                        if (left < actual_knn &&
-                            (local_dists[left] > local_dists[largest] ||
-                             (local_dists[left] == local_dists[largest] &&
-                              local_indices[left] > local_indices[largest]))) {
-                            largest = left;
-                        }
-
-                        if (right < actual_knn &&
-                            (local_dists[right] > local_dists[largest] ||
-                             (local_dists[right] == local_dists[largest] &&
-                              local_indices[right] > local_indices[largest]))) {
-                            largest = right;
-                        }
-
-                        if (largest != i) {
-                            T tmp_d = local_dists[i];
-                            local_dists[i] = local_dists[largest];
-                            local_dists[largest] = tmp_d;
-
-                            TIndex tmp_idx = local_indices[i];
-                            local_indices[i] = local_indices[largest];
-                            local_indices[largest] = tmp_idx;
-
-                            i = largest;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Since the heap has the largest element at root, we need to sort
-            // it in ascending order before writing to out_indices and
-            // out_distances. A simple insertion sort is ideal for sorting size
-            // <= 256.
-            for (int i = 1; i < actual_knn; ++i) {
-                T key_dist = local_dists[i];
-                TIndex key_idx = local_indices[i];
-                int j = i - 1;
-                while (j >= 0 && (local_dists[j] > key_dist ||
-                                  (local_dists[j] == key_dist &&
-                                   local_indices[j] > key_idx))) {
-                    local_dists[j + 1] = local_dists[j];
-                    local_indices[j + 1] = local_indices[j];
-                    j = j - 1;
-                }
-                local_dists[j + 1] = key_dist;
-                local_indices[j + 1] = key_idx;
-            }
-
-            // Write output
-            for (int64_t k = 0; k < knn; ++k) {
-                if (k >= actual_knn || local_indices[k] == TIndex(-1)) {
-                    query_out_indices[k] = TIndex(-1);
-                    query_out_distances[k] = inf;
-                } else {
-                    query_out_indices[k] = index_offset + local_indices[k];
-                    query_out_distances[k] = local_dists[k];
-                }
-            }
-        });
-    } else {
-        auto policy = oneapi::dpl::execution::make_device_policy(queue);
-
-        queue.parallel_for(
-                sycl::range<2>(num_queries, num_points), [=](sycl::id<2> id) {
-                    scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
-                            static_cast<TIndex>(id[1]);
-                });
-
-        queue.wait_and_throw();
-
-        for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
-            TIndex* query_indices =
-                    scratch_indices_ptr + query_idx * scratch_query_stride;
-            const T* query_distances =
-                    distances_ptr + query_idx * distance_query_stride;
-            std::partial_sort(policy, query_indices, query_indices + actual_knn,
-                              query_indices + num_points,
-                              [query_distances](TIndex lhs, TIndex rhs) {
-                                  const T lhs_dist = query_distances[lhs];
-                                  const T rhs_dist = query_distances[rhs];
-                                  if (lhs_dist < rhs_dist) {
-                                      return true;
-                                  }
-                                  if (rhs_dist < lhs_dist) {
-                                      return false;
-                                  }
-                                  return lhs < rhs;
-                              });
-        }
-
-        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2>
-                                                                         id) {
-            const int64_t query_idx = id[0];
-            const int64_t k = id[1];
-            TIndex* query_out_indices =
-                    out_indices_ptr + query_idx * out_query_stride;
-            T* query_out_distances =
-                    out_distances_ptr + query_idx * out_query_stride;
-
-            if (k >= actual_knn) {
-                query_out_indices[k] = TIndex(-1);
-                query_out_distances[k] = inf;
-                return;
-            }
-
-            const TIndex local_idx =
-                    scratch_indices_ptr[query_idx * scratch_query_stride + k];
-            const T dist = distances_ptr[query_idx * distance_query_stride +
-                                         local_idx];
-            if (use_threshold && dist > threshold) {
-                query_out_indices[k] = TIndex(-1);
-                query_out_distances[k] = inf;
-                return;
-            }
-            query_out_indices[k] = index_offset + local_idx;
-            query_out_distances[k] = dist;
-        });
-    }
-}
-
-// Merges two sorted top-k query buffers into a new top-k query buffer with
-// a high-performance parallel SYCL kernel or OneDPL fallback for large knn.
-template <typename T, typename TIndex>
-void MergeTopKQueriesSYCL(const Device& device,
-                          const T* current_distances_ptr,
-                          const TIndex* current_indices_ptr,
-                          int64_t current_query_stride,
-                          const T* candidate_distances_ptr,
-                          const TIndex* candidate_indices_ptr,
-                          int64_t candidate_query_stride,
-                          int64_t num_queries,
-                          int64_t knn,
-                          TIndex* scratch_indices_ptr,
-                          int64_t scratch_query_stride,
-                          TIndex* out_indices_ptr,
-                          T* out_distances_ptr,
-                          int64_t out_query_stride) {
-    if (num_queries == 0 || knn <= 0) {
-        return;
-    }
-
-    const T inf = std::numeric_limits<T>::max();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-
-    if (knn <= 256) {
-        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-            const int64_t query_idx = id[0];
-            const T* query_curr_dist =
-                    current_distances_ptr + query_idx * current_query_stride;
-            const TIndex* query_curr_idx =
-                    current_indices_ptr + query_idx * current_query_stride;
-            const T* query_cand_dist = candidate_distances_ptr +
-                                       query_idx * candidate_query_stride;
-            const TIndex* query_cand_idx =
-                    candidate_indices_ptr + query_idx * candidate_query_stride;
-
-            TIndex* query_out_indices =
-                    out_indices_ptr + query_idx * out_query_stride;
-            T* query_out_distances =
-                    out_distances_ptr + query_idx * out_query_stride;
-
-            // Two-pointer merge of two sorted arrays of size knn
-            int64_t i_curr = 0;
-            int64_t i_cand = 0;
-
-            for (int64_t k = 0; k < knn; ++k) {
-                bool take_curr = false;
-
-                const TIndex curr_idx =
-                        (i_curr < knn) ? query_curr_idx[i_curr] : TIndex(-1);
-                const TIndex cand_idx =
-                        (i_cand < knn) ? query_cand_idx[i_cand] : TIndex(-1);
-
-                const bool curr_valid = (curr_idx >= 0);
-                const bool cand_valid = (cand_idx >= 0);
-
-                if (!curr_valid && !cand_valid) {
-                    query_out_indices[k] = TIndex(-1);
-                    query_out_distances[k] = inf;
-                    continue;
-                } else if (!curr_valid) {
-                    take_curr = false;
-                } else if (!cand_valid) {
-                    take_curr = true;
-                } else {
-                    const T curr_dist = query_curr_dist[i_curr];
-                    const T cand_dist = query_cand_dist[i_cand];
-
-                    if (curr_dist < cand_dist) {
-                        take_curr = true;
-                    } else if (cand_dist < curr_dist) {
-                        take_curr = false;
-                    } else {
-                        // Tie breaker
-                        take_curr = (curr_idx < cand_idx);
-                    }
-                }
-
-                if (take_curr) {
-                    query_out_indices[k] = curr_idx;
-                    query_out_distances[k] = query_curr_dist[i_curr];
-                    i_curr++;
-                } else {
-                    query_out_indices[k] = cand_idx;
-                    query_out_distances[k] = query_cand_dist[i_cand];
-                    i_cand++;
-                }
-            }
-        });
-    } else {
-        const int64_t combined_cols = 2 * knn;
-        auto policy = oneapi::dpl::execution::make_device_policy(queue);
-
-        queue.parallel_for(
-                sycl::range<2>(num_queries, combined_cols),
-                [=](sycl::id<2> id) {
-                    scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
-                            static_cast<TIndex>(id[1]);
-                });
-
-        queue.wait_and_throw();
-
-        for (int64_t query_idx = 0; query_idx < num_queries; ++query_idx) {
-            TIndex* query_indices =
-                    scratch_indices_ptr + query_idx * scratch_query_stride;
-            const T* query_current_dist =
-                    current_distances_ptr + query_idx * current_query_stride;
-            const TIndex* query_current_idx =
-                    current_indices_ptr + query_idx * current_query_stride;
-            const T* query_candidate_dist = candidate_distances_ptr +
-                                            query_idx * candidate_query_stride;
-            const TIndex* query_candidate_idx =
-                    candidate_indices_ptr + query_idx * candidate_query_stride;
-
-            std::partial_sort(
-                    policy, query_indices, query_indices + knn,
-                    query_indices + combined_cols,
-                    [query_current_dist, query_current_idx,
-                     query_candidate_dist, query_candidate_idx,
-                     knn](TIndex lhs, TIndex rhs) {
-                        const bool lhs_is_current = lhs < knn;
-                        const bool rhs_is_current = rhs < knn;
-                        const TIndex lhs_idx =
-                                lhs_is_current ? query_current_idx[lhs]
-                                               : query_candidate_idx[lhs - knn];
-                        const TIndex rhs_idx =
-                                rhs_is_current ? query_current_idx[rhs]
-                                               : query_candidate_idx[rhs - knn];
-                        const T lhs_dist =
-                                lhs_is_current
-                                        ? query_current_dist[lhs]
-                                        : query_candidate_dist[lhs - knn];
-                        const T rhs_dist =
-                                rhs_is_current
-                                        ? query_current_dist[rhs]
-                                        : query_candidate_dist[rhs - knn];
-                        const bool lhs_valid = lhs_idx >= 0;
-                        const bool rhs_valid = rhs_idx >= 0;
-                        if (lhs_valid != rhs_valid) {
-                            return lhs_valid;
-                        }
-                        if (lhs_dist < rhs_dist) {
-                            return true;
-                        }
-                        if (rhs_dist < lhs_dist) {
-                            return false;
-                        }
-                        return lhs_idx < rhs_idx;
-                    });
-        }
-
-        queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2>
-                                                                         id) {
-            const int64_t query_idx = id[0];
-            const int64_t k = id[1];
-            TIndex* query_out_indices =
-                    out_indices_ptr + query_idx * out_query_stride;
-            T* query_out_distances =
-                    out_distances_ptr + query_idx * out_query_stride;
-            const TIndex source =
-                    scratch_indices_ptr[query_idx * scratch_query_stride + k];
-            const bool is_current = source < knn;
-            const int64_t offset = is_current ? source : source - knn;
-            const TIndex idx =
-                    is_current
-                            ? current_indices_ptr[query_idx *
-                                                          current_query_stride +
-                                                  offset]
-                            : candidate_indices_ptr
-                                      [query_idx * candidate_query_stride +
-                                       offset];
-            const T dist =
-                    is_current ? current_distances_ptr
-                                         [query_idx * current_query_stride +
-                                          offset]
-                               : candidate_distances_ptr
-                                         [query_idx * candidate_query_stride +
-                                          offset];
-            if (idx < 0) {
-                query_out_indices[k] = TIndex(-1);
-                query_out_distances[k] = inf;
-            } else {
-                query_out_indices[k] = idx;
-                query_out_distances[k] = dist;
-            }
-        });
-    }
-}
-
-// Finalizes hybrid-search counts and clears any unused tail elements in the
-// fixed-width output tensors.
-template <typename T, typename TIndex>
-void FinalizeHybridResultsSYCL(const Device& device,
-                               const int64_t* counts_ptr,
-                               int64_t num_queries,
-                               int64_t max_knn,
-                               TIndex* neighbors_index_ptr,
-                               T* neighbors_distance_ptr,
-                               TIndex* neighbors_count_ptr) {
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t query_idx = id[0];
-        const int64_t clipped_count =
-                std::min<int64_t>(counts_ptr[query_idx], max_knn);
-        neighbors_count_ptr[query_idx] = static_cast<TIndex>(clipped_count);
-        for (int64_t k = clipped_count; k < max_knn; ++k) {
-            neighbors_index_ptr[query_idx * max_knn + k] = TIndex(-1);
-            neighbors_distance_ptr[query_idx * max_knn + k] = T(0);
-        }
-    });
-}
-
-}  // namespace
-
-// Batched KNN search with tiled AddMM distance evaluation and query-local top-k
-// selection/merge on each tile.
+// Batched KNN search.
+//
+// For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair
+//   replaces three separate passes (Add_, SelectTopK, Merge).  The running
+//   max-heap is maintained in global memory between tile iterations and
+//   finalized (sorted + |q|² added) once per query batch.
+//
+// For k > kSYCLKnnMidKMax: legacy Select + Merge path with P2 fix.
+//
+// C5 fix: batch_knn = min(knn, num_points_i) per batch.
 template <class T, class TIndex>
 void KnnSearchSYCL(const Tensor& points,
                    const Tensor& points_row_splits,
@@ -569,7 +79,8 @@ void KnnSearchSYCL(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
-                   Tensor& neighbors_distance) {
+                   Tensor& neighbors_distance,
+                   int64_t tile_bytes) {
     const Device device = points.GetDevice();
     const Dtype dtype = points.GetDtype();
     const Dtype index_dtype = Dtype::FromType<TIndex>();
@@ -597,8 +108,11 @@ void KnnSearchSYCL(const Tensor& points,
         const Tensor queries_i = queries.Slice(0, query_begin, query_end);
         const int64_t num_points_i = points_i.GetShape(0);
         const int64_t num_queries_i = queries_i.GetShape(0);
+
+        // C5: clamp knn to the number of available points.
         batch_knn = std::min<int64_t>(knn, num_points_i);
 
+        // Populate row_splits for this batch.
         neighbors_row_splits_ptr[query_begin] = last_neighbors_count;
         for (int64_t q = 0; q < num_queries_i; ++q) {
             neighbors_row_splits_ptr[query_begin + q + 1] =
@@ -620,106 +134,174 @@ void KnnSearchSYCL(const Tensor& points,
                 batch_output_allocators[batch_idx].NeighborsDistance().View(
                         {num_queries_i, batch_knn});
 
-        // Precompute norms for batched distance evaluation.
+        // |p|² and |q|² for distance tiling.
         Tensor point_norms = points_i.Mul(points_i).Sum({1});
         Tensor query_norms = queries_i.Mul(queries_i).Sum({1});
 
-        int64_t tile_queries = 0;
-        int64_t tile_points = 0;
-        ChooseTileSizeSYCL(num_queries_i, num_points_i, sizeof(T), tile_queries,
-                           tile_points);
+        int64_t tile_queries = 0, tile_points = 0;
+        ChooseTileSizeSYCL(num_queries_i, num_points_i, sizeof(T), tile_bytes,
+                           tile_queries, tile_points);
 
+        // Shared tile buffer for AddMM output (−2*q*p).
         Tensor temp_distances =
                 Tensor::Empty({tile_queries, tile_points}, dtype, device);
-        Tensor tile_sort_indices =
-                Tensor::Empty({tile_queries, tile_points}, index_dtype, device);
-        Tensor tile_top_indices =
-                Tensor::Empty({tile_queries, batch_knn}, index_dtype, device);
-        Tensor tile_top_distances =
-                Tensor::Empty({tile_queries, batch_knn}, dtype, device);
-        Tensor best_indices =
-                Tensor::Empty({tile_queries, batch_knn}, index_dtype, device);
-        Tensor best_distances =
-                Tensor::Empty({tile_queries, batch_knn}, dtype, device);
-        Tensor merged_indices =
-                Tensor::Empty({tile_queries, batch_knn}, index_dtype, device);
-        Tensor merged_distances =
-                Tensor::Empty({tile_queries, batch_knn}, dtype, device);
-        Tensor merge_sort_indices = Tensor::Empty({tile_queries, 2 * batch_knn},
+
+        if (batch_knn <= kSYCLKnnMidKMax) {
+            // ── Fused small/mid-k path ─────────────────────────────────────
+            // K-bucket ≥ batch_knn; running best allocated at K-bucket width.
+            const int64_t k_bucket = KBucket(batch_knn);
+
+            // Running best (max-heap, not sorted until Finalize).
+            Tensor running_best_dist =
+                    Tensor::Full({tile_queries, k_bucket},
+                                 std::numeric_limits<T>::max(), dtype, device);
+            Tensor running_best_idx = Tensor::Full(
+                    {tile_queries, k_bucket}, TIndex(-1), index_dtype, device);
+
+            for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
+                const int64_t num_queries_iter =
+                        std::min(tile_queries, num_queries_i - q);
+                Tensor queries_tile =
+                        queries_i.Slice(0, q, q + num_queries_iter);
+                Tensor query_norms_tile =
+                        query_norms.Slice(0, q, q + num_queries_iter);
+
+                // Reset running best for this query tile.
+                Tensor rb_dist =
+                        running_best_dist.Slice(0, 0, num_queries_iter);
+                Tensor rb_idx = running_best_idx.Slice(0, 0, num_queries_iter);
+                rb_dist.Fill(std::numeric_limits<T>::max());
+                rb_idx.Fill(TIndex(-1));
+
+                for (int64_t p = 0; p < num_points_i; p += tile_points) {
+                    const int64_t num_points_iter =
+                            std::min(tile_points, num_points_i - p);
+                    Tensor points_tile =
+                            points_i.Slice(0, p, p + num_points_iter);
+                    Tensor point_norms_tile =
+                            point_norms.Slice(0, p, p + num_points_iter);
+                    Tensor temp_view =
+                            temp_distances.Slice(0, 0, num_queries_iter)
+                                    .Slice(1, 0, num_points_iter);
+
+                    // Step 1: AddMM → temp_view = −2*q*p
+                    AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
+
+                    // Step 2: Fused |p|² add + top-K update (P2, C1, C4)
+                    DispatchUpdateTopKFromTile<T, TIndex>(
+                            queue, temp_view.GetDataPtr<T>(),
+                            temp_view.GetStride(0),
+                            point_norms_tile.GetDataPtr<T>(), num_queries_iter,
+                            num_points_iter, k_bucket, TIndex(p),
+                            rb_dist.GetDataPtr<T>(),
+                            rb_idx.GetDataPtr<TIndex>(),
+                            /*use_threshold=*/false, T(0));
+                }
+
+                // Step 3: Heap-sort + add |q|² → write to final output.
+                DispatchFinalizeTopK<T, TIndex>(
+                        queue, num_queries_iter, rb_dist.GetDataPtr<T>(),
+                        rb_idx.GetDataPtr<TIndex>(),
+                        out_distances.Slice(0, q, q + num_queries_iter)
+                                .GetDataPtr<T>(),
+                        out_indices.Slice(0, q, q + num_queries_iter)
+                                .GetDataPtr<TIndex>(),
+                        batch_knn, k_bucket, query_norms_tile.GetDataPtr<T>());
+            }
+        } else {
+            // ── Large-k path (k > kSYCLKnnMidKMax): legacy Select + Merge ──
+            // P2: |q|² not in tile; AddQueryNormsToDistancesSYCL adds it once.
+            Tensor tile_sort_indices = Tensor::Empty(
+                    {tile_queries, tile_points}, index_dtype, device);
+            Tensor tile_top_indices = Tensor::Empty({tile_queries, batch_knn},
+                                                    index_dtype, device);
+            Tensor tile_top_distances =
+                    Tensor::Empty({tile_queries, batch_knn}, dtype, device);
+            Tensor best_indices = Tensor::Empty({tile_queries, batch_knn},
+                                                index_dtype, device);
+            Tensor best_distances =
+                    Tensor::Empty({tile_queries, batch_knn}, dtype, device);
+            Tensor merged_indices = Tensor::Empty({tile_queries, batch_knn},
                                                   index_dtype, device);
+            Tensor merged_distances =
+                    Tensor::Empty({tile_queries, batch_knn}, dtype, device);
+            Tensor merge_scratch = Tensor::Empty({tile_queries, 2 * batch_knn},
+                                                 index_dtype, device);
 
-        for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
-            int64_t num_queries_iter =
-                    std::min(tile_queries, num_queries_i - q);
-            Tensor queries_tile = queries_i.Slice(0, q, q + num_queries_iter);
-            Tensor query_norms_tile =
-                    query_norms.Slice(0, q, q + num_queries_iter);
+            for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
+                const int64_t num_queries_iter =
+                        std::min(tile_queries, num_queries_i - q);
+                Tensor queries_tile =
+                        queries_i.Slice(0, q, q + num_queries_iter);
+                Tensor query_norms_tile =
+                        query_norms.Slice(0, q, q + num_queries_iter);
 
-            Tensor best_indices_view =
-                    best_indices.Slice(0, 0, num_queries_iter);
-            Tensor best_distances_view =
-                    best_distances.Slice(0, 0, num_queries_iter);
-            best_indices_view.Fill(TIndex(-1));
-            best_distances_view.Fill(std::numeric_limits<T>::max());
+                Tensor biv = best_indices.Slice(0, 0, num_queries_iter);
+                Tensor bdv = best_distances.Slice(0, 0, num_queries_iter);
+                biv.Fill(TIndex(-1));
+                bdv.Fill(std::numeric_limits<T>::max());
 
-            for (int64_t p = 0; p < num_points_i; p += tile_points) {
-                int64_t num_points_iter =
-                        std::min(tile_points, num_points_i - p);
-                Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
-                Tensor point_norms_tile =
-                        point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_distances_view =
-                        temp_distances.Slice(0, 0, num_queries_iter)
-                                .Slice(1, 0, num_points_iter);
+                for (int64_t p = 0; p < num_points_i; p += tile_points) {
+                    const int64_t num_points_iter =
+                            std::min(tile_points, num_points_i - p);
+                    Tensor points_tile =
+                            points_i.Slice(0, p, p + num_points_iter);
+                    Tensor point_norms_tile =
+                            point_norms.Slice(0, p, p + num_points_iter);
+                    Tensor temp_view =
+                            temp_distances.Slice(0, 0, num_queries_iter)
+                                    .Slice(1, 0, num_points_iter);
 
-                AddMM(queries_tile, points_tile.T(), temp_distances_view, -2.0,
-                      0.0);
-                temp_distances_view.Add_(
-                        point_norms_tile.View({1, num_points_iter}));
-                temp_distances_view.Add_(
-                        query_norms_tile.View({num_queries_iter, 1}));
+                    // AddMM → partial dist (−2qp)
+                    AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
+                    // P2: add |p|² only (skip |q|²)
+                    temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
 
-                Tensor tile_top_indices_view =
-                        tile_top_indices.Slice(0, 0, num_queries_iter);
-                Tensor tile_top_distances_view =
-                        tile_top_distances.Slice(0, 0, num_queries_iter);
-                Tensor merged_indices_view =
-                        merged_indices.Slice(0, 0, num_queries_iter);
-                Tensor merged_distances_view =
-                        merged_distances.Slice(0, 0, num_queries_iter);
+                    Tensor ttiv =
+                            tile_top_indices.Slice(0, 0, num_queries_iter);
+                    Tensor ttdv =
+                            tile_top_distances.Slice(0, 0, num_queries_iter);
+                    Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
+                    Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
 
-                SelectTopKQueriesSYCL<T, TIndex>(
-                        device, temp_distances_view.GetDataPtr<T>(),
-                        temp_distances_view.GetStride(0), num_queries_iter,
-                        num_points_iter, batch_knn, TIndex(p),
-                        tile_sort_indices.GetDataPtr<TIndex>(),
-                        tile_sort_indices.GetStride(0),
-                        tile_top_indices_view.GetDataPtr<TIndex>(),
-                        tile_top_distances_view.GetDataPtr<T>(), batch_knn);
-                MergeTopKQueriesSYCL<T, TIndex>(
-                        device, best_distances_view.GetDataPtr<T>(),
-                        best_indices_view.GetDataPtr<TIndex>(), batch_knn,
-                        tile_top_distances_view.GetDataPtr<T>(),
-                        tile_top_indices_view.GetDataPtr<TIndex>(), batch_knn,
-                        num_queries_iter, batch_knn,
-                        merge_sort_indices.GetDataPtr<TIndex>(),
-                        merge_sort_indices.GetStride(0),
-                        merged_indices_view.GetDataPtr<TIndex>(),
-                        merged_distances_view.GetDataPtr<T>(), batch_knn);
+                    SelectTopKQueriesSYCL<T, TIndex>(
+                            device, temp_view.GetDataPtr<T>(),
+                            temp_view.GetStride(0), num_queries_iter,
+                            num_points_iter, batch_knn, TIndex(p),
+                            tile_sort_indices.GetDataPtr<TIndex>(),
+                            tile_sort_indices.GetStride(0),
+                            ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
+                            batch_knn);
+                    MergeTopKQueriesSYCL<T, TIndex>(
+                            device, bdv.GetDataPtr<T>(),
+                            biv.GetDataPtr<TIndex>(), batch_knn,
+                            ttdv.GetDataPtr<T>(), ttiv.GetDataPtr<TIndex>(),
+                            batch_knn, num_queries_iter, batch_knn,
+                            merge_scratch.GetDataPtr<TIndex>(),
+                            merge_scratch.GetStride(0),
+                            miv.GetDataPtr<TIndex>(), mdv.GetDataPtr<T>(),
+                            batch_knn);
 
-                best_indices_view.AsRvalue() = merged_indices_view;
-                best_distances_view.AsRvalue() = merged_distances_view;
+                    biv.AsRvalue() = miv;
+                    bdv.AsRvalue() = mdv;
+                }
+
+                // Write partial results to output; |q|² added after all tiles.
+                out_indices.Slice(0, q, q + num_queries_iter).AsRvalue() = biv;
+                out_distances.Slice(0, q, q + num_queries_iter).AsRvalue() =
+                        bdv;
             }
 
-            out_indices.Slice(0, q, q + num_queries_iter).AsRvalue() =
-                    best_indices_view;
-            out_distances.Slice(0, q, q + num_queries_iter).AsRvalue() =
-                    best_distances_view;
+            // P2: add |q|² once per query to the final distances.
+            AddQueryNormsToDistancesSYCL<T, TIndex>(
+                    device, num_queries_i, batch_knn, indices_ptr,
+                    distances_ptr, query_norms.GetDataPtr<T>());
         }
 
         queue.wait_and_throw();
     }
 
+    // Assemble the final output tensors from per-batch allocators.
     if (batch_size == 1) {
         neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
                 {queries.GetShape(0), batch_knn});
@@ -731,9 +313,8 @@ void KnnSearchSYCL(const Tensor& points,
 
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
     int64_t neighbors_size = 0;
-    for (const auto& allocator : batch_output_allocators) {
-        neighbors_size += allocator.NeighborsIndex().GetShape(0);
-    }
+    for (const auto& alloc : batch_output_allocators)
+        neighbors_size += alloc.NeighborsIndex().GetShape(0);
 
     TIndex* neighbors_index_ptr;
     T* neighbors_distance_ptr;
@@ -741,41 +322,42 @@ void KnnSearchSYCL(const Tensor& points,
     output_allocator.AllocDistances(&neighbors_distance_ptr, neighbors_size);
 
     int64_t offset = 0;
-    for (const auto& allocator : batch_output_allocators) {
-        const int64_t batch_size_i = allocator.NeighborsIndex().GetShape(0);
-        if (batch_size_i == 0) {
-            continue;
-        }
+    for (const auto& alloc : batch_output_allocators) {
+        const int64_t sz = alloc.NeighborsIndex().GetShape(0);
+        if (sz == 0) continue;
         MemoryManager::Memcpy(neighbors_index_ptr + offset, device,
-                              allocator.IndicesPtr(), device,
-                              sizeof(TIndex) * batch_size_i);
+                              alloc.IndicesPtr(), device, sizeof(TIndex) * sz);
         MemoryManager::Memcpy(neighbors_distance_ptr + offset, device,
-                              allocator.DistancesPtr(), device,
-                              sizeof(T) * batch_size_i);
-        offset += batch_size_i;
+                              alloc.DistancesPtr(), device, sizeof(T) * sz);
+        offset += sz;
     }
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-// Fixed-radius search using two tiled passes: one to count matches and one to
-// gather indices and optional distances.
+// Fixed-radius search.
+//
+// Two tiled passes: count (to size the output) then gather.
+// P2: the query-norm Add_ pass is dropped.  CountWithinThreshold and
+//     GatherWithinThreshold compute per-query adjusted thresholds internally
+//     (threshold_q = radius² − |q|²) and add |q|² back to returned distances.
 template <class T, class TIndex>
 void FixedRadiusSearchSYCL(const Tensor& points,
                            const Tensor& queries,
                            double radius,
                            const Tensor& points_row_splits,
                            const Tensor& queries_row_splits,
-                           const Tensor&,
-                           const Tensor&,
-                           const Tensor&,
+                           const Tensor& /*hash_table_splits*/,
+                           const Tensor& /*hash_table_index*/,
+                           const Tensor& /*hash_table_cell_splits*/,
                            const Metric metric,
                            const bool ignore_query_point,
                            const bool return_distances,
                            const bool sort,
                            Tensor& neighbors_index,
                            Tensor& neighbors_row_splits,
-                           Tensor& neighbors_distance) {
+                           Tensor& neighbors_distance,
+                           int64_t tile_bytes) {
     if (metric != Metric::L2) {
         utility::LogError("SYCL fixed radius search only supports L2 metric.");
     }
@@ -788,19 +370,21 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const Dtype dtype = points.GetDtype();
-    const T threshold = static_cast<T>(radius * radius);
+    const T radius_sq = static_cast<T>(radius * radius);
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+
     Tensor counts = Tensor::Zeros({num_queries}, Int64, device);
 
-    int64_t tile_queries = 0;
-    int64_t tile_points = 0;
-    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_queries,
-                       tile_points);
+    int64_t tile_queries = 0, tile_points = 0;
+    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
+                       tile_queries, tile_points);
     Tensor temp_distances =
             Tensor::Empty({tile_queries, tile_points}, dtype, device);
 
-    for (int batch_idx = 0; batch_idx < points_row_splits.GetShape(0) - 1;
-         ++batch_idx) {
+    const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
+
+    // ── Pass 1: count ────────────────────────────────────────────────────────
+    for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         const int64_t point_begin =
                 points_row_splits[batch_idx].Item<int64_t>();
         const int64_t point_end =
@@ -831,32 +415,31 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
                 Tensor point_norms_tile =
                         point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_distances_view =
-                        temp_distances.Slice(0, 0, num_queries_iter)
-                                .Slice(1, 0, num_points_iter);
+                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
+                                           .Slice(1, 0, num_points_iter);
 
-                AddMM(queries_tile, points_tile.T(), temp_distances_view, -2.0,
-                      0.0);
-                temp_distances_view.Add_(
-                        point_norms_tile.View({1, num_points_iter}));
-                temp_distances_view.Add_(
-                        query_norms_tile.View({num_queries_iter, 1}));
-                CountWithinThresholdQueriesSYCL(
-                        device, temp_distances_view.GetDataPtr<T>(),
-                        temp_distances_view.GetStride(0), num_queries_iter,
-                        num_points_iter, threshold, counts_ptr);
+                // Partial dist = −2qp + |p|² (no |q|²).
+                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
+                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
+
+                // P2: CountWithinThreshold uses per-query adjusted threshold.
+                CountWithinThresholdQueriesSYCL<T>(
+                        device, temp_view.GetDataPtr<T>(),
+                        temp_view.GetStride(0), num_queries_iter,
+                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
+                        radius_sq, counts_ptr);
             }
         }
     }
 
     queue.wait_and_throw();
 
+    // Build row_splits from counts.
     Tensor counts_cpu = counts.To(Device("CPU:0"));
     const int64_t* counts_cpu_ptr = counts_cpu.GetDataPtr<int64_t>();
     std::vector<int64_t> row_splits(num_queries + 1, 0);
-    for (int64_t q = 0; q < num_queries; ++q) {
+    for (int64_t q = 0; q < num_queries; ++q)
         row_splits[q + 1] = row_splits[q] + counts_cpu_ptr[q];
-    }
     neighbors_row_splits =
             Tensor(row_splits, {num_queries + 1}, Int64).To(device);
 
@@ -874,8 +457,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
         output_allocator.AllocDistances(&neighbors_distance_ptr, 0);
     }
 
-    for (int batch_idx = 0; batch_idx < points_row_splits.GetShape(0) - 1;
-         ++batch_idx) {
+    // ── Pass 2: gather ───────────────────────────────────────────────────────
+    for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         const int64_t point_begin =
                 points_row_splits[batch_idx].Item<int64_t>();
         const int64_t point_end =
@@ -906,56 +489,48 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
                 Tensor point_norms_tile =
                         point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_distances_view =
-                        temp_distances.Slice(0, 0, num_queries_iter)
-                                .Slice(1, 0, num_points_iter);
+                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
+                                           .Slice(1, 0, num_points_iter);
 
-                AddMM(queries_tile, points_tile.T(), temp_distances_view, -2.0,
-                      0.0);
-                temp_distances_view.Add_(
-                        point_norms_tile.View({1, num_points_iter}));
-                temp_distances_view.Add_(
-                        query_norms_tile.View({num_queries_iter, 1}));
+                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
+                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
+
                 GatherWithinThresholdQueriesSYCL<T, TIndex>(
-                        device, temp_distances_view.GetDataPtr<T>(),
-                        temp_distances_view.GetStride(0), num_queries_iter,
-                        num_points_iter, threshold, TIndex(point_begin + p),
-                        offsets_ptr, neighbors_index_ptr,
-                        neighbors_distance_ptr);
+                        device, temp_view.GetDataPtr<T>(),
+                        temp_view.GetStride(0), num_queries_iter,
+                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
+                        radius_sq, TIndex(point_begin + p), offsets_ptr,
+                        neighbors_index_ptr,
+                        (return_distances || sort) ? neighbors_distance_ptr
+                                                   : nullptr);
             }
         }
     }
 
     queue.wait_and_throw();
 
-    if (sort && num_queries > 0) {
-        const int64_t* row_splits_ptr =
-                neighbors_row_splits.GetDataPtr<int64_t>();
+    if (sort && row_splits.back() > 0) {
+        // Per-query insertion sort on distances (already full L2 from Gather).
+        const int64_t* rs_ptr = neighbors_row_splits.GetDataPtr<int64_t>();
         queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
             const int64_t q = id[0];
-            const int64_t start = row_splits_ptr[q];
-            const int64_t end = row_splits_ptr[q + 1];
+            const int64_t start = rs_ptr[q], end = rs_ptr[q + 1];
             const int64_t len = end - start;
-            if (len <= 1) {
-                return;
-            }
-
-            TIndex* segment_indices = neighbors_index_ptr + start;
-            T* segment_distances = neighbors_distance_ptr + start;
-
+            if (len <= 1) return;
+            TIndex* seg_i = neighbors_index_ptr + start;
+            T* seg_d = neighbors_distance_ptr + start;
             for (int64_t i = 1; i < len; ++i) {
-                T key_dist = segment_distances[i];
-                TIndex key_idx = segment_indices[i];
+                T kd = seg_d[i];
+                TIndex ki = seg_i[i];
                 int64_t j = i - 1;
-                while (j >= 0 && (segment_distances[j] > key_dist ||
-                                  (segment_distances[j] == key_dist &&
-                                   segment_indices[j] > key_idx))) {
-                    segment_distances[j + 1] = segment_distances[j];
-                    segment_indices[j + 1] = segment_indices[j];
-                    j = j - 1;
+                while (j >= 0 &&
+                       (seg_d[j] > kd || (seg_d[j] == kd && seg_i[j] > ki))) {
+                    seg_d[j + 1] = seg_d[j];
+                    seg_i[j + 1] = seg_i[j];
+                    --j;
                 }
-                segment_distances[j + 1] = key_dist;
-                segment_indices[j + 1] = key_idx;
+                seg_d[j + 1] = kd;
+                seg_i[j + 1] = ki;
             }
         });
         queue.wait_and_throw();
@@ -963,13 +538,15 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
-    if (!return_distances) {
+    if (!return_distances)
         neighbors_distance = Tensor({0}, Dtype::FromType<T>(), device);
-    }
 }
 
-// Hybrid search counts all neighbors within radius while keeping only the best
-// max_knn results per query in fixed-size output tensors.
+// Hybrid search: count all neighbors within radius while keeping only the
+// best max_knn per query in fixed-size output tensors.
+//
+// P2: |q|² is deferred to AddQueryNormsToHybridDistancesSYCL.
+// SelectTopKQueriesSYCL receives per-query adjusted thresholds.
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -977,13 +554,14 @@ void HybridSearchSYCL(const Tensor& points,
                       int max_knn,
                       const Tensor& points_row_splits,
                       const Tensor& queries_row_splits,
-                      const Tensor&,
-                      const Tensor&,
-                      const Tensor&,
+                      const Tensor& /*hash_table_splits*/,
+                      const Tensor& /*hash_table_index*/,
+                      const Tensor& /*hash_table_cell_splits*/,
                       const Metric metric,
                       Tensor& neighbors_index,
                       Tensor& neighbors_count,
-                      Tensor& neighbors_distance) {
+                      Tensor& neighbors_distance,
+                      int64_t tile_bytes) {
     if (metric != Metric::L2) {
         utility::LogError("SYCL hybrid search only supports L2 metric.");
     }
@@ -991,7 +569,7 @@ void HybridSearchSYCL(const Tensor& points,
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const Dtype dtype = points.GetDtype();
-    const T threshold = static_cast<T>(radius * radius);
+    const T radius_sq = static_cast<T>(radius * radius);
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
@@ -1009,27 +587,31 @@ void HybridSearchSYCL(const Tensor& points,
     Tensor out_distances =
             output_allocator.NeighborsDistance().View({num_queries, max_knn});
 
-    int64_t tile_queries = 0;
-    int64_t tile_points = 0;
-    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_queries,
-                       tile_points);
+    int64_t tile_queries = 0, tile_points = 0;
+    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
+                       tile_queries, tile_points);
     Tensor temp_distances =
             Tensor::Empty({tile_queries, tile_points}, dtype, device);
-    Tensor tile_sort_indices = Tensor::Empty({tile_queries, tile_points},
-                                             Dtype::FromType<TIndex>(), device);
-    Tensor tile_top_indices = Tensor::Empty({tile_queries, max_knn},
-                                            Dtype::FromType<TIndex>(), device);
+    const Dtype idx_dtype = Dtype::FromType<TIndex>();
+    Tensor tile_sort_indices =
+            Tensor::Empty({tile_queries, tile_points}, idx_dtype, device);
+    Tensor tile_top_indices =
+            Tensor::Empty({tile_queries, max_knn}, idx_dtype, device);
     Tensor tile_top_distances =
             Tensor::Empty({tile_queries, max_knn}, dtype, device);
-    Tensor merged_indices = Tensor::Empty({tile_queries, max_knn},
-                                          Dtype::FromType<TIndex>(), device);
+    Tensor merged_indices =
+            Tensor::Empty({tile_queries, max_knn}, idx_dtype, device);
     Tensor merged_distances =
             Tensor::Empty({tile_queries, max_knn}, dtype, device);
-    Tensor merge_sort_indices = Tensor::Empty(
-            {tile_queries, 2 * max_knn}, Dtype::FromType<TIndex>(), device);
+    Tensor merge_scratch =
+            Tensor::Empty({tile_queries, 2 * max_knn}, idx_dtype, device);
 
-    for (int batch_idx = 0; batch_idx < points_row_splits.GetShape(0) - 1;
-         ++batch_idx) {
+    // Per-query adjusted threshold tensor (device memory, one T per query
+    // tile).
+    Tensor adj_threshold = Tensor::Empty({tile_queries}, dtype, device);
+
+    const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
+    for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         const int64_t point_begin =
                 points_row_splits[batch_idx].Item<int64_t>();
         const int64_t point_end =
@@ -1051,12 +633,23 @@ void HybridSearchSYCL(const Tensor& points,
             Tensor queries_tile = queries_i.Slice(0, q, q + num_queries_iter);
             Tensor query_norms_tile =
                     query_norms.Slice(0, q, q + num_queries_iter);
-            Tensor best_indices_view = out_indices.Slice(
+            Tensor best_iv = out_indices.Slice(
                     0, query_begin + q, query_begin + q + num_queries_iter);
-            Tensor best_distances_view = out_distances.Slice(
+            Tensor best_dv = out_distances.Slice(
                     0, query_begin + q, query_begin + q + num_queries_iter);
             int64_t* counts_ptr =
                     counts.GetDataPtr<int64_t>() + query_begin + q;
+
+            // Per-query adjusted threshold: radius² − |q|².
+            // Compute on device and slice to query tile size.
+            {
+                const T rsq = radius_sq;
+                const T* qn = query_norms_tile.GetDataPtr<T>();
+                T* at = adj_threshold.GetDataPtr<T>();
+                queue.parallel_for(
+                        sycl::range<1>(num_queries_iter),
+                        [=](sycl::id<1> id) { at[id[0]] = rsq - qn[id[0]]; });
+            }
 
             for (int64_t p = 0; p < num_points_i; p += tile_points) {
                 const int64_t num_points_iter =
@@ -1064,53 +657,47 @@ void HybridSearchSYCL(const Tensor& points,
                 Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
                 Tensor point_norms_tile =
                         point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_distances_view =
-                        temp_distances.Slice(0, 0, num_queries_iter)
-                                .Slice(1, 0, num_points_iter);
+                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
+                                           .Slice(1, 0, num_points_iter);
 
-                AddMM(queries_tile, points_tile.T(), temp_distances_view, -2.0,
-                      0.0);
-                temp_distances_view.Add_(
-                        point_norms_tile.View({1, num_points_iter}));
-                temp_distances_view.Add_(
-                        query_norms_tile.View({num_queries_iter, 1}));
+                // Partial dist = −2qp + |p|² (no |q|²).
+                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
+                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
 
-                CountWithinThresholdQueriesSYCL(
-                        device, temp_distances_view.GetDataPtr<T>(),
-                        temp_distances_view.GetStride(0), num_queries_iter,
-                        num_points_iter, threshold, counts_ptr);
+                // Count: uses per-query adjusted threshold (P2).
+                CountWithinThresholdQueriesSYCL<T>(
+                        device, temp_view.GetDataPtr<T>(),
+                        temp_view.GetStride(0), num_queries_iter,
+                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
+                        radius_sq, counts_ptr);
 
-                Tensor tile_top_indices_view =
-                        tile_top_indices.Slice(0, 0, num_queries_iter);
-                Tensor tile_top_distances_view =
-                        tile_top_distances.Slice(0, 0, num_queries_iter);
-                Tensor merged_indices_view =
-                        merged_indices.Slice(0, 0, num_queries_iter);
-                Tensor merged_distances_view =
-                        merged_distances.Slice(0, 0, num_queries_iter);
+                // Select top-max_knn within threshold.
+                Tensor ttiv = tile_top_indices.Slice(0, 0, num_queries_iter);
+                Tensor ttdv = tile_top_distances.Slice(0, 0, num_queries_iter);
+                Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
+                Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
 
                 SelectTopKQueriesSYCL<T, TIndex>(
-                        device, temp_distances_view.GetDataPtr<T>(),
-                        temp_distances_view.GetStride(0), num_queries_iter,
+                        device, temp_view.GetDataPtr<T>(),
+                        temp_view.GetStride(0), num_queries_iter,
                         num_points_iter, max_knn, TIndex(point_begin + p),
                         tile_sort_indices.GetDataPtr<TIndex>(),
                         tile_sort_indices.GetStride(0),
-                        tile_top_indices_view.GetDataPtr<TIndex>(),
-                        tile_top_distances_view.GetDataPtr<T>(), max_knn, true,
-                        threshold);
+                        ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
+                        max_knn,
+                        /*use_threshold=*/true, adj_threshold.GetDataPtr<T>(),
+                        /*scalar_threshold=*/T(0));
                 MergeTopKQueriesSYCL<T, TIndex>(
-                        device, best_distances_view.GetDataPtr<T>(),
-                        best_indices_view.GetDataPtr<TIndex>(), max_knn,
-                        tile_top_distances_view.GetDataPtr<T>(),
-                        tile_top_indices_view.GetDataPtr<TIndex>(), max_knn,
-                        num_queries_iter, max_knn,
-                        merge_sort_indices.GetDataPtr<TIndex>(),
-                        merge_sort_indices.GetStride(0),
-                        merged_indices_view.GetDataPtr<TIndex>(),
-                        merged_distances_view.GetDataPtr<T>(), max_knn);
+                        device, best_dv.GetDataPtr<T>(),
+                        best_iv.GetDataPtr<TIndex>(), max_knn,
+                        ttdv.GetDataPtr<T>(), ttiv.GetDataPtr<TIndex>(),
+                        max_knn, num_queries_iter, max_knn,
+                        merge_scratch.GetDataPtr<TIndex>(),
+                        merge_scratch.GetStride(0), miv.GetDataPtr<TIndex>(),
+                        mdv.GetDataPtr<T>(), max_knn);
 
-                best_indices_view.AsRvalue() = merged_indices_view;
-                best_distances_view.AsRvalue() = merged_distances_view;
+                best_iv.AsRvalue() = miv;
+                best_dv.AsRvalue() = mdv;
             }
         }
     }
@@ -1124,6 +711,13 @@ void HybridSearchSYCL(const Tensor& points,
                                          neighbors_index.GetDataPtr<TIndex>(),
                                          neighbors_distance.GetDataPtr<T>(),
                                          neighbors_count.GetDataPtr<TIndex>());
+
+    // P2: add |q|² back to the partial distances stored in neighbors_distance.
+    AddQueryNormsToHybridDistancesSYCL<T, TIndex>(
+            device, num_queries, max_knn, neighbors_index.GetDataPtr<TIndex>(),
+            neighbors_distance.GetDataPtr<T>(),
+            queries.Mul(queries).Sum({1}).GetDataPtr<T>());
+
     queue.wait_and_throw();
 }
 
@@ -1132,20 +726,22 @@ void HybridSearchSYCL(const Tensor& points,
             const Tensor& points, const Tensor& points_row_splits,             \
             const Tensor& queries, const Tensor& queries_row_splits, int knn,  \
             Tensor& neighbors_index, Tensor& neighbors_row_splits,             \
-            Tensor& neighbors_distance);                                       \
+            Tensor& neighbors_distance, int64_t tile_bytes);                   \
     template void FixedRadiusSearchSYCL<T, TIndex>(                            \
             const Tensor& points, const Tensor& queries, double radius,        \
             const Tensor& points_row_splits, const Tensor& queries_row_splits, \
             const Tensor&, const Tensor&, const Tensor&, const Metric metric,  \
             const bool ignore_query_point, const bool return_distances,        \
             const bool sort, Tensor& neighbors_index,                          \
-            Tensor& neighbors_row_splits, Tensor& neighbors_distance);         \
+            Tensor& neighbors_row_splits, Tensor& neighbors_distance,          \
+            int64_t tile_bytes);                                               \
     template void HybridSearchSYCL<T, TIndex>(                                 \
             const Tensor& points, const Tensor& queries, double radius,        \
             int max_knn, const Tensor& points_row_splits,                      \
             const Tensor& queries_row_splits, const Tensor&, const Tensor&,    \
             const Tensor&, const Metric metric, Tensor& neighbors_index,       \
-            Tensor& neighbors_count, Tensor& neighbors_distance);
+            Tensor& neighbors_count, Tensor& neighbors_distance,               \
+            int64_t tile_bytes);
 
 INSTANTIATE(float, int32_t)
 INSTANTIATE(float, int64_t)

@@ -15,7 +15,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-FixedRadiusIndex::FixedRadiusIndex() {};
+FixedRadiusIndex::FixedRadiusIndex(){};
 
 FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
                                    double radius) {
@@ -31,7 +31,17 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, radius, index_dtype);
 };
 
-FixedRadiusIndex::~FixedRadiusIndex() {};
+FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
+                                   double radius,
+                                   const Dtype &index_dtype,
+                                   int64_t tile_bytes)
+    : tile_bytes_(tile_bytes) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
+    SetTensorData(dataset_points, radius, index_dtype);
+};
+
+FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius,
@@ -185,7 +195,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     } else if (device.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
-            FixedRadiusSearchSYCL<scalar_t, int_t>(RADIUS_PARAMETERS);
+            FixedRadiusSearchSYCL<scalar_t, int_t>(RADIUS_PARAMETERS,
+                                                   tile_bytes_);
         });
 #else
         utility::LogError(
@@ -264,7 +275,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     } else if (device.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
-            HybridSearchSYCL<scalar_t, int_t>(HYBRID_PARAMETERS);
+            HybridSearchSYCL<scalar_t, int_t>(HYBRID_PARAMETERS, tile_bytes_);
         });
 #else
         utility::LogError(

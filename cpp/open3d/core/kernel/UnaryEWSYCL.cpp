@@ -13,6 +13,7 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/ParallelFor.h"
+#include "open3d/core/SYCLBlockCopyDispatch.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -155,15 +156,25 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                                                 // on same SYCL device
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             if (src.GetDtype().IsObject()) {
-                // TODO: This is likely very slow. Coalesce into less memcpy
-                // calls.
-                int64_t object_byte_size = src.GetDtype().ByteSize();
-                for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
-                    const void* src_ptr = indexer.GetInputPtr(0, i);
-                    void* dst_ptr = indexer.GetOutputPtr(i);
-                    queue.memcpy(dst_ptr, src_ptr, object_byte_size);
-                }
-                queue;
+                const int64_t object_byte_size = src.GetDtype().ByteSize();
+                const int64_t block_size =
+                        GetLargestAlignedObjectBlockSize(object_byte_size);
+                const int64_t n = indexer.NumWorkloads();
+                DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
+                    const int64_t blocks = object_byte_size / block_size;
+                    queue.parallel_for(n, [indexer, blocks](int64_t i) {
+                        // reinterpret_cast required: GetInputPtr returns char*
+                        // and block_t may be sycl::vec<> which is not
+                        // trivially related to char via static_cast.
+                        const block_t* src = reinterpret_cast<const block_t*>(
+                                indexer.GetInputPtr(0, i));
+                        block_t* dst = reinterpret_cast<block_t*>(
+                                indexer.GetOutputPtr(i));
+                        for (int64_t b = 0; b < blocks; ++b) {
+                            dst[b] = src[b];
+                        }
+                    });
+                });
             } else {
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
                     using src_t = scalar_t;

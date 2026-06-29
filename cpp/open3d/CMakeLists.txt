@@ -57,6 +57,17 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
 
+if(ENABLE_SANITIZER)
+    message(STATUS "Enabling sanitizer: ${ENABLE_SANITIZER}")
+    if(MSVC)
+        add_compile_options(/fsanitize=${ENABLE_SANITIZER})
+        add_link_options(/fsanitize=${ENABLE_SANITIZER})
+    else()
+        add_compile_options(-fsanitize=${ENABLE_SANITIZER} -fno-omit-frame-pointer -g)
+        add_link_options(-fsanitize=${ENABLE_SANITIZER})
+    endif()
+endif()
+
 add_library(Open3D)
 
 add_subdirectory(camera)
@@ -152,17 +163,16 @@ endif()
 # GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
 # Gaussian splatting.  The context class detects the display server at runtime
 # and uses GLX on X11, EGL on Wayland.
-if (NOT APPLE)
-    find_package(OpenGL COMPONENTS EGL)
-    if (OpenGL_EGL_FOUND)
-        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
-    endif()
-    find_package(X11 QUIET)
-    if (X11_FOUND)
-        target_link_libraries(Open3D PRIVATE X11::X11)
-    endif()
-endif()
-
+#if (NOT APPLE)
+#    find_package(OpenGL COMPONENTS EGL)
+#    if (OpenGL_EGL_FOUND)
+#        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
+#    endif()
+#    find_package(X11 QUIET)
+#    if (X11_FOUND)
+#        target_link_libraries(Open3D PRIVATE X11::X11)
+#    endif()
+#endif()
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

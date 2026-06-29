@@ -327,3 +327,112 @@ def test_knn_search_sycl_matches_cpu(dtype):
                                distances_sycl.cpu().numpy(),
                                rtol=1e-5,
                                atol=0)
+
+
+# ── SYCL correctness regression tests ────────────────────────────────────────
+# These tests target specific bug fixes in the SYCL NNS implementation.
+# They are skipped when no SYCL GPU is available (i.e. only the CPU fallback
+# device is listed).  Each test documents the bug it covers.
+
+
+def _sycl_skip_if_no_gpu():
+    """Skip the calling test when no SYCL GPU is present."""
+    if len(o3c.sycl.get_available_devices()) <= 1:
+        pytest.skip("SYCL GPU not available.")
+
+
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_knn_search_sycl_coincident_c1(dtype):
+    """C1: a query coincident with a dataset point must produce distance >= 0.
+
+    Floating-point rounding in −2*q*p + |p|² can yield a tiny negative value
+    when q == p.  The fix clamps partial distances to zero before comparison.
+    """
+    _sycl_skip_if_no_gpu()
+    sycl = o3c.Device("SYCL:0")
+
+    # Place a query exactly on one of the dataset points.
+    dataset = o3c.Tensor([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                         dtype=dtype,
+                         device=sycl)
+    query = o3c.Tensor([[0.0, 0.0, 0.0]], dtype=dtype, device=sycl)
+
+    nns = o3c.nns.NearestNeighborSearch(dataset)
+    nns.knn_index()
+    _, distances = nns.knn_search(query, 1)
+
+    dist = distances.cpu().numpy()[0, 0]
+    assert dist >= 0.0, f"C1 violated: distance {dist} < 0 for coincident query"
+
+
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_knn_search_sycl_equidistant_tiebreak_c4(dtype):
+    """C4: equidistant neighbors must be returned with consistent tie-breaking.
+
+    When two dataset points are the same distance from a query the SYCL result
+    must agree with the CPU result (smaller global index wins).
+    """
+    _sycl_skip_if_no_gpu()
+    sycl = o3c.Device("SYCL:0")
+
+    # Three points, last two equidistant from the query.
+    dataset_np = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [-1.0, 0.0, 0.0]],
+                          dtype=np.float32)
+    query_np = np.array([[0.0, 0.0, 0.0]], dtype=np.float32)
+
+    dataset_cpu = o3c.Tensor(dataset_np,
+                             dtype=dtype,
+                             device=o3c.Device("CPU:0"))
+    query_cpu = o3c.Tensor(query_np, dtype=dtype, device=o3c.Device("CPU:0"))
+
+    nns_cpu = o3c.nns.NearestNeighborSearch(dataset_cpu)
+    nns_cpu.knn_index()
+    indices_cpu, distances_cpu = nns_cpu.knn_search(query_cpu, 3)
+
+    dataset_sycl = dataset_cpu.to(sycl)
+    query_sycl = query_cpu.to(sycl)
+
+    nns_sycl = o3c.nns.NearestNeighborSearch(dataset_sycl)
+    nns_sycl.knn_index()
+    indices_sycl, distances_sycl = nns_sycl.knn_search(query_sycl, 3)
+
+    np.testing.assert_equal(indices_cpu.numpy(), indices_sycl.cpu().numpy())
+    np.testing.assert_allclose(distances_cpu.numpy(),
+                               distances_sycl.cpu().numpy(),
+                               rtol=1e-5,
+                               atol=1e-6)
+
+
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_knn_search_sycl_k_exceeds_num_points_c5(dtype):
+    """C5: requesting knn > num_points must not crash or return garbage.
+
+    The SYCL driver must clamp the effective k per batch so that index and
+    distance buffers are not read out-of-bounds.
+    """
+    _sycl_skip_if_no_gpu()
+    sycl = o3c.Device("SYCL:0")
+
+    dataset_np = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+                          dtype=np.float32)
+    query_np = np.array([[0.1, 0.0, 0.0]], dtype=np.float32)
+
+    dataset = o3c.Tensor(dataset_np, dtype=dtype, device=sycl)
+    query = o3c.Tensor(query_np, dtype=dtype, device=sycl)
+
+    nns = o3c.nns.NearestNeighborSearch(dataset)
+    nns.knn_index()
+    # Request more neighbors than exist in the dataset.
+    indices, distances = nns.knn_search(query, 10)
+
+    idx_np = indices.cpu().numpy()[0]
+    dist_np = distances.cpu().numpy()[0]
+
+    # All returned indices must be valid.
+    assert np.all(idx_np >= 0) and np.all(
+        idx_np < 3), f"C5: out-of-range indices {idx_np}"
+    # All returned distances must be non-negative.
+    assert np.all(dist_np >= 0), f"C5: negative distances {dist_np}"
+    # The closest point (index 0, distance 0.01) must be first.
+    assert idx_np[0] == 0, f"C5: wrong nearest index {idx_np[0]}, expected 0"
+    np.testing.assert_allclose(dist_np[0], 0.01, rtol=1e-4)

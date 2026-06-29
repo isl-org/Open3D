@@ -35,11 +35,19 @@ std::string CompilerInfo::CXXCompilerVersion() const {
 }
 
 std::string CompilerInfo::CUDACompilerId() const {
-    return std::string(OPEN3D_CUDA_COMPILER_ID);
+    #ifdef BUILD_CUDA_MODULE
+        return std::string(OPEN3D_CUDA_COMPILER_ID);
+    #else
+        return "";
+    #endif
 }
 
 std::string CompilerInfo::CUDACompilerVersion() const {
-    return std::string(OPEN3D_CUDA_COMPILER_VERSION);
+    #ifdef BUILD_CUDA_MODULE
+        return std::string(OPEN3D_CUDA_COMPILER_VERSION);
+    #else
+        return "";
+    #endif
 }
 
 void CompilerInfo::Print() const {

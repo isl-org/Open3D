@@ -64,6 +64,9 @@ public:
     /// Get the size (number of valid entries) of the hash map.
     virtual int64_t Size() const = 0;
 
+    /// Get the number of non-empty slots (occupied + deleted/tombstones).
+    virtual int64_t GetNonEmptyCount() const { return Size(); }
+
     /// Get the number of buckets of the hash map.
     virtual int64_t GetBucketCount() const = 0;
 
