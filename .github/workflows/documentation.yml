@@ -22,6 +22,9 @@ jobs:
   headless-docs:   # Build headless and docs
     permissions:
       contents: write  # Artifact upload and release upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
@@ -48,6 +51,11 @@ jobs:
 
           # Rename from Github PR branch SHA to original branch SHA, if needed.
           mv open3d-*-docs.tar.gz open3d-${GITHUB_SHA}-docs.tar.gz
+
+      - name: Generate docs attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ github.workspace }}/open3d-${{ github.sha }}-docs.tar.gz
 
       - name: Upload docs
         uses: actions/upload-artifact@v4

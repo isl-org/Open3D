@@ -26,6 +26,9 @@ jobs:
   ubuntu-sycl:
     permissions:
       contents: write  # Release upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -53,6 +56,14 @@ jobs:
           else
             docker/docker_test.sh sycl-static
           fi
+
+      - name: Generate artifact attestation
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            ${{ github.workspace }}/open3d*.whl
+            ${{ github.workspace }}/open3d-devel-*.tar.xz
 
       - name: Upload Python wheel and C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
