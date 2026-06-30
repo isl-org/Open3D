@@ -64,6 +64,7 @@
 #include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/GlobalOptimization.h"
 #include "open3d/pipelines/registration/Registration.h"
+#include "open3d/pipelines/registration/SymmetricICP.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
