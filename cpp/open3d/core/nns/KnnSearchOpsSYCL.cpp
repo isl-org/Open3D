@@ -61,6 +61,27 @@ namespace open3d {
 namespace core {
 namespace nns {
 
+// Translate points and queries by a shared reference point to avoid float32
+// catastrophic cancellation in the tiled distance formula |q|^2 - 2q*p + |p|^2.
+// Squared L2 distance is translation-invariant, so the shift does not
+// change any distance or neighbor index, but it shrinks |p|^2 and |q|^2 from
+// O(max_coord^2 * dim) down to O(variance * dim). Without this, high-norm data
+// with small inter-point distances (FPFH features, room-scale scan coordinates)
+// loses all precision when the large near-equal terms are subtracted, returning
+// wrong nearest neighbors. CPU nanoflann computes sum((q-p)^2) directly and is
+// unaffected, which is why only the SYCL matmul path needed this.
+template <class T>
+static void CenterPointsAndQueries(Tensor& points, Tensor& queries) {
+    if (points.GetShape(0) == 0) return;
+    // Use the first point as the shift reference: it is an actual data row (so
+    // it always lies in the data range and can never be NaN/uninitialized) and
+    // needs no reduction. A centroid (Mean) would shrink norms slightly more,
+    // but is not worth a reduction kernel here.
+    const Tensor center = points.Slice(0, 0, 1);  // (1, D)
+    points = points.Sub(center);
+    queries = queries.Sub(center);
+}
+
 // Batched KNN search.
 //
 // For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair
@@ -89,6 +110,11 @@ void KnnSearchSYCL(const Tensor& points,
     std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
             batch_size, NeighborSearchAllocator<T, TIndex>(device));
 
+    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
+    // helper).
+    Tensor points_c = points, queries_c = queries;
+    CenterPointsAndQueries<T>(points_c, queries_c);
+
     int64_t* neighbors_row_splits_ptr =
             neighbors_row_splits.GetDataPtr<int64_t>();
     int64_t last_neighbors_count = 0;
@@ -104,8 +130,8 @@ void KnnSearchSYCL(const Tensor& points,
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
 
-        const Tensor points_i = points.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries.Slice(0, query_begin, query_end);
+        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
+        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
         const int64_t num_points_i = points_i.GetShape(0);
         const int64_t num_queries_i = queries_i.GetShape(0);
 
@@ -375,6 +401,11 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 
     Tensor counts = Tensor::Zeros({num_queries}, Int64, device);
 
+    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
+    // helper).
+    Tensor points_c = points, queries_c = queries;
+    CenterPointsAndQueries<T>(points_c, queries_c);
+
     int64_t tile_queries = 0, tile_points = 0;
     ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
                        tile_queries, tile_points);
@@ -393,8 +424,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries.Slice(0, query_begin, query_end);
+        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
+        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
         const int64_t num_points_i = points_i.GetShape(0);
         const int64_t num_queries_i = queries_i.GetShape(0);
         Tensor point_norms = points_i.Mul(points_i).Sum({1});
@@ -467,8 +498,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries.Slice(0, query_begin, query_end);
+        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
+        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
         const int64_t num_points_i = points_i.GetShape(0);
         const int64_t num_queries_i = queries_i.GetShape(0);
         Tensor point_norms = points_i.Mul(points_i).Sum({1});
@@ -546,7 +577,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 // best max_knn per query in fixed-size output tensors.
 //
 // P2: |q|² is deferred to AddQueryNormsToHybridDistancesSYCL.
-// SelectTopKQueriesSYCL receives per-query adjusted thresholds.
+// CountAndSelectTopKQueriesSYCL fuses radius counting with top-k selection.
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -587,6 +618,11 @@ void HybridSearchSYCL(const Tensor& points,
     Tensor out_distances =
             output_allocator.NeighborsDistance().View({num_queries, max_knn});
 
+    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
+    // helper).
+    Tensor points_c = points, queries_c = queries;
+    CenterPointsAndQueries<T>(points_c, queries_c);
+
     int64_t tile_queries = 0, tile_points = 0;
     ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
                        tile_queries, tile_points);
@@ -606,10 +642,6 @@ void HybridSearchSYCL(const Tensor& points,
     Tensor merge_scratch =
             Tensor::Empty({tile_queries, 2 * max_knn}, idx_dtype, device);
 
-    // Per-query adjusted threshold tensor (device memory, one T per query
-    // tile).
-    Tensor adj_threshold = Tensor::Empty({tile_queries}, dtype, device);
-
     const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
     for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
         const int64_t point_begin =
@@ -620,8 +652,8 @@ void HybridSearchSYCL(const Tensor& points,
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries.Slice(0, query_begin, query_end);
+        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
+        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
         const int64_t num_points_i = points_i.GetShape(0);
         const int64_t num_queries_i = queries_i.GetShape(0);
         Tensor point_norms = points_i.Mul(points_i).Sum({1});
@@ -640,17 +672,6 @@ void HybridSearchSYCL(const Tensor& points,
             int64_t* counts_ptr =
                     counts.GetDataPtr<int64_t>() + query_begin + q;
 
-            // Per-query adjusted threshold: radius² − |q|².
-            // Compute on device and slice to query tile size.
-            {
-                const T rsq = radius_sq;
-                const T* qn = query_norms_tile.GetDataPtr<T>();
-                T* at = adj_threshold.GetDataPtr<T>();
-                queue.parallel_for(
-                        sycl::range<1>(num_queries_iter),
-                        [=](sycl::id<1> id) { at[id[0]] = rsq - qn[id[0]]; });
-            }
-
             for (int64_t p = 0; p < num_points_i; p += tile_points) {
                 const int64_t num_points_iter =
                         std::min(tile_points, num_points_i - p);
@@ -664,29 +685,22 @@ void HybridSearchSYCL(const Tensor& points,
                 AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
                 temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
 
-                // Count: uses per-query adjusted threshold (P2).
-                CountWithinThresholdQueriesSYCL<T>(
-                        device, temp_view.GetDataPtr<T>(),
-                        temp_view.GetStride(0), num_queries_iter,
-                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
-                        radius_sq, counts_ptr);
-
-                // Select top-max_knn within threshold.
+                // Count + select top-max_knn within threshold (one pass,
+                // mid-k).
                 Tensor ttiv = tile_top_indices.Slice(0, 0, num_queries_iter);
                 Tensor ttdv = tile_top_distances.Slice(0, 0, num_queries_iter);
                 Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
                 Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
 
-                SelectTopKQueriesSYCL<T, TIndex>(
+                CountAndSelectTopKQueriesSYCL<T, TIndex>(
                         device, temp_view.GetDataPtr<T>(),
                         temp_view.GetStride(0), num_queries_iter,
                         num_points_iter, max_knn, TIndex(point_begin + p),
+                        query_norms_tile.GetDataPtr<T>(), radius_sq, counts_ptr,
                         tile_sort_indices.GetDataPtr<TIndex>(),
                         tile_sort_indices.GetStride(0),
                         ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
-                        max_knn,
-                        /*use_threshold=*/true, adj_threshold.GetDataPtr<T>(),
-                        /*scalar_threshold=*/T(0));
+                        max_knn);
                 MergeTopKQueriesSYCL<T, TIndex>(
                         device, best_dv.GetDataPtr<T>(),
                         best_iv.GetDataPtr<TIndex>(), max_knn,
@@ -713,10 +727,11 @@ void HybridSearchSYCL(const Tensor& points,
                                          neighbors_count.GetDataPtr<TIndex>());
 
     // P2: add |q|² back to the partial distances stored in neighbors_distance.
+    // Must use the CENTERED queries (queries_c) to match the centered partials.
     AddQueryNormsToHybridDistancesSYCL<T, TIndex>(
             device, num_queries, max_knn, neighbors_index.GetDataPtr<TIndex>(),
             neighbors_distance.GetDataPtr<T>(),
-            queries.Mul(queries).Sum({1}).GetDataPtr<T>());
+            queries_c.Mul(queries_c).Sum({1}).GetDataPtr<T>());
 
     queue.wait_and_throw();
 }

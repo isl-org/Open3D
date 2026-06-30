@@ -9,6 +9,8 @@
 
 #include <cmath>
 #include <limits>
+#include <random>
+#include <vector>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
@@ -428,6 +430,46 @@ TEST_F(SYCLNNSTest, KnnSearchMatchesCPU) {
     EXPECT_TRUE(distances_sycl.To(cpu).AllClose(distances_cpu, 1e-5, 1e-5));
 }
 
+// Regression for high-dimensional, large-N KNN (mirrors FPFH feature matching:
+// 33-dim, thousands of points, k=1). This exercises the multi-tile path and
+// the −2qp+|p|² partial-distance selection with large feature norms, which the
+// small 3D datasets above do not cover.
+TEST_F(SYCLNNSTest, KnnSearchHighDimParityCPU) {
+    const int64_t num_points = 5000;
+    const int64_t num_queries = 1000;
+    const int64_t dim = 33;
+    // Deterministic pseudo-random features with LARGE norms but SMALL
+    // inter-point distances (mirrors FPFH: similar geometry -> similar
+    // histograms). The large offset makes |p|^2 ~ 33*100^2 ~ 3.3e5 while
+    // neighbor distances are O(1), which stresses float32 cancellation in the
+    // -2qp + |p|^2 + |q|^2 distance formulation.
+    const float kOffset = 100.f;
+    std::mt19937 gen(42);
+    std::uniform_real_distribution<float> dist(0.f, 1.f);
+    std::vector<float> pts(num_points * dim), qrs(num_queries * dim);
+    for (auto& v : pts) v = kOffset + dist(gen);
+    for (auto& v : qrs) v = kOffset + dist(gen);
+    core::Tensor dataset(pts, {num_points, dim}, core::Float32, cpu);
+    core::Tensor query(qrs, {num_queries, dim}, core::Float32, cpu);
+
+    core::nns::NearestNeighborSearch nns_cpu(dataset, core::Int32);
+    nns_cpu.KnnIndex();
+    core::Tensor idx_cpu, d_cpu;
+    std::tie(idx_cpu, d_cpu) = nns_cpu.KnnSearch(query, 1);
+
+    core::nns::NearestNeighborSearch nns_sycl(dataset.To(sycl), core::Int32);
+    nns_sycl.KnnIndex();
+    core::Tensor idx_sycl, d_sycl;
+    std::tie(idx_sycl, d_sycl) = nns_sycl.KnnSearch(query.To(sycl), 1);
+
+    // Fraction of queries whose k=1 nearest-neighbor index matches the CPU
+    // reference. float32 vs CPU should agree on essentially all of them.
+    core::Tensor match = idx_sycl.To(cpu).Eq(idx_cpu);
+    int64_t num_match = match.To(core::Int64).Sum({0, 1}).Item<int64_t>();
+    double valid_ratio = double(num_match) / double(num_queries);
+    EXPECT_GT(valid_ratio, 0.99) << "valid_ratio=" << valid_ratio;
+}
+
 // C1: Query on a coincident point (distance = 0) must not produce a negative
 // distance due to floating-point cancellation in −2qp + |p|².
 TEST_F(SYCLNNSTest, KnnSearchCoincidentPoint_C1) {
@@ -610,6 +652,47 @@ TEST_F(SYCLNNSTest, HybridSearchMatchesCPU) {
                     dist_cpu[0][i].Item<float>(), 1e-5f)
                 << "Hybrid distance mismatch at i=" << i;
     }
+}
+
+// Regression for hybrid search on large-offset 3D coordinates with a small
+// radius (mirrors registration: room-scale scans, max_correspondence_distance).
+// Exercises float32 cancellation in the radius count/threshold path.
+TEST_F(SYCLNNSTest, HybridSearchLargeOffsetParityCPU) {
+    const int64_t n = 4000;
+    const float kOffset = 1000.f;  // non-origin-centered scan coordinates
+    const double radius = 0.05;
+    const int max_knn = 1;
+    std::mt19937 gen(7);
+    std::uniform_real_distribution<float> spread(0.f, 3.f);       // 3 m extent
+    std::uniform_real_distribution<float> jitter(-0.02f, 0.02f);  // < radius
+    std::vector<float> pts(n * 3), qrs(n * 3);
+    for (int64_t i = 0; i < n; ++i) {
+        for (int d = 0; d < 3; ++d) {
+            float v = kOffset + spread(gen);
+            pts[i * 3 + d] = v;
+            qrs[i * 3 + d] = v + jitter(gen);  // a close neighbor exists
+        }
+    }
+    core::Tensor dataset(pts, {n, 3}, core::Float32, cpu);
+    core::Tensor query(qrs, {n, 3}, core::Float32, cpu);
+
+    core::nns::NearestNeighborSearch nns_cpu(dataset, core::Int32);
+    nns_cpu.HybridIndex(radius);
+    core::Tensor idx_cpu, dist_cpu, cnt_cpu;
+    std::tie(idx_cpu, dist_cpu, cnt_cpu) =
+            nns_cpu.HybridSearch(query, radius, max_knn);
+
+    core::nns::NearestNeighborSearch nns_sycl(dataset.To(sycl), core::Int32);
+    nns_sycl.HybridIndex(radius);
+    core::Tensor idx_sycl, dist_sycl, cnt_sycl;
+    std::tie(idx_sycl, dist_sycl, cnt_sycl) =
+            nns_sycl.HybridSearch(query.To(sycl), radius, max_knn);
+
+    int64_t total_cpu = cnt_cpu.To(core::Int64).Sum({0}).Item<int64_t>();
+    int64_t total_sycl =
+            cnt_sycl.To(cpu).To(core::Int64).Sum({0}).Item<int64_t>();
+    EXPECT_GT(total_cpu, n / 2);  // most queries should have a neighbor
+    EXPECT_EQ(total_sycl, total_cpu) << "SYCL hybrid count mismatch";
 }
 
 // tile_bytes override for FixedRadiusIndex (exercises P2 across tile bounds).

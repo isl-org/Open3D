@@ -29,6 +29,9 @@ namespace core {
 /// sycl::atomic_ref and CUDA memory ops with the SYCL queue / MemoryManager.
 class SYCLHashBackendBufferAccessor {
 public:
+    static constexpr buf_index_t kInvalidBufIndex =
+            static_cast<buf_index_t>(-1);
+
     void Setup(HashBackendBuffer &hashmap_buffer) {
         Device device = hashmap_buffer.GetDevice();
         sycl::queue queue =
@@ -88,7 +91,11 @@ public:
         sycl::atomic_ref<int, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
                 top(*heap_top_);
-        int index = top.fetch_add(1);
+        const int index = top.fetch_add(1);
+        if (index >= static_cast<int>(capacity_)) {
+            top.fetch_sub(1);
+            return kInvalidBufIndex;
+        }
         return heap_[index];
     }
 

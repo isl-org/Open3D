@@ -509,20 +509,35 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     // Map discrete voxels to indices.
     core::HashSet voxeli_hashset(voxeli.GetLength(), core::Int64, {3}, device_);
 
-    // Index map: (0, original_points) -> (0, unique_points).
-    core::Tensor index_map_point2voxel, masks;
-    voxeli_hashset.Insert(voxeli, index_map_point2voxel, masks);
-
-    // Insert and find are two different passes.
-    // In the insertion pass, -1/false is returned for already existing
-    // downsampled corresponding points.
-    // In the find pass, actual indices are returned corresponding downsampled
-    // points.
-    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
-    index_map_point2voxel = index_map_point2voxel.To(core::Int64);
+    // Insertion pass: masks==true marks the first occurrence (one per unique
+    // voxel); the returned buf_indices are gather indices into the hash buffer.
+    core::Tensor insert_buf_indices, insert_masks;
+    voxeli_hashset.Insert(voxeli, insert_buf_indices, insert_masks);
 
     int64_t num_points = voxeli.GetLength();
     int64_t num_voxels = voxeli_hashset.Size();
+
+    // The hash backend only guarantees that buf_indices are valid gather
+    // indices into the key/value buffers (GetKeyTensor().IndexGet(...)); it
+    // does NOT guarantee they form the dense set [0, num_voxels). The CPU/CUDA
+    // backends happen to be dense for pure inserts, but the SYCL backend leaves
+    // gaps (its wait-free insert drops a pre-allocated slot on each
+    // duplicate-key race). We use buf_indices below as row indices into
+    // per-voxel reduction tensors, so relabel them to dense [0, num_voxels). On
+    // dense backends this remap is the identity.
+    core::Tensor remap = core::Tensor::Zeros({voxeli_hashset.GetCapacity()},
+                                             core::Int64, device_);
+    core::Tensor unique_slots =
+            insert_buf_indices.IndexGet({insert_masks}).To(core::Int64);
+    remap.IndexSet({unique_slots},
+                   core::Tensor::Arange(int64_t(0), num_voxels, int64_t(1),
+                                        core::Int64, device_));
+
+    // Find pass: per-point gather index of its voxel slot, then relabel dense.
+    core::Tensor index_map_point2voxel, masks;
+    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
+    index_map_point2voxel =
+            remap.IndexGet({index_map_point2voxel.To(core::Int64)});
 
     // Count the number of points in each voxel.
     auto voxel_num_points =

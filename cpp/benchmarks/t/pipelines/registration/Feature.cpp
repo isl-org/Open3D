@@ -21,14 +21,18 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-data::BunnyMesh pointcloud_ply;
-static const std::string path = pointcloud_ply.GetPath();
+static const std::string& BunnyMeshPath() {
+    static data::BunnyMesh bunny;
+    static const std::string path = bunny.GetPath();
+    return path;
+}
 
 void LegacyComputeFPFHFeature(benchmark::State& state,
                               std::optional<int> max_nn,
                               std::optional<double> radius,
                               std::optional<double> ratio_indices) {
-    auto pcd = open3d::io::CreatePointCloudFromFile(path)->UniformDownSample(3);
+    auto pcd = open3d::io::CreatePointCloudFromFile(BunnyMeshPath())
+                       ->UniformDownSample(3);
     pcd->EstimateNormals();
 
     std::optional<std::vector<size_t>> indices = std::nullopt;
@@ -71,7 +75,7 @@ void ComputeFPFHFeature(benchmark::State& state,
                         std::optional<double> radius,
                         std::optional<double> ratio_indices) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd);
+    t::io::ReadPointCloud(BunnyMeshPath(), pcd);
     pcd = pcd.To(device).UniformDownSample(3);
     pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
     pcd.EstimateNormals();

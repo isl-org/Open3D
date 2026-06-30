@@ -27,9 +27,9 @@
 //   one pass, replacing the old separate query-norm Add_ pass.
 //
 // Legacy path (mid k, threshold search):
-//   SelectTopKQueriesSYCL and MergeTopKQueriesSYCL are kept for the hybrid
-//   search (threshold + top-k) and for k > kSYCLKnnMidKMax.  They now take
-//   partial distances (no |q|²) and a per-query threshold pointer for P2.
+//   SelectTopKQueriesSYCL (K-dispatched heap) and MergeTopKQueriesSYCL serve
+//   hybrid search and k > kSYCLKnnMidKMax.  Hybrid tiles use
+//   CountAndSelectTopKQueriesSYCL to fuse radius counting with top-k.
 //
 // P2 – Drop |q|² from the distance tile:
 //   All selection/count/gather kernels compare partial_dist = −2qp + |p|²
@@ -177,41 +177,45 @@ void UpdateTopKFromTileSYCL(sycl::queue& queue,
                             TIndex* best_idx_ptr,
                             bool use_threshold,
                             T threshold) {
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t q = id[0];
-        const T* qrow = neg2qp_ptr + q * distance_stride;
-        T* qd = best_dist_ptr + q * K;
-        TIndex* qi = best_idx_ptr + q * K;
+    queue.parallel_for(
+            sycl::range<1>(num_queries),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                const int64_t q = id[0];
+                const T* qrow = neg2qp_ptr + q * distance_stride;
+                T* qd = best_dist_ptr + q * K;
+                TIndex* qi = best_idx_ptr + q * K;
 
-        // Load running best into private registers (or scratch for large K).
-        T d[K];
-        TIndex idx[K];
-        for (int i = 0; i < K; ++i) {
-            d[i] = qd[i];
-            idx[i] = qi[i];
-        }
+                // Load running best into private registers (or scratch for
+                // large K).
+                T d[K];
+                TIndex idx[K];
+                for (int i = 0; i < K; ++i) {
+                    d[i] = qd[i];
+                    idx[i] = qi[i];
+                }
 
-        // Scan: fused |p|² add, heap insert.
-        // Note: partial_dist = −2qp + |p|² may be negative (|q|² not yet
-        // added).  Do NOT clamp here; C1 clamping is applied in
-        // FinalizeTopKSYCL / GatherWithinThreshold once |q|² is added back.
-        for (int64_t p = 0; p < num_points; ++p) {
-            const T dist = qrow[p] + point_norms_ptr[p];
-            if (use_threshold && dist > threshold) continue;
-            const TIndex gp = point_offset + static_cast<TIndex>(p);
-            // d[0] = heap root = current k-th worst; insert if better.
-            if (dist < d[0] || (dist == d[0] && gp < idx[0])) {
-                d[0] = dist;
-                idx[0] = gp;
-                HeapifyDown<T, TIndex, K>(d, idx, 0);
-            }
-        }
+                // Scan: fused |p|² add, heap insert.
+                // Note: partial_dist = −2qp + |p|² may be negative (|q|² not
+                // yet added).  Do NOT clamp here; C1 clamping is applied in
+                // FinalizeTopKSYCL / GatherWithinThreshold once |q|² is added
+                // back.
+                for (int64_t p = 0; p < num_points; ++p) {
+                    const T dist = qrow[p] + point_norms_ptr[p];
+                    if (use_threshold && dist > threshold) continue;
+                    const TIndex gp = point_offset + static_cast<TIndex>(p);
+                    // d[0] = heap root = current k-th worst; insert if better.
+                    if (dist < d[0] || (dist == d[0] && gp < idx[0])) {
+                        d[0] = dist;
+                        idx[0] = gp;
+                        HeapifyDown<T, TIndex, K>(d, idx, 0);
+                    }
+                }
 
-        for (int i = 0; i < K; ++i) {
-            qd[i] = d[i];
-            qi[i] = idx[i];
-        }
-    });
+                for (int i = 0; i < K; ++i) {
+                    qd[i] = d[i];
+                    qi[i] = idx[i];
+                }
+            });
 }
 
 /// Heap-sort the running top-K, add |q|² (P2), clamp ≥ 0 (C1), and write
@@ -233,26 +237,29 @@ void FinalizeTopKSYCL(sycl::queue& queue,
                       TIndex* out_idx_ptr,
                       int64_t actual_k,
                       const T* query_norms_ptr) {
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t q = id[0];
-        T d[K];
-        TIndex idx[K];
-        for (int i = 0; i < K; ++i) {
-            d[i] = running_dist_ptr[q * K + i];
-            idx[i] = running_idx_ptr[q * K + i];
-        }
-        HeapSort<T, TIndex, K>(d, idx);
+    queue.parallel_for(sycl::range<1>(num_queries),
+                       [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                           const int64_t q = id[0];
+                           T d[K];
+                           TIndex idx[K];
+                           for (int i = 0; i < K; ++i) {
+                               d[i] = running_dist_ptr[q * K + i];
+                               idx[i] = running_idx_ptr[q * K + i];
+                           }
+                           HeapSort<T, TIndex, K>(d, idx);
 
-        const T qnorm = query_norms_ptr ? query_norms_ptr[q] : T(0);
-        T* qout_d = out_dist_ptr + q * actual_k;
-        TIndex* qout_i = out_idx_ptr + q * actual_k;
-        for (int64_t i = 0; i < actual_k; ++i) {
-            T dist = d[i];
-            if (query_norms_ptr) dist = sycl::fmax(T(0), dist + qnorm);
-            qout_d[i] = dist;
-            qout_i[i] = idx[i];
-        }
-    });
+                           const T qnorm =
+                                   query_norms_ptr ? query_norms_ptr[q] : T(0);
+                           T* qout_d = out_dist_ptr + q * actual_k;
+                           TIndex* qout_i = out_idx_ptr + q * actual_k;
+                           for (int64_t i = 0; i < actual_k; ++i) {
+                               T dist = d[i];
+                               if (query_norms_ptr)
+                                   dist = sycl::fmax(T(0), dist + qnorm);
+                               qout_d[i] = dist;
+                               qout_i[i] = idx[i];
+                           }
+                       });
 }
 
 // ─── K-dispatch helpers ───────────────────────────────────────────────────
@@ -356,14 +363,293 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 // These keep the existing algorithm but fix C1 (clamp), C4 (tie-break), and
 // add P2 support (no |q|² in distances_ptr; per-query threshold for hybrid).
 
+namespace detail {
+
+/// Heapify-down for a max-heap of runtime size active_k (≤ compile-time K).
+template <typename T, typename TIndex, int K>
+inline void HeapifyDownActive(T* local_d,
+                              TIndex* local_i,
+                              int root,
+                              int active_k) {
+    int i = root;
+    while (true) {
+        int left = 2 * i + 1, right = 2 * i + 2, largest = i;
+        if (left < active_k && (local_d[left] > local_d[largest] ||
+                                (local_d[left] == local_d[largest] &&
+                                 local_i[left] > local_i[largest])))
+            largest = left;
+        if (right < active_k && (local_d[right] > local_d[largest] ||
+                                 (local_d[right] == local_d[largest] &&
+                                  local_i[right] > local_i[largest])))
+            largest = right;
+        if (largest == i) break;
+        T td = local_d[i];
+        local_d[i] = local_d[largest];
+        local_d[largest] = td;
+        TIndex ti = local_i[i];
+        local_i[i] = local_i[largest];
+        local_i[largest] = ti;
+        i = largest;
+    }
+}
+
+/// Mid-k heap select with compile-time bucket K (≥ knn, from KBucket).
+template <typename T, typename TIndex, int K>
+void SelectTopKQueriesHeapSYCL(sycl::queue& queue,
+                               const T* distances_ptr,
+                               int64_t distance_query_stride,
+                               int64_t num_queries,
+                               int64_t num_points,
+                               int64_t knn,
+                               TIndex index_offset,
+                               TIndex* out_indices_ptr,
+                               T* out_distances_ptr,
+                               int64_t out_query_stride,
+                               bool use_threshold,
+                               const T* query_norms_ptr,
+                               T radius_sq,
+                               T scalar_threshold) {
+    const T inf = std::numeric_limits<T>::max();
+    const int64_t actual_knn = std::min(knn, num_points);
+
+    queue.parallel_for(
+            sycl::range<1>(num_queries),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                const int64_t q = id[0];
+                const T* qd = distances_ptr + q * distance_query_stride;
+                TIndex* qout_i = out_indices_ptr + q * out_query_stride;
+                T* qout_d = out_distances_ptr + q * out_query_stride;
+
+                const T thr = (use_threshold && query_norms_ptr)
+                                      ? (radius_sq - query_norms_ptr[q])
+                                      : scalar_threshold;
+
+                T local_d[K];
+                TIndex local_i[K];
+                for (int k = 0; k < actual_knn; ++k) {
+                    local_d[k] = inf;
+                    local_i[k] = TIndex(-1);
+                }
+
+                for (TIndex p = 0; p < static_cast<TIndex>(num_points); ++p) {
+                    const T dist = qd[p];
+                    if (use_threshold && dist > thr) continue;
+                    if (dist < local_d[0] ||
+                        (dist == local_d[0] &&
+                         index_offset + p < index_offset + local_i[0])) {
+                        local_d[0] = dist;
+                        local_i[0] = p;
+                        HeapifyDownActive<T, TIndex, K>(
+                                local_d, local_i, 0,
+                                static_cast<int>(actual_knn));
+                    }
+                }
+
+                for (int i = 1; i < actual_knn; ++i) {
+                    T key_d = local_d[i];
+                    TIndex key_i = local_i[i];
+                    int j = i - 1;
+                    while (j >= 0 &&
+                           (local_d[j] > key_d ||
+                            (local_d[j] == key_d && local_i[j] > key_i))) {
+                        local_d[j + 1] = local_d[j];
+                        local_i[j + 1] = local_i[j];
+                        j--;
+                    }
+                    local_d[j + 1] = key_d;
+                    local_i[j + 1] = key_i;
+                }
+
+                for (int64_t k = 0; k < knn; ++k) {
+                    if (k >= actual_knn || local_i[k] == TIndex(-1)) {
+                        qout_i[k] = TIndex(-1);
+                        qout_d[k] = inf;
+                    } else {
+                        qout_i[k] = index_offset + local_i[k];
+                        qout_d[k] = local_d[k];
+                    }
+                }
+            });
+}
+
+/// Hybrid tile pass: count points within radius and select top-k in one scan.
+template <typename T, typename TIndex, int K>
+void CountAndSelectTopKQueriesHeapSYCL(sycl::queue& queue,
+                                       const T* partial_dist_ptr,
+                                       int64_t distance_stride,
+                                       int64_t num_queries,
+                                       int64_t num_points,
+                                       int64_t knn,
+                                       TIndex index_offset,
+                                       const T* query_norms_ptr,
+                                       T radius_sq,
+                                       int64_t* counts_ptr,
+                                       TIndex* out_indices_ptr,
+                                       T* out_distances_ptr,
+                                       int64_t out_query_stride) {
+    const T inf = std::numeric_limits<T>::max();
+    const int64_t actual_knn = std::min(knn, num_points);
+
+    queue.parallel_for(
+            sycl::range<1>(num_queries),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                const int64_t q = id[0];
+                const T thresh = radius_sq - query_norms_ptr[q];
+                const T* qd = partial_dist_ptr + q * distance_stride;
+                TIndex* qout_i = out_indices_ptr + q * out_query_stride;
+                T* qout_d = out_distances_ptr + q * out_query_stride;
+
+                T local_d[K];
+                TIndex local_i[K];
+                for (int k = 0; k < actual_knn; ++k) {
+                    local_d[k] = inf;
+                    local_i[k] = TIndex(-1);
+                }
+
+                int64_t cnt = 0;
+                for (int64_t p = 0; p < num_points; ++p) {
+                    const T dist = qd[p];
+                    if (dist <= thresh) {
+                        ++cnt;
+                        if (dist < local_d[0] ||
+                            (dist == local_d[0] &&
+                             index_offset + static_cast<TIndex>(p) <
+                                     index_offset + local_i[0])) {
+                            local_d[0] = dist;
+                            local_i[0] = static_cast<TIndex>(p);
+                            HeapifyDownActive<T, TIndex, K>(
+                                    local_d, local_i, 0,
+                                    static_cast<int>(actual_knn));
+                        }
+                    }
+                }
+                counts_ptr[q] += cnt;
+
+                for (int i = 1; i < actual_knn; ++i) {
+                    T key_d = local_d[i];
+                    TIndex key_i = local_i[i];
+                    int j = i - 1;
+                    while (j >= 0 &&
+                           (local_d[j] > key_d ||
+                            (local_d[j] == key_d && local_i[j] > key_i))) {
+                        local_d[j + 1] = local_d[j];
+                        local_i[j + 1] = local_i[j];
+                        j--;
+                    }
+                    local_d[j + 1] = key_d;
+                    local_i[j + 1] = key_i;
+                }
+
+                for (int64_t k = 0; k < knn; ++k) {
+                    if (k >= actual_knn || local_i[k] == TIndex(-1)) {
+                        qout_i[k] = TIndex(-1);
+                        qout_d[k] = inf;
+                    } else {
+                        qout_i[k] = index_offset + local_i[k];
+                        qout_d[k] = local_d[k];
+                    }
+                }
+            });
+}
+
+}  // namespace detail
+
+template <typename T, typename TIndex>
+void DispatchSelectTopKQueriesSYCL(sycl::queue& queue,
+                                   const T* distances_ptr,
+                                   int64_t distance_query_stride,
+                                   int64_t num_queries,
+                                   int64_t num_points,
+                                   int64_t knn,
+                                   int64_t k_bucket,
+                                   TIndex index_offset,
+                                   TIndex* out_indices_ptr,
+                                   T* out_distances_ptr,
+                                   int64_t out_query_stride,
+                                   bool use_threshold,
+                                   const T* query_norms_ptr,
+                                   T radius_sq,
+                                   T scalar_threshold) {
+#define CALL_SELECT(Kval)                                                      \
+    detail::SelectTopKQueriesHeapSYCL<T, TIndex, Kval>(                        \
+            queue, distances_ptr, distance_query_stride, num_queries,          \
+            num_points, knn, index_offset, out_indices_ptr, out_distances_ptr, \
+            out_query_stride, use_threshold, query_norms_ptr, radius_sq,       \
+            scalar_threshold)
+    if (k_bucket <= 1)
+        CALL_SELECT(1);
+    else if (k_bucket <= 2)
+        CALL_SELECT(2);
+    else if (k_bucket <= 4)
+        CALL_SELECT(4);
+    else if (k_bucket <= 8)
+        CALL_SELECT(8);
+    else if (k_bucket <= 16)
+        CALL_SELECT(16);
+    else if (k_bucket <= 32)
+        CALL_SELECT(32);
+    else if (k_bucket <= 64)
+        CALL_SELECT(64);
+    else if (k_bucket <= 128)
+        CALL_SELECT(128);
+    else if (k_bucket <= 256)
+        CALL_SELECT(256);
+    else
+        CALL_SELECT(512);
+#undef CALL_SELECT
+}
+
+template <typename T, typename TIndex>
+void DispatchCountAndSelectTopKQueriesSYCL(sycl::queue& queue,
+                                           const T* partial_dist_ptr,
+                                           int64_t distance_stride,
+                                           int64_t num_queries,
+                                           int64_t num_points,
+                                           int64_t knn,
+                                           int64_t k_bucket,
+                                           TIndex index_offset,
+                                           const T* query_norms_ptr,
+                                           T radius_sq,
+                                           int64_t* counts_ptr,
+                                           TIndex* out_indices_ptr,
+                                           T* out_distances_ptr,
+                                           int64_t out_query_stride) {
+#define CALL_COUNT_SELECT(Kval)                                                \
+    detail::CountAndSelectTopKQueriesHeapSYCL<T, TIndex, Kval>(                \
+            queue, partial_dist_ptr, distance_stride, num_queries, num_points, \
+            knn, index_offset, query_norms_ptr, radius_sq, counts_ptr,         \
+            out_indices_ptr, out_distances_ptr, out_query_stride)
+    if (k_bucket <= 1)
+        CALL_COUNT_SELECT(1);
+    else if (k_bucket <= 2)
+        CALL_COUNT_SELECT(2);
+    else if (k_bucket <= 4)
+        CALL_COUNT_SELECT(4);
+    else if (k_bucket <= 8)
+        CALL_COUNT_SELECT(8);
+    else if (k_bucket <= 16)
+        CALL_COUNT_SELECT(16);
+    else if (k_bucket <= 32)
+        CALL_COUNT_SELECT(32);
+    else if (k_bucket <= 64)
+        CALL_COUNT_SELECT(64);
+    else if (k_bucket <= 128)
+        CALL_COUNT_SELECT(128);
+    else if (k_bucket <= 256)
+        CALL_COUNT_SELECT(256);
+    else
+        CALL_COUNT_SELECT(512);
+#undef CALL_COUNT_SELECT
+}
+
 /// Select the smallest knn partial distances per query.
 /// P2: distances_ptr contains partial dists (no |q|²); callers add it after.
 /// C1: clamp each distance to max(0, ...) before comparing.
 /// C4: equal distances resolved by global index.
 ///
-/// @param per_query_threshold_ptr  Per-query adjusted threshold array (size
-///   num_queries) used for hybrid search (radius² − |q|²).  If nullptr,
-///   scalar_threshold is used uniformly.  Ignored when use_threshold=false.
+/// @param query_norms_ptr  Per-query |q|² (size num_queries). When
+///   use_threshold is true and this is non-null, threshold is
+///   radius_sq − query_norms_ptr[q] (P2 hybrid). Otherwise scalar_threshold.
 template <typename T, typename TIndex>
 void SelectTopKQueriesSYCL(const Device& device,
                            const T* distances_ptr,
@@ -378,7 +664,8 @@ void SelectTopKQueriesSYCL(const Device& device,
                            T* out_distances_ptr,
                            int64_t out_query_stride,
                            bool use_threshold = false,
-                           const T* per_query_threshold_ptr = nullptr,
+                           const T* query_norms_ptr = nullptr,
+                           T radius_sq = T(0),
                            T scalar_threshold = T(0)) {
     if (num_queries == 0 || num_points == 0 || knn <= 0) return;
 
@@ -387,94 +674,18 @@ void SelectTopKQueriesSYCL(const Device& device,
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (knn <= kSYCLKnnMidKMax) {
-        // Heap path: one work-item per query, private array sized to knn.
-        // The fixed [kSYCLKnnMidKMax] bounds avoid VLA; only [0,actual_knn)
-        // is semantically active.  For knn ≤ 32 the compiler can keep the
-        // active entries in registers; for knn ≤ 512 it spills proportionally.
-        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-            const int64_t q = id[0];
-            const T* qd = distances_ptr + q * distance_query_stride;
-            TIndex* qout_i = out_indices_ptr + q * out_query_stride;
-            T* qout_d = out_distances_ptr + q * out_query_stride;
-
-            const T thr = (use_threshold && per_query_threshold_ptr)
-                                  ? per_query_threshold_ptr[q]
-                                  : scalar_threshold;
-
-            T local_d[kSYCLKnnMidKMax];
-            TIndex local_i[kSYCLKnnMidKMax];
-            for (int k = 0; k < actual_knn; ++k) {
-                local_d[k] = inf;
-                local_i[k] = TIndex(-1);
-            }
-
-            for (TIndex p = 0; p < static_cast<TIndex>(num_points); ++p) {
-                // Partial distance (no |q|²): may be negative; do not
-                // clamp here.  C1 clamping is in AddQueryNorms*.
-                const T dist = qd[p];
-                if (use_threshold && dist > thr) continue;
-                if (dist < local_d[0] ||
-                    (dist == local_d[0] &&
-                     index_offset + p < index_offset + local_i[0])) {
-                    local_d[0] = dist;
-                    local_i[0] = p;  // local index stored
-                    // Heapify-down with runtime knn bound.
-                    int i = 0;
-                    while (true) {
-                        int left = 2 * i + 1, right = 2 * i + 2, largest = i;
-                        if (left < actual_knn &&
-                            (local_d[left] > local_d[largest] ||
-                             (local_d[left] == local_d[largest] &&
-                              local_i[left] > local_i[largest])))
-                            largest = left;
-                        if (right < actual_knn &&
-                            (local_d[right] > local_d[largest] ||
-                             (local_d[right] == local_d[largest] &&
-                              local_i[right] > local_i[largest])))
-                            largest = right;
-                        if (largest == i) break;
-                        T td = local_d[i];
-                        local_d[i] = local_d[largest];
-                        local_d[largest] = td;
-                        TIndex ti = local_i[i];
-                        local_i[i] = local_i[largest];
-                        local_i[largest] = ti;
-                        i = largest;
-                    }
-                }
-            }
-
-            // Insertion-sort ascending (C4: ties already broken by
-            // local index, equivalent to global since same offset).
-            for (int i = 1; i < actual_knn; ++i) {
-                T key_d = local_d[i];
-                TIndex key_i = local_i[i];
-                int j = i - 1;
-                while (j >= 0 && (local_d[j] > key_d || (local_d[j] == key_d &&
-                                                         local_i[j] > key_i))) {
-                    local_d[j + 1] = local_d[j];
-                    local_i[j + 1] = local_i[j];
-                    j--;
-                }
-                local_d[j + 1] = key_d;
-                local_i[j + 1] = key_i;
-            }
-
-            for (int64_t k = 0; k < knn; ++k) {
-                if (k >= actual_knn || local_i[k] == TIndex(-1)) {
-                    qout_i[k] = TIndex(-1);
-                    qout_d[k] = inf;
-                } else {
-                    qout_i[k] = index_offset + local_i[k];
-                    qout_d[k] = local_d[k];
-                }
-            }
-        });
+        const int64_t k_bucket = KBucket(knn);
+        DispatchSelectTopKQueriesSYCL<T, TIndex>(
+                queue, distances_ptr, distance_query_stride, num_queries,
+                num_points, knn, k_bucket, index_offset, out_indices_ptr,
+                out_distances_ptr, out_query_stride, use_threshold,
+                query_norms_ptr, radius_sq, scalar_threshold);
     } else {
         // oneDPL partial_sort fallback (P8: serial per query).
         auto policy = oneapi::dpl::execution::make_device_policy(queue);
         queue.parallel_for(
-                sycl::range<2>(num_queries, num_points), [=](sycl::id<2> id) {
+                sycl::range<2>(num_queries, num_points),
+                [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
                     scratch_indices_ptr[id[0] * scratch_query_stride + id[1]] =
                             static_cast<TIndex>(id[1]);
                 });
@@ -495,7 +706,8 @@ void SelectTopKQueriesSYCL(const Device& device,
         }
 
         queue.parallel_for(
-                sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+                sycl::range<2>(num_queries, knn),
+                [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
                     const int64_t qi = id[0], k = id[1];
                     TIndex* qout_i = out_indices_ptr + qi * out_query_stride;
                     T* qout_d = out_distances_ptr + qi * out_query_stride;
@@ -509,8 +721,8 @@ void SelectTopKQueriesSYCL(const Device& device,
                     const T dist = sycl::fmax(
                             T(0),
                             distances_ptr[qi * distance_query_stride + li]);
-                    const T thr = (use_threshold && per_query_threshold_ptr)
-                                          ? per_query_threshold_ptr[qi]
+                    const T thr = (use_threshold && query_norms_ptr)
+                                          ? (radius_sq - query_norms_ptr[qi])
                                           : scalar_threshold;
                     if (use_threshold && dist > thr) {
                         qout_i[k] = TIndex(-1);
@@ -546,55 +758,57 @@ void MergeTopKQueriesSYCL(const Device& device,
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (knn <= kSYCLKnnMidKMax) {
-        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-            const int64_t q = id[0];
-            const T* qcd = curr_dist_ptr + q * curr_stride;
-            const TIndex* qci = curr_idx_ptr + q * curr_stride;
-            const T* qad = cand_dist_ptr + q * cand_stride;
-            const TIndex* qai = cand_idx_ptr + q * cand_stride;
-            TIndex* qout_i = out_idx_ptr + q * out_stride;
-            T* qout_d = out_dist_ptr + q * out_stride;
+        queue.parallel_for(
+                sycl::range<1>(num_queries),
+                [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                    const int64_t q = id[0];
+                    const T* qcd = curr_dist_ptr + q * curr_stride;
+                    const TIndex* qci = curr_idx_ptr + q * curr_stride;
+                    const T* qad = cand_dist_ptr + q * cand_stride;
+                    const TIndex* qai = cand_idx_ptr + q * cand_stride;
+                    TIndex* qout_i = out_idx_ptr + q * out_stride;
+                    T* qout_d = out_dist_ptr + q * out_stride;
 
-            int64_t ic = 0, ia = 0;
-            for (int64_t k = 0; k < knn; ++k) {
-                const TIndex ci = (ic < knn) ? qci[ic] : TIndex(-1);
-                const TIndex ai = (ia < knn) ? qai[ia] : TIndex(-1);
-                if (ci < 0 && ai < 0) {
-                    qout_i[k] = TIndex(-1);
-                    qout_d[k] = inf;
-                    continue;
-                }
-                bool take_curr;
-                if (ci < 0) {
-                    take_curr = false;
-                } else if (ai < 0) {
-                    take_curr = true;
-                } else {
-                    const T cd = qcd[ic], ad = qad[ia];
-                    if (cd < ad)
-                        take_curr = true;
-                    else if (ad < cd)
-                        take_curr = false;
-                    else
-                        take_curr = (ci < ai);  // C4
-                }
-                if (take_curr) {
-                    qout_d[k] = qcd[ic];
-                    qout_i[k] = ci;
-                    ++ic;
-                } else {
-                    qout_d[k] = qad[ia];
-                    qout_i[k] = ai;
-                    ++ia;
-                }
-            }
-        });
+                    int64_t ic = 0, ia = 0;
+                    for (int64_t k = 0; k < knn; ++k) {
+                        const TIndex ci = (ic < knn) ? qci[ic] : TIndex(-1);
+                        const TIndex ai = (ia < knn) ? qai[ia] : TIndex(-1);
+                        if (ci < 0 && ai < 0) {
+                            qout_i[k] = TIndex(-1);
+                            qout_d[k] = inf;
+                            continue;
+                        }
+                        bool take_curr;
+                        if (ci < 0) {
+                            take_curr = false;
+                        } else if (ai < 0) {
+                            take_curr = true;
+                        } else {
+                            const T cd = qcd[ic], ad = qad[ia];
+                            if (cd < ad)
+                                take_curr = true;
+                            else if (ad < cd)
+                                take_curr = false;
+                            else
+                                take_curr = (ci < ai);  // C4
+                        }
+                        if (take_curr) {
+                            qout_d[k] = qcd[ic];
+                            qout_i[k] = ci;
+                            ++ic;
+                        } else {
+                            qout_d[k] = qad[ia];
+                            qout_i[k] = ai;
+                            ++ia;
+                        }
+                    }
+                });
     } else {
         // oneDPL merge sort fallback for large knn (P8).
         const int64_t combined = 2 * knn;
         auto policy = oneapi::dpl::execution::make_device_policy(queue);
         queue.parallel_for(sycl::range<2>(num_queries, combined),
-                           [=](sycl::id<2> id) {
+                           [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
                                scratch_ptr[id[0] * scratch_stride + id[1]] =
                                        static_cast<TIndex>(id[1]);
                            });
@@ -622,7 +836,8 @@ void MergeTopKQueriesSYCL(const Device& device,
         }
 
         queue.parallel_for(
-                sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
+                sycl::range<2>(num_queries, knn),
+                [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
                     const int64_t qi = id[0], k = id[1];
                     const TIndex src = scratch_ptr[qi * scratch_stride + k];
                     const bool is_curr = (src < knn);
@@ -658,12 +873,14 @@ void AddQueryNormsToDistancesSYCL(const Device& device,
                                   T* distances_ptr,
                                   const T* query_norms_ptr) {
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<2>(num_queries, knn), [=](sycl::id<2> id) {
-        const int64_t q = id[0], k = id[1];
-        if (indices_ptr[q * knn + k] < 0) return;
-        distances_ptr[q * knn + k] = sycl::fmax(
-                T(0), distances_ptr[q * knn + k] + query_norms_ptr[q]);
-    });
+    queue.parallel_for(sycl::range<2>(num_queries, knn),
+                       [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
+                           const int64_t q = id[0], k = id[1];
+                           if (indices_ptr[q * knn + k] < 0) return;
+                           distances_ptr[q * knn + k] =
+                                   sycl::fmax(T(0), distances_ptr[q * knn + k] +
+                                                            query_norms_ptr[q]);
+                       });
 }
 
 // ─── Radius / hybrid helpers ──────────────────────────────────────────────
@@ -681,16 +898,57 @@ void CountWithinThresholdQueriesSYCL(const Device& device,
                                      int64_t* counts_ptr) {
     if (num_queries == 0 || num_points == 0) return;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t q = id[0];
-        const T thresh = radius_sq - query_norms_ptr[q];
-        const T* qd = partial_dist_ptr + q * distance_stride;
-        int64_t cnt = 0;
-        for (int64_t p = 0; p < num_points; ++p) {
-            if (qd[p] <= thresh) ++cnt;
-        }
-        counts_ptr[q] += cnt;
-    });
+    queue.parallel_for(sycl::range<1>(num_queries),
+                       [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                           const int64_t q = id[0];
+                           const T thresh = radius_sq - query_norms_ptr[q];
+                           const T* qd = partial_dist_ptr + q * distance_stride;
+                           int64_t cnt = 0;
+                           for (int64_t p = 0; p < num_points; ++p) {
+                               if (qd[p] <= thresh) ++cnt;
+                           }
+                           counts_ptr[q] += cnt;
+                       });
+}
+
+/// Hybrid tile: accumulate radius counts and select top-k partial distances
+/// in one pass per query (mid-k only; k ≤ kSYCLKnnMidKMax).
+template <typename T, typename TIndex>
+void CountAndSelectTopKQueriesSYCL(const Device& device,
+                                   const T* partial_dist_ptr,
+                                   int64_t distance_stride,
+                                   int64_t num_queries,
+                                   int64_t num_points,
+                                   int64_t knn,
+                                   TIndex index_offset,
+                                   const T* query_norms_ptr,
+                                   T radius_sq,
+                                   int64_t* counts_ptr,
+                                   TIndex* scratch_indices_ptr,
+                                   int64_t scratch_query_stride,
+                                   TIndex* out_indices_ptr,
+                                   T* out_distances_ptr,
+                                   int64_t out_query_stride) {
+    if (num_queries == 0 || num_points == 0 || knn <= 0) return;
+    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    if (knn <= kSYCLKnnMidKMax) {
+        const int64_t k_bucket = KBucket(knn);
+        DispatchCountAndSelectTopKQueriesSYCL<T, TIndex>(
+                queue, partial_dist_ptr, distance_stride, num_queries,
+                num_points, knn, k_bucket, index_offset, query_norms_ptr,
+                radius_sq, counts_ptr, out_indices_ptr, out_distances_ptr,
+                out_query_stride);
+    } else {
+        CountWithinThresholdQueriesSYCL<T>(
+                device, partial_dist_ptr, distance_stride, num_queries,
+                num_points, query_norms_ptr, radius_sq, counts_ptr);
+        SelectTopKQueriesSYCL<T, TIndex>(
+                device, partial_dist_ptr, distance_stride, num_queries,
+                num_points, knn, index_offset, scratch_indices_ptr,
+                scratch_query_stride, out_indices_ptr, out_distances_ptr,
+                out_query_stride,
+                /*use_threshold=*/true, query_norms_ptr, radius_sq);
+    }
 }
 
 /// Gather indices (and full L2 distances) within the per-query threshold.
@@ -709,24 +967,27 @@ void GatherWithinThresholdQueriesSYCL(const Device& device,
                                       T* out_distances_ptr) {
     if (num_queries == 0 || num_points == 0) return;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t q = id[0];
-        const T qnorm = query_norms_ptr[q];
-        const T thresh = radius_sq - qnorm;
-        const T* qd = partial_dist_ptr + q * distance_stride;
-        int64_t offset = offsets_ptr[q];
-        for (int64_t p = 0; p < num_points; ++p) {
-            const T partial = qd[p];
-            if (partial <= thresh) {
-                out_indices_ptr[offset] = index_offset + static_cast<TIndex>(p);
-                if (out_distances_ptr != nullptr)
-                    out_distances_ptr[offset] =
-                            sycl::fmax(T(0), partial + qnorm);  // C1
-                ++offset;
-            }
-        }
-        offsets_ptr[q] = offset;
-    });
+    queue.parallel_for(
+            sycl::range<1>(num_queries),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                const int64_t q = id[0];
+                const T qnorm = query_norms_ptr[q];
+                const T thresh = radius_sq - qnorm;
+                const T* qd = partial_dist_ptr + q * distance_stride;
+                int64_t offset = offsets_ptr[q];
+                for (int64_t p = 0; p < num_points; ++p) {
+                    const T partial = qd[p];
+                    if (partial <= thresh) {
+                        out_indices_ptr[offset] =
+                                index_offset + static_cast<TIndex>(p);
+                        if (out_distances_ptr != nullptr)
+                            out_distances_ptr[offset] =
+                                    sycl::fmax(T(0), partial + qnorm);  // C1
+                        ++offset;
+                    }
+                }
+                offsets_ptr[q] = offset;
+            });
 }
 
 /// Clip hybrid neighbor counts to max_knn and zero-fill the unused tail.
@@ -739,15 +1000,17 @@ void FinalizeHybridResultsSYCL(const Device& device,
                                T* neighbors_distance_ptr,
                                TIndex* neighbors_count_ptr) {
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-        const int64_t q = id[0];
-        const int64_t cnt = std::min<int64_t>(counts_ptr[q], max_knn);
-        neighbors_count_ptr[q] = static_cast<TIndex>(cnt);
-        for (int64_t k = cnt; k < max_knn; ++k) {
-            neighbors_index_ptr[q * max_knn + k] = TIndex(-1);
-            neighbors_distance_ptr[q * max_knn + k] = T(0);
-        }
-    });
+    queue.parallel_for(
+            sycl::range<1>(num_queries),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                const int64_t q = id[0];
+                const int64_t cnt = std::min<int64_t>(counts_ptr[q], max_knn);
+                neighbors_count_ptr[q] = static_cast<TIndex>(cnt);
+                for (int64_t k = cnt; k < max_knn; ++k) {
+                    neighbors_index_ptr[q * max_knn + k] = TIndex(-1);
+                    neighbors_distance_ptr[q * max_knn + k] = T(0);
+                }
+            });
 }
 
 /// Per-query final distances for hybrid search need |q|² added and clamped.
@@ -760,14 +1023,14 @@ void AddQueryNormsToHybridDistancesSYCL(const Device& device,
                                         T* distances_ptr,
                                         const T* query_norms_ptr) {
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(
-            sycl::range<2>(num_queries, max_knn), [=](sycl::id<2> id) {
-                const int64_t q = id[0], k = id[1];
-                if (indices_ptr[q * max_knn + k] < 0) return;
-                distances_ptr[q * max_knn + k] =
-                        sycl::fmax(T(0), distances_ptr[q * max_knn + k] +
+    queue.parallel_for(sycl::range<2>(num_queries, max_knn),
+                       [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
+                           const int64_t q = id[0], k = id[1];
+                           if (indices_ptr[q * max_knn + k] < 0) return;
+                           distances_ptr[q * max_knn + k] = sycl::fmax(
+                                   T(0), distances_ptr[q * max_knn + k] +
                                                  query_norms_ptr[q]);
-            });
+                       });
 }
 
 }  // namespace nns

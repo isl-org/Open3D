@@ -23,6 +23,10 @@
 namespace open3d {
 namespace core {
 
+// CUDA: explicit device sync. CPU/SYCL HashMap ops finish with
+// wait_and_throw().
+static void DeviceSync(const Device& device) { cuda::Synchronize(device); }
+
 template <typename K, typename V>
 class HashData {
 public:
@@ -71,12 +75,12 @@ void HashInsertInt(benchmark::State& state,
                         backend);
         Tensor buf_indices, masks;
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Insert(keys, values, buf_indices, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         int64_t s = hashmap.Size();
@@ -105,6 +109,16 @@ void HashEraseInt(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {1}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Erase(keys, masks);
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
@@ -112,12 +126,12 @@ void HashEraseInt(benchmark::State& state,
         Tensor buf_indices, masks;
         hashmap.Insert(keys, values, buf_indices, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Erase(keys, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         int64_t s = hashmap.Size();
@@ -147,9 +161,14 @@ void HashFindInt(benchmark::State& state,
     // Insert as warp-up
     hashmap.Insert(keys, values, buf_indices, masks);
 
+    {
+        hashmap.Find(keys, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         hashmap.Find(keys, buf_indices, masks);
-        cuda::Synchronize(device);
+        DeviceSync(device);
     }
 }
 
@@ -169,6 +188,16 @@ void HashClearInt(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {1}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Clear();
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
@@ -184,12 +213,12 @@ void HashClearInt(benchmark::State& state,
                     slots, s);
         }
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Clear();
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         s = hashmap.Size();
@@ -218,6 +247,15 @@ void HashReserveInt(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {1}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Reserve(2 * capacity);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {1}, core::Int32, {1}, device,
@@ -233,12 +271,12 @@ void HashReserveInt(benchmark::State& state,
                     slots, s);
         }
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Reserve(2 * capacity);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         s = hashmap.Size();
@@ -253,8 +291,8 @@ void HashReserveInt(benchmark::State& state,
 
 class Int3 {
 public:
-    Int3() : x_(0), y_(0), z_(0){};
-    Int3(int k) : x_(k), y_(k * 2), z_(k * 4){};
+    Int3() : x_(0), y_(0), z_(0) {};
+    Int3(int k) : x_(k), y_(k * 2), z_(k * 4) {};
     bool operator==(const Int3& other) const {
         return x_ == other.x_ && y_ == other.y_ && z_ == other.z_;
     }
@@ -288,12 +326,12 @@ void HashInsertInt3(benchmark::State& state,
                         backend);
         Tensor buf_indices, masks;
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Insert(keys, values, buf_indices, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         int64_t s = hashmap.Size();
@@ -325,6 +363,16 @@ void HashEraseInt3(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {3}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Erase(keys, masks);
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
@@ -332,12 +380,12 @@ void HashEraseInt3(benchmark::State& state,
         Tensor buf_indices, masks;
         hashmap.Insert(keys, values, buf_indices, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Erase(keys, masks);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         int64_t s = hashmap.Size();
@@ -369,9 +417,14 @@ void HashFindInt3(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap.Insert(keys, values, buf_indices, masks);
 
+    {
+        hashmap.Find(keys, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         hashmap.Find(keys, buf_indices, masks);
-        cuda::Synchronize(device);
+        DeviceSync(device);
     }
 }
 
@@ -394,6 +447,16 @@ void HashClearInt3(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {3}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Clear();
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
@@ -409,13 +472,13 @@ void HashClearInt3(benchmark::State& state,
                     slots, s);
         }
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Clear();
 
         state.PauseTiming();
-        cuda::Synchronize(device);
+        DeviceSync(device);
 
         s = hashmap.Size();
         if (s != 0) {
@@ -446,6 +509,15 @@ void HashReserveInt3(benchmark::State& state,
     Tensor buf_indices, masks;
     hashmap_warmup.Insert(keys, values, buf_indices, masks);
 
+    {
+        HashMap hashmap_jit(capacity, core::Int32, {3}, core::Int32, {1},
+                            device, backend);
+        Tensor buf_indices, masks;
+        hashmap_jit.Insert(keys, values, buf_indices, masks);
+        hashmap_jit.Reserve(2 * capacity);
+        DeviceSync(device);
+    }
+
     for (auto _ : state) {
         state.PauseTiming();
         HashMap hashmap(capacity, core::Int32, {3}, core::Int32, {1}, device,
@@ -461,12 +533,12 @@ void HashReserveInt3(benchmark::State& state,
                     slots, s);
         }
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.ResumeTiming();
 
         hashmap.Reserve(2 * capacity);
 
-        cuda::Synchronize(device);
+        DeviceSync(device);
         state.PauseTiming();
 
         s = hashmap.Size();

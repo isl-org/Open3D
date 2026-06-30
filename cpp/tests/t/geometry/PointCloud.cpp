@@ -1061,7 +1061,6 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     // Value test
     t::geometry::PointCloud pcd_small(
@@ -1140,7 +1139,6 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
@@ -1166,7 +1164,6 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     data::PCDPointCloud sample_pcd_data;
     geometry::PointCloud pcd_legacy;
@@ -1185,7 +1182,6 @@ TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},

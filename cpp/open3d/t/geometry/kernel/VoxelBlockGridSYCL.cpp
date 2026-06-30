@@ -80,8 +80,7 @@ void PointCloudTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
     }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_buf_indices, block_masks;
-    hashmap->Activate(block_coordi.Slice(0, 0, count.Item<index_t>()),
-                      block_buf_indices, block_masks);
+    hashmap->Activate(block_coordi, block_buf_indices, block_masks);
     voxel_block_coords = block_coordi.IndexGet({block_masks});
 }
 
@@ -214,8 +213,6 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
                             block_coordi_ptr[offset_rhs + 2];
                 }
             });
-    index_t active_count = count[0].Item<index_t>();
-    voxel_block_coords = voxel_block_coords.Slice(0, 0, active_count);
 }
 
 #define FN_ARGUMENTS                                                      \
