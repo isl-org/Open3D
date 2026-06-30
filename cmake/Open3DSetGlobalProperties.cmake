@@ -47,8 +47,10 @@ function(open3d_set_global_properties target)
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
-    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
-    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+    if (BUILD_CUDA_MODULE)
+        target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
+        target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+    endif()
 
     # std::filesystem (C++17) or std::experimental::filesystem (C++14)
     #

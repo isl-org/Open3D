@@ -49,10 +49,11 @@ public:
     std::vector<V> vals_;
 };
 
-class HashMapPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(HashMap,
-                         HashMapPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class HashMapPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        HashMap,
+        HashMapPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(HashMapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
@@ -61,6 +62,8 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -91,6 +94,8 @@ TEST_P(HashMapPermuteDevices, Find) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -135,6 +140,8 @@ TEST_P(HashMapPermuteDevices, Insert) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -188,6 +195,8 @@ TEST_P(HashMapPermuteDevices, Erase) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -251,6 +260,8 @@ TEST_P(HashMapPermuteDevices, Reserve) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -305,6 +316,8 @@ TEST_P(HashMapPermuteDevices, Clear) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -383,6 +396,8 @@ TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -442,6 +457,8 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -515,6 +532,8 @@ TEST_P(HashMapPermuteDevices, HashSet) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }

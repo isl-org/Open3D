@@ -235,15 +235,27 @@ public:
         if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
             return nullptr;
         }
-        int64_t offset = 0;
-        workload_idx = workload_idx * input_.dtype_byte_size_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / input_.byte_strides_[i] *
-                      input_.byte_strides_[i];
-            workload_idx = workload_idx % input_.byte_strides_[i];
+        bool is_contiguous = true;
+        int64_t expected_byte_stride = input_.dtype_byte_size_;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            if (input_.byte_strides_[d] != expected_byte_stride) {
+                is_contiguous = false;
+                break;
+            }
+            expected_byte_stride *= input_.shape_[d];
         }
-        return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
-                                  offset);
+        if (is_contiguous) {
+            return static_cast<char*>(input_.data_ptr_) +
+                   workload_idx * input_.dtype_byte_size_;
+        }
+        int64_t offset = 0;
+        int64_t remaining = workload_idx;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            const int64_t coord = remaining % input_.shape_[d];
+            remaining /= input_.shape_[d];
+            offset += coord * input_.byte_strides_[d];
+        }
+        return static_cast<char*>(input_.data_ptr_) + offset;
     }
 
 protected:

@@ -25,8 +25,10 @@ using std::isinf;
 using std::isnan;
 #endif
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void ToCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ToSYCL
 #else
 void ToCPU
 #endif
@@ -82,8 +84,10 @@ void ToCPU
 #undef LINEAR_SATURATE
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void ClipTransformCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ClipTransformSYCL
 #else
 void ClipTransformCPU
 #endif
@@ -118,8 +122,10 @@ void ClipTransformCPU
 
 // Reimplementation of the reference:
 // https://github.com/mp3guy/ICPCUDA/blob/master/Cuda/pyrdown.cu#L41
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void PyrDownDepthCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void PyrDownDepthSYCL
 #else
 void PyrDownDepthCPU
 #endif
@@ -191,8 +197,10 @@ void PyrDownDepthCPU
             });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void CreateVertexMapCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void CreateVertexMapSYCL
 #else
 void CreateVertexMapCPU
 #endif
@@ -238,8 +246,10 @@ void CreateVertexMapCPU
                 }
             });
 }
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void CreateNormalMapCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void CreateNormalMapSYCL
 #else
 void CreateNormalMapCPU
 #endif
@@ -303,8 +313,10 @@ void CreateNormalMapCPU
             });
 }
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__)
 void ColorizeDepthCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ColorizeDepthSYCL
 #else
 void ColorizeDepthCPU
 #endif

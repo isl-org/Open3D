@@ -376,6 +376,44 @@ void HybridSearchCUDA(const Tensor& points,
                       Tensor& neighbors_distance);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+/// SYCL radius search. tile_bytes controls the distance tile budget (P2).
+template <class T, class TIndex>
+void FixedRadiusSearchSYCL(const Tensor& points,
+                           const Tensor& queries,
+                           double radius,
+                           const Tensor& points_row_splits,
+                           const Tensor& queries_row_splits,
+                           const Tensor& hash_table_splits,
+                           const Tensor& hash_table_index,
+                           const Tensor& hash_table_cell_splits,
+                           const Metric metric,
+                           const bool ignore_query_point,
+                           const bool return_distances,
+                           const bool sort,
+                           Tensor& neighbors_index,
+                           Tensor& neighbors_row_splits,
+                           Tensor& neighbors_distance,
+                           int64_t tile_bytes);
+
+/// SYCL hybrid search. tile_bytes controls the distance tile budget (P2).
+template <class T, class TIndex>
+void HybridSearchSYCL(const Tensor& points,
+                      const Tensor& queries,
+                      double radius,
+                      int max_knn,
+                      const Tensor& points_row_splits,
+                      const Tensor& queries_row_splits,
+                      const Tensor& hash_table_splits,
+                      const Tensor& hash_table_index,
+                      const Tensor& hash_table_cell_splits,
+                      const Metric metric,
+                      Tensor& neighbors_index,
+                      Tensor& neighbors_count,
+                      Tensor& neighbors_distance,
+                      int64_t tile_bytes);
+#endif
+
 /// \class FixedRadiusIndex
 ///
 /// \brief FixedRadiusIndex for nearest neighbor range search.
@@ -392,6 +430,21 @@ public:
     FixedRadiusIndex(const Tensor& dataset_points,
                      double radius,
                      const Dtype& index_dtype);
+
+    /// \brief Constructor with SYCL distance-tile budget.
+    ///
+    /// \param dataset_points Dataset points for constructing search index.
+    /// \param radius         Search radius (must be positive).
+    /// \param index_dtype    Integer dtype for returned neighbor indices.
+    /// \param tile_bytes     Distance tile budget in bytes for SYCL devices
+    ///   (ignored on CPU/CUDA). Default kSYCLKnnDefaultTileBytes (4 MiB) is
+    ///   tuned for integrated GPUs; increase to 16–32 MiB for discrete GPUs.
+    ///   See NeighborSearchCommon.h for detailed tuning guidance.
+    FixedRadiusIndex(const Tensor& dataset_points,
+                     double radius,
+                     const Dtype& index_dtype,
+                     int64_t tile_bytes);
+
     ~FixedRadiusIndex();
     FixedRadiusIndex(const FixedRadiusIndex&) = delete;
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
@@ -454,6 +507,8 @@ protected:
     Tensor hash_table_splits_;
     Tensor hash_table_cell_splits_;
     Tensor hash_table_index_;
+    /// Distance tile budget for SYCL (bytes). See kSYCLKnnDefaultTileBytes.
+    int64_t tile_bytes_ = kSYCLKnnDefaultTileBytes;
 };
 
 }  // namespace nns

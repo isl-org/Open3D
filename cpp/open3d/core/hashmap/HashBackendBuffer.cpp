@@ -49,8 +49,9 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
         value_buffers_.push_back(value_buffer_i);
     }
 
-    // Heap top is device specific
-    if (device.IsCUDA()) {
+    // Heap top is device specific. CUDA and SYCL keep it in device memory; the
+    // CPU backend uses the std::atomic member of HeapTop instead.
+    if (device.IsCUDA() || device.IsSYCL()) {
         heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
     }
 
@@ -67,6 +68,11 @@ void HashBackendBuffer::ResetHeap() {
     } else if (device.IsCUDA()) {
         CUDA_CALL(CUDAResetHeap, heap);
         heap_top_.cuda.Fill<int>(0);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        SYCLResetHeap(heap);
+        heap_top_.cuda.Fill<int>(0);
+#endif
     }
 }
 
@@ -101,7 +107,7 @@ HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {
 }
 
 int HashBackendBuffer::GetHeapTopIndex() const {
-    if (heap_.IsCUDA()) {
+    if (heap_.IsCUDA() || heap_.IsSYCL()) {
         return heap_top_.cuda[0].Item<int>();
     }
     return heap_top_.cpu.load();

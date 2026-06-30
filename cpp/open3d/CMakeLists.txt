@@ -57,6 +57,17 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
 
+if(ENABLE_SANITIZER)
+    message(STATUS "Enabling sanitizer: ${ENABLE_SANITIZER}")
+    if(MSVC)
+        add_compile_options(/fsanitize=${ENABLE_SANITIZER})
+        add_link_options(/fsanitize=${ENABLE_SANITIZER})
+    else()
+        add_compile_options(-fsanitize=${ENABLE_SANITIZER} -fno-omit-frame-pointer -g)
+        add_link_options(-fsanitize=${ENABLE_SANITIZER})
+    endif()
+endif()
+
 add_library(Open3D)
 
 add_subdirectory(camera)
@@ -136,20 +147,32 @@ open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
-# GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
-# Gaussian splatting.  The context class detects the display server at runtime
-# and uses GLX on X11, EGL on Wayland.
-if (NOT APPLE)
-    find_package(OpenGL COMPONENTS EGL)
-    if (OpenGL_EGL_FOUND)
-        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
-    endif()
-    find_package(X11 QUIET)
-    if (X11_FOUND)
-        target_link_libraries(Open3D PRIVATE X11::X11)
+if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
+    # Static libraries do not perform the SYCL device link step themselves.
+    # Propagate the SYCL link target so final executables link with -fsycl and
+    # bundle device images from Open3D object files.
+    target_link_libraries(Open3D INTERFACE Open3D::3rdparty_sycl)
+    target_link_options(Open3D INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=${OPEN3D_SYCL_TARGETS}>)
+    if (OPEN3D_SYCL_TARGET_BACKEND_OPTIONS)
+        target_link_options(Open3D INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
     endif()
 endif()
 
+# GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
+# Gaussian splatting.  The context class detects the display server at runtime
+# and uses GLX on X11, EGL on Wayland.
+#if (NOT APPLE)
+#    find_package(OpenGL COMPONENTS EGL)
+#    if (OpenGL_EGL_FOUND)
+#        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
+#    endif()
+#    find_package(X11 QUIET)
+#    if (X11_FOUND)
+#        target_link_libraries(Open3D PRIVATE X11::X11)
+#    endif()
+#endif()
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

@@ -37,8 +37,12 @@ using std::min;
 using std::sqrt;
 #endif
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void UnprojectCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void UnprojectSYCL
 #else
 void UnprojectCPU
 #endif
@@ -76,7 +80,7 @@ void UnprojectCPU
     }
 
     // Counter
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -95,7 +99,19 @@ void UnprojectCPU
                     float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
                               depth_scale;
                     if (d > 0 && d < depth_max) {
-                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                        int idx;
+#if defined(__CUDACC__)
+                        idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+#elif defined(SYCL_LANGUAGE_VERSION)
+                        auto count_atomic_ref = sycl::atomic_ref<int,
+                                                                 sycl::memory_order::acq_rel,
+                                                                 sycl::memory_scope::device,
+                                                                 sycl::access::address_space::global_space>(
+                                *count_ptr);
+                        idx = count_atomic_ref.fetch_add(1);
+#else
+                        idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+#endif
 
                         float x_c = 0, y_c = 0, z_c = 0;
                         ti.Unproject(static_cast<float>(x),
@@ -118,7 +134,7 @@ void UnprojectCPU
                     }
                 });
     });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     int total_pts_count = count.Item<int>();
 #else
     int total_pts_count = (*count_ptr).load();
@@ -136,6 +152,8 @@ void UnprojectCPU
 
 #if defined(__CUDACC__)
 void GetPointMaskWithinAABBCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetPointMaskWithinAABBSYCL
 #else
 void GetPointMaskWithinAABBCPU
 #endif
@@ -170,6 +188,8 @@ void GetPointMaskWithinAABBCPU
 
 #if defined(__CUDACC__)
 void GetPointMaskWithinOBBCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetPointMaskWithinOBBSYCL
 #else
 void GetPointMaskWithinOBBCPU
 #endif
@@ -214,6 +234,8 @@ void GetPointMaskWithinOBBCPU
 
 #if defined(__CUDACC__)
 void NormalizeNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void NormalizeNormalsSYCL
 #else
 void NormalizeNormalsCPU
 #endif
@@ -245,6 +267,8 @@ void NormalizeNormalsCPU
 
 #if defined(__CUDACC__)
 void OrientNormalsToAlignWithDirectionCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void OrientNormalsToAlignWithDirectionSYCL
 #else
 void OrientNormalsToAlignWithDirectionCPU
 #endif
@@ -279,6 +303,8 @@ void OrientNormalsToAlignWithDirectionCPU
 
 #if defined(__CUDACC__)
 void OrientNormalsTowardsCameraLocationCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void OrientNormalsTowardsCameraLocationSYCL
 #else
 void OrientNormalsTowardsCameraLocationCPU
 #endif
@@ -331,6 +357,8 @@ void OrientNormalsTowardsCameraLocationCPU
     });
 }
 
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
+
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
                                                    scalar_t* u,
@@ -368,18 +396,23 @@ inline OPEN3D_HOST_DEVICE void Swap(scalar_t* x, scalar_t* y) {
 template <typename scalar_t>
 inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
     int largest = root;
-    int l = 2 * root + 1;
-    int r = 2 * root + 2;
+    while (true) {
+        int l = 2 * largest + 1;
+        int r = 2 * largest + 2;
+        int next_largest = largest;
 
-    if (l < n && arr[l] > arr[largest]) {
-        largest = l;
-    }
-    if (r < n && arr[r] > arr[largest]) {
-        largest = r;
-    }
-    if (largest != root) {
-        Swap<scalar_t>(&arr[root], &arr[largest]);
-        Heapify<scalar_t>(arr, n, largest);
+        if (l < n && arr[l] > arr[next_largest]) {
+            next_largest = l;
+        }
+        if (r < n && arr[r] > arr[next_largest]) {
+            next_largest = r;
+        }
+        if (next_largest != largest) {
+            Swap<scalar_t>(&arr[largest], &arr[next_largest]);
+            largest = next_largest;
+        } else {
+            break;
+        }
     }
 }
 
@@ -412,8 +445,12 @@ OPEN3D_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
     return max_diff > angle_threshold * M_PI / 180.0 ? true : false;
 }
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void ComputeBoundaryPointsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeBoundaryPointsSYCL
 #else
 void ComputeBoundaryPointsCPU
 #endif
@@ -474,6 +511,8 @@ void ComputeBoundaryPointsCPU
                 });
     });
 }
+
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
 
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
@@ -555,6 +594,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingHybridSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingHybridSearchSYCL
 #else
 void EstimateCovariancesUsingHybridSearchCPU
 #endif
@@ -605,6 +646,8 @@ void EstimateCovariancesUsingHybridSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingRadiusSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingRadiusSearchSYCL
 #else
 void EstimateCovariancesUsingRadiusSearchCPU
 #endif
@@ -654,6 +697,8 @@ void EstimateCovariancesUsingRadiusSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingKNNSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingKNNSearchSYCL
 #else
 void EstimateCovariancesUsingKNNSearchCPU
 #endif
@@ -972,6 +1017,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
 
 #if defined(__CUDACC__)
 void EstimateNormalsFromCovariancesCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateNormalsFromCovariancesSYCL
 #else
 void EstimateNormalsFromCovariancesCPU
 #endif
@@ -1124,8 +1171,12 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
     }
 }
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingHybridSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingHybridSearchSYCL
 #else
 void EstimateColorGradientsUsingHybridSearchCPU
 #endif
@@ -1178,6 +1229,8 @@ void EstimateColorGradientsUsingHybridSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingKNNSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingKNNSearchSYCL
 #else
 void EstimateColorGradientsUsingKNNSearchCPU
 #endif
@@ -1233,6 +1286,8 @@ void EstimateColorGradientsUsingKNNSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingRadiusSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingRadiusSearchSYCL
 #else
 void EstimateColorGradientsUsingRadiusSearchCPU
 #endif
@@ -1285,6 +1340,8 @@ void EstimateColorGradientsUsingRadiusSearchCPU
 
     core::cuda::Synchronize(points.GetDevice());
 }
+
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
 
 }  // namespace pointcloud
 }  // namespace kernel

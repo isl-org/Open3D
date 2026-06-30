@@ -68,9 +68,6 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
                          const int lid_x = int(it.get_local_id(1));
                          const int64_t group_y = it.get_group(0);
                          const int64_t col = it.get_global_id(1);
-                         if (col >= broadcasting_elems) {
-                             return;
-                         }
 
                          const int64_t row_base = group_y * int64_t(TILE_ROWS);
 
@@ -80,6 +77,10 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
                                                                : int64_t(-1);
                          }
                          it.barrier(sycl::access::fence_space::local_space);
+
+                         if (col >= broadcasting_elems) {
+                             return;
+                         }
 
                          int run_start = 0;
                          while (run_start < TILE_ROWS) {

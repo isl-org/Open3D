@@ -27,14 +27,12 @@ public:
     /// Constructor.
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
-    /// be 2D, with shape {n, d}. SYCL tensors are not yet supported.
+    /// be 2D, with shape {n, d}.
     // NearestNeighborSearch(const Tensor &dataset_points)
     //     : dataset_points_(dataset_points){};
     NearestNeighborSearch(const Tensor &dataset_points,
                           const Dtype &index_dtype = core::Int32)
-        : dataset_points_(dataset_points), index_dtype_(index_dtype) {
-        AssertNotSYCL(dataset_points_);
-    };
+        : dataset_points_(dataset_points), index_dtype_(index_dtype) {}
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;
@@ -47,17 +45,22 @@ public:
 
     /// Set index for multi-radius search.
     ///
+    /// Multi-radius search is currently only supported for CPU tensors.
+    ///
     /// \return Returns true if building index success, otherwise false.
     bool MultiRadiusIndex();
 
     /// Set index for fixed-radius search.
     ///
-    /// \param radius optional radius parameter. required for gpu fixed radius
-    /// index. \return Returns true if building index success, otherwise false.
+    /// \param radius Optional radius parameter. Required for CUDA and SYCL
+    /// fixed radius indices.
+    /// \return Returns true if building index success, otherwise false.
     bool FixedRadiusIndex(std::optional<double> radius = {});
 
     /// Set index for hybrid search.
     ///
+    /// \param radius Optional radius parameter. Required for CUDA and SYCL
+    /// hybrid indices.
     /// \return Returns true if building index success, otherwise false.
     bool HybridIndex(std::optional<double> radius = {});
 
@@ -88,6 +91,7 @@ public:
             const Tensor &query_points, double radius, bool sort = true);
 
     /// Perform multi-radius search. Each query point has an independent radius.
+    /// Only CPU tensors are currently supported for this search mode.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param radii Radii of query points. Each query point has one radius.
@@ -121,8 +125,8 @@ public:
 private:
     bool SetIndex();
 
-    /// Assert a Tensor is not CUDA tensoer. This will be removed in the future.
-    void AssertNotCUDA(const Tensor &t) const;
+    /// Assert a Tensor is on CPU.
+    void AssertCPU(const Tensor &t) const;
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;

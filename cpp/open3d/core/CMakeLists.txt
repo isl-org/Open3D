@@ -5,6 +5,7 @@ target_sources(core PRIVATE
     CUDAUtils.cpp
     Device.cpp
     Dtype.cpp
+    EigenConverter.cpp
     Indexer.cpp
     MemoryManager.cpp
     MemoryManagerCached.cpp
@@ -22,7 +23,6 @@ target_sources(core PRIVATE
 
 # Compile regardless BUILD_SYCL_MODULE == ON or OFF.
 open3d_sycl_target_sources(core PRIVATE
-    EigenConverter.cpp
     SYCLUtils.cpp
 )
 
@@ -90,6 +90,8 @@ target_sources(core_impl PRIVATE
 
 if (BUILD_SYCL_MODULE)
 open3d_sycl_target_sources(core_impl PRIVATE
+    hashmap/SYCL/CreateSYCLHashBackend.cpp
+    hashmap/SYCL/SYCLHashBackendBuffer.cpp
     kernel/UnaryEWSYCL.cpp
     kernel/BinaryEWSYCL.cpp
     kernel/ArangeSYCL.cpp
@@ -102,6 +104,7 @@ open3d_sycl_target_sources(core_impl PRIVATE
     linalg/LeastSquaresSYCL.cpp
     linalg/LUSYCL.cpp
     linalg/MatmulSYCL.cpp
+    nns/KnnSearchOpsSYCL.cpp
     linalg/SolveSYCL.cpp
     linalg/SVDSYCL.cpp
     linalg/TriSYCL.cpp

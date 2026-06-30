@@ -13,7 +13,8 @@
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/ParallelFor.h"
-#include "open3d/core/ParallelForSYCL.h"
+#include "open3d/core/SYCLBlockCopyDispatch.h"
+#include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/UnaryEW.h"
@@ -149,29 +150,41 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.fill(dst_ptr, scalar_element, num_elements)
-                        .wait_and_throw();
+                queue.fill(dst_ptr, scalar_element, num_elements);
             });
         } else if (src_device == dst_device) {  // non-contiguous or broadcast
                                                 // on same SYCL device
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             if (src.GetDtype().IsObject()) {
-                // TODO: This is likely very slow. Coalesce into less memcpy
-                // calls.
-                int64_t object_byte_size = src.GetDtype().ByteSize();
-                for (int64_t i = 0; i < indexer.NumWorkloads(); ++i) {
-                    const void* src_ptr = indexer.GetInputPtr(0, i);
-                    void* dst_ptr = indexer.GetOutputPtr(i);
-                    queue.memcpy(dst_ptr, src_ptr, object_byte_size);
-                }
-                queue.wait_and_throw();
+                const int64_t object_byte_size = src.GetDtype().ByteSize();
+                const int64_t block_size =
+                        GetLargestAlignedObjectBlockSize(object_byte_size);
+                const int64_t n = indexer.NumWorkloads();
+                DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
+                    const int64_t blocks = object_byte_size / block_size;
+                    queue.parallel_for(n, [indexer, blocks](int64_t i) {
+                        // reinterpret_cast required: GetInputPtr returns char*
+                        // and block_t may be sycl::vec<> which is not
+                        // trivially related to char via static_cast.
+                        const block_t* src = reinterpret_cast<const block_t*>(
+                                indexer.GetInputPtr(0, i));
+                        block_t* dst = reinterpret_cast<block_t*>(
+                                indexer.GetOutputPtr(i));
+                        for (int64_t b = 0; b < blocks; ++b) {
+                            dst[b] = src[b];
+                        }
+                    });
+                });
             } else {
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
                     using src_t = scalar_t;
                     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                         using dst_t = scalar_t;
-                        ParallelForSYCL<CopyElementKernel<src_t, dst_t>>(
-                                device_with_queue, indexer);
+                        const int64_t n = indexer.NumWorkloads();
+                        queue.parallel_for(n, [indexer](int64_t i) {
+                            CopyElementKernel<src_t, dst_t> ef(indexer);
+                            ef(i);
+                        });
                     });
                 });
             }
@@ -200,19 +213,30 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     Device device = src.GetDevice();  // == dst.GetDevice()
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     if (op_code == UnaryEWOpCode::LogicalNot) {
         if (dst_dtype == src_dtype) {
             Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+            const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                ParallelForSYCL<LogicalNotElementKernel<scalar_t, scalar_t>>(
-                        device, indexer);
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    LogicalNotElementKernel<scalar_t, scalar_t> ef(indexer);
+                    ef(i);
+                });
             });
         } else if (dst_dtype == Bool) {
             Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+            const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                ParallelForSYCL<LogicalNotElementKernel<scalar_t, bool>>(
-                        device, indexer);
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    LogicalNotElementKernel<scalar_t, bool> ef(indexer);
+                    ef(i);
+                });
             });
         } else {
             utility::LogError(
@@ -223,59 +247,89 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                op_code == UnaryEWOpCode::IsInf ||
                op_code == UnaryEWOpCode::IsFinite) {
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+        const int64_t n = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::IsNan) {
-                ParallelForSYCL<IsNanElementKernel<scalar_t>>(device, indexer);
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsNanElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             } else if (op_code == UnaryEWOpCode::IsInf) {
-                ParallelForSYCL<IsInfElementKernel<scalar_t>>(device, indexer);
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsInfElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             } else if (op_code == UnaryEWOpCode::IsFinite) {
-                ParallelForSYCL<IsFiniteElementKernel<scalar_t>>(device,
-                                                                 indexer);
+                queue.parallel_for(n, [indexer](int64_t i) {
+                    IsFiniteElementKernel<scalar_t> ef(indexer);
+                    ef(i);
+                });
             }
         });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+        const int64_t n = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
             switch (op_code) {
                 case UnaryEWOpCode::Sqrt:
-                    ParallelForSYCL<SqrtElementKernel<scalar_t>>(device,
-                                                                 indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        SqrtElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Sin:
-                    ParallelForSYCL<SinElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        SinElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Cos:
-                    ParallelForSYCL<CosElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        CosElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Neg:
-                    ParallelForSYCL<NegElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        NegElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Exp:
-                    ParallelForSYCL<ExpElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        ExpElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Abs:
-                    ParallelForSYCL<AbsElementKernel<scalar_t>>(device,
-                                                                indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        AbsElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Floor:
-                    ParallelForSYCL<FloorElementKernel<scalar_t>>(device,
-                                                                  indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        FloorElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Ceil:
-                    ParallelForSYCL<CeilElementKernel<scalar_t>>(device,
-                                                                 indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        CeilElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Round:
-                    ParallelForSYCL<RoundElementKernel<scalar_t>>(device,
-                                                                  indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        RoundElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 case UnaryEWOpCode::Trunc:
-                    ParallelForSYCL<TruncElementKernel<scalar_t>>(device,
-                                                                  indexer);
+                    queue.parallel_for(n, [indexer](int64_t i) {
+                        TruncElementKernel<scalar_t> ef(indexer);
+                        ef(i);
+                    });
                     break;
                 default:
                     utility::LogError("Unimplemented op_code for UnaryEWSYCL");
@@ -283,6 +337,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
             }
         });
     }
+    queue.wait_and_throw();
 }
 
 }  // namespace kernel

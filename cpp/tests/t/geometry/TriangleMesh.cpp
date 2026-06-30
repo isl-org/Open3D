@@ -14,6 +14,7 @@
 #include "gmock/gmock.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
@@ -254,7 +255,6 @@ TEST_P(TriangleMeshPermuteDevices, Has) {
 
 TEST_P(TriangleMeshPermuteDevices, Transform) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh(device);
     core::Tensor transformation = core::Tensor::Init<float>(
@@ -321,7 +321,6 @@ TEST_P(TriangleMeshPermuteDevices, Scale) {
 
 TEST_P(TriangleMeshPermuteDevices, Rotate) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh(device);
     core::Tensor rotation = core::Tensor::Init<float>(
@@ -342,7 +341,6 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
 
 TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -361,7 +359,6 @@ TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -377,7 +374,6 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
             open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
@@ -1271,7 +1267,6 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
 
 TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh_empty{device};
 
@@ -1457,7 +1452,6 @@ TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh_empty;
     EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
@@ -1481,7 +1475,6 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
 TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     using ::testing::UnorderedElementsAreArray;
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::TriangleMesh mesh_empty(device);
     EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
@@ -1744,6 +1737,40 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
     //                            &mesh, [](t::geometry::TriangleMesh*) {})},
     //                    "Mesh with AO texture");
 }
+
+#ifdef BUILD_SYCL_MODULE
+TEST(TriangleMeshSYCLBackendParity, NormalsAndAreasMatchCPU) {
+    if (!core::sy::IsAvailable()) {
+        GTEST_SKIP() << "No SYCL device.";
+    }
+    const core::Device cpu("CPU:0");
+    const core::Device sycl("SYCL:0");
+
+    t::geometry::TriangleMesh mesh_cpu =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, cpu);
+    t::geometry::TriangleMesh mesh_sycl =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, sycl);
+
+    mesh_cpu.ComputeTriangleNormals();
+    mesh_cpu.ComputeVertexNormals();
+    mesh_cpu.NormalizeNormals();
+    mesh_cpu.ComputeTriangleAreas();
+
+    mesh_sycl.ComputeTriangleNormals();
+    mesh_sycl.ComputeVertexNormals();
+    mesh_sycl.NormalizeNormals();
+    mesh_sycl.ComputeTriangleAreas();
+
+    EXPECT_TRUE(mesh_sycl.GetTriangleNormals().To(cpu).AllClose(
+            mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
+    EXPECT_TRUE(mesh_sycl.GetVertexNormals().To(cpu).AllClose(
+            mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
+    EXPECT_TRUE(mesh_sycl.GetTriangleAttr("areas").To(cpu).AllClose(
+            mesh_cpu.GetTriangleAttr("areas"), 1e-4, 1e-4));
+}
+#endif
 
 }  // namespace tests
 }  // namespace open3d

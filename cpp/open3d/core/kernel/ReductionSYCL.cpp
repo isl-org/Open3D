@@ -111,31 +111,16 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
 
 // Based on OneAPI GPU optimization guide code sample (Blocked access to
 // input data + SYCL builtin reduction ops for final reduction)
-// TODO: This launches one kernel per output element, which can be inefficient
-// in cases where the reduction dim is small but the non-reduced dim is large.
-// Speed-up by launching one kernel for the entire reduction.
+// We launch exactly one work-group per output element to completely avoid any
+// atomic lock!
 template <class ReductionOp, typename scalar_t>
 void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     auto queue = device_props.queue;
-    auto work_group_size = device_props.max_work_group_size;
-    size_t log2elements_per_group = 13;
-    auto elements_per_group = (1 << log2elements_per_group);  // 8192
-    size_t log2workitems_per_group = 8;
-    auto workitems_per_group = (1 << log2workitems_per_group);  // 256
-    auto elements_per_work_item =
-            elements_per_group / workitems_per_group;  // 32 (= max SIMD size)
-    auto mask = ~(~0 << log2workitems_per_group);
+    size_t work_group_size =
+            std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;
-
-    // atomic flag. Must be 4 bytes.
-    sycl::buffer<int32_t, 1> output_in_use{indexer.NumOutputElements()};
-    auto e_fill = queue.submit([&](auto& cgh) {
-        auto acc_output_in_use =
-                output_in_use.get_access<sycl::access_mode::write>(cgh);
-        cgh.fill(acc_output_in_use, 0);
-    });
 
     for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
          output_idx++) {
@@ -143,60 +128,59 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         // sub_indexer's workload_idx is indexer's ipo_idx.
         Indexer scalar_out_indexer = indexer.GetPerOutputIndexer(output_idx);
         auto num_elements = scalar_out_indexer.NumWorkloads();
-        auto num_work_groups = num_elements / elements_per_group;
-        if (num_elements > elements_per_group * num_work_groups)
-            ++num_work_groups;
-        // ensure each work group has work_group_size work items
-        auto num_work_items = num_work_groups * work_group_size;
 
-        sycl::buffer<int32_t, 1> this_output_in_use{output_in_use, output_idx,
-                                                    1};
         auto arg_red_cg = [&](auto& cgh) {
-            auto acc_in_use =
-                    this_output_in_use
-                            .get_access<sycl::access_mode::read_write>(cgh);
+            sycl::local_accessor<int64_t, 1> local_idx(
+                    sycl::range<1>(work_group_size), cgh);
+            sycl::local_accessor<scalar_t, 1> local_val(
+                    sycl::range<1>(work_group_size), cgh);
             cgh.parallel_for(
-                    sycl::nd_range<1>{num_work_items, work_group_size},
+                    sycl::nd_range<1>{work_group_size, work_group_size},
                     [=](sycl::nd_item<1> item) {
                         auto& out_idx =
                                 *scalar_out_indexer.GetOutputPtr<int64_t>(0, 0);
                         auto& out_val =
                                 *scalar_out_indexer.GetOutputPtr<scalar_t>(1,
                                                                            0);
-                        auto glob_id = item.get_global_id(0);
-                        auto this_group = item.get_group();
-                        auto offset = ((glob_id >> log2workitems_per_group)
-                                       << log2elements_per_group) +
-                                      (glob_id & mask);
+                        auto local_id = item.get_local_linear_id();
+
                         int64_t it_idx = 0;
                         scalar_t it_val = identity;
-                        for (size_t i = 0; i < elements_per_work_item; i++) {
-                            size_t idx =
-                                    (i << log2workitems_per_group) + offset;
-                            if (idx >= num_elements) break;
+                        for (size_t idx = local_id; idx < num_elements;
+                             idx += work_group_size) {
                             auto val =
                                     *scalar_out_indexer.GetInputPtr<scalar_t>(
                                             0, idx);
                             std::tie(it_idx, it_val) =
                                     red_op(it_idx, it_val, idx, val);
                         }
-                        auto group_out_val = sycl::reduce_over_group(
-                                this_group, it_val, identity,
-                                typename ReductionOp::basic_reduction());
-                        // atomic (serial) reduction over all groups. SYCL does
-                        // not have a barrier over groups. Work item(s) with min
-                        // / max value update the output. (non-deterministic)
-                        if (it_val == group_out_val) {
-                            // TODO: Look for a better option to a spinlock
-                            // mutex.
-                            auto in_use = sycl::atomic_ref<
-                                    int32_t, sycl::memory_order::acq_rel,
-                                    sycl::memory_scope::device>(acc_in_use[0]);
-                            while (in_use.exchange(1) == 1) {
+
+                        local_idx[local_id] = it_idx;
+                        local_val[local_id] = it_val;
+                        item.barrier(sycl::access::fence_space::local_space);
+
+                        int stride = 1;
+                        while (stride < item.get_local_range(0)) {
+                            stride *= 2;
+                        }
+                        for (stride /= 2; stride > 0; stride /= 2) {
+                            if (local_id < stride &&
+                                local_id + stride < item.get_local_range(0)) {
+                                auto other_idx = local_idx[local_id + stride];
+                                auto other_val = local_val[local_id + stride];
+                                std::tie(local_idx[local_id],
+                                         local_val[local_id]) =
+                                        red_op(local_idx[local_id],
+                                               local_val[local_id], other_idx,
+                                               other_val);
                             }
-                            std::tie(out_idx, out_val) = red_op(
-                                    out_idx, out_val, it_idx, group_out_val);
-                            in_use.store(0);
+                            item.barrier(
+                                    sycl::access::fence_space::local_space);
+                        }
+
+                        if (local_id == 0) {
+                            out_idx = local_idx[0];
+                            out_val = local_val[0];
                         }
                     });
         };

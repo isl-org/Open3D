@@ -27,10 +27,14 @@ void IndexGetSYCL(const Tensor& src,
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        for (int64_t idx = 0; idx < ai.NumWorkloads(); ++idx) {
-            queue.memcpy(ai.GetOutputPtr(idx), ai.GetInputPtr(idx),
-                         object_byte_size);
-        }
+        queue.parallel_for(ai.NumWorkloads(), [ai,
+                                               object_byte_size](int64_t idx) {
+                 char* dst_bytes = ai.GetOutputPtr(idx);
+                 const char* src_bytes = ai.GetInputPtr(idx);
+                 for (int64_t i = 0; i < object_byte_size; ++i) {
+                     dst_bytes[i] = src_bytes[i];
+                 }
+             }).wait_and_throw();
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             queue.parallel_for(ai.NumWorkloads(), [ai](int64_t idx) {
@@ -55,10 +59,14 @@ void IndexSetSYCL(const Tensor& src,
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
-        for (int64_t idx = 0; idx < ai.NumWorkloads(); ++idx) {
-            queue.memcpy(ai.GetOutputPtr(idx), ai.GetInputPtr(idx),
-                         object_byte_size);
-        }
+        queue.parallel_for(ai.NumWorkloads(), [ai,
+                                               object_byte_size](int64_t idx) {
+                 char* dst_bytes = ai.GetOutputPtr(idx);
+                 const char* src_bytes = ai.GetInputPtr(idx);
+                 for (int64_t i = 0; i < object_byte_size; ++i) {
+                     dst_bytes[i] = src_bytes[i];
+                 }
+             }).wait_and_throw();
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             queue.parallel_for(ai.NumWorkloads(), [ai](int64_t idx) {

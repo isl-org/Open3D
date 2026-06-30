@@ -53,7 +53,7 @@ def get_pcds_and_correspondences(dtype, device):
     return source_t, target_t, correspondences
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_compute_rmse_point_to_point(device):
 
     supported_dtypes = [o3c.Dtype.Float32, o3c.Dtype.Float64]
@@ -69,7 +69,7 @@ def test_compute_rmse_point_to_point(device):
         np.testing.assert_allclose(p2p_rmse, 0.706437, 0.0001)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_compute_transformation_point_to_point(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -90,7 +90,7 @@ def test_compute_transformation_point_to_point(device):
         np.testing.assert_allclose(p2p_rmse, 0.578255, 0.0001)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_compute_rmse_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -106,7 +106,7 @@ def test_compute_rmse_point_to_plane(device):
         np.testing.assert_allclose(p2l_rmse, 0.335499, 0.0001)
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_compute_transformation_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]

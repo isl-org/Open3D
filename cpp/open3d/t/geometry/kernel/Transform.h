@@ -52,6 +52,20 @@ void RotatePointsCUDA(const core::Tensor& R,
 void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+void TransformPointsSYCL(const core::Tensor& transformation,
+                         core::Tensor& points);
+
+void TransformNormalsSYCL(const core::Tensor& transformation,
+                          core::Tensor& normals);
+
+void RotatePointsSYCL(const core::Tensor& R,
+                      core::Tensor& points,
+                      const core::Tensor& center);
+
+void RotateNormalsSYCL(const core::Tensor& R, core::Tensor& normals);
+#endif
+
 }  // namespace transform
 }  // namespace kernel
 }  // namespace geometry

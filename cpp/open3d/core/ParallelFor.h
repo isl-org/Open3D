@@ -23,6 +23,10 @@
 #include "open3d/core/CUDAUtils.h"
 #endif
 
+#if defined(SYCL_LANGUAGE_VERSION)
+#include "open3d/core/SYCLContext.h"
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -87,6 +91,24 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 
 #endif
 
+#if defined(SYCL_LANGUAGE_VERSION)
+
+/// Run a function in parallel on SYCL.
+template <typename func_t>
+void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    if (n == 0) {
+        return;
+    }
+    auto queue = core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    queue.parallel_for(n, [=](int64_t i) { func(i); }).wait_and_throw();
+}
+
+#endif
+
 /// Run a function in parallel on CPU or CUDA.
 ///
 /// \param device The device for the parallel for loop to run on.
@@ -99,15 +121,14 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 /// \note If you use a lambda function, capture only the required variables
 /// instead of all to prevent accidental race conditions. If you want the
 /// kernel to be used on both CPU and CUDA, capture the variables by value.
-/// \note This does not dispatch to SYCL, since SYCL has extra constraints:
-///      - Lambdas may capture by value only.
-///      - No function pointers / virtual functions.
-/// Auto dispatch to SYCL will enforce these conditions even on CPU devices. Use
-/// ParallelForSYCL instead.
+/// \note This dispatches to SYCL when called on a SYCL device. Lambdas must
+/// capture by value only. No function pointers or virtual functions.
 template <typename func_t>
 void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    ParallelForSYCL_(device, n, func);
 #else
     ParallelForCPU_(device, n, func);
 #endif
@@ -168,6 +189,8 @@ void ParallelFor(const Device& device,
 
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    ParallelForSYCL_(device, n, func);
 #else
     int num_threads = utility::EstimateMaxThreads();
     ParallelForCPU_(device, num_threads, [&](int64_t i) {
@@ -181,6 +204,8 @@ void ParallelFor(const Device& device,
 
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    ParallelForSYCL_(device, n, func);
 #else
     ParallelForCPU_(device, n, func);
 #endif

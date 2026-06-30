@@ -104,6 +104,7 @@ OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
     spfh[idx * 33 + h_index3 + 22] += hist_incr;
 }
 
+#ifndef OPEN3D_SKIP_FPFH_MAIN
 #if defined(__CUDACC__)
 void ComputeFPFHFeatureCUDA
 #else
@@ -291,6 +292,7 @@ void ComputeFPFHFeatureCPU
                 });
     });
 }
+#endif  // OPEN3D_SKIP_FPFH_MAIN
 
 }  // namespace kernel
 }  // namespace pipelines
