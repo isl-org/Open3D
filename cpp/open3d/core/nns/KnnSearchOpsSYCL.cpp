@@ -160,6 +160,24 @@ void KnnSearchSYCL(const Tensor& points,
                 batch_output_allocators[batch_idx].NeighborsDistance().View(
                         {num_queries_i, batch_knn});
 
+        if (UseKnnDirectSYCL(points_i.GetShape(1), batch_knn)) {
+            // Direct-distance path (no AddMM, no centering — see
+            // DispatchKnnDirectSYCL docs): use the ORIGINAL, uncentered
+            // points/queries slices since |p-q|² is computed directly and
+            // is translation-sensitive in implementation (not in result).
+            const Tensor points_raw = points.Slice(0, point_begin, point_end);
+            const Tensor queries_raw =
+                    queries.Slice(0, query_begin, query_end);
+            DispatchKnnDirectSYCL<T, TIndex>(
+                    queue, points_raw.GetDataPtr<T>(),
+                    queries_raw.GetDataPtr<T>(), points_i.GetShape(1),
+                    num_points_i, num_queries_i, batch_knn,
+                    out_distances.GetDataPtr<T>(),
+                    out_indices.GetDataPtr<TIndex>());
+            queue.wait_and_throw();
+            continue;
+        }
+
         // |p|² and |q|² for distance tiling.
         Tensor point_norms = points_i.Mul(points_i).Sum({1});
         Tensor query_norms = queries_i.Mul(queries_i).Sum({1});

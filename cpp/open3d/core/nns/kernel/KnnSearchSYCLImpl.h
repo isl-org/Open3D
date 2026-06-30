@@ -359,6 +359,328 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 #undef CALL_FINALIZE
 }
 
+// ─── Direct-distance KNN (no AddMM, no centering) ────────────────────────
+// Cooperative, SLM-tiled brute-force KNN for low-dimension, low-k queries
+// (the dominant point-cloud regime: D ≤ kSYCLKnnDirectMaxDim,
+// K ≤ kSYCLKnnSmallKMax). This bypasses the oneMKL AddMM tiling used by the
+// rest of this file entirely: |p-q|² is accumulated directly as a sum of
+// squared per-dimension differences, so there is no |q|²-2qp+|p|²
+// cancellation risk and therefore neither data centering nor the P2
+// query-norm deferral above are needed for this path.
+//
+// Work distribution: one sub-group of compile-time width SG handles one
+// query. `subgroups_per_wg` sub-groups (queries) share a work-group and
+// cooperatively cache each `tile_points`-sized chunk of the dataset in SLM
+// once, amortizing that load across every query in the work-group instead
+// of re-reading points per query. Tiles are double-buffered in SLM so the
+// next tile's cooperative load is issued (software-pipelined prefetch)
+// before the current tile is consumed, letting the GPU's load pipeline
+// overlap with the distance-compute loop instead of stalling on it.
+//
+// Each lane keeps a private ascending-sorted top-K (register-resident for
+// K ≤ kSYCLKnnSmallKMax) while scanning its strided share of each tile.
+// Once all tiles are scanned, the SG lanes combine their per-lane top-K via
+// a register/shuffle all-reduce merge (sycl::select_from_group): at each of
+// the log2(SG) rounds, a lane exchanges its whole sorted K-array with its
+// XOR partner and 2-way-merges the two sorted arrays, keeping only the
+// smallest K. After the loop every lane holds the identical final top-K for
+// the query (no SLM/global traffic for the merge itself) — lane 0 writes
+// it out.
+//
+// `subgroups_per_wg` and `tile_points` are plain runtime parameters (not
+// template parameters), so launch geometry can be retuned by benchmarking
+// without recompiling; SG, NDIM and K stay compile-time so the per-lane
+// arrays remain register-resident.
+
+// Performance note: This direct path is 2-3 orders of magnitude faster than the
+// indirect path on an A770! Both paths can benefit from tuning.
+
+constexpr int64_t kSYCLKnnDirectSubgroupSize = 16;
+constexpr int64_t kSYCLKnnDirectSubgroupsPerWG = 8;
+constexpr int64_t kSYCLKnnDirectTilePoints = 256;
+constexpr int64_t kSYCLKnnDirectMaxDim = 8;
+
+template <typename T, typename TIndex, int NDIM, int K, int SG>
+void KnnDirectSYCL(sycl::queue& queue,
+                   const T* points_ptr,
+                   const T* queries_ptr,
+                   int64_t num_points,
+                   int64_t num_queries,
+                   int64_t actual_k,
+                   T* out_dist_ptr,
+                   TIndex* out_idx_ptr,
+                   int64_t subgroups_per_wg,
+                   int64_t tile_points) {
+    if (num_points <= 0 || num_queries <= 0) return;
+
+    const int64_t wg_size = subgroups_per_wg * SG;
+    const int64_t num_wgs =
+            (num_queries + subgroups_per_wg - 1) / subgroups_per_wg;
+    const int64_t global_size = num_wgs * wg_size;
+    const int64_t tp = std::min<int64_t>(tile_points, num_points);
+    const int64_t num_tiles = (num_points + tp - 1) / tp;
+
+    queue.submit([&](sycl::handler& h) {
+        sycl::local_accessor<T, 1> slm(sycl::range<1>(2 * tp * NDIM), h);
+        h.parallel_for(
+                sycl::nd_range<1>(sycl::range<1>(global_size),
+                                  sycl::range<1>(wg_size)),
+                [=](sycl::nd_item<1> it)
+                        [[sycl::reqd_sub_group_size(SG)]]
+                        [[intel::kernel_args_restrict]] {
+                    const auto sg = it.get_sub_group();
+                    const int64_t lane = sg.get_local_id()[0];
+                    const int64_t sg_id_in_wg = sg.get_group_id()[0];
+                    const int64_t wg_id = it.get_group(0);
+                    const int64_t local_lin = it.get_local_linear_id();
+                    const int64_t local_range = it.get_local_range(0);
+
+                    const int64_t query_idx =
+                            wg_id * subgroups_per_wg + sg_id_in_wg;
+                    const bool active_query = query_idx < num_queries;
+
+                    // Load this sub-group's query once. Inactive sub-groups
+                    // (tail of the last work-group) load row 0 so every
+                    // lane in the work-group stays in lock-step for the
+                    // shared SLM tile loads / barriers below.
+                    T q[NDIM];
+                    {
+                        const int64_t qrow = active_query ? query_idx : 0;
+                        for (int d = 0; d < NDIM; ++d) {
+                            q[d] = queries_ptr[qrow * NDIM + d];
+                        }
+                    }
+
+                    // Private ascending-sorted top-K, sentinel-filled.
+                    T d[K];
+                    TIndex idx[K];
+                    for (int i = 0; i < K; ++i) {
+                        d[i] = std::numeric_limits<T>::max();
+                        idx[i] = TIndex(-1);
+                    }
+
+                    for (int64_t t = 0; t < num_tiles; ++t) {
+                        const int64_t cur = t & 1;
+                        const int64_t cur_start = t * tp;
+                        const int64_t cur_n =
+                                std::min<int64_t>(tp, num_points - cur_start);
+
+                        if (t == 0) {
+                            // Cooperative whole-work-group load of tile 0.
+                            for (int64_t e = local_lin; e < cur_n * NDIM;
+                                 e += local_range) {
+                                const int64_t p = e / NDIM, dd = e % NDIM;
+                                slm[cur * tp * NDIM + e] =
+                                        points_ptr[(cur_start + p) * NDIM +
+                                                  dd];
+                            }
+                            sycl::group_barrier(it.get_group());
+                        }
+
+                        // Prefetch: cooperatively load the NEXT tile into
+                        // the other SLM buffer before computing on the
+                        // current one, so its global-memory loads are
+                        // issued early and can overlap with this tile's
+                        // compute below.
+                        if (t + 1 < num_tiles) {
+                            const int64_t nxt = 1 - cur;
+                            const int64_t nxt_start = (t + 1) * tp;
+                            const int64_t nxt_n = std::min<int64_t>(
+                                    tp, num_points - nxt_start);
+                            for (int64_t e = local_lin; e < nxt_n * NDIM;
+                                 e += local_range) {
+                                const int64_t p = e / NDIM, dd = e % NDIM;
+                                slm[nxt * tp * NDIM + e] =
+                                        points_ptr[(nxt_start + p) * NDIM +
+                                                  dd];
+                            }
+                        }
+
+                        if (active_query) {
+                            for (int64_t p_local = lane; p_local < cur_n;
+                                 p_local += SG) {
+                                T dist = T(0);
+                                const int64_t base =
+                                        cur * tp * NDIM + p_local * NDIM;
+                                for (int dd = 0; dd < NDIM; ++dd) {
+                                    const T diff = q[dd] - slm[base + dd];
+                                    dist += diff * diff;
+                                }
+                                const TIndex gp = static_cast<TIndex>(
+                                        cur_start + p_local);
+                                if (dist < d[K - 1] ||
+                                    (dist == d[K - 1] && gp < idx[K - 1])) {
+                                    int pos = K - 1;
+                                    d[pos] = dist;
+                                    idx[pos] = gp;
+                                    while (pos > 0 &&
+                                          (d[pos - 1] > d[pos] ||
+                                           (d[pos - 1] == d[pos] &&
+                                            idx[pos - 1] > idx[pos]))) {
+                                        T td = d[pos - 1];
+                                        d[pos - 1] = d[pos];
+                                        d[pos] = td;
+                                        TIndex ti = idx[pos - 1];
+                                        idx[pos - 1] = idx[pos];
+                                        idx[pos] = ti;
+                                        --pos;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Bottom barrier: (a) the next-tile load issued
+                        // above must finish before the following iteration
+                        // treats it as "current"; (b) every lane must be
+                        // done reading the current buffer before it is
+                        // overwritten two iterations from now.
+                        sycl::group_barrier(it.get_group());
+                    }
+
+                    if (!active_query) return;
+
+                    // Sub-group all-reduce merge: after log2(SG)
+                    // shuffle/merge rounds every lane holds the identical
+                    // final top-K for this query, entirely register
+                    // resident.
+                    for (int step = 1; step < SG; step <<= 1) {
+                        const int64_t partner = lane ^ step;
+                        T od[K];
+                        TIndex oidx[K];
+                        for (int i = 0; i < K; ++i) {
+                            od[i] = sycl::select_from_group(sg, d[i],
+                                                            partner);
+                            oidx[i] = sycl::select_from_group(sg, idx[i],
+                                                              partner);
+                        }
+                        T md[K];
+                        TIndex mi[K];
+                        int a = 0, b = 0;
+                        for (int o = 0; o < K; ++o) {
+                            const bool take_a =
+                                    (b >= K) ||
+                                    (a < K &&
+                                     (d[a] < od[b] ||
+                                      (d[a] == od[b] && idx[a] <= oidx[b])));
+                            if (take_a) {
+                                md[o] = d[a];
+                                mi[o] = idx[a];
+                                ++a;
+                            } else {
+                                md[o] = od[b];
+                                mi[o] = oidx[b];
+                                ++b;
+                            }
+                        }
+                        for (int o = 0; o < K; ++o) {
+                            d[o] = md[o];
+                            idx[o] = mi[o];
+                        }
+                    }
+
+                    if (lane == 0) {
+                        T* od = out_dist_ptr + query_idx * actual_k;
+                        TIndex* oi = out_idx_ptr + query_idx * actual_k;
+                        for (int64_t i = 0; i < actual_k; ++i) {
+                            od[i] = sycl::fmax(T(0), d[i]);  // C1
+                            oi[i] = idx[i];
+                        }
+                    }
+                });
+    });
+}
+
+template <typename T, typename TIndex, int NDIM>
+void DispatchKnnDirectK(sycl::queue& queue,
+                       const T* points_ptr,
+                       const T* queries_ptr,
+                       int64_t num_points,
+                       int64_t num_queries,
+                       int64_t actual_k,
+                       T* out_dist_ptr,
+                       TIndex* out_idx_ptr,
+                       int64_t subgroups_per_wg,
+                       int64_t tile_points) {
+    const int64_t k_bucket = KBucket(actual_k);
+#define CALL_DIRECT(Kval)                                                  \
+    KnnDirectSYCL<T, TIndex, NDIM, Kval, kSYCLKnnDirectSubgroupSize>(      \
+            queue, points_ptr, queries_ptr, num_points, num_queries,       \
+            actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,         \
+            tile_points)
+    if (k_bucket <= 1)
+        CALL_DIRECT(1);
+    else if (k_bucket <= 2)
+        CALL_DIRECT(2);
+    else if (k_bucket <= 4)
+        CALL_DIRECT(4);
+    else if (k_bucket <= 8)
+        CALL_DIRECT(8);
+    else if (k_bucket <= 16)
+        CALL_DIRECT(16);
+    else
+        CALL_DIRECT(32);
+#undef CALL_DIRECT
+}
+
+/// Dispatch the direct-distance KNN path by compile-time dimension (1..8)
+/// and K-bucket (≤ 32). Writes directly into the caller-allocated output
+/// buffers; no public API / build plumbing changes are required.
+template <typename T, typename TIndex>
+void DispatchKnnDirectSYCL(
+        sycl::queue& queue,
+        const T* points_ptr,
+        const T* queries_ptr,
+        int64_t dim,
+        int64_t num_points,
+        int64_t num_queries,
+        int64_t actual_k,
+        T* out_dist_ptr,
+        TIndex* out_idx_ptr,
+        int64_t subgroups_per_wg = kSYCLKnnDirectSubgroupsPerWG,
+        int64_t tile_points = kSYCLKnnDirectTilePoints) {
+#define CALL_DIM(NDIMVAL)                                                \
+    DispatchKnnDirectK<T, TIndex, NDIMVAL>(                              \
+            queue, points_ptr, queries_ptr, num_points, num_queries,     \
+            actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,       \
+            tile_points)
+    switch (dim) {
+        case 1:
+            CALL_DIM(1);
+            break;
+        case 2:
+            CALL_DIM(2);
+            break;
+        case 3:
+            CALL_DIM(3);
+            break;
+        case 4:
+            CALL_DIM(4);
+            break;
+        case 5:
+            CALL_DIM(5);
+            break;
+        case 6:
+            CALL_DIM(6);
+            break;
+        case 7:
+            CALL_DIM(7);
+            break;
+        case 8:
+            CALL_DIM(8);
+            break;
+        default:
+            utility::LogError(
+                    "DispatchKnnDirectSYCL only supports dim 1 to {}.",
+                    kSYCLKnnDirectMaxDim);
+    }
+#undef CALL_DIM
+}
+
+/// True if (dim, knn) qualifies for the direct-distance SYCL KNN path.
+inline bool UseKnnDirectSYCL(int64_t dim, int64_t knn) {
+    return dim >= 1 && dim <= kSYCLKnnDirectMaxDim && knn <= kSYCLKnnSmallKMax;
+}
+
 // ─── Legacy Select / Merge (mid-k and large-k paths) ─────────────────────
 // These keep the existing algorithm but fix C1 (clamp), C4 (tie-break), and
 // add P2 support (no |q|² in distances_ptr; per-query threshold for hybrid).

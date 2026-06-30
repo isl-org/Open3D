@@ -178,17 +178,23 @@ void NNS_HybridSearch(benchmark::State& state,
 #define ENUM_NNS_SEARCH(FN, DEVICE, TAG)                            \
     BENCHMARK_CAPTURE(FN, TAG##_10k_k1, 10000, 1000, 1, DEVICE)     \
             ->Unit(benchmark::kMillisecond);                        \
+    BENCHMARK_CAPTURE(FN, TAG##_10k_k4, 10000, 1000, 4, DEVICE)     \
+            ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_10k_k8, 10000, 1000, 8, DEVICE)     \
             ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_10k_k32, 10000, 1000, 32, DEVICE)   \
             ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_100k_k1, 100000, 1000, 1, DEVICE)   \
             ->Unit(benchmark::kMillisecond);                        \
+    BENCHMARK_CAPTURE(FN, TAG##_100k_k4, 100000, 1000, 4, DEVICE)   \
+            ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_100k_k8, 100000, 1000, 8, DEVICE)   \
             ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_100k_k32, 100000, 1000, 32, DEVICE) \
             ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_1M_k1, 1000000, 1000, 1, DEVICE)    \
+            ->Unit(benchmark::kMillisecond);                        \
+    BENCHMARK_CAPTURE(FN, TAG##_1M_k4, 1000000, 1000, 4, DEVICE)    \
             ->Unit(benchmark::kMillisecond);                        \
     BENCHMARK_CAPTURE(FN, TAG##_1M_k8, 1000000, 1000, 8, DEVICE)    \
             ->Unit(benchmark::kMillisecond);                        \
