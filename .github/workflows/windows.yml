@@ -212,7 +212,10 @@ jobs:
               }
             }
             $CMAKE_GENERATOR = "Ninja"
-            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # icpx.exe identifies as GNU-like in oneAPI 2025.3+ which conflicts with
+            # CMake generating MSVC-style flags when C compiler (icx) is MSVC-like.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
               "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
@@ -342,7 +345,9 @@ jobs:
               }
             }
             $CMAKE_GENERATOR = "Ninja"
-            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # See Config step for the reason icpx is not used.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
               "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
           } else {
             $CMAKE_GENERATOR = "Visual Studio 17 2022"
@@ -493,7 +498,9 @@ jobs:
               }
             }
             $CMAKE_GENERATOR = "Ninja"
-            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icpx", `
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # See Config step for the reason icpx is not used.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
               "-DCMAKE_BUILD_TYPE=Release"
             if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
               Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
