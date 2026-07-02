@@ -12,8 +12,8 @@
 // NVIDIA Performance Primitives has no ROCm equivalent. On the HIP build the
 // GPU image-filter ops are an explicitly-unsupported path: these stubs satisfy
 // the link from Image.cpp's CUDA branch and report the limitation at runtime.
-// The CPU (IPP) image path and every other GPU kernel are unaffected. Image
-// filter GPU tests are scoped out of this port (see notes.md).
+// The CPU (IPP) image path and every other GPU kernel are unaffected. See the
+// AMD GPU support section of docs/compilation.rst for the unsupported ops.
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"

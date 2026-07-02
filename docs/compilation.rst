@@ -347,19 +347,22 @@ default under ``/opt/rocm``) is required.
           ..
     cmake --build . -j$(nproc)
 
-Without ``-DCMAKE_HIP_ARCHITECTURES`` the build targets ``gfx90a`` by default.
-Pass it to build for a different AMD GPU, or for several at once, e.g.
+Without ``-DCMAKE_HIP_ARCHITECTURES`` the HIP toolchain auto-detects the AMD
+GPUs installed on the build host (via ``rocm_agent_enumerator``); a host with
+no AMD GPU must pass the architecture explicitly. Set it to build for a
+specific GPU, or for several at once, e.g.
 ``-DCMAKE_HIP_ARCHITECTURES=gfx1100`` or
 ``-DCMAKE_HIP_ARCHITECTURES="gfx90a;gfx1100"``. ``rocminfo`` prints the
 architecture of the installed GPU.
 
 .. note::
     ROCm support targets Linux and covers the core tensor and ``open3d.t``
-    GPU code paths. A few CUDA-only features are not yet available on ROCm and
-    are handled gracefully rather than failing the build: the NPP-based GPU
-    image filters (the CPU image path is used instead), the non-default SlabHash
-    hashmap backend (the default StdGPU backend is used), and the ML ops
-    (``BUILD_PYTORCH_OPS``/``BUILD_TENSORFLOW_OPS``, which remain CUDA-only).
+    GPU code paths. A few CUDA-only features are not yet available on ROCm but
+    do not fail the build: the NPP-based GPU image filters report the operation
+    as unsupported at runtime (run them on the CPU device instead), the
+    non-default SlabHash hashmap backend is unused (the default StdGPU backend
+    is selected), and the ML ops (``BUILD_PYTORCH_OPS``/``BUILD_TENSORFLOW_OPS``)
+    remain CUDA-only.
 
 WebRTC remote visualization
 ```````````````````````````

@@ -1887,7 +1887,7 @@ endif()
 # NVIDIA Performance Primitives has no ROCm equivalent, so the GPU image-filter
 # ops that dispatch to NPP (NPPImage.*) are guarded out of the HIP build and
 # Image.cpp reports them unsupported on ROCm (the CPU/IPP image path is
-# unaffected). See notes.md for the scoped-out image ops.
+# unaffected). See the AMD GPU support section of docs/compilation.rst.
 if (BUILD_CUDA_MODULE AND NOT USE_HIP)
     # NPP library list: https://docs.nvidia.com/cuda/npp/index.html
     if(WIN32)

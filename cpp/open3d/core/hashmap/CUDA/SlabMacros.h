@@ -68,7 +68,7 @@ static constexpr uint32_t kSlabMaskBits = 5;
 // ballot) is NOT wave64-correct and a correct wave64 rewrite is deferred; here
 // the lane masks are only widened to 64 bits so the *_sync intrinsics, which on
 // HIP static_assert sizeof(mask)==8, compile. SlabHash-backend tests are
-// skipped on this port (see notes.md).
+// skipped on this port.
 #if defined(USE_HIP)
 static constexpr unsigned long long kSyncLanesMask = 0xFFFFFFFFFFFFFFFFull;
 static constexpr unsigned long long kNodePtrLanesMask = 0x7FFFFFFFull;

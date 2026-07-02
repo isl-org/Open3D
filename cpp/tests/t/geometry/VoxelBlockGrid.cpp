@@ -64,7 +64,7 @@ static std::vector<core::HashBackendType> EnumerateBackends(
 #ifdef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         include_slab = false;
 #endif
         if (include_slab) {

@@ -62,7 +62,7 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -97,7 +97,7 @@ TEST_P(HashMapPermuteDevices, Find) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -146,7 +146,7 @@ TEST_P(HashMapPermuteDevices, Insert) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -204,7 +204,7 @@ TEST_P(HashMapPermuteDevices, Erase) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -272,7 +272,7 @@ TEST_P(HashMapPermuteDevices, Reserve) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -331,7 +331,7 @@ TEST_P(HashMapPermuteDevices, Clear) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -414,7 +414,7 @@ TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -478,7 +478,7 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
@@ -556,7 +556,7 @@ TEST_P(HashMapPermuteDevices, HashSet) {
 #ifndef USE_HIP
         // The Slab (warp-cooperative) backend's 32-lane lane election is not
         // wave64-correct on ROCm/CDNA and is out of scope for this port; only
-        // the default StdGPU backend is validated here. See notes.md.
+        // the default StdGPU backend is validated here.
         backends.push_back(core::HashBackendType::Slab);
 #endif
         backends.push_back(core::HashBackendType::StdGPU);
