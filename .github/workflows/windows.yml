@@ -368,7 +368,7 @@ jobs:
           }
           Remove-Item "C:\Program Files\Open3D" -Recurse
       - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
