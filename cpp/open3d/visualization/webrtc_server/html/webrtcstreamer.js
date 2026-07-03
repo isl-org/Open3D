@@ -37,8 +37,6 @@ let WebRtcStreamer = (function() {
         this.pc = null;
         this.dataChannel = null;
 
-        this.pcOptions = {optional: [{DtlsSrtpKeyAgreement: true}]};
-
         this.mediaConstraints = {
             offerToReceiveAudio: true,
             offerToReceiveVideo: true,
@@ -614,8 +612,7 @@ let WebRtcStreamer = (function() {
     WebRtcStreamer.prototype.createPeerConnection = function() {
         console.log(
                 'createPeerConnection  config: ' +
-                JSON.stringify(this.pcConfig) +
-                ' option:' + JSON.stringify(this.pcOptions));
+                JSON.stringify(this.pcConfig));
         this.pc = new RTCPeerConnection(this.pcConfig);
         var pc = this.pc;
         pc.peerid = Math.random();
@@ -719,8 +716,7 @@ let WebRtcStreamer = (function() {
 
         console.log(
                 'Created RTCPeerConnection with config: ' +
-                JSON.stringify(this.pcConfig) +
-                'option:' + JSON.stringify(this.pcOptions));
+                JSON.stringify(this.pcConfig));
         return pc;
     };
 
