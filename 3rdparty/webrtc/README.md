@@ -27,15 +27,20 @@ Applied by `apply_webrtc_patches.sh` (each is skipped if it does not apply
 cleanly to the pinned WebRTC commit):
 
 ```
-0001-src-enable-rtc_use_cxx11_abi-option.patch         # -> src
-0001-build-enable-rtc_use_cxx11_abi-option.patch       # -> src/build
-0001-third_party-enable-rtc_use_cxx11_abi-option.patch # -> src/third_party
-0002-build-enable_safe_libstdcxx.patch                 # -> src/build_overrides
-0003-src-fix-nullptr_t-with-libstdcxx.patch            # -> src (GCC)
-0004-src-gcc-suppress-port-interface-network.patch     # -> src (GCC)
-0005-call-payload_type_picker-gcc-flat_tree.patch      # -> src (GCC)
-0006-build-win-dynamic-crt.patch                       # -> src/build (Windows /MD)
+0001-src-enable-rtc_use_cxx11_abi-option.patch             # -> src (GCC C++11 ABI)
+0001-build-enable-rtc_use_cxx11_abi-option.patch           # -> src/build (GCC C++11 ABI)
+0001-third_party-enable-rtc_use_cxx11_abi-option.patch     # -> src/third_party (GCC C++11 ABI)
+0002-src-fix-nullptr_t-with-libstdcxx.patch                # -> src (GCC nullptr_t with libstdc++)
+0004-call-payload_type_picker-gcc-flat_tree.patch          # -> src (GCC flat_tree ordering)
+0005-build-win-dynamic-crt.patch                           # -> src/build (Windows /MD[d] runtime)
+0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party/protobuf (macOS constinit)
 ```
+
+`apply_webrtc_patches.sh` also directly patches
+`third_party/protobuf/src/google/protobuf/port.cc` on Apple (via Python
+string replacement) to drop `PROTOBUF_CONSTINIT` from the
+`fixed_address_empty_string` declaration, which causes a hard error on
+Xcode 15.4 because `std::string`'s constructor is not a constant expression.
 
 `0006-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
 non-component (static) Windows build can use the dynamic MSVC runtime

@@ -64,7 +64,7 @@ if '__APPLE__' in content and 'fixed_address_empty_string' in content:
     sys.exit(0)
 if old not in content:
     print(f'WARNING: {path}: expected PROTOBUF_CONSTINIT pattern not found; '
-          f'skipping Apple constinit fix', file=sys.stderr)
+          f'Skipping Apple constinit fix', file=sys.stderr)
     sys.exit(0)
 new = ('#if defined(__APPLE__)\n'
        '// Apple Clang (Xcode 15.4): GlobalEmptyString (std::string) requires heap\n'
