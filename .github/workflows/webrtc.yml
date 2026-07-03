@@ -2,9 +2,6 @@ name: WebRTC
 permissions: {}
 
 on:
-  push:
-    branches:
-      - copilot/fix-webrtc-workflow-jobs
   workflow_dispatch:
     inputs:
       webrtc_commit:

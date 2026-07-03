@@ -5,8 +5,10 @@
 include(ExternalProject)
 
 set(WEBRTC_VER e8b4d4c)
+set(WEBRTC_USE_LOCAL_ARCHIVE OFF)
 if(DEFINED ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE} AND NOT "$ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE}" STREQUAL "")
     set(WEBRTC_URL "file://$ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE}")
+    set(WEBRTC_USE_LOCAL_ARCHIVE ON)
 endif()
 if (APPLE)
     if(NOT WEBRTC_URL)
@@ -57,9 +59,15 @@ else()  # Linux
 endif()
 
 if(WEBRTC_SHA256 MATCHES "^PLACEHOLDER")
-    message(WARNING "WebRTC prebuilt SHA256 not set for this platform (${WEBRTC_SHA256}). "
-        "Set OPEN3D_WEBRTC_PREBUILT_ARCHIVE or update webrtc_download.cmake after CI publish.")
-    unset(WEBRTC_SHA256)
+    if(WEBRTC_USE_LOCAL_ARCHIVE)
+        message(WARNING "WebRTC prebuilt SHA256 not set for this platform (${WEBRTC_SHA256}). "
+            "Using local OPEN3D_WEBRTC_PREBUILT_ARCHIVE without URL_HASH verification.")
+        unset(WEBRTC_SHA256)
+    else()
+        message(FATAL_ERROR "WebRTC prebuilt SHA256 not set for this platform (${WEBRTC_SHA256}). "
+            "Update webrtc_download.cmake after publishing the archive, or set "
+            "OPEN3D_WEBRTC_PREBUILT_ARCHIVE to a verified local file.")
+    endif()
 endif()
 
 set(_webrtc_url_hash "")
