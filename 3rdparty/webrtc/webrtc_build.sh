@@ -86,12 +86,49 @@ clone_depot_tools() {
     # Linux-only helper scripts (cbuildbot, luci-auth-fido2-plugin, etc.) and
     # are not needed for WebRTC builds. The 'fetch' check below validates the
     # critical tools were extracted.
-    tar -xzf "$archive" -C "$dest" || true
+    # On Windows (Git Bash), symlinks in the archive fail because creating them
+    # requires elevated privileges.  Use Python to extract while silently
+    # skipping symlink/hardlink members so that critical batch/exe files are
+    # always extracted.  Non-Windows uses plain tar.
+    if command -v cygpath >/dev/null 2>&1; then
+        python3 - "$dest" "$archive" <<'PYEOF_INNER'
+import tarfile, sys
+dest, archive = sys.argv[1], sys.argv[2]
+with tarfile.open(archive, "r:gz") as tf:
+    for m in tf.getmembers():
+        if m.issym() or m.islnk():
+            print(f"Skip symlink: {m.name}")
+            continue
+        try:
+            tf.extract(m, dest)
+        except Exception as e:
+            print(f"Warning: cannot extract {m.name}: {e}", file=sys.stderr)
+PYEOF_INNER
+    else
+        tar -xzf "$archive" -C "$dest"
+    fi
     rm -rf "$tmp"
 
     if [[ ! -x "$dest/fetch" ]]; then
         echo "ERROR: depot_tools archive at ${commit} is missing fetch" >&2
         exit 1
+    fi
+
+    # On Windows, verify that critical batch wrappers were extracted from the
+    # tarball.  If extraction failed silently, these files would be absent and
+    # the bootstrap or GN build would later fail with a confusing error.
+    if command -v cygpath >/dev/null 2>&1; then
+        local _missing=()
+        for _tool in "fetch.bat" "gn.bat"; do
+            [[ -f "$dest/$_tool" ]] || _missing+=("$_tool")
+        done
+        if [[ ${#_missing[@]} -gt 0 ]]; then
+            echo "ERROR: depot_tools extraction incomplete on Windows." >&2
+            echo "       Missing: ${_missing[*]}" >&2
+            echo "       Batch files in $dest:" >&2
+            ls "$dest"/*.bat 2>/dev/null >&2 || ls "$dest" >&2 || true
+            exit 1
+        fi
     fi
 
     # Bootstrap depot_tools.

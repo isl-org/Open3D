@@ -147,6 +147,12 @@ jobs:
           WIN_TAG: ${{ matrix.tag }}
         run: |
           $ErrorActionPreference = 'Stop'
+          # Locate the VS-installed ninja.exe *before* prepending depot_tools to
+          # PATH.  depot_tools contains a Unix wrapper script named 'ninja' (no
+          # extension) that Windows cannot execute; if depot_tools appears first
+          # in PATH cmake -G Ninja picks up that script and fails with
+          # "unknown error" when trying to run 'ninja --version'.
+          $ninjaExe = (Get-Command ninja.exe -ErrorAction Stop).Source
           $env:Path = (Get-Item depot_tools).FullName + ';' + $env:Path
           $installRoot = Join-Path $env:WORK_DIR "webrtc_pkg"
           if (Test-Path $installRoot) { Remove-Item -Recurse -Force $installRoot }
@@ -154,6 +160,7 @@ jobs:
           Push-Location webrtc/build
           $debugFlag = if ($env:BUILD_CONFIG -eq 'Debug') { 'ON' } else { 'OFF' }
           cmake -G Ninja `
+            -D CMAKE_MAKE_PROGRAM="$ninjaExe" `
             -D CMAKE_BUILD_TYPE=$env:BUILD_CONFIG `
             -D WEBRTC_IS_DEBUG=$debugFlag `
             -D WEBRTC_STATIC_MSVC_RUNTIME=$env:STATIC_RT `

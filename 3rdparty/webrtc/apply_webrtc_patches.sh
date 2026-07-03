@@ -36,13 +36,66 @@ apply_one() {
     fi
 }
 
+# Fix port.cc for Apple Clang (Xcode 15.4): the GlobalEmptyString (std::string)
+# variable is declared with PROTOBUF_CONSTINIT which expands to `constinit` or
+# [[clang::require_constant_initialization]] on Apple Clang >= 13.  Apple's
+# libc++ std::string constructor performs a heap allocation, so the variable
+# cannot be constant-initialized, producing a hard error.  Guard the declaration
+# with !defined(__APPLE__) so PROTOBUF_CONSTINIT is omitted on Apple.
+#
+# This supplements the port_def.inc patch in 0006 and directly targets the
+# specific failing declaration (port.cc:120 in the WebRTC M149 protobuf).
+fix_protobuf_port_cc_apple() {
+    local port_cc="${WEBRTC_SRC}/third_party/protobuf/src/google/protobuf/port.cc"
+    [[ -f "$port_cc" ]] || return 0
+    python3 - "$port_cc" <<'PYEOF'
+import sys
+
+path = sys.argv[1]
+with open(path, 'r') as f:
+    content = f.read()
+
+old = ('PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT\n'
+       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
+       '        fixed_address_empty_string{};')
+# Check idempotency: already patched if __APPLE__ guard present near declaration.
+if '__APPLE__' in content and 'fixed_address_empty_string' in content:
+    print(f'Skip {path} (Apple constinit fix already applied)')
+    sys.exit(0)
+if old not in content:
+    print(f'WARNING: {path}: expected PROTOBUF_CONSTINIT pattern not found; '
+          f'skipping Apple constinit fix', file=sys.stderr)
+    sys.exit(0)
+new = ('#if defined(__APPLE__)\n'
+       '// Apple Clang (Xcode 15.4): GlobalEmptyString (std::string) requires heap\n'
+       '// allocation in its constructor, which is not a constant expression.\n'
+       '// Skip PROTOBUF_CONSTINIT to avoid "variable does not have a constant\n'
+       '// initializer" hard error.\n'
+       'PROTOBUF_ATTRIBUTE_NO_DESTROY\n'
+       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
+       '        fixed_address_empty_string{};\n'
+       '#else\n'
+       'PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT\n'
+       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
+       '        fixed_address_empty_string{};\n'
+       '#endif  // !defined(__APPLE__)')
+with open(path, 'w') as f:
+    f.write(content.replace(old, new, 1))
+print(f'Applied Apple constinit fix in {path}')
+PYEOF
+}
+
 PATCH_DIR="$OPEN3D_DIR/3rdparty/webrtc"
 # Required: declare gn args consumed by args.gn and fix GCC compile errors.
 apply_one "$PATCH_DIR/0001-src-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0001-build-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC/build"
 apply_one "$PATCH_DIR/0001-third_party-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC/third_party"
 apply_one "$PATCH_DIR/0002-src-fix-nullptr_t-with-libstdcxx.patch" "$WEBRTC_SRC"
-apply_one "$PATCH_DIR/0003-src-gcc-suppress-port-interface-network.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0004-call-payload_type_picker-gcc-flat_tree.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0005-build-win-dynamic-crt.patch" "$WEBRTC_SRC/build"
+# 0006 patches port_def.inc to prevent PROTOBUF_CONSTINIT from expanding to
+# constinit/[[clang::require_constant_initialization]] on Apple. The
+# fix_protobuf_port_cc_apple call below directly patches port.cc as an
+# additional safety measure in case the port_def.inc path alone is insufficient.
 apply_one "$PATCH_DIR/0006-third_party-protobuf-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party/protobuf"
+fix_protobuf_port_cc_apple

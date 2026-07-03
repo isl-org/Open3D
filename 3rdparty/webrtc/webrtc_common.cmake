@@ -28,7 +28,9 @@ function(get_webrtc_args WEBRTC_ARGS)
         endif()
     elseif(UNIX)
         set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-        set(WEBRTC_ARGS extra_cxxflags=[\"-Wno-changes-meaning\"]\n${WEBRTC_ARGS})
+        # GCC rejects the virtual-function name-shadowing via -fpermissive (not a
+        # -W flag), so demote it to a warning with -fpermissive.
+        set(WEBRTC_ARGS extra_cxxflags=[\"-fpermissive\"]\n${WEBRTC_ARGS})
     endif()
 
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})
