@@ -28,10 +28,6 @@ function(get_webrtc_args WEBRTC_ARGS)
         endif()
     elseif(UNIX)
         set(WEBRTC_ARGS is_clang=false\n${WEBRTC_ARGS})
-        # -fpermissive for GCC is injected via 0003-src-gcc-fpermissive.patch
-        # directly into WebRTC's BUILD.gn config("common_config") because the
-        # gn arg `extra_cxxflags` is not a recognised WebRTC build argument and
-        # was silently ignored.
     endif()
 
     set(WEBRTC_ARGS use_custom_libcxx=false\n${WEBRTC_ARGS})

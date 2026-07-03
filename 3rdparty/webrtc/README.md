@@ -31,7 +31,7 @@ cleanly to the pinned WebRTC commit):
 0001-build-enable-rtc_use_cxx11_abi-option.patch           # -> src/build (GCC C++11 ABI)
 0001-third_party-enable-rtc_use_cxx11_abi-option.patch     # -> src/third_party (GCC C++11 ABI)
 0002-src-fix-nullptr_t-with-libstdcxx.patch                # -> src (GCC nullptr_t with libstdc++)
-0003-src-gcc-fpermissive.patch                             # -> src (GCC C++20: Network() name shadowing)
+
 0004-call-payload_type_picker-gcc-flat_tree.patch          # -> src (GCC flat_tree ordering)
 0005-build-win-dynamic-crt.patch                           # -> src/build (Windows /MD[d] runtime)
 0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party/protobuf (macOS constinit)
@@ -42,6 +42,10 @@ cleanly to the pinned WebRTC commit):
 string replacement) to drop `PROTOBUF_CONSTINIT` from the
 `fixed_address_empty_string` declaration, which causes a hard error on
 Xcode 15.4 because `std::string`'s constructor is not a constant expression.
+
+`apply_webrtc_patches.sh` also directly patches `p2p/base/port_interface.h` and
+`p2p/base/port.h` (via Python string replacement) to qualify the return type
+of `Network()` as `::webrtc::Network*` to fix a GCC C++20 "changes meaning" error.
 
 `0006-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
 non-component (static) Windows build can use the dynamic MSVC runtime

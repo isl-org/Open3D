@@ -85,13 +85,38 @@ print(f'Applied Apple constinit fix in {path}')
 PYEOF
 }
 
+# Fix GCC C++20 "changes meaning" error for Network() in WebRTC.
+# GCC treats a method name matching a class name as an error.
+fix_gcc_cxx20_network_changes_meaning() {
+    python3 - "${WEBRTC_SRC}/p2p/base/port_interface.h" "${WEBRTC_SRC}/p2p/base/port.h" <<'PYEOF'
+import sys
+import re
+import os
+
+for path in sys.argv[1:]:
+    if not os.path.exists(path):
+        continue
+    with open(path, 'r') as f:
+        content = f.read()
+    
+    # Replace `Network* Network()` with `::webrtc::Network* Network()`
+    # but only if it's not already prefixed with `::webrtc::`.
+    new_content = re.sub(r'(?<!::webrtc::)Network\*\s*Network\(\)', r'::webrtc::Network* Network()', content)
+    
+    if new_content != content:
+        with open(path, 'w') as f:
+            f.write(new_content)
+        print(f'Applied GCC C++20 Network() changes meaning fix in {path}')
+    else:
+        print(f'Skip GCC C++20 Network() changes meaning fix in {path} (already applied or not found)')
+PYEOF
+}
+
 PATCH_DIR="$OPEN3D_DIR/3rdparty/webrtc"
 # Required: declare gn args consumed by args.gn and fix GCC compile errors.
 apply_one "$PATCH_DIR/0001-src-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0001-build-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC/build"
 apply_one "$PATCH_DIR/0001-third_party-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC/third_party"
-# 0003 must come after 0001-src so its context (rtc_use_cxx11_abi block) is present.
-apply_one "$PATCH_DIR/0003-src-gcc-fpermissive.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0002-src-fix-nullptr_t-with-libstdcxx.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0004-call-payload_type_picker-gcc-flat_tree.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0005-build-win-dynamic-crt.patch" "$WEBRTC_SRC/build"
@@ -101,3 +126,4 @@ apply_one "$PATCH_DIR/0005-build-win-dynamic-crt.patch" "$WEBRTC_SRC/build"
 # additional safety measure in case the port_def.inc path alone is insufficient.
 apply_one "$PATCH_DIR/0006-third_party-protobuf-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party/protobuf"
 fix_protobuf_port_cc_apple
+fix_gcc_cxx20_network_changes_meaning
