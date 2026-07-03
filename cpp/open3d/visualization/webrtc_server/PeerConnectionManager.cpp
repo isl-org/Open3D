@@ -114,7 +114,6 @@ static bool PeerConnectionHasStreamForWindow(
 static webrtc::PeerConnectionFactoryDependencies
 CreatePeerConnectionFactoryDependencies(
         webrtc::FieldTrials* field_trials) {
-    (void)field_trials;
     webrtc::PeerConnectionFactoryDependencies dependencies;
     dependencies.worker_thread = webrtc::Thread::Current();
     dependencies.network_thread = nullptr;

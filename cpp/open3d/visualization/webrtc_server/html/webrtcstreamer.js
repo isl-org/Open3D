@@ -454,6 +454,7 @@ let WebRtcStreamer = (function() {
     WebRtcStreamer.prototype.disconnect = function() {
         if (this.videoElt) {
             this.videoElt.srcObject = null;
+            this.videoElt.removeAttribute('src');
         }
         this.remoteStream = null;
         if (this.pc) {
