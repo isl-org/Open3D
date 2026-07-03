@@ -31,6 +31,7 @@ cleanly to the pinned WebRTC commit):
 0001-build-enable-rtc_use_cxx11_abi-option.patch           # -> src/build (GCC C++11 ABI)
 0001-third_party-enable-rtc_use_cxx11_abi-option.patch     # -> src/third_party (GCC C++11 ABI)
 0002-src-fix-nullptr_t-with-libstdcxx.patch                # -> src (GCC nullptr_t with libstdc++)
+0003-src-gcc-fpermissive.patch                             # -> src (GCC C++20: Network() name shadowing)
 0004-call-payload_type_picker-gcc-flat_tree.patch          # -> src (GCC flat_tree ordering)
 0005-build-win-dynamic-crt.patch                           # -> src/build (Windows /MD[d] runtime)
 0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party/protobuf (macOS constinit)
