@@ -1,0 +1,12 @@
+diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
+--- a/rtc_base/ssl_stream_adapter.h
++++ b/rtc_base/ssl_stream_adapter.h
+@@ -129,7 +129,7 @@ class SSLStreamAdapter : public StreamInterface {
+   static std::unique_ptr<SSLStreamAdapter> Create(
+       std::unique_ptr<StreamInterface> stream,
+       absl::AnyInvocable<void(SSLHandshakeError)> handshake_error,
+-      nullptr_t /*field_trials*/) {
++      std::nullptr_t /*field_trials*/) {
+     return Create(std::move(stream), std::move(handshake_error));
+   }
+ 

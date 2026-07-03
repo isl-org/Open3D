@@ -4,43 +4,74 @@
 
 include(ExternalProject)
 
-set(WEBRTC_VER 60e6748)
+set(WEBRTC_VER e8b4d4c)
+if(DEFINED ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE} AND NOT "$ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE}" STREQUAL "")
+    set(WEBRTC_URL "file://$ENV{OPEN3D_WEBRTC_PREBUILT_ARCHIVE}")
+endif()
 if (APPLE)
-    set(WEBRTC_URL
-        https://github.com/isl-org/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_macos_10.14.tar.gz
-    )
-    set(WEBRTC_SHA256 e9d1f4e4fefb2e28ef4f16cf4a4f0008baf4fe638ca3ad329e82e7fd0ce87f56)
+    if(NOT WEBRTC_URL)
+        set(WEBRTC_URL
+            https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v4/webrtc_${WEBRTC_VER}_macos_arm64.tar.gz
+        )
+    endif()
+    # Update after publishing M149 macOS arm64 artifact from webrtc.yml.
+    set(WEBRTC_SHA256 PLACEHOLDER_MACOS_ARM64_SHA256)
 elseif (WIN32)
-    if (BUILD_SHARED_LIBS OR NOT STATIC_WINDOWS_RUNTIME)
-        message(FATAL_ERROR "Pre-built WebRTC binaries are not available for "
-            "BUILD_SHARED_LIBS=ON or STATIC_WINDOWS_RUNTIME=OFF. Please use "
-            "(a) BUILD_WEBRTC=OFF or "
-            "(b) BUILD_SHARED_LIBS=OFF and STATIC_WINDOWS_RUNTIME=ON or "
-            "(c) BUILD_WEBRTC_FROM_SOURCE=ON")
+    # Prebuilt WebRTC is a static lib for both MSVC runtimes. A shared Open3D
+    # build links it into open3d.dll and always uses the dynamic runtime, so
+    # only BUILD_SHARED_LIBS=ON + STATIC_WINDOWS_RUNTIME=ON is unsupported.
+    if (BUILD_SHARED_LIBS AND STATIC_WINDOWS_RUNTIME)
+        message(FATAL_ERROR "Pre-built WebRTC does not support "
+            "BUILD_SHARED_LIBS=ON with STATIC_WINDOWS_RUNTIME=ON. Use "
+            "STATIC_WINDOWS_RUNTIME=OFF or BUILD_WEBRTC_FROM_SOURCE=ON.")
     endif()
-    set(WEBRTC_URL
-        https://github.com/isl-org/open3d_downloads/releases/download/webrtc/webrtc_${WEBRTC_VER}_win.zip
-    )
-    set(WEBRTC_SHA256 f4686d0028ef5c36c5d7158a638fa834b63183b522f0b63932f7f70ebffeea22)
-else()  # Linux
-    if(GLIBCXX_USE_CXX11_ABI)
-        set(WEBRTC_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v3/webrtc_${WEBRTC_VER}_cxx-abi-1.tar.gz
-        )
-        set(WEBRTC_SHA256 0d98ddbc4164b9e7bfc50b7d4eaa912a753dabde0847d85a64f93a062ae4c335)
+    if(STATIC_WINDOWS_RUNTIME)
+        set(WEBRTC_RUNTIME_TAG mt)
     else()
-        set(WEBRTC_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v3/webrtc_${WEBRTC_VER}_cxx-abi-0.tar.gz
-        )
-        set(WEBRTC_SHA256 2a3714713908f84079f1fbce8594c9b7010846b5db74b086f7bf30f22f1f5835)
+        set(WEBRTC_RUNTIME_TAG md)
     endif()
+    if(CMAKE_BUILD_TYPE STREQUAL Debug)
+        set(WEBRTC_CONFIG_TAG Debug)
+    else()
+        set(WEBRTC_CONFIG_TAG Release)
+    endif()
+    if(NOT WEBRTC_URL)
+        set(WEBRTC_URL
+            https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v4/webrtc_${WEBRTC_VER}_win_${WEBRTC_CONFIG_TAG}_${WEBRTC_RUNTIME_TAG}.zip
+        )
+    endif()
+    # Update after publishing four Windows artifacts from webrtc.yml.
+    set(WEBRTC_SHA256 PLACEHOLDER_WIN_SHA256)
+else()  # Linux
+    if(NOT WEBRTC_URL)
+        if(NOT GLIBCXX_USE_CXX11_ABI)
+            message(FATAL_ERROR "Pre-built WebRTC with GLIBCXX_USE_CXX11_ABI=OFF is "
+                "no longer provided. Use GLIBCXX_USE_CXX11_ABI=ON or "
+                "BUILD_WEBRTC_FROM_SOURCE=ON.")
+        endif()
+        set(WEBRTC_URL
+            https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v4/webrtc_${WEBRTC_VER}_linux_cxx-abi-1.tar.gz
+        )
+    endif()
+    set(WEBRTC_SHA256 1b529bf448d5abd07ec1f8d310ee5c94bd79e84fe563ae1562420f8e478cc202)
+endif()
+
+if(WEBRTC_SHA256 MATCHES "^PLACEHOLDER")
+    message(WARNING "WebRTC prebuilt SHA256 not set for this platform (${WEBRTC_SHA256}). "
+        "Set OPEN3D_WEBRTC_PREBUILT_ARCHIVE or update webrtc_download.cmake after CI publish.")
+    unset(WEBRTC_SHA256)
+endif()
+
+set(_webrtc_url_hash "")
+if(WEBRTC_SHA256)
+    set(_webrtc_url_hash URL_HASH SHA256=${WEBRTC_SHA256})
 endif()
 
 ExternalProject_Add(
     ext_webrtc
     PREFIX webrtc
     URL ${WEBRTC_URL}
-    URL_HASH SHA256=${WEBRTC_SHA256}
+    ${_webrtc_url_hash}
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
@@ -50,22 +81,18 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_webrtc SOURCE_DIR)
-if (WIN32)
-    set(SOURCE_DIR "${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>")
-endif()
-set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(LIBPNG_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+# Prebuilt layout: flat include/ and lib/ at archive root (M149 packages).
+set(WEBRTC_PREBUILT_ROOT ${SOURCE_DIR})
 
 # Variables consumed by find_dependencies.cmake
 set(WEBRTC_INCLUDE_DIRS
-    ${SOURCE_DIR}/include/
-    ${SOURCE_DIR}/include/third_party/abseil-cpp/
-    ${SOURCE_DIR}/include/third_party/jsoncpp/source/include/
-    ${SOURCE_DIR}/include/third_party/jsoncpp/generated/
-    ${SOURCE_DIR}/include/third_party/libyuv/include/
+    ${WEBRTC_PREBUILT_ROOT}/include/
+    ${WEBRTC_PREBUILT_ROOT}/include/third_party/abseil-cpp/
+    ${WEBRTC_PREBUILT_ROOT}/include/third_party/jsoncpp/source/include/
+    ${WEBRTC_PREBUILT_ROOT}/include/third_party/jsoncpp/generated/
+    ${WEBRTC_PREBUILT_ROOT}/include/third_party/libyuv/include/
 )
-set(WEBRTC_LIB_DIR ${SOURCE_DIR}/lib)
+set(WEBRTC_LIB_DIR ${WEBRTC_PREBUILT_ROOT}/lib)
 set(WEBRTC_LIBRARIES
     webrtc
     webrtc_extra

@@ -1988,11 +1988,24 @@ if(BUILD_WEBRTC)
     open3d_import_3rdparty_library(3rdparty_webrtc
         HIDDEN
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
-        LIB_DIR      ${WEBRTC_LIB_DIR}
-        LIBRARIES    ${WEBRTC_LIBRARIES}
         DEPENDS      ext_webrtc_all
     )
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "-Wl,--whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "-Wl,--no-whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    else()
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    endif()
     target_link_libraries(3rdparty_webrtc INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+    # libwebrtc.a and libturbojpeg.a both export jpeg_* symbols (WebRTC bundles libjpeg).
+    if(UNIX AND NOT APPLE)
+        target_link_options(3rdparty_webrtc INTERFACE "LINKER:--allow-multiple-definition")
+    endif()
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
     endif()

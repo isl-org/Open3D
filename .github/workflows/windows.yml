@@ -56,7 +56,10 @@ jobs:
           - BUILD_CUDA_MODULE: ON   # FIXME
             CONFIG: Debug
     env:
-      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      # WebRTC prebuilt ships static libs for both MSVC runtimes (/MT, /MD).
+      # Enable it for static-lib + static-runtime (/MT) and shared-lib +
+      # dynamic-runtime (/MD). Shared libs always use the dynamic runtime.
+      BUILD_WEBRTC: ${{ ( ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) || ( matrix.BUILD_SHARED_LIBS == 'ON' && matrix.STATIC_RUNTIME == 'OFF' ) ) && 'ON' || 'OFF' }}
       BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:

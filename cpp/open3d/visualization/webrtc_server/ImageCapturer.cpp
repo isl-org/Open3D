@@ -7,11 +7,13 @@
 
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
 #include <media/base/video_broadcaster.h>
 #include <media/base/video_common.h>
+#include <rtc_base/time_utils.h>
 
 #include <memory>
 
@@ -50,7 +52,7 @@ void ImageCapturer::OnCaptureResult(
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
 
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+    webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
 
     // frame->data()
@@ -64,7 +66,7 @@ void ImageCapturer::OnCaptureResult(
     if (conversion_result >= 0) {
         webrtc::VideoFrame video_frame(i420_buffer,
                                        webrtc::VideoRotation::kVideoRotation_0,
-                                       rtc::TimeMicros());
+                                       webrtc::TimeMicros());
         if ((height_ == 0) && (width_ == 0)) {
             broadcaster_.OnFrame(video_frame);
         } else {
@@ -77,13 +79,13 @@ void ImageCapturer::OnCaptureResult(
             }
             int stride_y = width;
             int stride_uv = (width + 1) / 2;
-            rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
+            webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
                     webrtc::I420Buffer::Create(width, height, stride_y,
                                                stride_uv, stride_uv);
             scaled_buffer->ScaleFrom(
                     *video_frame.video_frame_buffer()->ToI420());
             webrtc::VideoFrame frame = webrtc::VideoFrame(
-                    scaled_buffer, webrtc::kVideoRotation_0, rtc::TimeMicros());
+                    scaled_buffer, webrtc::kVideoRotation_0, webrtc::TimeMicros());
 
             broadcaster_.OnFrame(frame);
         }
@@ -93,15 +95,15 @@ void ImageCapturer::OnCaptureResult(
     }
 }
 
-// Override rtc::VideoSourceInterface<webrtc::VideoFrame>.
+// Override webrtc::VideoSourceInterface<webrtc::VideoFrame>.
 void ImageCapturer::AddOrUpdateSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-        const rtc::VideoSinkWants& wants) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+        const webrtc::VideoSinkWants& wants) {
     broadcaster_.AddOrUpdateSink(sink, wants);
 }
 
 void ImageCapturer::RemoveSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
     broadcaster_.RemoveSink(sink);
 }
 

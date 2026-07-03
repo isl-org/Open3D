@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Open3D WebVisualizer</title>
@@ -136,6 +137,7 @@
             videoElt.muted = true;
             videoElt.controls = false;
             videoElt.playsinline = true;
+            videoElt.preload = "none";
             videoElt.innerText = "Your browser does not support HTML5 video.";
 
             divElt.appendChild(videoElt);
