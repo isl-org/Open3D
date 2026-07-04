@@ -124,12 +124,10 @@ endif()
 
 # Set output directory according to architecture (cpu/cuda)
 get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
-set(TORCH_OPS_ARCH_DIR
-    "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
 set_target_properties(open3d_torch_ops PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
-    ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
-    RUNTIME_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}")
+    LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${TORCH_OPS_DIR}")
 
 # Do not add "lib" prefix
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")

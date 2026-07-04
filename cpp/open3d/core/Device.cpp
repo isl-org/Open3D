@@ -18,42 +18,49 @@
 namespace open3d {
 namespace core {
 
-static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
-    const std::vector<std::string> tokens =
-            utility::SplitString(type_colon_id, ":", true);
-    if (tokens.size() == 2) {
-        std::string device_type_lower = utility::ToLower(tokens[0]);
-        if (device_type_lower == "cpu") {
-            return Device::DeviceType::CPU;
-        } else if (device_type_lower == "cuda") {
-            return Device::DeviceType::CUDA;
-        } else if (device_type_lower == "sycl") {
-            return Device::DeviceType::SYCL;
-        } else {
-            utility::LogError(
-                    "Invalid device string {}. Valid device strings are like "
-                    "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
-                    type_colon_id);
-        }
-    } else {
-        utility::LogError(
-                "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
-                type_colon_id);
+static Device::DeviceType ParseDeviceTypeToken(const std::string& token) {
+    const std::string device_type_lower = utility::ToLower(token);
+    if (device_type_lower == "cpu") {
+        return Device::DeviceType::CPU;
+    } else if (device_type_lower == "cuda") {
+        return Device::DeviceType::CUDA;
+    } else if (device_type_lower == "sycl") {
+        return Device::DeviceType::SYCL;
     }
+    utility::LogError(
+            "Invalid device type \"{}\". Expected \"CPU\", \"CUDA\", or "
+            "\"SYCL\".",
+            token);
 }
 
-static int StringToDeviceId(const std::string& type_colon_id) {
+static Device::DeviceType StringToDeviceType(const std::string& device_str) {
     const std::vector<std::string> tokens =
-            utility::SplitString(type_colon_id, ":", true);
+            utility::SplitString(device_str, ":", true);
+    if (tokens.size() == 1) {
+        return ParseDeviceTypeToken(tokens[0]);
+    }
+    if (tokens.size() == 2) {
+        return ParseDeviceTypeToken(tokens[0]);
+    }
+    utility::LogError(
+            "Invalid device string {}. Valid device strings are like "
+            "\"CPU\", \"CUDA:0\", or \"SYCL:1\"",
+            device_str);
+}
+
+static int StringToDeviceId(const std::string& device_str) {
+    const std::vector<std::string> tokens =
+            utility::SplitString(device_str, ":", true);
+    if (tokens.size() == 1) {
+        return 0;
+    }
     if (tokens.size() == 2) {
         return std::stoi(tokens[1]);
-    } else {
-        utility::LogError(
-                "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\", \"CUDA:1\" or \"SYCL:0\"",
-                type_colon_id);
     }
+    utility::LogError(
+            "Invalid device string {}. Valid device strings are like "
+            "\"CPU\", \"CUDA:0\", or \"SYCL:1\"",
+            device_str);
 }
 
 Device::Device(DeviceType device_type, int device_id)
@@ -68,9 +75,8 @@ Device::Device(DeviceType device_type, int device_id)
 Device::Device(const std::string& device_type, int device_id)
     : Device(device_type + ":" + std::to_string(device_id)) {}
 
-Device::Device(const std::string& type_colon_id)
-    : Device(StringToDeviceType(type_colon_id),
-             StringToDeviceId(type_colon_id)) {}
+Device::Device(const std::string& device_str)
+    : Device(StringToDeviceType(device_str), StringToDeviceId(device_str)) {}
 
 bool Device::operator==(const Device& other) const {
     return this->device_type_ == other.device_type_ &&

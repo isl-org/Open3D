@@ -5,7 +5,6 @@ endif()
 # We need to get python version to configure some meta files
 set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
-
 pybind11_add_module(pybind)
 
 add_subdirectory(camera)
@@ -42,6 +41,7 @@ target_include_directories(pybind SYSTEM PRIVATE
 open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
 target_link_libraries(pybind PRIVATE Open3D::Open3D)
+open3d_link_split_device_libraries(pybind)
 
 
 if (WIN32)
@@ -77,7 +77,7 @@ endif()
 # PYTHON_COMPILED_MODULE_DIR. The default location is
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
-    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
 
 if (UNIX AND NOT APPLE)
     # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
@@ -101,6 +101,7 @@ if (BUILD_SHARED_LIBS)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
     )
+    open3d_pybind_post_build_copy_device_libraries(pybind)
 endif()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so, libc++abi.so (needed by filament) for Linux.

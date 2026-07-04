@@ -185,9 +185,8 @@ build_pip_package() {
     set -u
 
     echo
-    echo Building with CPU only...
-    mkdir -p build_cpu
-    pushd build_cpu # PWD=Open3D/build_cpu
+    mkdir -p build
+    pushd build
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
@@ -202,61 +201,44 @@ build_pip_package() {
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
+        "-DBUILD_SHARED_LIBS=ON"
     )
-    set -x # Echo commands on
-    if [ ! -f CMakeCache.txt ]; then
-        cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
+    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+        install_python_dependencies with-cuda purge-cache
+        cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
+    else
+        cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
     fi
-    set +x # Echo commands off
-    echo
-
+    set -x
+    if [ ! -f CMakeCache.txt ]; then
+        cmake -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
+    fi
+    set +x
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
         echo "Building Open3D C++ Core only..."
         make VERBOSE=1 -j"$NPROC"
-        # make install? Not strictly necessary unless we want to use installed libs.
-        # But for 'build-lib', we want to keep the build directory populated.
-        # make VERBOSE=1 -j"$NPROC" install
     else
-        echo "Packaging Open3D CPU pip package..."
+        echo "Packaging Open3D pip wheel (single configure)..."
         make VERBOSE=1 -j"$NPROC" pip-package
     fi
     popd
 
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
         echo
-        echo Installing CUDA versions of TensorFlow and PyTorch...
-        install_python_dependencies with-cuda purge-cache
-        echo
-        echo Building with CUDA...
-        
-        mkdir -p build_cuda
-        pushd build_cuda
-        
-        set -x # Echo commands on
+        echo "Building open3d-cpu wheel..."
+        mkdir -p build_cpu
+        pushd build_cpu
         if [ ! -f CMakeCache.txt ]; then
-            cmake -DBUILD_CUDA_MODULE=ON \
-                -DBUILD_COMMON_CUDA_ARCHS=ON \
-                -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+            cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_PYTHON_MODULE=ON \
                 "${cmakeOptions[@]}" ..
         fi
-        set +x # Echo commands off
-        
-        if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
-             make VERBOSE=1 -j"$NPROC"
-        else
-             make VERBOSE=1 -j"$NPROC" pip-package
-        fi
+        make VERBOSE=1 -j"$NPROC" pip-package
         popd
+        mkdir -p build/lib/python_package/pip_package
+        cp build_cpu/lib/python_package/pip_package/open3d_cpu*.whl \
+            build/lib/python_package/pip_package/ || true
     fi
     echo
-
-    if [ "$BUILD_PYTHON_MODULE" != "OFF" ]; then
-        mkdir -p build/lib/python_package/pip_package
-        cp build_cpu/lib/python_package/pip_package/open3d*.whl build/lib/python_package/pip_package/ || true
-        if [ "$BUILD_CUDA_MODULE" == ON ]; then
-            cp build_cuda/lib/python_package/pip_package/open3d*.whl build/lib/python_package/pip_package/ || true
-        fi
-    fi
 }
 
 # Test wheel in blank virtual environment

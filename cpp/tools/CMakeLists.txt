@@ -6,6 +6,7 @@ macro(open3d_add_tool TOOL_NAME)
             Open3D::Open3D 
             ${ARGN}
         )
+    open3d_link_split_device_libraries(${TOOL_NAME})
 
     set_target_properties(${TOOL_NAME} PROPERTIES FOLDER "Tools")
     open3d_show_and_abort_on_warning(${TOOL_NAME})
@@ -29,6 +30,7 @@ target_link_libraries(ManuallyAlignPointCloud PRIVATE
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_tinyfiledialogs
 )
+open3d_link_split_device_libraries(ManuallyAlignPointCloud)
 set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
 open3d_show_and_abort_on_warning(ManuallyAlignPointCloud)
 open3d_set_global_properties(ManuallyAlignPointCloud)

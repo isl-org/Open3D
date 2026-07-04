@@ -34,9 +34,6 @@ struct Logger::Impl {
     // The current print function.
     std::function<void(const std::string &)> print_fcn_;
 
-    // The default print function (that prints to console).
-    static std::function<void(const std::string &)> console_print_fcn_;
-
     // Verbosity level.
     VerbosityLevel verbosity_level_;
 
@@ -57,11 +54,18 @@ struct Logger::Impl {
     }
 };
 
-std::function<void(const std::string &)> Logger::Impl::console_print_fcn_ =
-        [](const std::string &msg) { std::cout << msg << std::endl; };
+namespace {
+
+const std::function<void(const std::string &)> &GetDefaultPrintFunction() {
+    static const std::function<void(const std::string &)> default_fcn =
+            [](const std::string &msg) { std::cout << msg << std::endl; };
+    return default_fcn;
+}
+
+}  // namespace
 
 Logger::Logger() : impl_(new Logger::Impl()) {
-    impl_->print_fcn_ = Logger::Impl::console_print_fcn_;
+    impl_->print_fcn_ = GetDefaultPrintFunction();
     impl_->verbosity_level_ = VerbosityLevel::Info;
 }
 
@@ -118,7 +122,7 @@ const std::function<void(const std::string &)> Logger::GetPrintFunction() {
 }
 
 void Logger::ResetPrintFunction() {
-    impl_->print_fcn_ = impl_->console_print_fcn_;
+    impl_->print_fcn_ = GetDefaultPrintFunction();
 }
 
 void Logger::SetVerbosityLevel(VerbosityLevel verbosity_level) {

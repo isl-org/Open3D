@@ -12,6 +12,7 @@
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/Device.h"
+#include "open3d/core/DevicePluginLoader.h"
 #include "open3d/core/MemoryManagerStatistic.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -98,21 +99,40 @@ std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
                      std::make_shared<MemoryManagerCPU>()},
-#ifdef BUILD_CUDA_MODULE
+            };
+    static bool device_managers_initialized = false;
+    if (!device_managers_initialized) {
+#if defined(BUILD_CUDA_MODULE)
+        if (IsCudaDeviceLibraryLoaded()) {
+#if defined(BUILD_SHARED_LIBS)
 #ifdef ENABLE_CACHED_CUDA_MANAGER
-                    {Device::DeviceType::CUDA,
-                     std::make_shared<MemoryManagerCached>(
-                             std::make_shared<MemoryManagerCUDA>())},
+            map_device_type_to_memory_manager[Device::DeviceType::CUDA] =
+                    std::make_shared<MemoryManagerCached>(
+                            CreateCudaMemoryManagerDevice());
 #else
-                    {Device::DeviceType::CUDA,
-                     std::make_shared<MemoryManagerCUDA>()},
+            map_device_type_to_memory_manager[Device::DeviceType::CUDA] =
+                    CreateCudaMemoryManagerDevice();
 #endif
+#else
+#ifdef ENABLE_CACHED_CUDA_MANAGER
+            map_device_type_to_memory_manager[Device::DeviceType::CUDA] =
+                    std::make_shared<MemoryManagerCached>(
+                            std::make_shared<MemoryManagerCUDA>());
+#else
+            map_device_type_to_memory_manager[Device::DeviceType::CUDA] =
+                    std::make_shared<MemoryManagerCUDA>();
+#endif
+#endif
+        }
 #endif
 #ifdef BUILD_SYCL_MODULE
-                    {Device::DeviceType::SYCL,
-                     std::make_shared<MemoryManagerSYCL>()},
+        if (IsXpuDeviceLibraryLoaded()) {
+            map_device_type_to_memory_manager[Device::DeviceType::SYCL] =
+                    std::make_shared<MemoryManagerSYCL>();
+        }
 #endif
-            };
+        device_managers_initialized = true;
+    }
 
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {

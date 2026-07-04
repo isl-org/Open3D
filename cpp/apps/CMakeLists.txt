@@ -128,6 +128,7 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
     endif()
 
     target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D TBB::tbb ${ARGN})
+    open3d_link_split_device_libraries(${TARGET_NAME})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
 
     if (BUILD_SYCL_MODULE)

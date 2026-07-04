@@ -24,10 +24,16 @@ target_link_libraries(Draw PRIVATE Open3D::Open3D)
 if(WIN32)
     get_target_property(open3d_type Open3D::Open3D TYPE)
     if(open3d_type STREQUAL "SHARED_LIBRARY")
-        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll" 
+        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll"
                       "${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll")
-    else() 
-        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll") 
+        if(TARGET Open3D::Open3D_cuda)
+            list(APPEND copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/Open3D_cuda.dll")
+        endif()
+        if(TARGET Open3D::Open3D_xpu)
+            list(APPEND copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/Open3D_xpu.dll")
+        endif()
+    else()
+        set(copy_dlls "${CMAKE_INSTALL_PREFIX}/bin/tbb12$<$<CONFIG:Debug>:_debug>.dll")
     endif()
     # For CUDA builds, we must also copy the CUDA DLLs. Alternately, add
     # $Env:CUDA_PATH/bin to $Env:PATH to avoid this copy.

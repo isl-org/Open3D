@@ -555,6 +555,7 @@ endif()
 # Include convenience functions
 include(Open3DLink3rdpartyLibraries)
 include(Open3DSetGlobalProperties)
+include(Open3DDeviceLibrary)
 include(Open3DShowAndAbortOnWarning)
 include(Open3DSYCLTargetSources)
 

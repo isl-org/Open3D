@@ -17,18 +17,26 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-# Folder structure is base_dir/{cpu|cuda}/{pybind*.so|open3d_{torch|tf}_ops.so},
-# so copy base_dir directly to ${PYTHON_PACKAGE_DST_DIR}/open3d
+# Copy compiled extensions and bundled shared libraries into open3d/
 foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
-    get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
-    get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
-    get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
-    foreach(ARCH cpu cuda)
-        if(IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
-            file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
-                "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}"
-                FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
-        endif()
+    file(COPY ${COMPILED_MODULE_PATH}
+         DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
+         FOLLOW_SYMLINK_CHAIN)
+endforeach()
+list(GET COMPILED_MODULE_PATH_LIST 0 _first_compiled_module)
+get_filename_component(_pybind_dir ${_first_compiled_module} DIRECTORY)
+# Copy Open3D_cuda / Open3D_xpu (or libOpen3D_* on Unix) when present next to pybind.
+foreach(_dev_suffix cuda xpu)
+    if(WIN32)
+        set(_dev_glob "${_pybind_dir}/Open3D_${_dev_suffix}.dll")
+    elseif(APPLE)
+        set(_dev_glob "${_pybind_dir}/libOpen3D_${_dev_suffix}.*.dylib")
+    else()
+        set(_dev_glob "${_pybind_dir}/libOpen3D_${_dev_suffix}.so*")
+    endif()
+    file(GLOB _dev_libs ${_dev_glob})
+    foreach(_dev_lib ${_dev_libs})
+        file(COPY ${_dev_lib} DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/)
     endforeach()
 endforeach()
 # Include additional libraries that may be absent from the user system

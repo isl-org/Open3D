@@ -41,6 +41,7 @@ target_link_libraries(tests PRIVATE
     Open3D::3rdparty_threads
     Open3D::3rdparty_vtk
 )
+open3d_link_split_device_libraries(tests)
 
 if (TARGET Open3D::3rdparty_openmp)
     target_link_libraries(tests PRIVATE

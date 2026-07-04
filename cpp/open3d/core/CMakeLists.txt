@@ -1,9 +1,63 @@
+# Device-only sources for libOpen3D_cuda / libOpen3D_xpu when BUILD_SHARED_LIBS splits modules.
+set(OPEN3D_CORE_CUDA_SOURCES
+    MemoryManagerCUDA.cpp
+)
+set(OPEN3D_CORE_CUDA_HASHMAP_SOURCES
+    hashmap/CUDA/CreateCUDAHashBackend.cu
+    hashmap/CUDA/CUDAHashBackendBuffer.cu
+    hashmap/CUDA/SlabNodeManager.cu
+)
+set(OPEN3D_CORE_IMPL_CUDA_SOURCES
+    kernel/ArangeCUDA.cu
+    kernel/BinaryEWCUDA.cu
+    kernel/IndexGetSetCUDA.cu
+    kernel/IndexReductionCUDA.cu
+    kernel/NonZeroCUDA.cu
+    kernel/ReductionCUDA.cu
+    kernel/UnaryEWCUDA.cu
+    linalg/AddMMCUDA.cpp
+    linalg/InverseCUDA.cpp
+    linalg/LeastSquaresCUDA.cpp
+    linalg/LinalgUtils.cpp
+    linalg/LUCUDA.cpp
+    linalg/MatmulCUDA.cpp
+    linalg/SolveCUDA.cpp
+    linalg/SVDCUDA.cpp
+    linalg/TriCUDA.cu
+    nns/FixedRadiusSearchOps.cu
+    nns/kernel/BlockSelectFloat32.cu
+    nns/kernel/BlockSelectFloat64.cu
+    nns/KnnSearchOps.cu
+)
+set(OPEN3D_CORE_SYCL_SOURCES
+    MemoryManagerSYCL.cpp
+    SYCLContext.cpp
+)
+set(OPEN3D_CORE_IMPL_SYCL_SOURCES
+    kernel/UnaryEWSYCL.cpp
+    kernel/BinaryEWSYCL.cpp
+    kernel/ArangeSYCL.cpp
+    kernel/IndexGetSetSYCL.cpp
+    kernel/NonZeroSYCL.cpp
+    kernel/IndexReductionSYCL.cpp
+    kernel/ReductionSYCL.cpp
+    linalg/AddMMSYCL.cpp
+    linalg/InverseSYCL.cpp
+    linalg/LeastSquaresSYCL.cpp
+    linalg/LUSYCL.cpp
+    linalg/MatmulSYCL.cpp
+    linalg/SolveSYCL.cpp
+    linalg/SVDSYCL.cpp
+    linalg/TriSYCL.cpp
+)
+
 open3d_ispc_add_library(core OBJECT)
 
 target_sources(core PRIVATE
     AdvancedIndexing.cpp
     CUDAUtils.cpp
     Device.cpp
+    DevicePluginLoader.cpp
     Dtype.cpp
     Indexer.cpp
     MemoryManager.cpp
@@ -26,13 +80,13 @@ open3d_sycl_target_sources(core PRIVATE
     SYCLUtils.cpp
 )
 
-# Compile only when BUILD_SYCL_MODULE == ON.
-if (BUILD_SYCL_MODULE)
-    open3d_sycl_target_sources(core PRIVATE
-        MemoryManagerSYCL.cpp
-        SYCLContext.cpp
-    )
-endif()
+open3d_add_split_module_sources(
+    HOST_TARGET core
+    DEVICE_OBJECT core_xpu
+    DEVICE_KIND SYCL
+    MODULE_FLAG BUILD_SYCL_MODULE
+    SOURCES ${OPEN3D_CORE_SYCL_SOURCES}
+)
 
 target_sources(core PRIVATE
     hashmap/CPU/CPUHashBackendBuffer.cpp
@@ -59,9 +113,10 @@ target_sources(core PRIVATE
     nns/NNSIndex.cpp
 )
 
-# core_impl contains the implementation of core functions that are not exposed in the public API
 open3d_ispc_add_library(core_impl OBJECT)
-set_target_properties(core_impl PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+if(NOT (BUILD_SHARED_LIBS AND (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE)))
+    set_target_properties(core_impl PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+endif()
 
 target_sources(core_impl PRIVATE
     kernel/Arange.cpp
@@ -88,54 +143,23 @@ target_sources(core_impl PRIVATE
     linalg/TriCPU.cpp
 )
 
-if (BUILD_SYCL_MODULE)
-open3d_sycl_target_sources(core_impl PRIVATE
-    kernel/UnaryEWSYCL.cpp
-    kernel/BinaryEWSYCL.cpp
-    kernel/ArangeSYCL.cpp
-    kernel/IndexGetSetSYCL.cpp
-    kernel/NonZeroSYCL.cpp
-    kernel/IndexReductionSYCL.cpp
-    kernel/ReductionSYCL.cpp
-    linalg/AddMMSYCL.cpp
-    linalg/InverseSYCL.cpp
-    linalg/LeastSquaresSYCL.cpp
-    linalg/LUSYCL.cpp
-    linalg/MatmulSYCL.cpp
-    linalg/SolveSYCL.cpp
-    linalg/SVDSYCL.cpp
-    linalg/TriSYCL.cpp
+open3d_add_split_module_sources(
+    HOST_TARGET core_impl
+    DEVICE_OBJECT core_impl_xpu
+    DEVICE_KIND SYCL
+    MODULE_FLAG BUILD_SYCL_MODULE
+    HIDDEN
+    SOURCES ${OPEN3D_CORE_IMPL_SYCL_SOURCES}
 )
-endif()
 
 if (BUILD_CUDA_MODULE)
-    target_sources(core PRIVATE
-        MemoryManagerCUDA.cpp
+    open3d_add_device_split_object_library(core_cuda CUDA
+        SOURCES
+            ${OPEN3D_CORE_CUDA_SOURCES}
+            ${OPEN3D_CORE_CUDA_HASHMAP_SOURCES}
     )
-    target_sources(core_impl PRIVATE
-        hashmap/CUDA/CreateCUDAHashBackend.cu
-        hashmap/CUDA/CUDAHashBackendBuffer.cu
-        hashmap/CUDA/SlabNodeManager.cu
-        kernel/ArangeCUDA.cu
-        kernel/BinaryEWCUDA.cu
-        kernel/IndexGetSetCUDA.cu
-        kernel/IndexReductionCUDA.cu
-        kernel/NonZeroCUDA.cu
-        kernel/ReductionCUDA.cu
-        kernel/UnaryEWCUDA.cu
-        linalg/AddMMCUDA.cpp
-        linalg/InverseCUDA.cpp
-        linalg/LeastSquaresCUDA.cpp
-        linalg/LinalgUtils.cpp
-        linalg/LUCUDA.cpp
-        linalg/MatmulCUDA.cpp
-        linalg/SolveCUDA.cpp
-        linalg/SVDCUDA.cpp
-        linalg/TriCUDA.cu
-        nns/FixedRadiusSearchOps.cu
-        nns/kernel/BlockSelectFloat32.cu
-        nns/kernel/BlockSelectFloat64.cu
-        nns/KnnSearchOps.cu
+    open3d_add_device_split_object_library(core_impl_cuda CUDA HIDDEN
+        SOURCES ${OPEN3D_CORE_IMPL_CUDA_SOURCES}
     )
 endif()
 
@@ -149,6 +173,7 @@ if (BUILD_ISPC_MODULE)
     )
 endif()
 
+
 open3d_show_and_abort_on_warning(core)
 open3d_set_global_properties(core)
 open3d_set_open3d_lib_properties(core)
@@ -159,7 +184,3 @@ open3d_set_global_properties(core_impl)
 open3d_set_open3d_lib_properties(core_impl)
 open3d_link_3rdparty_libraries(core_impl)
 
-if(BUILD_CUDA_MODULE)
-    target_include_directories(core SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-    target_include_directories(core_impl SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()

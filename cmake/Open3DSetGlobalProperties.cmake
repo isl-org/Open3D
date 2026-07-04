@@ -88,6 +88,9 @@ function(open3d_set_global_properties target)
     target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
 
     # Propagate build configuration into source code
+    if (BUILD_SHARED_LIBS)
+        target_compile_definitions(${target} PRIVATE BUILD_SHARED_LIBS)
+    endif()
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
         if (ENABLE_CACHED_CUDA_MANAGER)
@@ -210,5 +213,6 @@ function(open3d_set_global_properties target)
         # BUILD_RPATH for Python wheel libs and app.
             BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
     endif()
+
 
 endfunction()

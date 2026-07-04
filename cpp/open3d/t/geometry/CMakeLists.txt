@@ -1,5 +1,9 @@
 add_subdirectory(kernel)
 
+set(OPEN3D_TGEOMETRY_SYCL_SOURCES
+    RaycastingScene.cpp
+)
+
 open3d_ispc_add_library(tgeometry OBJECT)
 
 target_sources(tgeometry PRIVATE
@@ -16,21 +20,18 @@ target_sources(tgeometry PRIVATE
 )
 
 if (BUILD_SYCL_MODULE)
-    open3d_sycl_target_sources(tgeometry PRIVATE
-        RaycastingScene.cpp
+    open3d_add_split_module_sources(
+        HOST_TARGET tgeometry
+        DEVICE_OBJECT tgeometry_xpu
+        DEVICE_KIND SYCL
+        MODULE_FLAG BUILD_SYCL_MODULE
+        SOURCES ${OPEN3D_TGEOMETRY_SYCL_SOURCES}
     )
 else()
-    target_sources(tgeometry PRIVATE
-        RaycastingScene.cpp
-    )
+    target_sources(tgeometry PRIVATE ${OPEN3D_TGEOMETRY_SYCL_SOURCES})
 endif()
 
 open3d_show_and_abort_on_warning(tgeometry)
 open3d_set_global_properties(tgeometry)
 open3d_set_open3d_lib_properties(tgeometry)
 open3d_link_3rdparty_libraries(tgeometry)
-
-if(BUILD_CUDA_MODULE)
-    target_include_directories(tgeometry SYSTEM PRIVATE
-        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-endif()

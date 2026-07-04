@@ -25,12 +25,17 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 11.5+ (optional): Open3D supports GPU acceleration of an increasing number
-  of operations through CUDA on Linux. We recommend using CUDA 12+ for the
-  best compatibility with recent GPUs and optional external dependencies such
-  as Tensorflow or PyTorch. Please see the `official documentation
-  <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
-  install the CUDA toolkit from Nvidia.
+* CUDA 11.5+ (optional): Open3D supports GPU acceleration through CUDA on Linux.
+  Prebuilt wheels statically link the CUDA runtime libraries into
+  ``libOpen3D_cuda.so``, so no separate NVIDIA runtime pip packages are
+  required at import time. For building from source, install the CUDA
+  toolkit (``nvidia-smi``, ``nvcc -V``) and configure with
+  ``-DBUILD_CUDA_MODULE=ON`` (``-DBUILD_WITH_CUDA_STATIC=ON`` by default).
+
+* Shared libraries: when CUDA or SYCL is enabled, CPU code lives in ``libOpen3D.so`` and
+  device code in ``libOpen3D_cuda.so`` or ``libOpen3D_xpu.so``. Static builds link
+  ``libOpen3D.a`` plus the matching device archive. Python wheels ship a single ``pybind``
+  module alongside these libraries.
 
 * Ccache 4.0+ (optional, recommended): ccache is a compiler cache that can
   speed up the compilation process by avoiding recompilation of the same
@@ -313,19 +318,21 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
 
     .. code-block:: bash
 
-        cmake -DBUILD_CUDA_MODULE=ON -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+        cmake -DBUILD_CUDA_MODULE=ON -DBUILD_SHARED_LIBS=ON \
+              -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
 
-    Please note that CUDA support is work in progress and experimental. For building
-    Open3D with CUDA support, ensure that CUDA is properly installed by running following commands:
+    CUDA runtime libraries are statically linked into ``libOpen3D_cuda.so``
+    by default (``-DBUILD_WITH_CUDA_STATIC=ON``), so CUDA wheels do not need
+    any NVIDIA redistributable pip packages at import time. Pass
+    ``-DBUILD_WITH_CUDA_STATIC=OFF`` to dynamically link the CUDA runtime
+    instead. For development, ensure the CUDA toolkit is available:
 
     .. code-block:: bash
 
-        nvidia-smi      # Prints CUDA-enabled GPU information
-        nvcc -V         # Prints compiler version
+        nvidia-smi
+        nvcc -V
 
-    If you see an output similar to ``command not found``, you can install CUDA toolkit
-    by following the `official
-    documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
+    SYCL builds use ``libOpen3D_xpu.so`` and ``dpcpp-cpp-rt``; see :ref:`sycl`.
 
 WebRTC remote visualization
 ```````````````````````````
@@ -349,6 +356,81 @@ We provide Windows MSVC static libraries built in Release and Debug mode built w
 the static Windows runtime. This corresponds to building with the ``/MT`` and
 ``/MTd`` options respectively. For the build procedure, please see
 ``.github/workflows/webrtc.yml``. Other configurations are not supported.
+
+.. _abi_dependency_compatibility:
+
+ABI dependency and compatibility
+--------------------------------
+
+When compiling Open3D from source or using prebuilt wheels with machine learning (ML) framework bindings (such as PyTorch or TensorFlow) and hardware acceleration (such as CUDA or SYCL), maintaining Application Binary Interface (ABI) compatibility across all dependencies is critical. 
+
+An ABI mismatch between Open3D, the ML frameworks, and the underlying runtime libraries can lead to compilation failures, linker errors, or runtime crashes (such as segmentation faults).
+
+ABI Dependency Tree
+```````````````````
+
+The diagram below illustrates how Open3D and its custom operators depend on the underlying runtime ABI libraries:
+
+.. code-block:: text
+
+       +-----------------------------------------------------+
+       |                 Runtime ABI Library                 |
+       |             (glibc, nvidia-rt, sycl-rt)             |
+       +-----------+--------------+--------------+-----------+
+                   ^              ^              ^
+                   |              |              |
+                   |        +-----+-----+  +-----+-----+
+                   |        |  PyTorch  |  |TensorFlow |
+                   |        +-----+-----+  +-----+-----+
+                   |              ^              ^
+                   |              |              |
+                   |        +-----+-----+  +-----+-----+
+                   |        | torch-ops |  |  tf-ops   |
+                   |        +-----+-----+  +-----+-----+
+                   |              ^              ^
+                   |              |              |
+             +-----+-----+--------+--------------+-----+
+             |                 Open3D                  |
+             +-----------------------------------------+
+
+As shown in the diagram:
+
+* **Open3D** directly links against the core runtime ABI libraries (such as ``glibc``, ``nvidia-rt``, or ``sycl-rt``).
+* When custom ML operators are enabled (``BUILD_PYTORCH_OPS=ON`` or ``BUILD_TENSORFLOW_OPS=ON``), Open3D compiles custom operator libraries (``torch-ops`` and ``tf-ops``).
+* These custom operators depend directly on the installed ML frameworks (``pytorch`` and ``tensorflow``).
+* Both the ML frameworks and the custom operators must link against the exact same runtime ABI libraries.
+
+Consequently, the dependency versions must be compatible. Typically, the major and minor versions of the toolchains and runtime libraries used at build time must match those used by the installed ML frameworks, and the runtime environment must satisfy the compatibility guarantees of each library.
+
+Runtime ABI Libraries and Compatibility Guarantees
+```````````````````````````````````````````````````
+
+glibc (GNU C Library)
+"""""""""""""""""""""
+
+* **Backward Compatibility**: ``glibc`` guarantees strict backward compatibility. A binary compiled against an older version of ``glibc`` (e.g., ``glibc 2.31`` on Ubuntu 20.04) will run without issues on a system with a newer version of ``glibc`` (e.g., ``glibc 2.35`` on Ubuntu 22.04). It does **not** guarantee forward compatibility.
+* **C++ Standard Library ABI (libstdc++)**:
+  * Open3D compiles with ``GLIBCXX_USE_CXX11_ABI=ON`` by default.
+  * Modern PyTorch and TensorFlow Linux wheel releases are also built with CXX11 ABI enabled (``_GLIBCXX_USE_CXX11_ABI=1``) by default.
+  * Open3D's CMake configuration automatically queries and verifies that the ABI configuration of the installed PyTorch and TensorFlow matches Open3D's configuration to prevent linker and runtime errors.
+
+nvidia-rt (NVIDIA CUDA Runtime and Driver)
+""""""""""""""""""""""""""""""""""""""""""
+
+* **Static Linking for Safety**:
+  * To prevent runtime version mismatch issues between different CUDA runtimes, Open3D builds with ``BUILD_WITH_CUDA_STATIC=ON`` by default.
+  * This statically links CUDA toolkit libraries (such as ``cudart_static``, ``cublas_static``, ``cusolver_static``, ``cusparse_static``, and ``npp*_static``) directly into Open3D's binary libraries, isolating Open3D from external CUDA runtime version mismatches.
+* **Compatibility Guarantees**:
+  * **Driver Backward Compatibility**: Newer NVIDIA drivers support older CUDA Toolkit and CUDA Runtime versions.
+  * **CUDA Minor Version Compatibility**: Starting with CUDA 11, NVIDIA guarantees binary compatibility within the same major version. An application compiled with any CUDA 11.x SDK can run on any driver that supports CUDA 11.0 or later. The same applies to CUDA 12.x and CUDA 13.x.
+
+sycl-rt (Intel oneAPI DPC++ Runtime)
+""""""""""""""""""""""""""""""""""""
+
+* **Compatibility Guarantees**:
+  * **oneAPI Runtime Compatibility**: Intel oneAPI guarantees backward compatibility for the DPC++ runtime (``dpcpp-cpp-rt``). A newer runtime can execute binaries compiled with an older oneAPI compiler. Forward compatibility is not supported.
+  * **Strict Version Matching**: Due to rapid development in SYCL standards and implementations, it is highly recommended to use matching major and minor versions of the DPC++ compiler and runtime.
+  * Open3D's SYCL wheels pin the runtime dependency in ``python/requirements_sycl.txt`` (e.g., ``dpcpp-cpp-rt==2025.3.1``). When compiling Open3D with SYCL support, ensure your Intel oneAPI Base Toolkit version is compatible with this runtime.
 
 Unit test
 ---------

@@ -8,6 +8,7 @@
 #include "open3d/core/CUDAUtils.h"
 
 #include "open3d/Macro.h"
+#include "open3d/core/DevicePluginLoader.h"
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
@@ -19,6 +20,11 @@ namespace core {
 namespace cuda {
 
 int DeviceCount() {
+#if defined(BUILD_SHARED_LIBS)
+    if (!IsCudaDeviceLibraryLoaded()) {
+        return 0;
+    }
+#endif
 #ifdef BUILD_CUDA_MODULE
     try {
         int num_devices;

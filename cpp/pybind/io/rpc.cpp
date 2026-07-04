@@ -11,7 +11,7 @@
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
-#include "pybind/core/tensor_type_caster.h"
+#include "pybind/core/type_caster.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 

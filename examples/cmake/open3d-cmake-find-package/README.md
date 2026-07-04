@@ -49,6 +49,12 @@ cd ..\..
 
 Note: `-DBUILD_SHARED_LIBS=ON` is recommended if `-DBUILD_CUDA_MODULE=ON`.
 
+CUDA and SYCL builds produce a host library (`libOpen3D`) plus a device
+library (`libOpen3D_cuda` or `libOpen3D_xpu`). Link only `Open3D::Open3D`; for
+static installs the device archive is pulled in automatically. For shared
+installs, ship `libOpen3D_cuda.so` / `libOpen3D_xpu.so` next to `libOpen3D.so`
+(or set `OPEN3D_CUDA_LIB_DIR` / `OPEN3D_XPU_LIB_DIR` at runtime).
+
 ## Step 2: Use Open3D in this example project
 
 On Ubuntu/macOS:

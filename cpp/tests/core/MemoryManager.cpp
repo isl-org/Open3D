@@ -103,8 +103,15 @@ std::shared_ptr<core::MemoryManagerCached> MakeCachedMemoryManagerDevice(
     }
 #ifdef BUILD_CUDA_MODULE
     if (device.IsCUDA()) {
+#ifndef BUILD_SHARED_LIBS
         return std::make_shared<core::MemoryManagerCached>(
                 std::make_shared<core::MemoryManagerCUDA>());
+#else
+        utility::LogError(
+                "MakeCachedMemoryManagerDevice(CUDA) is unavailable with "
+                "BUILD_SHARED_LIBS (plugin mode); use MemoryManager::Malloc "
+                "instead.");
+#endif
     }
 #endif
 

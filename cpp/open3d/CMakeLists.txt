@@ -33,10 +33,8 @@ function(open3d_set_open3d_lib_properties target)
                 -Wl,-exported_symbols_list
                 "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
         elseif (UNIX)   # Linux
-            # On ARM64 with shared libs, using the version script hides BoringSSL symbols
-            # needed by the examples (which link via 3rdparty_curl/openssl logic).
-            # We disable the version script on ARM64 to allow these symbols to be resolved.
-            if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND BUILD_SHARED_LIBS))
+            if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND BUILD_SHARED_LIBS) AND
+               NOT (BUILD_SHARED_LIBS AND (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE)))
                 file(GENERATE OUTPUT libOpen3D.map CONTENT
                     [=[{
     global:
@@ -140,6 +138,35 @@ open3d_show_and_abort_on_warning(Open3D)
 open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
+open3d_finish_shared_host_library(Open3D)
+
+if(BUILD_CUDA_MODULE)
+    target_link_libraries(Open3D PRIVATE CUDA::cudart)
+endif()
+
+if (BUILD_CUDA_MODULE)
+    open3d_add_open3d_device_library(cuda CUDA
+        OBJECT_LIBS core_cuda core_impl_cuda tgeometry_kernel_cuda
+        tpipelines_kernel_cuda ml_contrib_cuda)
+endif()
+
+if (BUILD_SYCL_MODULE)
+    open3d_add_open3d_device_library(xpu SYCL
+        OBJECT_LIBS core_xpu core_impl_xpu tgeometry_xpu)
+endif()
+
+# Shared plugin: consumers must link libOpen3D before libOpen3D_cuda on GNU ld.
+if(BUILD_SHARED_LIBS AND (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE))
+    if(TARGET Open3D_cuda)
+        target_link_libraries(Open3D INTERFACE Open3D_cuda)
+    endif()
+    if(TARGET Open3D_xpu)
+        target_link_libraries(Open3D INTERFACE Open3D_xpu)
+    endif()
+    if(UNIX AND NOT APPLE)
+        target_link_options(Open3D INTERFACE LINKER:--allow-shlib-undefined)
+    endif()
+endif()
 
 # GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
 # Gaussian splatting.  The context class detects the display server at runtime
@@ -185,6 +212,20 @@ install(TARGETS Open3D EXPORT Open3DTargets
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
 )
+if (BUILD_CUDA_MODULE)
+    install(TARGETS Open3D_cuda EXPORT Open3DTargets
+            RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
+            LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+            ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
+    )
+endif()
+if (BUILD_SYCL_MODULE)
+    install(TARGETS Open3D_xpu EXPORT Open3DTargets
+            RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
+            LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+            ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
+    )
+endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
