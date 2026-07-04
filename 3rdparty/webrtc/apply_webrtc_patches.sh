@@ -126,7 +126,7 @@ with open(path, 'r') as f:
     content = f.read()
 
 helper = """
-namespace {
+namespace webrtc {
 template <typename T>
 constexpr int AsInt(const T& t) {
     if constexpr (std::is_integral_v<T>) {
@@ -135,7 +135,7 @@ constexpr int AsInt(const T& t) {
         return t.value();
     }
 }
-}  // namespace
+}  // namespace webrtc
 """
 
 if 'AsInt(const T& t)' not in content:
