@@ -112,6 +112,47 @@ for path in sys.argv[1:]:
 PYEOF
 }
 
+# Fix GCC ambiguous conversion from webrtc::PayloadType to int in used_ids.h.
+# webrtc::PayloadType has multiple conversion operators (one inherited from
+# StrongAlias) that GCC flags as ambiguous when assigning to int.
+# idstruct->id can be an int or a PayloadType, so we conditionally unwrap using type traits.
+fix_gcc_payload_type_ambiguous() {
+    local used_ids="${WEBRTC_SRC}/pc/used_ids.h"
+    [[ -f "$used_ids" ]] || return 0
+    python3 - "$used_ids" <<'PYEOF'
+import sys
+path = sys.argv[1]
+with open(path, 'r') as f:
+    content = f.read()
+
+helper = """
+namespace {
+template <typename T>
+constexpr int AsInt(const T& t) {
+    if constexpr (std::is_integral_v<T>) {
+        return t;
+    } else {
+        return t.value();
+    }
+}
+}  // namespace
+"""
+
+if 'AsInt(const T& t)' not in content:
+    content = content.replace('#include "rtc_base/system/rtc_export.h"', '#include "rtc_base/system/rtc_export.h"\n#include <type_traits>\n' + helper)
+
+new_content = content.replace('int original_id = idstruct->id;', 'int original_id = AsInt(idstruct->id);')
+new_content = new_content.replace('int new_id = idstruct->id;', 'int new_id = AsInt(idstruct->id);')
+
+if new_content != content:
+    with open(path, 'w') as f:
+        f.write(new_content)
+    print(f'Applied GCC PayloadType ambiguous conversion fix in {path}')
+else:
+    print(f'Skip GCC PayloadType ambiguous conversion fix in {path} (already applied or not found)')
+PYEOF
+}
+
 PATCH_DIR="$OPEN3D_DIR/3rdparty/webrtc"
 # Required: declare gn args consumed by args.gn and fix GCC compile errors.
 apply_one "$PATCH_DIR/0001-src-enable-rtc_use_cxx11_abi-option.patch" "$WEBRTC_SRC"
@@ -127,3 +168,4 @@ apply_one "$PATCH_DIR/0005-build-win-dynamic-crt.patch" "$WEBRTC_SRC/build"
 apply_one "$PATCH_DIR/0006-third_party-protobuf-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party/protobuf"
 fix_protobuf_port_cc_apple
 fix_gcc_cxx20_network_changes_meaning
+fix_gcc_payload_type_ambiguous
