@@ -126,7 +126,6 @@ with open(path, 'r') as f:
     content = f.read()
 
 helper = """
-namespace webrtc {
 template <typename T>
 constexpr int AsInt(const T& t) {
     if constexpr (std::is_integral_v<T>) {
@@ -135,11 +134,15 @@ constexpr int AsInt(const T& t) {
         return t.value();
     }
 }
-}  // namespace webrtc
+
 """
 
+# Anchor on `namespace webrtc {` (present in every candidate file) rather
+# than a specific #include line, which may not exist in every file this
+# fix is applied to (e.g. pc/used_ids.h does not include rtc_export.h).
 if 'AsInt(const T& t)' not in content:
-    content = content.replace('#include "rtc_base/system/rtc_export.h"', '#include "rtc_base/system/rtc_export.h"\n#include <type_traits>\n' + helper)
+    content = content.replace('#include <vector>', '#include <vector>\n#include <type_traits>', 1)
+    content = content.replace('namespace webrtc {\n', 'namespace webrtc {\n' + helper, 1)
 
 new_content = content.replace('int original_id = idstruct->id;', 'int original_id = AsInt(idstruct->id);')
 new_content = new_content.replace('int new_id = idstruct->id;', 'int new_id = AsInt(idstruct->id);')

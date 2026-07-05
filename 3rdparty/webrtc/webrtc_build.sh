@@ -165,7 +165,6 @@ install_dependencies_ubuntu() {
         libglib2.0-dev \
         libnss3-dev \
         libgtk-3-dev \
-        ninja-build \
         python3 \
         python3-pip \
         python3-setuptools \
@@ -225,13 +224,29 @@ build_webrtc() {
 
     WEBRTC_COMMIT_SHORT=$(git -C "$root/webrtc/src" rev-parse --short=7 HEAD)
 
+    # depot_tools/ninja is a Python wrapper that locates the real ninja binary
+    # by walking up from the *current directory* to find a tracked gclient
+    # entry (see gclient_paths.FindGclientRoot). CMake's own Ninja-generator
+    # sanity check ("ninja --version") runs with cwd = this build directory,
+    # which is a sibling of webrtc/src (not nested inside it), so that lookup
+    # fails and the wrapper falls back to requiring a "ninja" on PATH. Point
+    # CMake directly at the real, DEPS-pinned ninja binary instead (mirrors
+    # how the Windows job locates ninja.exe before prepending depot_tools to
+    # PATH) so no system/apt ninja package is required.
+    local ninja_bin="$root/webrtc/src/third_party/ninja/ninja"
+    if [[ ! -x "$ninja_bin" ]]; then
+        echo "ERROR: expected ninja binary not found at $ninja_bin" >&2
+        exit 1
+    fi
+
     mkdir -p "$root/webrtc/build"
     pushd "$root/webrtc/build"
     cmake -G Ninja \
+        -DCMAKE_MAKE_PROGRAM="$ninja_bin" \
         -DCMAKE_INSTALL_PREFIX="$root/webrtc_release" \
         -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
         ..
-    ninja -j"${NPROC}" install
+    "$ninja_bin" -j"${NPROC}" install
     popd
 
     pushd "$root"
