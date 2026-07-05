@@ -125,10 +125,5 @@ bool MemoryManagerCUDA::IsCUDAPointer(const void* ptr, const Device& device) {
     return attributes.devicePointer != nullptr ? true : false;
 }
 
-extern "C" OPEN3D_API void open3d_create_cuda_memory_manager(
-        std::shared_ptr<MemoryManagerDevice>* out) {
-    *out = std::make_shared<MemoryManagerCUDA>();
-}
-
 }  // namespace core
 }  // namespace open3d

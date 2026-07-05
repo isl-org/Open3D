@@ -150,9 +150,16 @@ function(open3d_finish_shared_host_library target)
     if(NOT BUILD_SHARED_LIBS OR NOT (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE))
         return()
     endif()
+    # Open3D's own object files reference device-only symbols that are only
+    # defined in Open3D_cuda/Open3D_xpu (linked by the final consumer, e.g.
+    # pybind, tests, apps -- see open3d_link_split_device_libraries() below).
+    # This avoids a circular library dependency (Open3D_cuda already links
+    # Open3D). Binding is eager (no -z lazy): the dynamic loader resolves all
+    # symbols once every NEEDED library in the process is loaded, so these
+    # references succeed as long as the plugin library is linked somewhere in
+    # the same process/module.
     target_link_options(${target} PRIVATE
-        "LINKER:--unresolved-symbols=ignore-in-object-files"
-        "LINKER:-z,lazy")
+        "LINKER:--unresolved-symbols=ignore-in-object-files")
     if(NOT BUILD_WEBRTC)
         target_link_libraries(${target} PRIVATE
             "-Wl,--whole-archive"

@@ -141,7 +141,11 @@ open3d_link_3rdparty_libraries(Open3D)
 open3d_finish_shared_host_library(Open3D)
 
 if(BUILD_CUDA_MODULE)
-    target_link_libraries(Open3D PRIVATE CUDA::cudart)
+    if(BUILD_WITH_CUDA_STATIC)
+        target_link_libraries(Open3D PRIVATE CUDA::cudart_static)
+    else()
+        target_link_libraries(Open3D PRIVATE CUDA::cudart)
+    endif()
 endif()
 
 if (BUILD_CUDA_MODULE)

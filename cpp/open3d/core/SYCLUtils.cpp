@@ -19,7 +19,6 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "open3d/core/DevicePluginLoader.h"
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_SYCL_MODULE
@@ -199,11 +198,6 @@ void PrintSYCLDevices(bool print_all) {
 
 bool IsAvailable() {
 #ifdef BUILD_SYCL_MODULE
-#if defined(BUILD_SHARED_LIBS)
-    if (!IsXpuDeviceLibraryLoaded()) {
-        return false;
-    }
-#endif
     return SYCLContext::GetInstance().IsAvailable();
 #else
     return false;
@@ -212,11 +206,6 @@ bool IsAvailable() {
 
 bool IsDeviceAvailable(const Device &device) {
 #ifdef BUILD_SYCL_MODULE
-#if defined(BUILD_SHARED_LIBS)
-    if (!IsXpuDeviceLibraryLoaded()) {
-        return false;
-    }
-#endif
     return SYCLContext::GetInstance().IsDeviceAvailable(device);
 #else
     return false;
@@ -225,11 +214,6 @@ bool IsDeviceAvailable(const Device &device) {
 
 std::string GetDeviceType(const Device &device) {
 #ifdef BUILD_SYCL_MODULE
-#if defined(BUILD_SHARED_LIBS)
-    if (!IsXpuDeviceLibraryLoaded()) {
-        return "";
-    }
-#endif
     if (IsDeviceAvailable(device)) {
         return SYCLContext::GetInstance()
                 .GetDeviceProperties(device)
@@ -244,11 +228,6 @@ std::string GetDeviceType(const Device &device) {
 
 std::vector<Device> GetAvailableSYCLDevices() {
 #ifdef BUILD_SYCL_MODULE
-#if defined(BUILD_SHARED_LIBS)
-    if (!IsXpuDeviceLibraryLoaded()) {
-        return {};
-    }
-#endif
     return SYCLContext::GetInstance().GetAvailableSYCLDevices();
 #else
     return {};

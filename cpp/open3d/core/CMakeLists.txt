@@ -57,7 +57,6 @@ target_sources(core PRIVATE
     AdvancedIndexing.cpp
     CUDAUtils.cpp
     Device.cpp
-    DevicePluginLoader.cpp
     Dtype.cpp
     Indexer.cpp
     MemoryManager.cpp
