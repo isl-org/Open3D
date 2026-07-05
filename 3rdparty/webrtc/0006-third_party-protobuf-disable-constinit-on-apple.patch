@@ -1,7 +1,18 @@
-diff --git a/src/google/protobuf/port_def.inc b/src/google/protobuf/port_def.inc
-index 16423927bd33..edef8148783b 100644
---- a/src/google/protobuf/port_def.inc
-+++ b/src/google/protobuf/port_def.inc
+Subject: [PATCH] third_party/protobuf: disable constinit on Apple in port_def.inc
+
+Apple Clang >= 12 expands PROTOBUF_CONSTINIT to constinit or
+[[clang::require_constant_initialization]], which produces a hard
+"variable does not have a constant initializer" error for weak default
+instance pointers on Apple platforms (Xcode 15.4). Skip both branches
+on __APPLE__ so PROTOBUF_CONSTINIT expands to nothing there.
+
+Note: this patch must be applied with the working directory at the
+`third_party` git root (not `third_party/protobuf`, which is a plain
+subdirectory and not a repository root) -- see apply_webrtc_patches.sh.
+
+diff --git a/protobuf/src/google/protobuf/port_def.inc b/protobuf/src/google/protobuf/port_def.inc
+--- a/protobuf/src/google/protobuf/port_def.inc
++++ b/protobuf/src/google/protobuf/port_def.inc
 @@ -469,7 +469,7 @@
  #  define PROTOBUF_CONSTEXPR constexpr
  # endif

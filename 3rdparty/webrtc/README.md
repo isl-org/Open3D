@@ -23,8 +23,9 @@ webrtc_common.cmake   # Specifies Common WebRTC targets and gn args.       (Meth
 
 ## Patches
 
-Applied by `apply_webrtc_patches.sh` (each is skipped if it does not apply
-cleanly to the pinned WebRTC commit):
+Applied by `apply_webrtc_patches.sh` via plain `git apply` (each is skipped
+without error if it does not apply cleanly to the pinned WebRTC commit, e.g.
+because it was already applied or the fix has landed upstream):
 
 ```
 0001-src-enable-rtc_use_cxx11_abi-option.patch             # -> src (GCC C++11 ABI)
@@ -34,23 +35,24 @@ cleanly to the pinned WebRTC commit):
 
 0004-call-payload_type_picker-gcc-flat_tree.patch          # -> src (GCC flat_tree ordering)
 0005-build-win-dynamic-crt.patch                           # -> src/build (Windows /MD[d] runtime)
-0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party/protobuf (macOS constinit)
+0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party (macOS constinit, port_def.inc)
+0007-p2p-fix-gcc-cxx20-network-changes-meaning.patch        # -> src (GCC C++20 Network() name lookup)
+0008-pc-fix-gcc-payload-type-ambiguous-conversion.patch     # -> src (GCC PayloadType->int ambiguity)
+0009-third_party-protobuf-port-cc-disable-constinit-on-apple.patch # -> third_party (macOS constinit, port.cc)
 ```
 
-`apply_webrtc_patches.sh` also directly patches
-`third_party/protobuf/src/google/protobuf/port.cc` on Apple (via Python
-string replacement) to drop `PROTOBUF_CONSTINIT` from the
-`fixed_address_empty_string` declaration, which causes a hard error on
-Xcode 15.4 because `std::string`'s constructor is not a constant expression.
-
-`apply_webrtc_patches.sh` also directly patches `p2p/base/port_interface.h` and
-`p2p/base/port.h` (via Python string replacement) to qualify the return type
-of `Network()` as `::webrtc::Network*` to fix a GCC C++20 "changes meaning" error.
-
-`0006-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
+`0005-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
 non-component (static) Windows build can use the dynamic MSVC runtime
 (`/MD[d]`). This lets Open3D ship a static `libwebrtc` for both
 `STATIC_WINDOWS_RUNTIME=ON` (`/MT[d]`) and `OFF` (`/MD[d]`).
+
+`0006` and `0009` both touch files under `third_party/protobuf`, which is a
+plain subdirectory of the `third_party` checkout, not a git repository root
+of its own. They are applied with `third_party` (not `third_party/protobuf`)
+as the working directory and use `protobuf/`-prefixed paths accordingly --
+see the comment on `apply_one()` in `apply_webrtc_patches.sh` for why this
+matters (`git apply` run from a non-root subdirectory can silently no-op
+instead of applying or erroring).
 
 ## Method 1
 

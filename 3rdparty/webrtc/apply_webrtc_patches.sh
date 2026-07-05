@@ -9,6 +9,16 @@ WEBRTC_SRC="${2:?WebRTC src path}"
 #
 # Args: <patch> <dir> [required|optional]   (default: required)
 #
+# IMPORTANT: <dir> must be the *root* of a git checkout (i.e. the directory
+# containing .git), not an arbitrary subdirectory. `git apply` run from a
+# subdirectory with paths relative to that subdirectory silently no-ops
+# ("Skipped patch ..." on stderr, exit 0) instead of applying or erroring, at
+# least with the git version used by our CI/dev images. Patches touching
+# files under a git-tracked *plain* subdirectory (e.g. third_party/protobuf,
+# which is not itself a repository root) must therefore be applied from the
+# enclosing repo root (third_party) with paths prefixed accordingly (e.g.
+# protobuf/src/...) -- see 0006 and 0009.
+#
 # A patch is considered "already applied" when it applies in reverse; in that
 # case it is skipped without error so the script is safe to re-run and tolerant
 # of fixes that have landed upstream. A required patch that neither applies nor
@@ -20,9 +30,15 @@ apply_one() {
     local patch="$1"
     local dir="$2"
     local required="${3:-required}"
-    local name
+    local name check_output check_rc
     name="$(basename "$patch")"
-    if git -C "$dir" apply --check "$patch" 2>/dev/null; then
+
+    # Capture combined output so we can detect git's silent "Skipped patch"
+    # no-op (see note above), which must NOT be treated as a successful
+    # check even though it exits 0.
+    check_output="$(git -C "$dir" apply --check "$patch" 2>&1)" && check_rc=0 || check_rc=$?
+
+    if [[ "$check_rc" -eq 0 && "$check_output" != *"Skipped patch"* ]]; then
         git -C "$dir" apply "$patch"
         echo "Applied $name in $dir"
     elif git -C "$dir" apply --reverse --check "$patch" 2>/dev/null; then
@@ -31,129 +47,10 @@ apply_one() {
         echo "Skip $name (does not apply; optional) in $dir"
     else
         echo "ERROR: required patch $name does not apply in $dir." >&2
+        [[ -n "$check_output" ]] && echo "       $check_output" >&2
         echo "       Refresh the patch for the pinned WebRTC commit." >&2
         exit 1
     fi
-}
-
-# Fix port.cc for Apple Clang (Xcode 15.4): the GlobalEmptyString (std::string)
-# variable is declared with PROTOBUF_CONSTINIT which expands to `constinit` or
-# [[clang::require_constant_initialization]] on Apple Clang >= 13.  Apple's
-# libc++ std::string constructor performs a heap allocation, so the variable
-# cannot be constant-initialized, producing a hard error.  Guard the declaration
-# with !defined(__APPLE__) so PROTOBUF_CONSTINIT is omitted on Apple.
-#
-# This supplements the port_def.inc patch in 0006 and directly targets the
-# specific failing declaration (port.cc:120 in the WebRTC M149 protobuf).
-fix_protobuf_port_cc_apple() {
-    local port_cc="${WEBRTC_SRC}/third_party/protobuf/src/google/protobuf/port.cc"
-    [[ -f "$port_cc" ]] || return 0
-    python3 - "$port_cc" <<'PYEOF'
-import sys
-
-path = sys.argv[1]
-with open(path, 'r') as f:
-    content = f.read()
-
-old = ('PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT\n'
-       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
-       '        fixed_address_empty_string{};')
-# Check idempotency: already patched if __APPLE__ guard present near declaration.
-if '__APPLE__' in content and 'fixed_address_empty_string' in content:
-    print(f'Skip {path} (Apple constinit fix already applied)')
-    sys.exit(0)
-if old not in content:
-    print(f'WARNING: {path}: expected PROTOBUF_CONSTINIT pattern not found; '
-          f'Skipping Apple constinit fix', file=sys.stderr)
-    sys.exit(0)
-new = ('#if defined(__APPLE__)\n'
-       '// Apple Clang (Xcode 15.4): GlobalEmptyString (std::string) requires heap\n'
-       '// allocation in its constructor, which is not a constant expression.\n'
-       '// Skip PROTOBUF_CONSTINIT to avoid "variable does not have a constant\n'
-       '// initializer" hard error.\n'
-       'PROTOBUF_ATTRIBUTE_NO_DESTROY\n'
-       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
-       '        fixed_address_empty_string{};\n'
-       '#else\n'
-       'PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT\n'
-       '    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString\n'
-       '        fixed_address_empty_string{};\n'
-       '#endif  // !defined(__APPLE__)')
-with open(path, 'w') as f:
-    f.write(content.replace(old, new, 1))
-print(f'Applied Apple constinit fix in {path}')
-PYEOF
-}
-
-# Fix GCC C++20 "changes meaning" error for Network() in WebRTC.
-# GCC treats a method name matching a class name as an error.
-fix_gcc_cxx20_network_changes_meaning() {
-    python3 - "${WEBRTC_SRC}/p2p/base/port_interface.h" "${WEBRTC_SRC}/p2p/base/port.h" <<'PYEOF'
-import sys
-import re
-import os
-
-for path in sys.argv[1:]:
-    if not os.path.exists(path):
-        continue
-    with open(path, 'r') as f:
-        content = f.read()
-    
-    # Replace `Network* Network()` with `::webrtc::Network* Network()`
-    # but only if it's not already prefixed with `::webrtc::`.
-    new_content = re.sub(r'(?<!::webrtc::)Network\*\s*Network\(\)', r'::webrtc::Network* Network()', content)
-    
-    if new_content != content:
-        with open(path, 'w') as f:
-            f.write(new_content)
-        print(f'Applied GCC C++20 Network() changes meaning fix in {path}')
-    else:
-        print(f'Skip GCC C++20 Network() changes meaning fix in {path} (already applied or not found)')
-PYEOF
-}
-
-# Fix GCC ambiguous conversion from webrtc::PayloadType to int in used_ids.h.
-# webrtc::PayloadType has multiple conversion operators (one inherited from
-# StrongAlias) that GCC flags as ambiguous when assigning to int.
-# idstruct->id can be an int or a PayloadType, so we conditionally unwrap using type traits.
-fix_gcc_payload_type_ambiguous() {
-    local used_ids="${WEBRTC_SRC}/pc/used_ids.h"
-    [[ -f "$used_ids" ]] || return 0
-    python3 - "$used_ids" <<'PYEOF'
-import sys
-path = sys.argv[1]
-with open(path, 'r') as f:
-    content = f.read()
-
-helper = """
-template <typename T>
-constexpr int AsInt(const T& t) {
-    if constexpr (std::is_integral_v<T>) {
-        return t;
-    } else {
-        return t.value();
-    }
-}
-
-"""
-
-# Anchor on `namespace webrtc {` (present in every candidate file) rather
-# than a specific #include line, which may not exist in every file this
-# fix is applied to (e.g. pc/used_ids.h does not include rtc_export.h).
-if 'AsInt(const T& t)' not in content:
-    content = content.replace('#include <vector>', '#include <vector>\n#include <type_traits>', 1)
-    content = content.replace('namespace webrtc {\n', 'namespace webrtc {\n' + helper, 1)
-
-new_content = content.replace('int original_id = idstruct->id;', 'int original_id = AsInt(idstruct->id);')
-new_content = new_content.replace('int new_id = idstruct->id;', 'int new_id = AsInt(idstruct->id);')
-
-if new_content != content:
-    with open(path, 'w') as f:
-        f.write(new_content)
-    print(f'Applied GCC PayloadType ambiguous conversion fix in {path}')
-else:
-    print(f'Skip GCC PayloadType ambiguous conversion fix in {path} (already applied or not found)')
-PYEOF
 }
 
 PATCH_DIR="$OPEN3D_DIR/3rdparty/webrtc"
@@ -164,11 +61,10 @@ apply_one "$PATCH_DIR/0001-third_party-enable-rtc_use_cxx11_abi-option.patch" "$
 apply_one "$PATCH_DIR/0002-src-fix-nullptr_t-with-libstdcxx.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0004-call-payload_type_picker-gcc-flat_tree.patch" "$WEBRTC_SRC"
 apply_one "$PATCH_DIR/0005-build-win-dynamic-crt.patch" "$WEBRTC_SRC/build"
-# 0006 patches port_def.inc to prevent PROTOBUF_CONSTINIT from expanding to
-# constinit/[[clang::require_constant_initialization]] on Apple. The
-# fix_protobuf_port_cc_apple call below directly patches port.cc as an
-# additional safety measure in case the port_def.inc path alone is insufficient.
-apply_one "$PATCH_DIR/0006-third_party-protobuf-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party/protobuf"
-fix_protobuf_port_cc_apple
-fix_gcc_cxx20_network_changes_meaning
-fix_gcc_payload_type_ambiguous
+# 0006 and 0009 patch files under third_party/protobuf, a plain subdirectory
+# of the third_party checkout (not its own git root) -- apply from
+# $WEBRTC_SRC/third_party, not .../third_party/protobuf. See apply_one note.
+apply_one "$PATCH_DIR/0006-third_party-protobuf-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party"
+apply_one "$PATCH_DIR/0009-third_party-protobuf-port-cc-disable-constinit-on-apple.patch" "$WEBRTC_SRC/third_party"
+apply_one "$PATCH_DIR/0007-p2p-fix-gcc-cxx20-network-changes-meaning.patch" "$WEBRTC_SRC"
+apply_one "$PATCH_DIR/0008-pc-fix-gcc-payload-type-ambiguous-conversion.patch" "$WEBRTC_SRC"
