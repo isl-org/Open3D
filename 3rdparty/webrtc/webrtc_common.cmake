@@ -18,6 +18,17 @@ function(get_webrtc_args WEBRTC_ARGS)
         endif()
     endif()
 
+    if(MSVC)
+        if(NOT DEFINED STATIC_WINDOWS_RUNTIME)
+            set(STATIC_WINDOWS_RUNTIME ON)
+        endif()
+        if(NOT STATIC_WINDOWS_RUNTIME)
+            set(WEBRTC_ARGS "dynamic_crt=true\n${WEBRTC_ARGS}")
+        else()
+            set(WEBRTC_ARGS "dynamic_crt=false\n${WEBRTC_ARGS}")
+        endif()
+    endif()
+
     if (APPLE)  # WebRTC default
         set(WEBRTC_ARGS is_clang=true\n${WEBRTC_ARGS})
     else()

@@ -5,9 +5,5 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-from open3d.pybind.ml import *
-
-from . import configs
-from . import datasets
-from . import vis
-from . import utils
+# Tensor / device API (implemented in the pybind extension).
+from open3d.pybind.core import *  # noqa: F403

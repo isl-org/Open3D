@@ -58,10 +58,10 @@ install_dependencies_ubuntu() {
         git \
         gnupg \
         libglib2.0-dev \
-        python \
-        python-pip \
-        python-setuptools \
-        python-wheel \
+        python-is-python3 \
+        python3-pip \
+        python3-setuptools \
+        python3-wheel \
         software-properties-common \
         tree \
         curl
@@ -136,7 +136,7 @@ build_webrtc() {
             webrtc_release
     elif [[ $(uname -s) == 'Darwin' ]]; then
         tar -czf \
-            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos.tar.gz" \
+            "$OPEN3D_DIR/webrtc_${WEBRTC_COMMIT_SHORT}_macos-$(uname -m).tar.gz" \
             webrtc_release
     fi
     popd # PWD=Open3D

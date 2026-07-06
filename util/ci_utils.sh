@@ -23,6 +23,7 @@ BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE:-OFF}
+BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE:-ON}
 
 # Dependency versions:
 # CUDA: see docker/docker_build.sh
@@ -120,6 +121,7 @@ build_all() {
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
         -DBUILD_EXAMPLES=OFF
+        -DBUILD_PYTHON_MODULE="$BUILD_PYTHON_MODULE"
     )
 
     echo
@@ -132,7 +134,9 @@ build_all() {
     if [[ "$BUILD_SHARED_LIBS" == "ON" ]]; then
         make package
     fi
-    make VERBOSE=1 install-pip-package -j"$NPROC"
+    if [[ "$BUILD_PYTHON_MODULE" == "ON" ]]; then
+        make VERBOSE=1 install-pip-package -j"$NPROC"
+    fi
     echo
 }
 
@@ -181,11 +185,9 @@ build_pip_package() {
     set -u
 
     echo
-    echo Building with CPU only...
     mkdir -p build
-    pushd build # PWD=Open3D/build
-    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
-        "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+    pushd build
+    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
@@ -199,38 +201,44 @@ build_pip_package() {
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
+        "-DBUILD_SHARED_LIBS=ON"
     )
-    set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
-    set +x # Echo commands off
-    echo
-
-    echo "Packaging Open3D CPU pip package..."
-    make VERBOSE=1 -j"$NPROC" pip-package
-    mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
-
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
-        echo
-        echo Installing CUDA versions of TensorFlow and PyTorch...
         install_python_dependencies with-cuda purge-cache
+        cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
+    else
+        cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
+    fi
+    set -x
+    if [ ! -f CMakeCache.txt ]; then
+        cmake -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
+    fi
+    set +x
+    if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
+        echo "Building Open3D C++ Core only..."
+        make VERBOSE=1 -j"$NPROC"
+    else
+        echo "Packaging Open3D pip wheel (single configure)..."
+        make VERBOSE=1 -j"$NPROC" pip-package
+    fi
+    popd
+
+    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
         echo
-        echo Building with CUDA...
-        rebuild_list=(bin lib/Release/*.a lib/_build_config.py cpp lib/ml)
-        echo
-        echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
-        rm -r "${rebuild_list[@]}" || true
-        set -x # Echo commands on
-        cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS=ON \
-            "${cmakeOptions[@]}" ..
-        set +x # Echo commands off
+        echo "Building open3d-cpu wheel..."
+        mkdir -p build_cpu
+        pushd build_cpu
+        if [ ! -f CMakeCache.txt ]; then
+            cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_PYTHON_MODULE=ON \
+                "${cmakeOptions[@]}" ..
+        fi
+        make VERBOSE=1 -j"$NPROC" pip-package
+        popd
+        mkdir -p build/lib/python_package/pip_package
+        cp build_cpu/lib/python_package/pip_package/open3d_cpu*.whl \
+            build/lib/python_package/pip_package/ || true
     fi
     echo
-
-    echo "Packaging Open3D full pip package..."
-    make VERBOSE=1 -j"$NPROC" pip-package
-    mv open3d*.whl lib/python_package/pip_package/ # restore CPU wheel
-    popd                                           # PWD=Open3D
 }
 
 # Test wheel in blank virtual environment
