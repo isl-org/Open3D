@@ -6,10 +6,10 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/AdvancedIndexing.h"
+#include "open3d/core/BlockCopyDispatch.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/IndexGetSet.h"
 
 namespace open3d {
 namespace core {
@@ -26,14 +26,21 @@ void IndexGetSYCL(const Tensor& src,
     sycl::queue queue =
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
-        int64_t object_byte_size = dtype.ByteSize();
-        queue.parallel_for(ai.NumWorkloads(), [ai,
-                                               object_byte_size](int64_t idx) {
-                 char* dst_bytes = ai.GetOutputPtr(idx);
-                 const char* src_bytes = ai.GetInputPtr(idx);
-                 for (int64_t i = 0; i < object_byte_size; ++i) {
-                     dst_bytes[i] = src_bytes[i];
-                 }
+        const int64_t object_byte_size = dtype.ByteSize();
+        const int64_t block_size =
+                GetLargestAlignedObjectBlockSize(object_byte_size);
+        queue.parallel_for(ai.NumWorkloads(), [ai, object_byte_size,
+                                               block_size](int64_t idx) {
+                 DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
+                     const int64_t blocks = object_byte_size / block_size;
+                     const block_t* src = reinterpret_cast<const block_t*>(
+                             ai.GetInputPtr(idx));
+                     block_t* dst =
+                             reinterpret_cast<block_t*>(ai.GetOutputPtr(idx));
+                     for (int64_t b = 0; b < blocks; ++b) {
+                         dst[b] = src[b];
+                     }
+                 });
              }).wait_and_throw();
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
@@ -58,14 +65,21 @@ void IndexSetSYCL(const Tensor& src,
     sycl::queue queue =
             sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
     if (dtype.IsObject()) {
-        int64_t object_byte_size = dtype.ByteSize();
-        queue.parallel_for(ai.NumWorkloads(), [ai,
-                                               object_byte_size](int64_t idx) {
-                 char* dst_bytes = ai.GetOutputPtr(idx);
-                 const char* src_bytes = ai.GetInputPtr(idx);
-                 for (int64_t i = 0; i < object_byte_size; ++i) {
-                     dst_bytes[i] = src_bytes[i];
-                 }
+        const int64_t object_byte_size = dtype.ByteSize();
+        const int64_t block_size =
+                GetLargestAlignedObjectBlockSize(object_byte_size);
+        queue.parallel_for(ai.NumWorkloads(), [ai, object_byte_size,
+                                               block_size](int64_t idx) {
+                 DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
+                     const int64_t blocks = object_byte_size / block_size;
+                     const block_t* src = reinterpret_cast<const block_t*>(
+                             ai.GetInputPtr(idx));
+                     block_t* dst =
+                             reinterpret_cast<block_t*>(ai.GetOutputPtr(idx));
+                     for (int64_t b = 0; b < blocks; ++b) {
+                         dst[b] = src[b];
+                     }
+                 });
              }).wait_and_throw();
     } else {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {

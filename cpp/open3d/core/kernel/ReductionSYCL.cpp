@@ -13,13 +13,35 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
 namespace {
+
+// SYCL tensor reductions use Indexer to map arbitrary strided/broadcast inputs
+// to outputs. Two engine implementations cover regular reductions (sum, min,
+// etc.) and arg reductions (argmin, argmax).
+//
+// Work partitioning:
+// - Each output element corresponds to reducing over all input elements that
+//   match on non-reduction dimensions (e.g. sum along dim 0 fixes other dims).
+// - num_outputs = indexer.NumOutputElements(); per-output workload count is
+//   indexer.GetPerOutputIndexer(0).NumWorkloads() (size along reduced axes).
+//
+// SYCLReductionEngine chooses the launch strategy from num_outputs:
+// - num_outputs > 1: one kernel, one work-group per output, strided partial
+//   sums within the group, then sycl::reduce_over_group. Uses GetInputPtrDevice
+//   so a single Indexer can address any (output_idx, reduction_idx) on device.
+// - num_outputs == 1: blocked parallel_for + sycl::reduction for large single
+//   reductions (e.g. global sum). Each work-item accumulates 32 elements with
+//   a blocked index layout; the runtime reduction combines across work-groups.
+//
+// SYCLArgReductionEngine always uses the multi-output grid (including when
+// num_outputs == 1): work-group per output, GetInputPtrDevice, then a local
+// tree reduction on (index, value) pairs because sycl::reduction does not
+// support arg reductions directly.
 
 template <typename scalar_t>
 struct ArgMinReduction {
@@ -45,152 +67,295 @@ struct ArgMaxReduction {
     }
 };
 
-// TODO: This launches one kernel per output element, which can be inefficient
-// in cases where the reduction dim is small but the non-reduced dim is large.
-// Unit tests for a large number of outputs are disabled.
-// Speed-up by launching one kernel for the entire reduction.
+/// Device-side input pointer for one element of a reduction.
+///
+/// Equivalent on the host to:
+///   indexer.GetPerOutputIndexer(output_idx).GetInputPtr(0,
+///   reduction_element_idx)
+/// but without building a per-output Indexer in device code (needed when many
+/// outputs are reduced in one kernel).
+///
+/// Loops are bounded by MAX_DIMS with runtime ndims checks so SYCL/JIT sees
+/// fixed trip counts.
+template <typename scalar_t>
+inline const scalar_t* GetInputPtrDevice(const Indexer& indexer,
+                                         int64_t output_idx,
+                                         int64_t reduction_element_idx) {
+    int64_t ndims = indexer.NumDims();
+    const int64_t* primary_shape = indexer.GetPrimaryShape();
+
+    // 1. Compute coordinates for non-reduction dimensions from output_idx
+    int64_t output_shape[MAX_DIMS] = {0};
+    int64_t output_default_strides[MAX_DIMS] = {0};
+    int64_t input_coords[MAX_DIMS] = {0};
+
+    for (int64_t i = 0; i < MAX_DIMS; ++i) {
+        if (i < ndims) {
+            if (indexer.IsReductionDim(i)) {
+                output_shape[i] = 1;
+            } else {
+                output_shape[i] = primary_shape[i];
+            }
+        }
+    }
+    int64_t stride = 1;
+    for (int64_t i = MAX_DIMS - 1; i >= 0; --i) {
+        if (i < ndims) {
+            output_default_strides[i] = stride;
+            stride = output_shape[i] > 1 ? stride * output_shape[i] : stride;
+        }
+    }
+    int64_t temp_output_idx = output_idx;
+    for (int64_t i = 0; i < MAX_DIMS; ++i) {
+        if (i < ndims) {
+            if (!indexer.IsReductionDim(i)) {
+                input_coords[i] = temp_output_idx / output_default_strides[i];
+                temp_output_idx = temp_output_idx % output_default_strides[i];
+            }
+        }
+    }
+
+    // 2. Compute coordinates for reduction dimensions from
+    // reduction_element_idx
+    int64_t reduction_shape[MAX_DIMS] = {0};
+    int64_t reduction_default_strides[MAX_DIMS] = {0};
+    for (int64_t i = 0; i < MAX_DIMS; ++i) {
+        if (i < ndims) {
+            if (indexer.IsReductionDim(i)) {
+                reduction_shape[i] = primary_shape[i];
+            } else {
+                reduction_shape[i] = 1;
+            }
+        }
+    }
+    stride = 1;
+    for (int64_t i = MAX_DIMS - 1; i >= 0; --i) {
+        if (i < ndims) {
+            reduction_default_strides[i] = stride;
+            stride = reduction_shape[i] > 1 ? stride * reduction_shape[i]
+                                            : stride;
+        }
+    }
+    int64_t temp_reduction_idx = reduction_element_idx;
+    for (int64_t i = 0; i < MAX_DIMS; ++i) {
+        if (i < ndims) {
+            if (indexer.IsReductionDim(i)) {
+                input_coords[i] =
+                        temp_reduction_idx / reduction_default_strides[i];
+                temp_reduction_idx =
+                        temp_reduction_idx % reduction_default_strides[i];
+            }
+        }
+    }
+
+    // 3. Reconstruct workload_idx (linear index in input shape)
+    int64_t workload_idx = 0;
+    const int64_t* primary_strides = indexer.GetPrimaryStrides();
+    for (int64_t i = 0; i < MAX_DIMS; ++i) {
+        if (i < ndims) {
+            workload_idx += input_coords[i] * primary_strides[i];
+        }
+    }
+
+    return indexer.GetInputPtr<scalar_t>(0, workload_idx);
+}
+
+/// Regular associative reductions (sum, prod, min, max, all, any).
 template <class ReductionOp, typename scalar_t>
 void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = device_props.queue;
-    auto work_group_size = device_props.max_work_group_size;
-    size_t log2elements_per_group = 13;
-    auto elements_per_group = (1 << log2elements_per_group);  // 8192
-    size_t log2workitems_per_group = 8;
-    auto workitems_per_group = (1 << log2workitems_per_group);  // 256
-    auto elements_per_work_item =
-            elements_per_group / workitems_per_group;  // 32 (= max SIMD size)
-    auto mask = ~(~0 << log2workitems_per_group);
-    ReductionOp red_op;
-
-    for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
-         output_idx++) {
-        // sub_indexer.NumWorkloads() == ipo.
-        // sub_indexer's workload_idx is indexer's ipo_idx.
-        Indexer scalar_out_indexer = indexer.GetPerOutputIndexer(output_idx);
-        auto num_elements = scalar_out_indexer.NumWorkloads();
-        auto num_work_groups = num_elements / elements_per_group;
-        if (num_elements > elements_per_group * num_work_groups)
-            ++num_work_groups;
-        // ensure each work group has work_group_size work items
-        auto num_work_items = num_work_groups * work_group_size;
-
-        auto red_cg = [&](auto& cgh) {
-            auto output = scalar_out_indexer.GetOutputPtr<scalar_t>(0);
-            // Setting this still doesn't initialize to identity -
-            // output buffer must be initialized separately.
-            auto sycl_reducer = sycl::reduction(
-                    output, identity, red_op,
-                    {sycl::property::reduction::initialize_to_identity()});
-            cgh.parallel_for(
-                    sycl::nd_range<1>{num_work_items, work_group_size},
-                    sycl_reducer, [=](sycl::nd_item<1> item, auto& red_arg) {
-                        auto glob_id = item.get_global_id(0);
-                        auto offset = ((glob_id >> log2workitems_per_group)
-                                       << log2elements_per_group) +
-                                      (glob_id & mask);
-                        auto item_out = identity;
-                        for (size_t i = 0; i < elements_per_work_item; i++) {
-                            size_t idx =
-                                    (i << log2workitems_per_group) + offset;
-                            if (idx >= num_elements) break;
-                            auto val =
-                                    *scalar_out_indexer.GetInputPtr<scalar_t>(
-                                            0, idx);
-                            item_out = red_op(item_out, val);
-                        }
-                        red_arg.combine(item_out);
-                    });
-        };
-
-        auto e = queue.submit(red_cg);
-    }
-    queue.wait_and_throw();
-}
-
-// Based on OneAPI GPU optimization guide code sample (Blocked access to
-// input data + SYCL builtin reduction ops for final reduction)
-// We launch exactly one work-group per output element to completely avoid any
-// atomic lock!
-template <class ReductionOp, typename scalar_t>
-void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
-    auto device_props =
-            sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = device_props.queue;
+    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
     size_t work_group_size =
             std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;
 
-    for (int64_t output_idx = 0; output_idx < indexer.NumOutputElements();
-         output_idx++) {
-        // sub_indexer.NumWorkloads() == ipo.
-        // sub_indexer's workload_idx is indexer's ipo_idx.
-        Indexer scalar_out_indexer = indexer.GetPerOutputIndexer(output_idx);
-        auto num_elements = scalar_out_indexer.NumWorkloads();
+    int64_t num_outputs = indexer.NumOutputElements();
+    Indexer first_out_indexer = indexer.GetPerOutputIndexer(0);
+    int64_t num_elements = first_out_indexer.NumWorkloads();
 
-        auto arg_red_cg = [&](auto& cgh) {
-            sycl::local_accessor<int64_t, 1> local_idx(
-                    sycl::range<1>(work_group_size), cgh);
-            sycl::local_accessor<scalar_t, 1> local_val(
-                    sycl::range<1>(work_group_size), cgh);
-            cgh.parallel_for(
-                    sycl::nd_range<1>{work_group_size, work_group_size},
-                    [=](sycl::nd_item<1> item) {
-                        auto& out_idx =
-                                *scalar_out_indexer.GetOutputPtr<int64_t>(0, 0);
-                        auto& out_val =
-                                *scalar_out_indexer.GetOutputPtr<scalar_t>(1,
-                                                                           0);
-                        auto local_id = item.get_local_linear_id();
+    if (num_outputs > 1) {
+        // Multi-output path: parallelize across outputs (e.g. sum along one
+        // dimension). Favors one launch over per-output submits; inner loop is
+        // a simple strided scan with per-element GetInputPtrDevice.
+        queue.submit([&](sycl::handler& cgh) {
+                 cgh.parallel_for(
+                         sycl::nd_range<1>{num_outputs * work_group_size,
+                                           work_group_size},
+                         [=](sycl::nd_item<1> item) {
+                             int64_t output_idx = item.get_group(0);
+                             if (output_idx >= num_outputs) return;
 
-                        int64_t it_idx = 0;
-                        scalar_t it_val = identity;
-                        for (size_t idx = local_id; idx < num_elements;
-                             idx += work_group_size) {
-                            auto val =
-                                    *scalar_out_indexer.GetInputPtr<scalar_t>(
-                                            0, idx);
-                            std::tie(it_idx, it_val) =
-                                    red_op(it_idx, it_val, idx, val);
-                        }
+                             auto local_id = item.get_local_linear_id();
 
-                        local_idx[local_id] = it_idx;
-                        local_val[local_id] = it_val;
-                        item.barrier(sycl::access::fence_space::local_space);
+                             scalar_t item_out = identity;
+                             for (int64_t idx = local_id; idx < num_elements;
+                                  idx += work_group_size) {
+                                 const scalar_t* val_ptr =
+                                         GetInputPtrDevice<scalar_t>(
+                                                 indexer, output_idx, idx);
+                                 if (val_ptr) {
+                                     item_out = red_op(item_out, *val_ptr);
+                                 }
+                             }
 
-                        int stride = 1;
-                        while (stride < item.get_local_range(0)) {
-                            stride *= 2;
-                        }
-                        for (stride /= 2; stride > 0; stride /= 2) {
-                            if (local_id < stride &&
-                                local_id + stride < item.get_local_range(0)) {
-                                auto other_idx = local_idx[local_id + stride];
-                                auto other_val = local_val[local_id + stride];
-                                std::tie(local_idx[local_id],
-                                         local_val[local_id]) =
-                                        red_op(local_idx[local_id],
-                                               local_val[local_id], other_idx,
-                                               other_val);
+                             scalar_t grp_val = sycl::reduce_over_group(
+                                     item.get_group(), item_out, red_op);
+
+                             if (local_id == 0) {
+                                 scalar_t* out_ptr =
+                                         indexer.GetOutputPtr<scalar_t>(
+                                                 0, output_idx);
+                                 if (out_ptr) {
+                                     *out_ptr = grp_val;
+                                 }
+                             }
+                         });
+             }).wait_and_throw();
+    } else {
+        // Single-output path: optimize throughput for one large reduction.
+        // Block layout: each work-group owns elements_per_group contiguous
+        // logical indices; each work-item processes elements_per_work_item (32)
+        // indices in a strided pattern within that block for better locality.
+        size_t log2workitems_per_group = 0;
+        while ((1ULL << log2workitems_per_group) < work_group_size) {
+            log2workitems_per_group++;
+        }
+        auto workitems_per_group = (1 << log2workitems_per_group);
+        size_t log2elements_per_group = log2workitems_per_group + 5;
+        auto elements_per_group = (1 << log2elements_per_group);
+        auto elements_per_work_item = 32;
+        auto mask = ~(~0 << log2workitems_per_group);
+
+        // With num_outputs == 1 this runs once; loop supports the same engine
+        // if extended to multiple scalar outputs without GetInputPtrDevice.
+        for (int64_t output_idx = 0; output_idx < num_outputs; output_idx++) {
+            Indexer scalar_out_indexer =
+                    indexer.GetPerOutputIndexer(output_idx);
+            auto num_elements_scalar = scalar_out_indexer.NumWorkloads();
+            auto num_work_groups = num_elements_scalar / elements_per_group;
+            if (num_elements_scalar > elements_per_group * num_work_groups)
+                ++num_work_groups;
+            auto num_work_items = num_work_groups * work_group_size;
+
+            auto red_cg = [&](auto& cgh) {
+                auto output = scalar_out_indexer.GetOutputPtr<scalar_t>(0);
+                auto sycl_reducer = sycl::reduction(
+                        output, identity, red_op,
+                        {sycl::property::reduction::initialize_to_identity()});
+                cgh.parallel_for(
+                        sycl::nd_range<1>{num_work_items, work_group_size},
+                        sycl_reducer,
+                        [=](sycl::nd_item<1> item, auto& red_arg) {
+                            auto glob_id = item.get_global_id(0);
+                            auto offset = ((glob_id >> log2workitems_per_group)
+                                           << log2elements_per_group) +
+                                          (glob_id & mask);
+                            auto item_out = identity;
+                            for (size_t i = 0; i < elements_per_work_item;
+                                 i++) {
+                                size_t idx =
+                                        (i << log2workitems_per_group) + offset;
+                                if (idx >= num_elements_scalar) break;
+                                auto val =
+                                        *scalar_out_indexer
+                                                 .GetInputPtr<scalar_t>(0, idx);
+                                item_out = red_op(item_out, val);
                             }
-                            item.barrier(
-                                    sycl::access::fence_space::local_space);
-                        }
+                            red_arg.combine(item_out);
+                        });
+            };
 
-                        if (local_id == 0) {
-                            out_idx = local_idx[0];
-                            out_val = local_val[0];
-                        }
-                    });
-        };
-
-        auto e = queue.submit(arg_red_cg);
+            auto e = queue.submit(red_cg);
+        }
+        queue.wait_and_throw();
     }
-    queue.wait_and_throw();
+}
+
+/// Argmin/argmax: writes index (int64) and value (accumulation tensor) per
+/// output. One work-group per output; partial (idx, val) per lane, then binary
+/// tree in local memory. reduction_element_idx is stored as the arg index.
+template <class ReductionOp, typename scalar_t>
+void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
+    auto device_props =
+            sy::SYCLContext::GetInstance().GetDeviceProperties(device);
+    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    size_t work_group_size =
+            std::min<size_t>(256, device_props.max_work_group_size);
+    ReductionOp red_op;
+
+    int64_t num_outputs = indexer.NumOutputElements();
+    Indexer first_out_indexer = indexer.GetPerOutputIndexer(0);
+    int64_t num_elements = first_out_indexer.NumWorkloads();
+
+    queue.submit([&](sycl::handler& cgh) {
+             sycl::local_accessor<int64_t, 1> local_idx(
+                     sycl::range<1>(work_group_size), cgh);
+             sycl::local_accessor<scalar_t, 1> local_val(
+                     sycl::range<1>(work_group_size), cgh);
+             cgh.parallel_for(
+                     sycl::nd_range<1>{num_outputs * work_group_size,
+                                       work_group_size},
+                     [=](sycl::nd_item<1> item) {
+                         int64_t output_idx = item.get_group(0);
+                         if (output_idx >= num_outputs) return;
+
+                         auto local_id = item.get_local_linear_id();
+
+                         int64_t it_idx = 0;
+                         scalar_t it_val = identity;
+                         for (size_t idx = local_id; idx < num_elements;
+                              idx += work_group_size) {
+                             const scalar_t* val_ptr =
+                                     GetInputPtrDevice<scalar_t>(
+                                             indexer, output_idx, idx);
+                             if (val_ptr) {
+                                 std::tie(it_idx, it_val) =
+                                         red_op(it_idx, it_val, idx, *val_ptr);
+                             }
+                         }
+
+                         local_idx[local_id] = it_idx;
+                         local_val[local_id] = it_val;
+                         item.barrier(sycl::access::fence_space::local_space);
+
+                         int stride = 1;
+                         while (stride < item.get_local_range(0)) {
+                             stride *= 2;
+                         }
+                         for (stride /= 2; stride > 0; stride /= 2) {
+                             if (local_id < stride &&
+                                 local_id + stride < item.get_local_range(0)) {
+                                 auto other_idx = local_idx[local_id + stride];
+                                 auto other_val = local_val[local_id + stride];
+                                 std::tie(local_idx[local_id],
+                                          local_val[local_id]) =
+                                         red_op(local_idx[local_id],
+                                                local_val[local_id], other_idx,
+                                                other_val);
+                             }
+                             item.barrier(
+                                     sycl::access::fence_space::local_space);
+                         }
+
+                         if (local_id == 0) {
+                             int64_t* out_idx_ptr =
+                                     indexer.GetOutputPtr<int64_t>(0,
+                                                                   output_idx);
+                             scalar_t* out_val_ptr =
+                                     indexer.GetOutputPtr<scalar_t>(1,
+                                                                    output_idx);
+                             if (out_idx_ptr) *out_idx_ptr = local_idx[0];
+                             if (out_val_ptr) *out_val_ptr = local_val[0];
+                         }
+                     });
+         }).wait_and_throw();
 }
 }  // namespace
 
+/// Dispatches SYCL reduction kernels by op kind: regular, arg, or boolean.
+/// Builds an Indexer from src/dst and reduction dims; pre-fills dst (and
+/// dst_acc for arg ops) with the reduction identity.
 void ReductionSYCL(const Tensor& src,
                    Tensor& dst,
                    const SizeVector& dims,

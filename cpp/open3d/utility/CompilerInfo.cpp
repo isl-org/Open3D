@@ -7,7 +7,6 @@
 
 #include "open3d/utility/CompilerInfo.h"
 
-#include <memory>
 #include <string>
 
 #include "open3d/utility/Logging.h"

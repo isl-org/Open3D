@@ -8,9 +8,7 @@
 #include <atomic>
 #include <cmath>
 
-#include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/Dispatch.h"
@@ -28,7 +26,6 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {

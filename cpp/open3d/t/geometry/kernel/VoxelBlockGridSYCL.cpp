@@ -54,18 +54,26 @@ void PointCloudTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
                 index_t zb_hi = static_cast<index_t>(
                         floorf((z + sdf_trunc) / block_size));
 
+                index_t xb_diff = xb_hi - xb_lo + 1;
+                index_t yb_diff = yb_hi - yb_lo + 1;
+                index_t zb_diff = zb_hi - zb_lo + 1;
+                if (xb_diff <= 0 || yb_diff <= 0 || zb_diff <= 0) return;
+                index_t local_count = xb_diff * yb_diff * zb_diff;
+
+                auto count_atomic_ref = sycl::atomic_ref<
+                        index_t, sycl::memory_order::acq_rel,
+                        sycl::memory_scope::device,
+                        sycl::access::address_space::global_space>(*count_ptr);
+                index_t start_idx = count_atomic_ref.fetch_add(local_count);
+
+                index_t idx = start_idx;
                 for (index_t xb = xb_lo; xb <= xb_hi; ++xb) {
                     for (index_t yb = yb_lo; yb <= yb_hi; ++yb) {
                         for (index_t zb = zb_lo; zb <= zb_hi; ++zb) {
-                            auto count_atomic_ref = sycl::atomic_ref<
-                                    index_t, sycl::memory_order::acq_rel,
-                                    sycl::memory_scope::device,
-                                    sycl::access::address_space::global_space>(
-                                    *count_ptr);
-                            index_t idx = count_atomic_ref.fetch_add(1);
                             block_coordi_ptr[3 * idx + 0] = xb;
                             block_coordi_ptr[3 * idx + 1] = yb;
                             block_coordi_ptr[3 * idx + 2] = zb;
+                            idx++;
                         }
                     }
                 }
@@ -194,25 +202,51 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
     index_t *voxel_block_coord_ptr = voxel_block_coords.GetDataPtr<index_t>();
     bool *block_masks_ptr = block_masks.GetDataPtr<bool>();
     count[0] = 0;
-    core::ParallelFor(
-            device, total_block_count, [=] OPEN3D_DEVICE(index_t workload_idx) {
-                if (block_masks_ptr[workload_idx]) {
-                    auto count_atomic_ref = sycl::atomic_ref<
-                            index_t, sycl::memory_order::acq_rel,
-                            sycl::memory_scope::device,
-                            sycl::access::address_space::global_space>(
-                            *count_ptr);
-                    index_t idx = count_atomic_ref.fetch_add(1);
-                    index_t offset_lhs = 3 * idx;
-                    index_t offset_rhs = 3 * workload_idx;
-                    voxel_block_coord_ptr[offset_lhs + 0] =
-                            block_coordi_ptr[offset_rhs + 0];
-                    voxel_block_coord_ptr[offset_lhs + 1] =
-                            block_coordi_ptr[offset_rhs + 1];
-                    voxel_block_coord_ptr[offset_lhs + 2] =
-                            block_coordi_ptr[offset_rhs + 2];
-                }
-            });
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    size_t wg = core::sy::SYCLPreferredWorkGroupSize(device);
+    auto nd_range = core::sy::SYCLNdRange1D(total_block_count, wg);
+
+    queue.parallel_for(
+                 nd_range,
+                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
+                     index_t workload_idx = item.get_global_id(0);
+                     bool active = (workload_idx < total_block_count) &&
+                                   block_masks_ptr[workload_idx];
+                     auto sg = item.get_sub_group();
+                     int active_val = active ? 1 : 0;
+                     int sg_offset = sycl::exclusive_scan_over_group(
+                             sg, active_val, sycl::plus<int>());
+                     int sg_total = sycl::reduce_over_group(sg, active_val,
+                                                            sycl::plus<int>());
+
+                     int sg_start = 0;
+                     if (sg.leader()) {
+                         if (sg_total > 0) {
+                             auto count_atomic_ref = sycl::atomic_ref<
+                                     index_t, sycl::memory_order::acq_rel,
+                                     sycl::memory_scope::device,
+                                     sycl::access::address_space::global_space>(
+                                     *count_ptr);
+                             sg_start = count_atomic_ref.fetch_add(sg_total);
+                         }
+                     }
+                     sg_start = sycl::group_broadcast(sg, sg_start, 0);
+
+                     if (active) {
+                         index_t idx = sg_start + sg_offset;
+                         index_t offset_lhs = 3 * idx;
+                         index_t offset_rhs = 3 * workload_idx;
+                         voxel_block_coord_ptr[offset_lhs + 0] =
+                                 block_coordi_ptr[offset_rhs + 0];
+                         voxel_block_coord_ptr[offset_lhs + 1] =
+                                 block_coordi_ptr[offset_rhs + 1];
+                         voxel_block_coord_ptr[offset_lhs + 2] =
+                                 block_coordi_ptr[offset_rhs + 2];
+                     }
+                 })
+            .wait_and_throw();
 }
 
 #define FN_ARGUMENTS                                                      \

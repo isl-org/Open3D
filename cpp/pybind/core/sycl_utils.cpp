@@ -39,10 +39,22 @@ void pybind_sycl_utils_definitions(py::module& m) {
                "variable and "
                "will affect the entire process and any child processes.");
 
-    m_sycl.def("get_device_type", sy::GetDeviceType, "device"_a,
-               "Returns the device type (cpu / gpu / accelerator / custom) of "
-               "the specified device as a string. Returns empty string if the "
-               "device is not available.");
+    py::class_<sy::SYCLDevice>(m_sycl, "SYCLDevice",
+                               "Cached SYCL device properties.")
+            .def_readonly("name", &sy::SYCLDevice::name)
+            .def_readonly("device_type", &sy::SYCLDevice::device_type)
+            .def_readonly("max_work_group_size",
+                          &sy::SYCLDevice::max_work_group_size)
+            .def_readonly("fp64", &sy::SYCLDevice::fp64)
+            .def_readonly("usm_device_allocations",
+                          &sy::SYCLDevice::usm_device_allocations)
+            .def_readonly("discrete_gpu", &sy::SYCLDevice::discrete_gpu)
+            .def_readonly("global_mem_size", &sy::SYCLDevice::global_mem_size);
+
+    m_sycl.def("get_device_properties", &sy::GetSYCLDeviceProperties,
+               "device"_a,
+               "Return cached SYCL device properties, or a default-initialized "
+               "SYCLDevice if the device is unavailable.");
 }
 
 }  // namespace core

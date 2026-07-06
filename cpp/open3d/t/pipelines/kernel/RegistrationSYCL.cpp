@@ -7,6 +7,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
@@ -20,25 +21,6 @@ namespace kernel {
 
 static constexpr int kReduceDim =
         29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
-
-/// Perform a group reduction over a fixed-size private array using
-/// sycl::reduce_over_group, then have work item 0 atomically accumulate each
-/// group partial sum into the device-side global buffer.
-template <int N, typename scalar_t>
-static inline void GroupReduceAndAdd(sycl::nd_item<1> item,
-                                     const scalar_t (&local_sum)[N],
-                                     scalar_t *global_sum_ptr) {
-    auto grp = item.get_group();
-    for (int k = 0; k < N; ++k) {
-        scalar_t grp_val = sycl::reduce_over_group(grp, local_sum[k],
-                                                   sycl::plus<scalar_t>{});
-        if (item.get_local_id(0) == 0) {
-            sycl::atomic_ref<scalar_t, sycl::memory_order::acq_rel,
-                             sycl::memory_scope::device>(global_sum_ptr[k]) +=
-                    grp_val;
-        }
-    }
-}
 
 void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                  const core::Tensor &target_points,
@@ -56,12 +38,17 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDim}, dtype, device);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+        scalar_t *partial_sum_ptr = partial_sum.GetDataPtr<scalar_t>();
 
         DISPATCH_ROBUST_KERNEL_FUNCTION(
                 kernel.type_, scalar_t, kernel.scaling_parameter_,
@@ -113,13 +100,16 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                              }
                                          }
 
-                                         GroupReduceAndAdd<kReduceDim,
-                                                           scalar_t>(
+                                         core::sy::SYCLGroupReduceToPartial<
+                                                 kReduceDim, scalar_t>(
                                                  item, local_sum,
-                                                 global_sum_ptr);
+                                                 partial_sum_ptr);
                                      });
                          }).wait_and_throw();
                 });
+
+        core::sy::SYCLReducePartialBuffer<kReduceDim, scalar_t>(
+                queue, partial_sum_ptr, global_sum_ptr, num_groups);
     });
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
@@ -145,9 +135,13 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDim}, dtype, device);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t sqrt_lambda_geometric =
@@ -155,6 +149,7 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
         const scalar_t sqrt_lambda_photometric =
                 static_cast<scalar_t>(sqrt(1.0 - lambda_geometric));
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+        scalar_t *partial_sum_ptr = partial_sum.GetDataPtr<scalar_t>();
 
         DISPATCH_ROBUST_KERNEL_FUNCTION(
                 kernel.type_, scalar_t, kernel.scaling_parameter_,
@@ -228,13 +223,16 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                                              }
                                          }
 
-                                         GroupReduceAndAdd<kReduceDim,
-                                                           scalar_t>(
+                                         core::sy::SYCLGroupReduceToPartial<
+                                                 kReduceDim, scalar_t>(
                                                  item, local_sum,
-                                                 global_sum_ptr);
+                                                 partial_sum_ptr);
                                      });
                          }).wait_and_throw();
                 });
+
+        core::sy::SYCLReducePartialBuffer<kReduceDim, scalar_t>(
+                queue, partial_sum_ptr, global_sum_ptr, num_groups);
     });
 
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
@@ -269,209 +267,133 @@ void ComputePoseDopplerICPSYCL(
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype,
-                                     [&]() {
-                                         const scalar_t sqrt_lambda_geometric =
-                                                 sqrt(1.0 -
-                                                      static_cast<scalar_t>(
-                                                              lambda_doppler));
-                                         const scalar_t sqrt_lambda_doppler =
-                                                 sqrt(lambda_doppler);
-                                         const scalar_t
-                                                 sqrt_lambda_doppler_by_dt =
-                                                         sqrt_lambda_doppler /
-                                                         static_cast<scalar_t>(
-                                                                 period);
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDim}, dtype, device);
 
-                                         // Pre-compute v_s_in_S using a
-                                         // single-task kernel.
-                                         {
-                                             const scalar_t *R_S_to_V_ptr =
-                                                     R_S_to_V.GetDataPtr<
-                                                             scalar_t>();
-                                             const scalar_t *r_v_to_s_in_V_ptr =
-                                                     r_v_to_s_in_V.GetDataPtr<
-                                                             scalar_t>();
-                                             const scalar_t *w_v_in_V_ptr =
-                                                     w_v_in_V.GetDataPtr<
-                                                             scalar_t>();
-                                             const scalar_t *v_v_in_V_ptr =
-                                                     v_v_in_V.GetDataPtr<
-                                                             scalar_t>();
-                                             scalar_t *v_s_in_S_ptr =
-                                                     v_s_in_S.GetDataPtr<
-                                                             scalar_t>();
-                                             queue.single_task([=]() {
-                                                      PreComputeForDopplerICP(
-                                                              R_S_to_V_ptr,
-                                                              r_v_to_s_in_V_ptr,
-                                                              w_v_in_V_ptr,
-                                                              v_v_in_V_ptr,
-                                                              v_s_in_S_ptr);
-                                                  }).wait_and_throw();
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        const scalar_t sqrt_lambda_geometric =
+                sqrt(1.0 - static_cast<scalar_t>(lambda_doppler));
+        const scalar_t sqrt_lambda_doppler = sqrt(lambda_doppler);
+        const scalar_t sqrt_lambda_doppler_by_dt =
+                sqrt_lambda_doppler / static_cast<scalar_t>(period);
+
+        // Pre-compute v_s_in_S using a
+        // single-task kernel.
+        {
+            const scalar_t *R_S_to_V_ptr = R_S_to_V.GetDataPtr<scalar_t>();
+            const scalar_t *r_v_to_s_in_V_ptr =
+                    r_v_to_s_in_V.GetDataPtr<scalar_t>();
+            const scalar_t *w_v_in_V_ptr = w_v_in_V.GetDataPtr<scalar_t>();
+            const scalar_t *v_v_in_V_ptr = v_v_in_V.GetDataPtr<scalar_t>();
+            scalar_t *v_s_in_S_ptr = v_s_in_S.GetDataPtr<scalar_t>();
+            queue.single_task([=]() {
+                     PreComputeForDopplerICP(R_S_to_V_ptr, r_v_to_s_in_V_ptr,
+                                             w_v_in_V_ptr, v_v_in_V_ptr,
+                                             v_s_in_S_ptr);
+                 }).wait_and_throw();
+        }
+
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+        scalar_t *partial_sum_ptr = partial_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(
+                scalar_t, kernel_geometric.type_,
+                kernel_geometric.scaling_parameter_, kernel_doppler.type_,
+                kernel_doppler.scaling_parameter_, [&]() {
+                    const scalar_t *source_points_ptr =
+                            source_points.GetDataPtr<scalar_t>();
+                    const scalar_t *source_dopplers_ptr =
+                            source_dopplers.GetDataPtr<scalar_t>();
+                    const scalar_t *source_directions_ptr =
+                            source_directions.GetDataPtr<scalar_t>();
+                    const scalar_t *target_points_ptr =
+                            target_points.GetDataPtr<scalar_t>();
+                    const scalar_t *target_normals_ptr =
+                            target_normals.GetDataPtr<scalar_t>();
+                    const int64_t *correspondence_indices_ptr =
+                            correspondence_indices.GetDataPtr<int64_t>();
+                    const scalar_t *R_S_to_V_ptr =
+                            R_S_to_V.GetDataPtr<scalar_t>();
+                    const scalar_t *r_v_to_s_in_V_ptr =
+                            r_v_to_s_in_V.GetDataPtr<scalar_t>();
+                    const scalar_t *v_s_in_S_ptr =
+                            v_s_in_S.GetDataPtr<scalar_t>();
+
+                    queue.submit([&](sycl::handler &cgh) {
+                             cgh.parallel_for(
+                                     sycl::nd_range<1>{num_groups * wgs, wgs},
+                                     [=](sycl::nd_item<1> item) {
+                                         const int gid = item.get_global_id(0);
+                                         scalar_t local_sum[kReduceDim] = {};
+
+                                         if (gid < n) {
+                                             scalar_t J_G[6] = {0},
+                                                      J_D[6] = {0};
+                                             scalar_t r_G = 0, r_D = 0;
+
+                                             const bool valid = GetJacobianDopplerICP<
+                                                     scalar_t>(
+                                                     gid, source_points_ptr,
+                                                     source_dopplers_ptr,
+                                                     source_directions_ptr,
+                                                     target_points_ptr,
+                                                     target_normals_ptr,
+                                                     correspondence_indices_ptr,
+                                                     R_S_to_V_ptr,
+                                                     r_v_to_s_in_V_ptr,
+                                                     v_s_in_S_ptr,
+                                                     reject_dynamic_outliers,
+                                                     static_cast<scalar_t>(
+                                                             doppler_outlier_threshold),
+                                                     sqrt_lambda_geometric,
+                                                     sqrt_lambda_doppler,
+                                                     sqrt_lambda_doppler_by_dt,
+                                                     J_G, J_D, r_G, r_D);
+
+                                             if (valid) {
+                                                 const scalar_t w_G =
+                                                         GetWeightFromRobustKernelFirst(
+                                                                 r_G);
+                                                 const scalar_t w_D =
+                                                         GetWeightFromRobustKernelSecond(
+                                                                 r_D);
+
+                                                 int i = 0;
+                                                 for (int j = 0; j < 6; ++j) {
+                                                     for (int k = 0; k <= j;
+                                                          ++k) {
+                                                         local_sum[i++] +=
+                                                                 J_G[j] * w_G *
+                                                                         J_G[k] +
+                                                                 J_D[j] * w_D *
+                                                                         J_D[k];
+                                                     }
+                                                     local_sum[21 + j] +=
+                                                             J_G[j] * w_G *
+                                                                     r_G +
+                                                             J_D[j] * w_D * r_D;
+                                                 }
+                                                 local_sum[27] +=
+                                                         r_G * r_G + r_D * r_D;
+                                                 local_sum[28] += scalar_t(1);
+                                             }
                                          }
 
-                                         scalar_t *global_sum_ptr =
-                                                 global_sum.GetDataPtr<
-                                                         scalar_t>();
-
-                                         DISPATCH_DUAL_ROBUST_KERNEL_FUNCTION(scalar_t,
-                                                                              kernel_geometric
-                                                                                      .type_,
-                                                                              kernel_geometric
-                                                                                      .scaling_parameter_,
-                                                                              kernel_doppler
-                                                                                      .type_,
-                                                                              kernel_doppler
-                                                                                      .scaling_parameter_,
-                                                                              [&]() {
-                                                                                  const scalar_t *source_points_ptr =
-                                                                                          source_points
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const scalar_t *source_dopplers_ptr =
-                                                                                          source_dopplers
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const scalar_t *source_directions_ptr =
-                                                                                          source_directions
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const scalar_t *target_points_ptr =
-                                                                                          target_points
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const scalar_t *target_normals_ptr =
-                                                                                          target_normals
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const int64_t *correspondence_indices_ptr =
-                                                                                          correspondence_indices
-                                                                                                  .GetDataPtr<
-                                                                                                          int64_t>();
-                                                                                  const scalar_t *R_S_to_V_ptr =
-                                                                                          R_S_to_V.GetDataPtr<
-                                                                                                  scalar_t>();
-                                                                                  const scalar_t *r_v_to_s_in_V_ptr =
-                                                                                          r_v_to_s_in_V
-                                                                                                  .GetDataPtr<
-                                                                                                          scalar_t>();
-                                                                                  const scalar_t *v_s_in_S_ptr =
-                                                                                          v_s_in_S.GetDataPtr<
-                                                                                                  scalar_t>();
-
-                                                                                  queue
-                                                                                          .submit([&](sycl::handler
-                                                                                                              &cgh) {
-                                                                                              cgh.parallel_for(
-                                                                                                      sycl::nd_range<
-                                                                                                              1>{
-                                                                                                              num_groups *
-                                                                                                                      wgs,
-                                                                                                              wgs},
-                                                                                                      [=](sycl::nd_item<
-                                                                                                              1> item) {
-                                                                                                          const int gid =
-                                                                                                                  item.get_global_id(
-                                                                                                                          0);
-                                                                                                          scalar_t local_sum
-                                                                                                                  [kReduceDim] =
-                                                                                                                          {};
-
-                                                                                                          if (gid <
-                                                                                                              n) {
-                                                                                                              scalar_t J_G
-                                                                                                                      [6] = {0},
-                                                                                                                   J_D[6] = {
-                                                                                                                           0};
-                                                                                                              scalar_t
-                                                                                                                      r_G = 0,
-                                                                                                                      r_D = 0;
-
-                                                                                                              const bool valid = GetJacobianDopplerICP<
-                                                                                                                      scalar_t>(
-                                                                                                                      gid,
-                                                                                                                      source_points_ptr,
-                                                                                                                      source_dopplers_ptr,
-                                                                                                                      source_directions_ptr,
-                                                                                                                      target_points_ptr,
-                                                                                                                      target_normals_ptr,
-                                                                                                                      correspondence_indices_ptr,
-                                                                                                                      R_S_to_V_ptr,
-                                                                                                                      r_v_to_s_in_V_ptr,
-                                                                                                                      v_s_in_S_ptr,
-                                                                                                                      reject_dynamic_outliers,
-                                                                                                                      static_cast<
-                                                                                                                              scalar_t>(
-                                                                                                                              doppler_outlier_threshold),
-                                                                                                                      sqrt_lambda_geometric,
-                                                                                                                      sqrt_lambda_doppler,
-                                                                                                                      sqrt_lambda_doppler_by_dt,
-                                                                                                                      J_G,
-                                                                                                                      J_D,
-                                                                                                                      r_G,
-                                                                                                                      r_D);
-
-                                                                                                              if (valid) {
-                                                                                                                  const scalar_t
-                                                                                                                          w_G = GetWeightFromRobustKernelFirst(
-                                                                                                                                  r_G);
-                                                                                                                  const scalar_t
-                                                                                                                          w_D = GetWeightFromRobustKernelSecond(
-                                                                                                                                  r_D);
-
-                                                                                                                  int i = 0;
-                                                                                                                  for (int j = 0;
-                                                                                                                       j <
-                                                                                                                       6;
-                                                                                                                       ++j) {
-                                                                                                                      for (int k = 0;
-                                                                                                                           k <=
-                                                                                                                           j;
-                                                                                                                           ++k) {
-                                                                                                                          local_sum
-                                                                                                                                  [i++] +=
-                                                                                                                                  J_G[j] *
-                                                                                                                                          w_G *
-                                                                                                                                          J_G[k] +
-                                                                                                                                  J_D[j] *
-                                                                                                                                          w_D *
-                                                                                                                                          J_D[k];
-                                                                                                                      }
-                                                                                                                      local_sum
-                                                                                                                              [21 +
-                                                                                                                               j] +=
-                                                                                                                              J_G[j] *
-                                                                                                                                      w_G *
-                                                                                                                                      r_G +
-                                                                                                                              J_D[j] *
-                                                                                                                                      w_D *
-                                                                                                                                      r_D;
-                                                                                                                  }
-                                                                                                                  local_sum
-                                                                                                                          [27] +=
-                                                                                                                          r_G * r_G +
-                                                                                                                          r_D * r_D;
-                                                                                                                  local_sum[28] += scalar_t(
-                                                                                                                          1);
-                                                                                                              }
-                                                                                                          }
-
-                                                                                                          GroupReduceAndAdd<
-                                                                                                                  kReduceDim,
-                                                                                                                  scalar_t>(
-                                                                                                                  item,
-                                                                                                                  local_sum,
-                                                                                                                  global_sum_ptr);
-                                                                                                      });
-                                                                                          })
-                                                                                          .wait_and_throw();
-                                                                              });
+                                         core::sy::SYCLGroupReduceToPartial<
+                                                 kReduceDim, scalar_t>(
+                                                 item, local_sum,
+                                                 partial_sum_ptr);
                                      });
+                         }).wait_and_throw();
+                    core::sy::SYCLReducePartialBuffer<kReduceDim, scalar_t>(
+                            queue, partial_sum_ptr, global_sum_ptr, num_groups);
+                });
+    });
 
     DecodeAndSolve6x6(global_sum, output_pose, residual, inlier_count);
 }
@@ -487,12 +409,17 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), 21}, dtype, device);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+        scalar_t *partial_sum_ptr = partial_sum.GetDataPtr<scalar_t>();
         const scalar_t *target_points_ptr =
                 target_points.GetDataPtr<scalar_t>();
         const int64_t *correspondence_indices_ptr =
@@ -526,10 +453,13 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
                                  }
                              }
 
-                             GroupReduceAndAdd<21, scalar_t>(item, local_sum,
-                                                             global_sum_ptr);
+                             core::sy::SYCLGroupReduceToPartial<21, scalar_t>(
+                                     item, local_sum, partial_sum_ptr);
                          });
              }).wait_and_throw();
+
+        core::sy::SYCLReducePartialBuffer<21, scalar_t>(
+                queue, partial_sum_ptr, global_sum_ptr, num_groups);
 
         const core::Device host(core::Device("CPU:0"));
         core::Tensor global_sum_cpu = global_sum.To(host, core::Float64);

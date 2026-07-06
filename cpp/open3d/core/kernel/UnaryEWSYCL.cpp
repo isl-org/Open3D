@@ -7,13 +7,13 @@
 
 #include <cmath>
 #include <cstring>
+#include <type_traits>
 
+#include "open3d/core/BlockCopyDispatch.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
-#include "open3d/core/ParallelFor.h"
-#include "open3d/core/SYCLBlockCopyDispatch.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -44,88 +44,129 @@ struct CopyElementKernel : public UnaryElementKernel {
     }
 };
 
-// Math: integers treated as double (C++11)
-// no casting needed for float
-#define UNARY_ELEMENT_KERNEL(name, elem_op)                                \
-    template <typename src_t>                                              \
-    struct name##ElementKernel : public UnaryElementKernel {               \
-        using UnaryElementKernel::UnaryElementKernel;                      \
-        void operator()(int64_t i) {                                       \
-            const src_t* src = indexer.GetInputPtr<src_t>(0, i);           \
-            src_t* dst = indexer.GetOutputPtr<src_t>(i);                   \
-            *dst = static_cast<src_t>(elem_op(static_cast<double>(*src))); \
-        }                                                                  \
-    };                                                                     \
-    template <>                                                            \
-    struct name##ElementKernel<float> : public UnaryElementKernel {        \
-        using UnaryElementKernel::UnaryElementKernel;                      \
-        void operator()(int64_t i) {                                       \
-            const float* src = indexer.GetInputPtr<float>(0, i);           \
-            float* dst = indexer.GetOutputPtr<float>(i);                   \
-            *dst = elem_op(*src);                                          \
-        }                                                                  \
+// Contiguous fast-path helpers: match UNARY_ELEMENT_KERNEL / float-check macros
+// (double uses sycl::* on T; other dtypes promote through float).
+template <typename T>
+struct SYCLFloatCheckers {
+#define SYCL_FLOAT_CHECK(Method, sycl_fn, non_float) \
+    static inline bool Method(T val) {               \
+        if constexpr (std::is_floating_point_v<T>) { \
+            return sycl_fn(val);                     \
+        }                                            \
+        return non_float;                            \
     }
+    SYCL_FLOAT_CHECK(IsNan, sycl::isnan, false)
+    SYCL_FLOAT_CHECK(IsInf, sycl::isinf, false)
+    SYCL_FLOAT_CHECK(IsFinite, sycl::isfinite, true)
+#undef SYCL_FLOAT_CHECK
+};
 
-UNARY_ELEMENT_KERNEL(Sqrt, sycl::sqrt);
-UNARY_ELEMENT_KERNEL(Sin, sycl::sin);
-UNARY_ELEMENT_KERNEL(Cos, sycl::cos);
-UNARY_ELEMENT_KERNEL(Exp, sycl::exp);
-// TODO: Use sycl::abs for integers (no casting)
-UNARY_ELEMENT_KERNEL(Abs, sycl::fabs);
-UNARY_ELEMENT_KERNEL(Floor, sycl::floor);
-UNARY_ELEMENT_KERNEL(Ceil, sycl::ceil);
-UNARY_ELEMENT_KERNEL(Round, sycl::round);
-UNARY_ELEMENT_KERNEL(Trunc, sycl::trunc);
-#undef UNARY_ELEMENT_KERNEL
+// Separate templates so device compilation does not instantiate sycl::abs for
+// floating-point T (sycl::abs is integer-only).
+template <typename T>
+inline std::enable_if_t<std::is_floating_point_v<T>, T> SYCLUnaryAbs(T val) {
+    return sycl::fabs(val);
+}
 
-// No special treatment for unsigned types - we use the SYCL runtime
-// default
+template <typename T>
+inline std::enable_if_t<std::is_integral_v<T>, T> SYCLUnaryAbs(T val) {
+    return sycl::abs(val);
+}
+
+template <typename T>
+struct SYCLMath {
+#define SYCL_MATH_UNARY(Method, sycl_fn)                             \
+    static inline T Method(T val) {                                  \
+        if constexpr (std::is_same_v<T, double>) {                   \
+            return sycl_fn(val);                                     \
+        } else {                                                     \
+            return static_cast<T>(sycl_fn(static_cast<float>(val))); \
+        }                                                            \
+    }
+    SYCL_MATH_UNARY(Sqrt, sycl::sqrt)
+    SYCL_MATH_UNARY(Sin, sycl::sin)
+    SYCL_MATH_UNARY(Cos, sycl::cos)
+    SYCL_MATH_UNARY(Exp, sycl::exp)
+    SYCL_MATH_UNARY(Floor, sycl::floor)
+    SYCL_MATH_UNARY(Ceil, sycl::ceil)
+    SYCL_MATH_UNARY(Round, sycl::round)
+    SYCL_MATH_UNARY(Trunc, sycl::trunc)
+#undef SYCL_MATH_UNARY
+    static inline T Abs(T val) { return SYCLUnaryAbs(val); }
+};
+
 template <typename scalar_t>
-struct NegElementKernel : public UnaryElementKernel {
-    using UnaryElementKernel::UnaryElementKernel;
-    void operator()(int64_t i) {
-        const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
-        scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-        *dst = -*src;
+inline scalar_t UnaryEWTransform(UnaryEWOpCode op_code, scalar_t val) {
+    switch (op_code) {
+        case UnaryEWOpCode::Sqrt:
+            return SYCLMath<scalar_t>::Sqrt(val);
+        case UnaryEWOpCode::Sin:
+            return SYCLMath<scalar_t>::Sin(val);
+        case UnaryEWOpCode::Cos:
+            return SYCLMath<scalar_t>::Cos(val);
+        case UnaryEWOpCode::Neg:
+            return -val;
+        case UnaryEWOpCode::Exp:
+            return SYCLMath<scalar_t>::Exp(val);
+        case UnaryEWOpCode::Abs:
+            return SYCLMath<scalar_t>::Abs(val);
+        case UnaryEWOpCode::Floor:
+            return SYCLMath<scalar_t>::Floor(val);
+        case UnaryEWOpCode::Ceil:
+            return SYCLMath<scalar_t>::Ceil(val);
+        case UnaryEWOpCode::Round:
+            return SYCLMath<scalar_t>::Round(val);
+        case UnaryEWOpCode::Trunc:
+            return SYCLMath<scalar_t>::Trunc(val);
+        default:
+            return val;
     }
-};
+}
 
-// Float checkers: integers treated as double (C++11)
-// no casting needed for float
-#define UNARY_ELEMENT_KERNEL(name, elem_op)                         \
-    template <typename src_t>                                       \
-    struct name##ElementKernel : public UnaryElementKernel {        \
-        using UnaryElementKernel::UnaryElementKernel;               \
-        void operator()(int64_t i) {                                \
-            const src_t* src = indexer.GetInputPtr<src_t>(0, i);    \
-            bool* dst = indexer.GetOutputPtr<bool>(i);              \
-            *dst = elem_op(static_cast<double>(*src));              \
-        }                                                           \
-    };                                                              \
-    template <>                                                     \
-    struct name##ElementKernel<float> : public UnaryElementKernel { \
-        using UnaryElementKernel::UnaryElementKernel;               \
-        void operator()(int64_t i) {                                \
-            const float* src = indexer.GetInputPtr<float>(0, i);    \
-            bool* dst = indexer.GetOutputPtr<bool>(i);              \
-            *dst = elem_op(*src);                                   \
-        }                                                           \
+template <typename scalar_t>
+inline bool UnaryEWFloatCheck(UnaryEWOpCode op_code, scalar_t val) {
+    switch (op_code) {
+        case UnaryEWOpCode::IsNan:
+            return SYCLFloatCheckers<scalar_t>::IsNan(val);
+        case UnaryEWOpCode::IsInf:
+            return SYCLFloatCheckers<scalar_t>::IsInf(val);
+        case UnaryEWOpCode::IsFinite:
+            return SYCLFloatCheckers<scalar_t>::IsFinite(val);
+        default:
+            return false;
     }
+}
 
-UNARY_ELEMENT_KERNEL(IsNan, sycl::isnan);
-UNARY_ELEMENT_KERNEL(IsInf, sycl::isinf);
-UNARY_ELEMENT_KERNEL(IsFinite, sycl::isfinite);
-#undef UNARY_ELEMENT_KERNEL
+template <typename src_t, typename dst_t>
+inline dst_t UnaryEWLogicalNot(src_t val) {
+    return static_cast<dst_t>(!static_cast<bool>(val));
+}
 
-template <typename src_t, typename dst_t /* == bool or src_t */>
-struct LogicalNotElementKernel : public UnaryElementKernel {
-    using UnaryElementKernel::UnaryElementKernel;
-    void operator()(int64_t i) {
-        const src_t* src = indexer.GetInputPtr<src_t>(0, i);
-        dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
-        *dst = static_cast<dst_t>(!static_cast<bool>(*src));
-    }
-};
+template <typename scalar_t>
+inline void UnaryEWApplyIndexer(const Indexer& indexer,
+                                int64_t i,
+                                UnaryEWOpCode op_code) {
+    const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
+    scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+    *dst = UnaryEWTransform(op_code, *src);
+}
+
+template <typename scalar_t>
+inline void UnaryEWFloatCheckApplyIndexer(const Indexer& indexer,
+                                          int64_t i,
+                                          UnaryEWOpCode op_code) {
+    const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
+    bool* dst = indexer.GetOutputPtr<bool>(i);
+    *dst = UnaryEWFloatCheck(op_code, *src);
+}
+
+template <typename src_t, typename dst_t>
+inline void UnaryEWLogicalNotApplyIndexer(const Indexer& indexer, int64_t i) {
+    const src_t* src = indexer.GetInputPtr<src_t>(0, i);
+    dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
+    *dst = UnaryEWLogicalNot<src_t, dst_t>(*src);
+}
+
 }  // namespace
 
 void CopySYCL(const Tensor& src, Tensor& dst) {
@@ -219,24 +260,51 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     }
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
+    const bool contiguous_same_shape = src.IsContiguous() &&
+                                       dst.IsContiguous() &&
+                                       src.GetShape() == dst.GetShape();
+
     if (op_code == UnaryEWOpCode::LogicalNot) {
         if (dst_dtype == src_dtype) {
-            Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
-            const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                queue.parallel_for(n, [indexer](int64_t i) {
-                    LogicalNotElementKernel<scalar_t, scalar_t> ef(indexer);
-                    ef(i);
-                });
+                if (contiguous_same_shape) {
+                    int64_t n = src.NumElements();
+                    const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
+                    scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
+                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
+                        int64_t i = id[0];
+                        dst_ptr[i] = UnaryEWLogicalNot<scalar_t, scalar_t>(
+                                src_ptr[i]);
+                    });
+                } else {
+                    Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+                    const int64_t n = indexer.NumWorkloads();
+                    queue.parallel_for(n, [=](int64_t i) {
+                        UnaryEWLogicalNotApplyIndexer<scalar_t, scalar_t>(
+                                indexer, i);
+                    });
+                }
             });
         } else if (dst_dtype == Bool) {
-            Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
-            const int64_t n = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
-                queue.parallel_for(n, [indexer](int64_t i) {
-                    LogicalNotElementKernel<scalar_t, bool> ef(indexer);
-                    ef(i);
-                });
+                if (contiguous_same_shape) {
+                    int64_t n = src.NumElements();
+                    const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
+                    bool* dst_ptr = dst.GetDataPtr<bool>();
+                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
+                        int64_t i = id[0];
+                        dst_ptr[i] =
+                                UnaryEWLogicalNot<scalar_t, bool>(src_ptr[i]);
+                    });
+                } else {
+                    Indexer indexer({src}, dst,
+                                    DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+                    const int64_t n = indexer.NumWorkloads();
+                    queue.parallel_for(n, [=](int64_t i) {
+                        UnaryEWLogicalNotApplyIndexer<scalar_t, bool>(indexer,
+                                                                      i);
+                    });
+                }
             });
         } else {
             utility::LogError(
@@ -246,96 +314,60 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
     } else if (op_code == UnaryEWOpCode::IsNan ||
                op_code == UnaryEWOpCode::IsInf ||
                op_code == UnaryEWOpCode::IsFinite) {
-        Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
-        const int64_t n = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
-            if (op_code == UnaryEWOpCode::IsNan) {
-                queue.parallel_for(n, [indexer](int64_t i) {
-                    IsNanElementKernel<scalar_t> ef(indexer);
-                    ef(i);
+            if (contiguous_same_shape) {
+                int64_t n = src.NumElements();
+                const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
+                bool* dst_ptr = dst.GetDataPtr<bool>();
+                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
+                    int64_t i = id[0];
+                    dst_ptr[i] = UnaryEWFloatCheck(op_code, src_ptr[i]);
                 });
-            } else if (op_code == UnaryEWOpCode::IsInf) {
-                queue.parallel_for(n, [indexer](int64_t i) {
-                    IsInfElementKernel<scalar_t> ef(indexer);
-                    ef(i);
+            } else {
+                Indexer indexer({src}, dst,
+                                DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
+                const int64_t n = indexer.NumWorkloads();
+                queue.parallel_for(n, [=](int64_t i) {
+                    UnaryEWFloatCheckApplyIndexer<scalar_t>(indexer, i,
+                                                            op_code);
                 });
-            } else if (op_code == UnaryEWOpCode::IsFinite) {
-                queue.parallel_for(n, [indexer](int64_t i) {
-                    IsFiniteElementKernel<scalar_t> ef(indexer);
-                    ef(i);
+            }
+        });
+    } else if (dst_dtype == src_dtype) {
+        switch (op_code) {
+            case UnaryEWOpCode::Sqrt:
+            case UnaryEWOpCode::Sin:
+            case UnaryEWOpCode::Cos:
+            case UnaryEWOpCode::Neg:
+            case UnaryEWOpCode::Exp:
+            case UnaryEWOpCode::Abs:
+            case UnaryEWOpCode::Floor:
+            case UnaryEWOpCode::Ceil:
+            case UnaryEWOpCode::Round:
+            case UnaryEWOpCode::Trunc:
+                break;
+            default:
+                utility::LogError("Unimplemented op_code for UnaryEWSYCL");
+        }
+        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
+            if (contiguous_same_shape) {
+                int64_t n = src.NumElements();
+                const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
+                scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
+                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
+                    int64_t i = id[0];
+                    dst_ptr[i] = UnaryEWTransform(op_code, src_ptr[i]);
+                });
+            } else {
+                Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
+                const int64_t n = indexer.NumWorkloads();
+                queue.parallel_for(n, [=](int64_t i) {
+                    UnaryEWApplyIndexer<scalar_t>(indexer, i, op_code);
                 });
             }
         });
     } else {
-        Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
-        const int64_t n = indexer.NumWorkloads();
-        DISPATCH_DTYPE_TO_TEMPLATE(src_dtype, [&]() {
-            switch (op_code) {
-                case UnaryEWOpCode::Sqrt:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        SqrtElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Sin:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        SinElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Cos:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        CosElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Neg:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        NegElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Exp:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        ExpElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Abs:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        AbsElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Floor:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        FloorElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Ceil:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        CeilElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Round:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        RoundElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                case UnaryEWOpCode::Trunc:
-                    queue.parallel_for(n, [indexer](int64_t i) {
-                        TruncElementKernel<scalar_t> ef(indexer);
-                        ef(i);
-                    });
-                    break;
-                default:
-                    utility::LogError("Unimplemented op_code for UnaryEWSYCL");
-                    break;
-            }
-        });
+        utility::LogError("Unsupported dtype combination for UnaryEWSYCL.");
     }
     queue.wait_and_throw();
 }

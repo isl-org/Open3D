@@ -212,29 +212,14 @@ bool IsDeviceAvailable(const Device &device) {
 #endif
 }
 
-bool IsFP64Supported(const Device &device) {
+SYCLDevice GetSYCLDeviceProperties(const Device &device) {
 #ifdef BUILD_SYCL_MODULE
-    if (IsDeviceAvailable(device)) {
-        return SYCLContext::GetInstance().GetDeviceProperties(device).fp64;
-    } else {
-        return false;
+    if (!IsDeviceAvailable(device)) {
+        return SYCLDevice{};
     }
+    return SYCLContext::GetInstance().GetDeviceProperties(device);
 #else
-    return false;
-#endif
-}
-
-std::string GetDeviceType(const Device &device) {
-#ifdef BUILD_SYCL_MODULE
-    if (IsDeviceAvailable(device)) {
-        return SYCLContext::GetInstance()
-                .GetDeviceProperties(device)
-                .device_type;
-    } else {
-        return "";
-    }
-#else
-    return "";
+    return SYCLDevice{};
 #endif
 }
 

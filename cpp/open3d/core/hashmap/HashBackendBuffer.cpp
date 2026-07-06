@@ -7,6 +7,7 @@
 
 #include "open3d/core/hashmap/HashBackendBuffer.h"
 
+#include "open3d/core/BlockCopyDispatch.h"
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
@@ -16,10 +17,8 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
                                      int64_t key_dsize,
                                      std::vector<int64_t> value_dsizes,
                                      const Device &device) {
-    // First compute common bytesize divisor for fast copying values.
-    const std::vector<int64_t> kDivisors = {16, 12, 8, 4, 2, 1};
-
-    for (const auto &divisor : kDivisors) {
+    // Largest kBlockCopyDivisors entry dividing all value buffer sizes.
+    for (int64_t divisor : kBlockCopyDivisors) {
         bool valid = true;
         blocks_per_element_.clear();
         for (size_t i = 0; i < value_dsizes.size(); ++i) {

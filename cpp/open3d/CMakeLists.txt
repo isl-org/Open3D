@@ -147,6 +147,18 @@ open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
+if (BUILD_SYCL_MODULE)
+    # parallel linking to speed up SYCL link time code generation
+    cmake_host_system_information(RESULT NUM_CORES QUERY NUMBER_OF_PHYSICAL_CORES)
+    target_link_options(Open3D PUBLIC -fsycl-max-parallel-link-jobs=${NUM_CORES})
+endif()
+# Switch linker to lld for clang and gcc, if lld is available
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    find_program(LLD_PROGRAM lld)
+    if (LLD_PROGRAM)
+        target_link_options(Open3D PUBLIC -fuse-ld=lld)
+    endif()
+endif()
 if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
     # Static libraries do not perform the SYCL device link step themselves.
     # Propagate the SYCL link target so final executables link with -fsycl and
@@ -159,20 +171,6 @@ if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
             $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
     endif()
 endif()
-
-# GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
-# Gaussian splatting.  The context class detects the display server at runtime
-# and uses GLX on X11, EGL on Wayland.
-#if (NOT APPLE)
-#    find_package(OpenGL COMPONENTS EGL)
-#    if (OpenGL_EGL_FOUND)
-#        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
-#    endif()
-#    find_package(X11 QUIET)
-#    if (X11_FOUND)
-#        target_link_libraries(Open3D PRIVATE X11::X11)
-#    endif()
-#endif()
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

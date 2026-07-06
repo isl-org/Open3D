@@ -47,14 +47,12 @@
 #include <oneapi/dpl/execution>
 #include <sycl/sycl.hpp>
 
-#include "open3d/core/SYCLContext.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
 #include "open3d/core/nns/kernel/KnnSearchSYCLImpl.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -163,17 +161,17 @@ void KnnSearchSYCL(const Tensor& points,
         if (UseKnnDirectSYCL(points_i.GetShape(1), batch_knn)) {
             // Direct-distance path (no AddMM, no centering — see
             // DispatchKnnDirectSYCL docs): use the ORIGINAL, uncentered
-            // points/queries slices since |p-q|² is computed directly and
-            // is translation-sensitive in implementation (not in result).
+            // points/queries slices since |p-q|² is computed directly
+            // and is translation-sensitive in implementation (not in
+            // result).
             const Tensor points_raw = points.Slice(0, point_begin, point_end);
-            const Tensor queries_raw =
-                    queries.Slice(0, query_begin, query_end);
-            DispatchKnnDirectSYCL<T, TIndex>(
-                    queue, points_raw.GetDataPtr<T>(),
-                    queries_raw.GetDataPtr<T>(), points_i.GetShape(1),
-                    num_points_i, num_queries_i, batch_knn,
-                    out_distances.GetDataPtr<T>(),
-                    out_indices.GetDataPtr<TIndex>());
+            const Tensor queries_raw = queries.Slice(0, query_begin, query_end);
+            DispatchKnnDirectSYCL<T, TIndex>(queue, points_raw.GetDataPtr<T>(),
+                                             queries_raw.GetDataPtr<T>(),
+                                             points_i.GetShape(1), num_points_i,
+                                             num_queries_i, batch_knn,
+                                             out_distances.GetDataPtr<T>(),
+                                             out_indices.GetDataPtr<TIndex>());
             queue.wait_and_throw();
             continue;
         }

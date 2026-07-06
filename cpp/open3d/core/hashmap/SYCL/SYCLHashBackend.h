@@ -13,8 +13,8 @@
 #include <sycl/sycl.hpp>
 #include <vector>
 
+#include "open3d/core/BlockCopyDispatch.h"
 #include "open3d/core/MemoryManager.h"
-#include "open3d/core/SYCLBlockCopyDispatch.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"

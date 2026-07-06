@@ -82,8 +82,8 @@ struct NanoFlannIndexHolderBase {
 //     k > kSYCLKnnMidKMax falls back to a sequential oneDPL partial_sort.
 //     Increase to 1024 if very large k is common and scratch bandwidth allows.
 
-/// Default distance-tile budget in bytes (4 MiB, tuned for iGPU).
-constexpr int64_t kSYCLKnnDefaultTileBytes = 4LL * 1024 * 1024;
+/// Default distance-tile budget in bytes (8 MiB, tuned for iGPU).
+constexpr int64_t kSYCLKnnDefaultTileBytes = 8LL * 1024 * 1024;
 
 /// Upper bound of k for the GRF-register heap path (eliminates scratch spill).
 constexpr int64_t kSYCLKnnSmallKMax = 32;

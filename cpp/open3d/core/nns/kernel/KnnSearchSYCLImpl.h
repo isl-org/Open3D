@@ -51,6 +51,7 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <sycl/sycl.hpp>
+#include <type_traits>
 
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
@@ -74,6 +75,9 @@ inline void ChooseTileSizeSYCL(int64_t num_queries,
     tile_queries = std::max<int64_t>(tile_queries, 1);
     tile_points = std::max<int64_t>(tile_bytes / (tile_queries * element_size),
                                     int64_t(256));
+    if (tile_points > 128) {
+        tile_points = (tile_points / 128) * 128;
+    }
     tile_points = std::min<int64_t>(tile_points, num_points);
     tile_points = std::max<int64_t>(tile_points, 1);
 }
@@ -401,6 +405,9 @@ constexpr int64_t kSYCLKnnDirectTilePoints = 256;
 constexpr int64_t kSYCLKnnDirectMaxDim = 8;
 
 template <typename T, typename TIndex, int NDIM, int K, int SG>
+class KnnDirectKernel;
+
+template <typename T, typename TIndex, int NDIM, int K, int SG>
 void KnnDirectSYCL(sycl::queue& queue,
                    const T* points_ptr,
                    const T* queries_ptr,
@@ -422,12 +429,11 @@ void KnnDirectSYCL(sycl::queue& queue,
 
     queue.submit([&](sycl::handler& h) {
         sycl::local_accessor<T, 1> slm(sycl::range<1>(2 * tp * NDIM), h);
-        h.parallel_for(
+        h.parallel_for<KnnDirectKernel<T, TIndex, NDIM, K, SG>>(
                 sycl::nd_range<1>(sycl::range<1>(global_size),
                                   sycl::range<1>(wg_size)),
-                [=](sycl::nd_item<1> it)
-                        [[sycl::reqd_sub_group_size(SG)]]
-                        [[intel::kernel_args_restrict]] {
+                [=](sycl::nd_item<1> it) [[sycl::reqd_sub_group_size(
+                        SG)]] [[intel::kernel_args_restrict]] {
                     const auto sg = it.get_sub_group();
                     const int64_t lane = sg.get_local_id()[0];
                     const int64_t sg_id_in_wg = sg.get_group_id()[0];
@@ -471,8 +477,7 @@ void KnnDirectSYCL(sycl::queue& queue,
                                  e += local_range) {
                                 const int64_t p = e / NDIM, dd = e % NDIM;
                                 slm[cur * tp * NDIM + e] =
-                                        points_ptr[(cur_start + p) * NDIM +
-                                                  dd];
+                                        points_ptr[(cur_start + p) * NDIM + dd];
                             }
                             sycl::group_barrier(it.get_group());
                         }
@@ -491,8 +496,7 @@ void KnnDirectSYCL(sycl::queue& queue,
                                  e += local_range) {
                                 const int64_t p = e / NDIM, dd = e % NDIM;
                                 slm[nxt * tp * NDIM + e] =
-                                        points_ptr[(nxt_start + p) * NDIM +
-                                                  dd];
+                                        points_ptr[(nxt_start + p) * NDIM + dd];
                             }
                         }
 
@@ -514,9 +518,9 @@ void KnnDirectSYCL(sycl::queue& queue,
                                     d[pos] = dist;
                                     idx[pos] = gp;
                                     while (pos > 0 &&
-                                          (d[pos - 1] > d[pos] ||
-                                           (d[pos - 1] == d[pos] &&
-                                            idx[pos - 1] > idx[pos]))) {
+                                           (d[pos - 1] > d[pos] ||
+                                            (d[pos - 1] == d[pos] &&
+                                             idx[pos - 1] > idx[pos]))) {
                                         T td = d[pos - 1];
                                         d[pos - 1] = d[pos];
                                         d[pos] = td;
@@ -548,8 +552,7 @@ void KnnDirectSYCL(sycl::queue& queue,
                         T od[K];
                         TIndex oidx[K];
                         for (int i = 0; i < K; ++i) {
-                            od[i] = sycl::select_from_group(sg, d[i],
-                                                            partner);
+                            od[i] = sycl::select_from_group(sg, d[i], partner);
                             oidx[i] = sycl::select_from_group(sg, idx[i],
                                                               partner);
                         }
@@ -592,21 +595,21 @@ void KnnDirectSYCL(sycl::queue& queue,
 
 template <typename T, typename TIndex, int NDIM>
 void DispatchKnnDirectK(sycl::queue& queue,
-                       const T* points_ptr,
-                       const T* queries_ptr,
-                       int64_t num_points,
-                       int64_t num_queries,
-                       int64_t actual_k,
-                       T* out_dist_ptr,
-                       TIndex* out_idx_ptr,
-                       int64_t subgroups_per_wg,
-                       int64_t tile_points) {
+                        const T* points_ptr,
+                        const T* queries_ptr,
+                        int64_t num_points,
+                        int64_t num_queries,
+                        int64_t actual_k,
+                        T* out_dist_ptr,
+                        TIndex* out_idx_ptr,
+                        int64_t subgroups_per_wg,
+                        int64_t tile_points) {
     const int64_t k_bucket = KBucket(actual_k);
-#define CALL_DIRECT(Kval)                                                  \
-    KnnDirectSYCL<T, TIndex, NDIM, Kval, kSYCLKnnDirectSubgroupSize>(      \
-            queue, points_ptr, queries_ptr, num_points, num_queries,       \
-            actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,         \
-            tile_points)
+    constexpr int SG = std::is_same_v<T, double> ? 8 : 16;
+#define CALL_DIRECT(Kval)                                                      \
+    KnnDirectSYCL<T, TIndex, NDIM, Kval, SG>(                                  \
+            queue, points_ptr, queries_ptr, num_points, num_queries, actual_k, \
+            out_dist_ptr, out_idx_ptr, subgroups_per_wg, tile_points)
     if (k_bucket <= 1)
         CALL_DIRECT(1);
     else if (k_bucket <= 2)
@@ -638,11 +641,10 @@ void DispatchKnnDirectSYCL(
         TIndex* out_idx_ptr,
         int64_t subgroups_per_wg = kSYCLKnnDirectSubgroupsPerWG,
         int64_t tile_points = kSYCLKnnDirectTilePoints) {
-#define CALL_DIM(NDIMVAL)                                                \
-    DispatchKnnDirectK<T, TIndex, NDIMVAL>(                              \
-            queue, points_ptr, queries_ptr, num_points, num_queries,     \
-            actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,       \
-            tile_points)
+#define CALL_DIM(NDIMVAL)                                                      \
+    DispatchKnnDirectK<T, TIndex, NDIMVAL>(                                    \
+            queue, points_ptr, queries_ptr, num_points, num_queries, actual_k, \
+            out_dist_ptr, out_idx_ptr, subgroups_per_wg, tile_points)
     switch (dim) {
         case 1:
             CALL_DIM(1);

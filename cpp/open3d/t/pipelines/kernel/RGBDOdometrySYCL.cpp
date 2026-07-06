@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -24,25 +25,6 @@ using t::geometry::kernel::TransformIndexer;
 
 static constexpr int kReduceDimOdometry = 29;
 static constexpr int kJtJDimOdometry = 21;
-
-/// Perform a group reduction over a fixed-size private float array using
-/// sycl::reduce_over_group, then have work item 0 atomically accumulate each
-/// group partial sum into the device-side global buffer.
-template <int N>
-static inline void GroupReduceAndAdd(sycl::nd_item<1> item,
-                                     const float (&local_sum)[N],
-                                     float *global_sum_ptr) {
-    auto grp = item.get_group();
-    for (int k = 0; k < N; ++k) {
-        float grp_val =
-                sycl::reduce_over_group(grp, local_sum[k], sycl::plus<float>{});
-        if (item.get_local_id(0) == 0) {
-            sycl::atomic_ref<float, sycl::memory_order::acq_rel,
-                             sycl::memory_scope::device>(global_sum_ptr[k]) +=
-                    grp_val;
-        }
-    }
-}
 
 void ComputeOdometryResultPointToPlaneSYCL(
         const core::Tensor &source_vertex_map,
@@ -73,9 +55,15 @@ void ComputeOdometryResultPointToPlaneSYCL(
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
+            core::Float32, device);
+    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
 
     queue.submit([&](sycl::handler &cgh) {
              cgh.parallel_for(
@@ -113,10 +101,14 @@ void ComputeOdometryResultPointToPlaneSYCL(
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
-                                                               global_sum_ptr);
+                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
+                                                            float>(
+                                 item, local_sum, partial_sum_ptr);
                      });
          }).wait_and_throw();
+
+    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
+            queue, partial_sum_ptr, global_sum_ptr, num_groups);
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -158,9 +150,15 @@ void ComputeOdometryResultIntensitySYCL(
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
+            core::Float32, device);
+    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
 
     queue.submit([&](sycl::handler &cgh) {
              cgh.parallel_for(
@@ -201,10 +199,14 @@ void ComputeOdometryResultIntensitySYCL(
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
-                                                               global_sum_ptr);
+                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
+                                                            float>(
+                                 item, local_sum, partial_sum_ptr);
                      });
          }).wait_and_throw();
+
+    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
+            queue, partial_sum_ptr, global_sum_ptr, num_groups);
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -250,9 +252,15 @@ void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
+            core::Float32, device);
+    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
 
     queue.submit([&](sycl::handler &cgh) {
              cgh.parallel_for(
@@ -304,10 +312,14 @@ void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
                              }
                          }
 
-                         GroupReduceAndAdd<kReduceDimOdometry>(item, local_sum,
-                                                               global_sum_ptr);
+                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
+                                                            float>(
+                                 item, local_sum, partial_sum_ptr);
                      });
          }).wait_and_throw();
+
+    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
+            queue, partial_sum_ptr, global_sum_ptr, num_groups);
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -335,9 +347,15 @@ void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue = device_props.queue;
-    const size_t wgs = device_props.max_work_group_size;
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+
+    core::Tensor partial_sum = core::Tensor::Zeros(
+            {static_cast<int64_t>(num_groups), kJtJDimOdometry}, core::Float32,
+            device);
+    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
 
     queue.submit([&](sycl::handler &cgh) {
              cgh.parallel_for(
@@ -371,10 +389,14 @@ void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
                              }
                          }
 
-                         GroupReduceAndAdd<kJtJDimOdometry>(item, local_sum,
-                                                            global_sum_ptr);
+                         core::sy::SYCLGroupReduceToPartial<kJtJDimOdometry,
+                                                            float>(
+                                 item, local_sum, partial_sum_ptr);
                      });
          }).wait_and_throw();
+
+    core::sy::SYCLReducePartialBuffer<kJtJDimOdometry, float>(
+            queue, partial_sum_ptr, global_sum_ptr, num_groups);
 
     const core::Device host(core::Device("CPU:0"));
     information = core::Tensor::Empty({6, 6}, core::Float64, host);

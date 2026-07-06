@@ -55,13 +55,15 @@ void ProjectSYCL(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
         auto depth_atomic_ref =
-                sycl::atomic_ref<float, sycl::memory_order::acq_rel,
+                sycl::atomic_ref<float, sycl::memory_order::relaxed,
                                  sycl::memory_scope::device,
                                  sycl::access::address_space::global_space>(
                         *depth_ptr);
-        float old = depth_atomic_ref.load();
+        float old = depth_atomic_ref.load(sycl::memory_order::relaxed);
         while (old == 0.0f || old > d) {
-            if (depth_atomic_ref.compare_exchange_strong(old, d)) {
+            if (depth_atomic_ref.compare_exchange_strong(
+                        old, d, sycl::memory_order::relaxed,
+                        sycl::memory_order::relaxed)) {
                 break;
             }
         }

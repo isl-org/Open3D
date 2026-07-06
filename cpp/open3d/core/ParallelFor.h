@@ -24,7 +24,7 @@
 #endif
 
 #if defined(SYCL_LANGUAGE_VERSION)
-#include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
 #endif
 
 namespace open3d {
@@ -104,7 +104,14 @@ void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
         return;
     }
     auto queue = core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    queue.parallel_for(n, [=](int64_t i) { func(i); }).wait_and_throw();
+    size_t wg = core::sy::SYCLPreferredWorkGroupSize(device);
+    auto nd_range = core::sy::SYCLNdRange1D(n, wg);
+    queue.parallel_for(nd_range, [=](sycl::nd_item<1> item) {
+             int64_t i = item.get_global_id(0);
+             if (i < n) {
+                 func(i);
+             }
+         }).wait_and_throw();
 }
 
 #endif
