@@ -14,6 +14,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -447,6 +448,7 @@ TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
 
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -1061,6 +1063,7 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     // Value test
     t::geometry::PointCloud pcd_small(
@@ -1139,6 +1142,7 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
@@ -1182,6 +1186,7 @@ TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},

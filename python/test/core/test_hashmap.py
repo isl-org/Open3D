@@ -16,13 +16,15 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_creation(device):
     hashmap = o3c.HashMap(10, o3c.int64, [1], o3c.int64, [1], device)
     assert hashmap.size() == 0
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_insertion(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, [1], o3c.int64, [1], device)
@@ -40,7 +42,8 @@ def test_insertion(device):
                             valid_values.cpu().numpy() * 100)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_activate(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, [1], o3c.int64, [1], device)
@@ -56,7 +59,8 @@ def test_activate(device):
                             np.array([100, 300, 500, 700, 900]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_find(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, [1], o3c.int64, [1], device)
@@ -79,7 +83,8 @@ def test_find(device):
                             np.array([1, 5]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_erase(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, [1], o3c.int64, [1], device)
@@ -106,7 +111,8 @@ def test_erase(device):
     np.testing.assert_equal(active_values_np[sorted_i], np.array([3, 7, 9]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_complex_shape(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, [3], o3c.int64, [1], device)
@@ -135,7 +141,8 @@ def test_complex_shape(device):
                             np.array([True, False]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_multivalue(device):
     capacity = 10
     hashmap = o3c.HashMap(capacity, o3c.int64, (3), (o3c.int64, o3c.float64),
@@ -171,7 +178,8 @@ def test_multivalue(device):
                             np.array([True, False]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_hashset(device):
     capacity = 10
     hashset = o3c.HashSet(capacity, o3c.int64, (3), device)

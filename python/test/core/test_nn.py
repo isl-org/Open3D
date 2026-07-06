@@ -107,7 +107,8 @@ def test_knn_search(device):
                                rtol=1e-5)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(

@@ -14,6 +14,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
@@ -49,7 +50,13 @@ public:
     std::vector<V> vals_;
 };
 
-class HashMapPermuteDevices : public PermuteDevicesWithSYCL {};
+// SYCL hash map is unsupported on SYCL CPU.
+class HashMapPermuteDevices : public PermuteDevicesWithSYCL {
+protected:
+    void SetUp() override {
+        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
+    }
+};
 INSTANTIATE_TEST_SUITE_P(
         HashMap,
         HashMapPermuteDevices,

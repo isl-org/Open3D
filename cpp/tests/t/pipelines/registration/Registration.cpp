@@ -10,6 +10,7 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
@@ -26,7 +27,13 @@ namespace l_reg = open3d::pipelines::registration;
 namespace open3d {
 namespace tests {
 
-class RegistrationPermuteDevices : public PermuteDevicesWithSYCL {};
+// Correspondence search (HybridSearch) is unsupported on SYCL CPU.
+class RegistrationPermuteDevices : public PermuteDevicesWithSYCL {
+protected:
+    void SetUp() override {
+        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
+    }
+};
 INSTANTIATE_TEST_SUITE_P(
         Registration,
         RegistrationPermuteDevices,

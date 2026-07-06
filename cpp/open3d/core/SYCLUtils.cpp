@@ -223,6 +223,10 @@ SYCLDevice GetSYCLDeviceProperties(const Device &device) {
 #endif
 }
 
+bool IsCPUDevice(const Device &device) {
+    return GetSYCLDeviceProperties(device).device_type == "cpu";
+}
+
 std::vector<Device> GetAvailableSYCLDevices() {
 #ifdef BUILD_SYCL_MODULE
     return SYCLContext::GetInstance().GetAvailableSYCLDevices();

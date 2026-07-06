@@ -9,6 +9,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -20,7 +21,13 @@
 namespace open3d {
 namespace tests {
 
-class FeaturePermuteDevices : public PermuteDevicesWithSYCL {};
+// FPFH uses HybridSearch/FixedRadiusSearch, unsupported on SYCL CPU.
+class FeaturePermuteDevices : public PermuteDevicesWithSYCL {
+protected:
+    void SetUp() override {
+        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
+    }
+};
 INSTANTIATE_TEST_SUITE_P(
         Feature,
         FeaturePermuteDevices,

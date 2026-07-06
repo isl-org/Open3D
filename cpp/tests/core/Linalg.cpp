@@ -483,9 +483,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    if (core::sy::GetSYCLDeviceProperties(device).device_type == "cpu") {
-        GTEST_SKIP() << "MKL unsupported SYCL device.";
-    }
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
     core::Dtype dtype = core::Float32;
 
     // Solve test.

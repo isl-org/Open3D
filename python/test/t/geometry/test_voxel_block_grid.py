@@ -76,7 +76,8 @@ def _integrate_redwood_frames(device,
     return vbg
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize(
+    "device", list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_voxel_block_grid_construct(device):
     vbg = o3d.t.geometry.VoxelBlockGrid(
         attr_names=["tsdf", "weight", "color"],

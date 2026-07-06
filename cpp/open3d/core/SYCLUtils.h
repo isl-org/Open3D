@@ -49,6 +49,10 @@ bool IsDeviceAvailable(const Device& device);
 /// default-initialized \ref SYCLDevice.
 SYCLDevice GetSYCLDeviceProperties(const Device& device);
 
+/// Returns true if \p device is the SYCL CPU fallback (used when no SYCL GPU
+/// is available, e.g. in CI). Some SYCL kernels don't support this device.
+bool IsCPUDevice(const Device& device);
+
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 

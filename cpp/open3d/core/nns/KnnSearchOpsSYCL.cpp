@@ -47,6 +47,7 @@
 #include <oneapi/dpl/execution>
 #include <sycl/sycl.hpp>
 
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
@@ -408,6 +409,12 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 "SYCL fixed radius search does not support "
                 "ignore_query_point.");
     }
+    // Count/gather kernels corrupt output on SYCL CPU; GPU-only for now.
+    if (sy::IsCPUDevice(points.GetDevice())) {
+        utility::LogError(
+                "SYCL fixed radius search is not supported on "
+                "SYCL CPU.");
+    }
 
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
@@ -611,6 +618,10 @@ void HybridSearchSYCL(const Tensor& points,
                       int64_t tile_bytes) {
     if (metric != Metric::L2) {
         utility::LogError("SYCL hybrid search only supports L2 metric.");
+    }
+    // See FixedRadiusSearchSYCL: unsupported on SYCL CPU.
+    if (sy::IsCPUDevice(points.GetDevice())) {
+        utility::LogError("SYCL hybrid search is not supported on SYCL CPU.");
     }
 
     const Device device = points.GetDevice();

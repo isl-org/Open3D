@@ -2351,10 +2351,8 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceMaxFloatLimit) {
 
 TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMin) {
     core::Device device = GetParam();
-    if (core::sy::GetSYCLDeviceProperties(device).device_type == "cpu") {
-        GTEST_SKIP() << "allocateMemSubBuffer() API failed with unknown error "
-                        "on CPU.";
-    }
+    if (core::sy::IsCPUDevice(device))
+        GTEST_SKIP() << "allocateMemSubBuffer() fails on SYCL CPU.";
 
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
@@ -2384,10 +2382,8 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMin) {
 
 TEST_P(TensorPermuteDevicesWithSYCL, ReduceArgMax) {
     core::Device device = GetParam();
-    if (core::sy::GetSYCLDeviceProperties(device).device_type == "cpu") {
-        GTEST_SKIP() << "allocateMemSubBuffer() API failed with unknown error "
-                        "on CPU.";
-    }
+    if (core::sy::IsCPUDevice(device))
+        GTEST_SKIP() << "allocateMemSubBuffer() fails on SYCL CPU.";
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},

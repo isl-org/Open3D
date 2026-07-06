@@ -24,7 +24,13 @@ namespace tests {
 
 using namespace t::geometry;
 
-class VoxelBlockGridPermuteDevices : public PermuteDevicesWithSYCL {};
+// SYCL hash map is unsupported on SYCL CPU.
+class VoxelBlockGridPermuteDevices : public PermuteDevicesWithSYCL {
+protected:
+    void SetUp() override {
+        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
+    }
+};
 INSTANTIATE_TEST_SUITE_P(
         VoxelBlockGrid,
         VoxelBlockGridPermuteDevices,
