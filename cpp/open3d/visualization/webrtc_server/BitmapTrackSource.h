@@ -73,11 +73,13 @@ public:
     bool GetStats(Stats* stats) override { return false; }
     void AddOrUpdateSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                          const webrtc::VideoSinkWants& wants) override;
-    void RemoveSink(webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+    void RemoveSink(
+            webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
     bool SupportsEncodedOutput() const override { return false; }
     void GenerateKeyFrame() override {}
-    void AddEncodedSink(webrtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>*
-                                sink) override {}
+    void AddEncodedSink(
+            webrtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
+            override {}
     void RemoveEncodedSink(
             webrtc::VideoSinkInterface<webrtc::RecordableEncodedFrame>* sink)
             override {}

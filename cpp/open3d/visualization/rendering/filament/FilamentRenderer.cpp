@@ -34,6 +34,8 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <vector>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -300,6 +302,11 @@ namespace {
 struct UserData {
     std::function<void(std::shared_ptr<core::Tensor>)> callback;
     std::shared_ptr<core::Tensor> image;
+#if defined(__APPLE__)
+    // Metal readPixels only supports RGBA; points at
+    // FilamentRenderer::read_pixels_rgba_buffer_, stripped to RGB below.
+    std::vector<uint8_t>* rgba_buffer;
+#endif
 
     UserData(std::function<void(std::shared_ptr<core::Tensor>)> cb,
              std::shared_ptr<core::Tensor> img)
@@ -308,6 +315,16 @@ struct UserData {
 
 void ReadPixelsCallback(void*, size_t, void* user) {
     auto* user_data = static_cast<UserData*>(user);
+#if defined(__APPLE__)
+    const uint8_t* src = user_data->rgba_buffer->data();
+    uint8_t* dst = user_data->image->GetDataPtr<uint8_t>();
+    const int64_t n_pixels = user_data->image->NumElements() / 3;
+    for (int64_t i = 0; i < n_pixels; ++i) {
+        dst[i * 3 + 0] = src[i * 4 + 0];
+        dst[i * 3 + 1] = src[i * 4 + 1];
+        dst[i * 3 + 2] = src[i * 4 + 2];
+    }
+#endif
     user_data->callback(user_data->image);
     delete user_data;
 }
@@ -320,7 +337,6 @@ void FilamentRenderer::RequestReadPixels(
         std::function<void(std::shared_ptr<core::Tensor>)> callback) {
     core::SizeVector shape{height, width, 3};
     core::Dtype dtype = core::UInt8;
-    int64_t nbytes = shape.NumElements() * dtype.ByteSize();
 
     auto image = std::make_shared<core::Tensor>(shape, dtype);
     auto* user_data = new UserData(callback, image);
@@ -328,9 +344,24 @@ void FilamentRenderer::RequestReadPixels(
     using namespace filament;
     using namespace backend;
 
+#if defined(__APPLE__)
+    // Metal lacks native RGB readback; reuse a persistent RGBA scratch
+    // buffer (EndFrame() flushes before the next Draw() reuses it).
+    const size_t nbytes = static_cast<size_t>(width) * height * 4;
+    if (read_pixels_rgba_buffer_.size() != nbytes) {
+        read_pixels_rgba_buffer_.resize(nbytes);
+    }
+    user_data->rgba_buffer = &read_pixels_rgba_buffer_;
+    PixelBufferDescriptor pd(read_pixels_rgba_buffer_.data(), nbytes,
+                             PixelDataFormat::RGBA, PixelDataType::UBYTE,
+                             ReadPixelsCallback, user_data);
+#else
+    // GL/Vulkan read RGB+UBYTE directly into the tensor.
+    int64_t nbytes = shape.NumElements() * dtype.ByteSize();
     PixelBufferDescriptor pd(image->GetDataPtr(), nbytes, PixelDataFormat::RGB,
                              PixelDataType::UBYTE, ReadPixelsCallback,
                              user_data);
+#endif
     renderer_->readPixels(0, 0, width, height, std::move(pd));
     needs_wait_after_draw_ = true;
 }

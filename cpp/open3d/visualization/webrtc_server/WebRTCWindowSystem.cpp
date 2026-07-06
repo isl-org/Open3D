@@ -7,12 +7,12 @@
 
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
-#include <rtc_base/ssl_adapter.h>
 #include <rtc_base/logging.h>
+#include <rtc_base/ssl_adapter.h>
 #include <rtc_base/thread.h>
 
-#include <chrono>
 #include <atomic>
+#include <chrono>
 #include <sstream>
 #include <thread>
 #include <unordered_map>
@@ -103,7 +103,7 @@ struct WebRTCWindowSystem::Impl {
     std::thread webrtc_thread_;
     bool sever_started_ = false;
     // Set while the WebRTC std::thread is inside Run(); used for shutdown.
-    std::atomic<webrtc::Thread*> webrtc_message_thread_{nullptr};
+    std::atomic<webrtc::Thread *> webrtc_message_thread_{nullptr};
 
     std::unordered_map<std::string, std::function<std::string(std::string)>>
             data_channel_message_callbacks_;
@@ -199,7 +199,7 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {
     if (impl_->sever_started_ && impl_->webrtc_thread_.joinable()) {
-        webrtc::Thread* message_thread = impl_->webrtc_message_thread_.load();
+        webrtc::Thread *message_thread = impl_->webrtc_message_thread_.load();
         if (message_thread) {
             message_thread->Quit();
         }
@@ -284,7 +284,7 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                     webrtc::ThreadManager::Instance()->UnwrapCurrentThread();
                 }
             } webrtc_thread_scope;
-            webrtc::Thread* thread = webrtc::Thread::Current();
+            webrtc::Thread *thread = webrtc::Thread::Current();
             impl_->webrtc_message_thread_.store(thread);
 
             webrtc::InitializeSSL();

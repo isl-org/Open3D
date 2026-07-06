@@ -8,6 +8,7 @@
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 
 #include <api/scoped_refptr.h>
+#include <api/video/color_space.h>
 #include <api/video/i420_buffer.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
@@ -55,18 +56,23 @@ void ImageCapturer::OnCaptureResult(
     webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
 
-    // frame->data()
-    const int conversion_result = libyuv::ConvertToI420(
-            frame->GetDataPtr<uint8_t>(), 0, i420_buffer->MutableDataY(),
-            i420_buffer->StrideY(), i420_buffer->MutableDataU(),
-            i420_buffer->StrideU(), i420_buffer->MutableDataV(),
-            i420_buffer->StrideV(), 0, 0, width, height, i420_buffer->width(),
-            i420_buffer->height(), libyuv::kRotate0, ::libyuv::FOURCC_RAW);
+    // Use full-range ("J") conversion to match Open3D's full-range (0-255)
+    // RGB frames, and tag the color space so VP9 signals this in-band.
+    const int conversion_result = libyuv::RAWToJ420(
+            frame->GetDataPtr<uint8_t>(), width * 3,
+            i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+            i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+            i420_buffer->MutableDataV(), i420_buffer->StrideV(), width, height);
 
     if (conversion_result >= 0) {
         webrtc::VideoFrame video_frame(i420_buffer,
                                        webrtc::VideoRotation::kVideoRotation_0,
                                        webrtc::TimeMicros());
+        video_frame.set_color_space(
+                webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kSMPTE170M,
+                                   webrtc::ColorSpace::TransferID::kSMPTE170M,
+                                   webrtc::ColorSpace::MatrixID::kSMPTE170M,
+                                   webrtc::ColorSpace::RangeID::kFull));
         if ((height_ == 0) && (width_ == 0)) {
             broadcaster_.OnFrame(video_frame);
         } else {
@@ -84,8 +90,10 @@ void ImageCapturer::OnCaptureResult(
                                                stride_uv, stride_uv);
             scaled_buffer->ScaleFrom(
                     *video_frame.video_frame_buffer()->ToI420());
-            webrtc::VideoFrame frame = webrtc::VideoFrame(
-                    scaled_buffer, webrtc::kVideoRotation_0, webrtc::TimeMicros());
+            webrtc::VideoFrame frame =
+                    webrtc::VideoFrame(scaled_buffer, webrtc::kVideoRotation_0,
+                                       webrtc::TimeMicros());
+            frame.set_color_space(*video_frame.color_space());
 
             broadcaster_.OnFrame(frame);
         }

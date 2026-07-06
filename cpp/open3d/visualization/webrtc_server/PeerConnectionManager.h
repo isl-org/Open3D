@@ -19,9 +19,9 @@
 #pragma once
 
 #include <api/field_trials.h>
-#include <api/stats/rtc_stats.h>
 #include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
+#include <api/stats/rtc_stats.h>
 #include <rtc_base/ref_counted_object.h>
 #include <rtc_base/strings/json.h>
 
@@ -144,8 +144,8 @@ class PeerConnectionManager {
                 webrtc::PeerConnectionInterface* pc,
                 std::promise<const webrtc::SessionDescriptionInterface*>&
                         promise) {
-            return new webrtc::RefCountedObject<CreateSessionDescriptionObserver>(
-                    pc, promise);
+            return new webrtc::RefCountedObject<
+                    CreateSessionDescriptionObserver>(pc, promise);
         }
         virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
             std::string sdp;
@@ -195,10 +195,10 @@ class PeerConnectionManager {
 
     class DataChannelObserver : public webrtc::DataChannelObserver {
     public:
-        DataChannelObserver(
-                PeerConnectionManager* peer_connection_manager,
-                webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
-                const std::string& peerid)
+        DataChannelObserver(PeerConnectionManager* peer_connection_manager,
+                            webrtc::scoped_refptr<webrtc::DataChannelInterface>
+                                    data_channel,
+                            const std::string& peerid)
             : peer_connection_manager_(peer_connection_manager),
               data_channel_(data_channel),
               peerid_(peerid) {
@@ -267,9 +267,8 @@ class PeerConnectionManager {
         PeerConnectionObserver(PeerConnectionManager* peer_connection_manager,
                                const std::string& peerid);
 
-        void Initialize(
-                webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
-                        peer_connection);
+        void Initialize(webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
+                                peer_connection);
 
         virtual ~PeerConnectionObserver() {
             delete local_channel_;
