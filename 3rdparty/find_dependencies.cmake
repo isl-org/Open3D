@@ -1990,16 +1990,35 @@ if(BUILD_WEBRTC)
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
         DEPENDS      ext_webrtc_all
     )
+    # webrtc/webrtc_extra need custom --whole-archive handling (below), so
+    # they can't use open3d_import_3rdparty_library()'s LIBRARIES option.
+    # Install them manually and reference $<INSTALL_INTERFACE:...> paths, so
+    # examples built against an installed *static* Open3D package (i.e. not
+    # from within this build tree) still link against them; see the
+    # LIBRARIES branch of open3d_import_3rdparty_library() for reference.
+    if(NOT BUILD_SHARED_LIBS)
+        foreach(_o3d_webrtc_lib webrtc webrtc_extra)
+            install(FILES "${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                DESTINATION ${Open3D_INSTALL_LIB_DIR}
+                RENAME "${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc_${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        endforeach()
+    endif()
+    set(WEBRTC_INSTALLED_LIB
+        "$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc")
     if(UNIX AND NOT APPLE)
         target_link_libraries(3rdparty_webrtc INTERFACE
             "-Wl,--whole-archive"
             "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
             "-Wl,--no-whole-archive"
-            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
     else()
         target_link_libraries(3rdparty_webrtc INTERFACE
             "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
-            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
     endif()
     target_link_libraries(3rdparty_webrtc INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
     # libwebrtc.a and libturbojpeg.a both export jpeg_* symbols (WebRTC bundles libjpeg).

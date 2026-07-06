@@ -491,7 +491,7 @@ struct formatter<webrtc::PeerConnectionInterface::SignalingState> {
             default:
                 text = "unknown";
         }
-        return format_to(ctx.out(), "{}", text);
+        return fmt::format_to(ctx.out(), "{}", text);
     }
 
     template <typename ParseContext>
