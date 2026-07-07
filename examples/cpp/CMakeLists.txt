@@ -112,10 +112,15 @@ include(ProcessorCount)
 ProcessorCount(NPROC)
 
 # build-examples-iteratively is used to conserve space on CI machine.
+# NOTE: CMAKE_BINARY_DIR cannot be forwarded via -D here: CMake's script mode
+# (cmake -P) always resets CMAKE_BINARY_DIR/CMAKE_SOURCE_DIR/CMAKE_CURRENT_BINARY_DIR
+# to the script's invocation directory, silently ignoring any -D override. Use a
+# differently-named variable (EXAMPLE_TOP_BUILD_DIR) instead so the script can
+# reliably locate the top-level build tree regardless of its own working directory.
 add_custom_target(build-examples-iteratively
     COMMAND ${CMAKE_COMMAND}
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
-    -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+    -DEXAMPLE_TOP_BUILD_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
     -DCMAKE_BUILD_TYPE="$<CONFIG>"
     -DNPROC="${NPROC}"

@@ -257,7 +257,10 @@ jobs:
               $buildArgs += "--config", "${{ matrix.CONFIG }}"
           }
           cmake @buildArgs --target build-examples-iteratively
-          cmake @buildArgs --target INSTALL
+          # Use lowercase "install" (works case-insensitively for MSBuild/VS
+          # generator too) since Ninja's generated meta-target is lowercase
+          # only; uppercase "INSTALL" is unknown to Ninja.
+          cmake @buildArgs --target install
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
