@@ -142,12 +142,41 @@ function(open3d_set_global_properties target)
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+            if(BUILD_SYCL_MODULE)
+                # The Intel oneAPI DPC++/C++ compiler (icx) fails to parse
+                # recent MSVC STL versions' <execution> header (pulled in
+                # transitively by oneDPL's <oneapi/dpl/execution>, which is
+                # used by SYCL kernels for host-side algorithms), which
+                # implements a work-stealing deque annotated with the
+                # concurrency SAL macro `_Guarded_by_`. icx/clang-cl does not
+                # expand this macro the same way cl.exe does, causing
+                # "error: unknown type name '_Guarded_by_'". Since this macro
+                # is purely a static-analysis annotation (a no-op outside of
+                # /analyze builds), it is safe to force it to expand to
+                # nothing for SYCL translation units.
+                # Note: use target_compile_options (not
+                # target_compile_definitions) because CMake does not reliably
+                # escape parentheses in compile definitions across
+                # generators/shells, which can corrupt the flag. Also avoid
+                # wrapping this in a $<COMPILE_LANGUAGE:CXX> generator
+                # expression: CMake's generator-expression parser mishandles
+                # the literal parentheses in the flag text, splitting it into
+                # multiple separate command-line arguments.
+                target_compile_options(${target} PRIVATE "-D_Guarded_by_(x)=")
+            endif()
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            # Note: /MP is not compatible with the Intel oneAPI DPC++/C++
+            # compiler (icx) when SYCL offloading (-fsycl) is enabled: icx
+            # errors with "'-MP' is not supported with offloading enabled".
+            # Use build-time parallelism (Option 1) instead when
+            # BUILD_SYCL_MODULE is ON.
+            if(NOT BUILD_SYCL_MODULE)
+                target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            endif()
             if(BUILD_GUI)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.

@@ -2,6 +2,15 @@ include(ExternalProject)
 
 find_package(Git QUIET REQUIRED)
 
+# SYCL builds always force the dynamic (/MD, /MDd) MSVC runtime for the
+# whole project regardless of STATIC_WINDOWS_RUNTIME (icx rejects -fsycl
+# combined with the static runtime), so jsoncpp must match.
+if(BUILD_SYCL_MODULE)
+    set(JSONCPP_USE_STATIC_RUNTIME OFF)
+else()
+    set(JSONCPP_USE_STATIC_RUNTIME ${STATIC_WINDOWS_RUNTIME})
+endif()
+
 ExternalProject_Add(
     ext_jsoncpp
     PREFIX jsoncpp
@@ -19,7 +28,7 @@ ExternalProject_Add(
         -DBUILD_OBJECT_LIBS=OFF
         -DJSONCPP_WITH_TESTS=OFF
         -DJSONCPP_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI}
-        -DJSONCPP_STATIC_WINDOWS_RUNTIME=${STATIC_WINDOWS_RUNTIME}
+        -DJSONCPP_STATIC_WINDOWS_RUNTIME=${JSONCPP_USE_STATIC_RUNTIME}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}jsoncpp${CMAKE_STATIC_LIBRARY_SUFFIX}

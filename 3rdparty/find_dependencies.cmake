@@ -1356,7 +1356,10 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         else()  # WIN32
-            if (STATIC_WINDOWS_RUNTIME)
+            # Match the prebuilt Filament archive's runtime selection in
+            # filament_download.cmake: SYCL builds always use the dynamic
+            # runtime regardless of STATIC_WINDOWS_RUNTIME.
+            if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
                 set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
             else()
                 set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
@@ -1608,11 +1611,19 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
     find_package(MKL REQUIRED)
+    # oneAPI MKL's lib layout differs by platform: Linux nests libs under an
+    # "intel64" subdirectory, while Windows (verified with oneAPI 2025.3)
+    # places them directly in "lib".
+    if(WIN32)
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib)
+    else()
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
+    endif()
     open3d_import_3rdparty_library(3rdparty_mkl
         HIDDEN
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
-        LIB_DIR      ${MKL_ROOT}/lib/intel64
+        LIB_DIR      ${MKL_LIB_DIR}
         LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
     if (BUILD_SYCL_MODULE)

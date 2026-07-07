@@ -19,7 +19,16 @@ ExternalProject_Add(
         -DCIVETWEB_DISABLE_CGI=ON
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}> $<$<PLATFORM_ID:Windows>:/EHsc>"
+        # Note: on Windows, keep this as a single flag (no embedded space by
+        # combining with another flag in the same string). The Intel
+        # oneAPI DPC++/C++ compiler (icx), used when BUILD_SYCL_MODULE=ON,
+        # parses each CMAKE_ARGS string as one literal argv token; a
+        # combined "-D<macro> /EHsc" string gets misparsed by icx as the
+        # macro's value swallowing "/EHsc", silently leaving exceptions
+        # disabled (MSVC cl.exe tolerates this, icx does not). Since
+        # _GLIBCXX_USE_CXX11_ABI only matters for libstdc++ (not used on
+        # Windows/MSVC STL), it is safe to only set one flag per platform.
+        -DCMAKE_CXX_FLAGS=$<IF:$<PLATFORM_ID:Windows>,/EHsc,-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>>
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}civetweb${CMAKE_STATIC_LIBRARY_SUFFIX}

@@ -4,6 +4,14 @@
 
 include(ExternalProject)
 
+# Sub-directory (below <SOURCE_DIR>) where the extracted archive places its
+# static libs. On Windows the archive layout has a per-config subfolder.
+if(WIN32)
+    set(WEBRTC_BYPRODUCT_SUBDIR "$<IF:$<CONFIG:Debug>,Debug,Release>/lib")
+else()
+    set(WEBRTC_BYPRODUCT_SUBDIR "lib")
+endif()
+
 set(WEBRTC_VER 60e6748)
 if (APPLE)
     set(WEBRTC_URL
@@ -46,7 +54,15 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS ""
+    # Declare the pre-compiled libs extracted from the downloaded archive as
+    # byproducts. This is required by the Ninja generator (used for Windows
+    # xpu/SYCL builds), which -- unlike Makefiles -- refuses to link a target
+    # against a file with "no known rule to make it". Makefiles/VS generators
+    # tolerated the previously-empty BUILD_BYPRODUCTS since they don't track
+    # output freshness for custom/external targets as strictly.
+    BUILD_BYPRODUCTS
+        <SOURCE_DIR>/${WEBRTC_BYPRODUCT_SUBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <SOURCE_DIR>/${WEBRTC_BYPRODUCT_SUBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_webrtc SOURCE_DIR)

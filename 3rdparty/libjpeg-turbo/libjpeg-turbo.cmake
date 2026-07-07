@@ -35,7 +35,7 @@ else()
     message(STATUS "NASM assembler not found - libjpeg-turbo performance may suffer")
 endif()
 
-if (STATIC_WINDOWS_RUNTIME)
+if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
     set(WITH_CRT_DLL OFF)
 else()
     set(WITH_CRT_DLL ON)

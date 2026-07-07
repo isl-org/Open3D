@@ -521,9 +521,15 @@ if(WIN32)
         # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
         add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
-    if (STATIC_WINDOWS_RUNTIME)
+    if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
+        # The Intel oneAPI DPC++/C++ compiler (icx) hard-errors ("invalid
+        # argument 'MT' not allowed with '-fsycl'") when compiling any
+        # translation unit that has -fsycl enabled together with the static
+        # (/MT, /MTd) MSVC runtime. SYCL compilation therefore always
+        # requires the dynamic runtime on Windows, regardless of
+        # STATIC_WINDOWS_RUNTIME.
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()

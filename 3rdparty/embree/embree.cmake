@@ -50,14 +50,28 @@ endif()
 
 
 if(WIN32)
-    set(WIN_CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> ${CMAKE_CXX_FLAGS_DEBUG_INIT}"
-                       "-DCMAKE_CXX_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_RELEASE_INIT}"
-                       "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT}"
-                       "-DCMAKE_CXX_FLAGS_MINSIZEREL=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_MINSIZEREL_INIT}"
-                       "-DCMAKE_C_FLAGS_DEBUG=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MTd,/MDd> ${CMAKE_C_FLAGS_DEBUG_INIT}"
-                       "-DCMAKE_C_FLAGS_RELEASE=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_RELEASE_INIT}"
-                       "-DCMAKE_C_FLAGS_RELWITHDEBINFO=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_RELWITHDEBINFO_INIT}"
-                       "-DCMAKE_C_FLAGS_MINSIZEREL=$<IF:$<BOOL:${STATIC_WINDOWS_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_MINSIZEREL_INIT}"
+    # icx.exe hard-errors ("invalid argument 'MT' not allowed with
+    # '-fsycl'") when compiling any translation unit with -fsycl together
+    # with the static (/MT, /MTd) MSVC runtime. Since embree's SYCL support
+    # (embree4_sycl, ze_wrapper) is built in the same ExternalProject
+    # configure/build as the non-SYCL ISA libs, force the dynamic runtime
+    # (/MD, /MDd) for all of embree's libs when BUILD_SYCL_MODULE=ON,
+    # regardless of STATIC_WINDOWS_RUNTIME. This also matches upstream
+    # embree's own Windows SYCL build docs, which never enable
+    # USE_STATIC_RUNTIME (default OFF) together with EMBREE_SYCL_SUPPORT.
+    if(BUILD_SYCL_MODULE)
+        set(EMBREE_USE_STATIC_RUNTIME OFF)
+    else()
+        set(EMBREE_USE_STATIC_RUNTIME ${STATIC_WINDOWS_RUNTIME})
+    endif()
+    set(WIN_CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MTd,/MDd> ${CMAKE_CXX_FLAGS_DEBUG_INIT}"
+                       "-DCMAKE_CXX_FLAGS_RELEASE=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_RELEASE_INIT}"
+                       "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT}"
+                       "-DCMAKE_CXX_FLAGS_MINSIZEREL=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_CXX_FLAGS_MINSIZEREL_INIT}"
+                       "-DCMAKE_C_FLAGS_DEBUG=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MTd,/MDd> ${CMAKE_C_FLAGS_DEBUG_INIT}"
+                       "-DCMAKE_C_FLAGS_RELEASE=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_RELEASE_INIT}"
+                       "-DCMAKE_C_FLAGS_RELWITHDEBINFO=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_RELWITHDEBINFO_INIT}"
+                       "-DCMAKE_C_FLAGS_MINSIZEREL=$<IF:$<BOOL:${EMBREE_USE_STATIC_RUNTIME}>,/MT,/MD> ${CMAKE_C_FLAGS_MINSIZEREL_INIT}"
                        )
 else()
     set(WIN_CMAKE_ARGS "")

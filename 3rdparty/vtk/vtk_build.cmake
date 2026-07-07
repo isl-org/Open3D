@@ -313,7 +313,12 @@ else() #### download prebuilt vtk
         )
         set(VTK_SHA256 28e36654ed18aa9f668a0486a6c3d26a0ca6cf6a593dbd15be4736b40880a82b)
     elseif(WIN32)
-        if (STATIC_WINDOWS_RUNTIME)
+        # Note: when BUILD_SYCL_MODULE is ON, Open3D's own CMakeLists.txt
+        # forces the dynamic (/MD, /MDd) MSVC runtime for the whole project
+        # regardless of STATIC_WINDOWS_RUNTIME (icx rejects -fsycl combined
+        # with the static runtime). The prebuilt VTK archive must match, or
+        # linking fails with LNK2038 "RuntimeLibrary mismatch" errors.
+        if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
             set(VTK_URL
                 https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_staticrt.tar.gz
             )
