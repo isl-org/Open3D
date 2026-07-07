@@ -56,7 +56,9 @@ jobs:
           - BUILD_CUDA_MODULE: ON   # FIXME
             CONFIG: Debug
     env:
-      BUILD_WEBRTC: 'OFF'  # TODO: WebRTC DLL not available for Windows; re-enable when fixed
+      # WebRTC is only built (as a static lib) for the static-runtime,
+      # static-library config; its DLL is not available for Windows yet.
+      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
       BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:

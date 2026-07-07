@@ -66,7 +66,10 @@ def _insert_pybind_names(skip_names=()):
         if "open3d.pybind" in modname:
             if any("." + skip_name in modname for skip_name in skip_names):
                 continue
-            subname = modname.replace("open3d.pybind.", "")
+            # Keep the leading "open3d." so submodules are registered under
+            # e.g. "open3d.t" rather than a bare "t" (which is not importable
+            # via `import open3d.t`).
+            subname = modname.replace("pybind.", "")
             if subname not in sys.modules:
                 submodules[subname] = sys.modules[modname]
     sys.modules.update(submodules)

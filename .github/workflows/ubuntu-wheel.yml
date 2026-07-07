@@ -30,6 +30,10 @@ jobs:
       DEVELOPER_BUILD: 'ON'
       CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
       OPEN3D_CPU_RENDERING: true
+      # Required by cuda_wheel_build() in docker/docker_build.sh (py310 is
+      # used as a dummy Python version to build the shared lib layer only).
+      BUILD_PYTORCH_OPS: 'ON'
+      BUILD_TENSORFLOW_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
