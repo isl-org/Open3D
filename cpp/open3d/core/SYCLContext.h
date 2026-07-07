@@ -53,7 +53,7 @@ struct SYCLDevice {
     uint64_t global_mem_size = 0;  ///< Global memory size in bytes.
     /// Sub-group (SIMD/wave) widths natively supported by the device, e.g.
     /// {8, 16, 32} on discrete Arc GPUs vs {16, 32} on some integrated Xe
-    /// GPUs. 
+    /// GPUs.
     std::vector<size_t> sub_group_sizes{};
 
     /// True if \p size is one of the device's natively supported sub-group

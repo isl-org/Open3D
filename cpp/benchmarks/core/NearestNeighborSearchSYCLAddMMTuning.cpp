@@ -45,10 +45,10 @@ static void NNS_KnnAddMMTuneT(benchmark::State& state,
 
     const core::Device device("SYCL:0");
     const core::Dtype dtype = core::Dtype::FromType<T>();
-    const core::Tensor points = benchmarks::Rand({num_points, dim}, 42,
-                                                 {0.0, 1.0}, dtype, device);
-    const core::Tensor queries = benchmarks::Rand({num_queries, dim}, 43,
-                                                  {0.0, 1.0}, dtype, device);
+    const core::Tensor points =
+            benchmarks::Rand({num_points, dim}, 42, {0.0, 1.0}, dtype, device);
+    const core::Tensor queries =
+            benchmarks::Rand({num_queries, dim}, 43, {0.0, 1.0}, dtype, device);
     const core::Tensor points_row_splits =
             core::Tensor::Init<int64_t>({0, num_points});
     const core::Tensor queries_row_splits =
@@ -179,10 +179,10 @@ static void NNS_KnnPathCompareT(benchmark::State& state,
 
     const core::Device device("SYCL:0");
     const core::Dtype dtype = core::Dtype::FromType<T>();
-    const core::Tensor points = benchmarks::Rand({num_points, dim}, 42,
-                                                 {0.0, 1.0}, dtype, device);
-    const core::Tensor queries = benchmarks::Rand({num_queries, dim}, 43,
-                                                  {0.0, 1.0}, dtype, device);
+    const core::Tensor points =
+            benchmarks::Rand({num_points, dim}, 42, {0.0, 1.0}, dtype, device);
+    const core::Tensor queries =
+            benchmarks::Rand({num_queries, dim}, 43, {0.0, 1.0}, dtype, device);
     const core::Tensor points_row_splits =
             core::Tensor::Init<int64_t>({0, num_points});
     const core::Tensor queries_row_splits =
@@ -267,10 +267,10 @@ static void NNS_KnnPathScaleT(benchmark::State& state,
 
     const core::Device device("SYCL:0");
     const core::Dtype dtype = core::Dtype::FromType<T>();
-    const core::Tensor points = benchmarks::Rand({num_points, dim}, 42,
-                                                 {0.0, 1.0}, dtype, device);
-    const core::Tensor queries = benchmarks::Rand({num_queries, dim}, 43,
-                                                  {0.0, 1.0}, dtype, device);
+    const core::Tensor points =
+            benchmarks::Rand({num_points, dim}, 42, {0.0, 1.0}, dtype, device);
+    const core::Tensor queries =
+            benchmarks::Rand({num_queries, dim}, 43, {0.0, 1.0}, dtype, device);
     const core::Tensor points_row_splits =
             core::Tensor::Init<int64_t>({0, num_points});
     const core::Tensor queries_row_splits =

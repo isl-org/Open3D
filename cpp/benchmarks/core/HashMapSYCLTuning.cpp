@@ -74,9 +74,9 @@ T* ToDevice(const std::vector<T>& host, const core::Device& device) {
 // capacity/duplicate_factor/op are fixed per BENCHMARK_CAPTURE call
 // (captured, not swept).
 static void HashMapSYCLTune(benchmark::State& state,
-                           int64_t capacity,
-                           int64_t duplicate_factor,
-                           HashOp op) {
+                            int64_t capacity,
+                            int64_t duplicate_factor,
+                            HashOp op) {
     const int64_t wg_size = state.range(0);
 
     const core::Device device("SYCL:0");
@@ -85,8 +85,8 @@ static void HashMapSYCLTune(benchmark::State& state,
 
     KeyT* d_keys = ToDevice(data.keys, device);
     int* d_vals = ToDevice(data.vals, device);
-    core::buf_index_t* d_buf_indices = static_cast<core::buf_index_t*>(
-            core::MemoryManager::Malloc(
+    core::buf_index_t* d_buf_indices =
+            static_cast<core::buf_index_t*>(core::MemoryManager::Malloc(
                     capacity * sizeof(core::buf_index_t), device));
     bool* d_masks = static_cast<bool*>(
             core::MemoryManager::Malloc(capacity * sizeof(bool), device));
@@ -151,20 +151,20 @@ static void HashMapSYCLTune(benchmark::State& state,
 }
 
 static void HashMapSYCLTuneInsert(benchmark::State& state,
-                                 int64_t capacity,
-                                 int64_t duplicate_factor) {
+                                  int64_t capacity,
+                                  int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kInsert);
 }
 
 static void HashMapSYCLTuneFind(benchmark::State& state,
-                               int64_t capacity,
-                               int64_t duplicate_factor) {
+                                int64_t capacity,
+                                int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kFind);
 }
 
 static void HashMapSYCLTuneErase(benchmark::State& state,
-                                int64_t capacity,
-                                int64_t duplicate_factor) {
+                                 int64_t capacity,
+                                 int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kErase);
 }
 

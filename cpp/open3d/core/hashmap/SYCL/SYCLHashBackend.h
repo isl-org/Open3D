@@ -76,7 +76,7 @@ namespace {
 constexpr int64_t kHashWgSize = 1024;
 
 // bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier),
-// i.e. the inverse of the target max load factor. 
+// i.e. the inverse of the target max load factor.
 constexpr int64_t kHashBucketCountMultiplier = 2;
 
 // Packed slot: [63:36] fingerprint (28 bits), [35:32] state, [31:0] buf_index.
@@ -434,8 +434,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                          prev_state == kSlotDeleted) &&
                         tst.compare_exchange_strong(
                                 expected_packed,
-                                PackSlot(kSlotOccupied, my_bi,
-                                         my_fingerprint),
+                                PackSlot(kSlotOccupied, my_bi, my_fingerprint),
                                 sycl::memory_order::acq_rel,
                                 sycl::memory_order::relaxed)) {
                         output_buf_indices[tid] = my_bi;
@@ -479,8 +478,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     };
 
     const int64_t wg_size = wg_size_;
-    const int64_t global_size =
-            ((count + wg_size - 1) / wg_size) * wg_size;
+    const int64_t global_size = ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
               cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                insert_kernel);
@@ -543,8 +541,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
             };
 
     const int64_t wg_size = wg_size_;
-    const int64_t global_size =
-            ((count + wg_size - 1) / wg_size) * wg_size;
+    const int64_t global_size = ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
               cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                find_kernel);
@@ -616,8 +613,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
     };
 
     const int64_t wg_size = wg_size_;
-    const int64_t global_size =
-            ((count + wg_size - 1) / wg_size) * wg_size;
+    const int64_t global_size = ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
               cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                erase_kernel);
@@ -699,8 +695,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Clear() {
 template <typename Key, typename Hash, typename Eq>
 void SYCLHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
-    bucket_count_ = NextPowerOfTwo(std::max<int64_t>(
-            capacity * kHashBucketCountMultiplier, 1));
+    bucket_count_ = NextPowerOfTwo(
+            std::max<int64_t>(capacity * kHashBucketCountMultiplier, 1));
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(
             this->capacity_, this->key_dsize_, this->value_dsizes_,

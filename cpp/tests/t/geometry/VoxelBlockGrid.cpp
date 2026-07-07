@@ -114,6 +114,7 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
     return vbg;
 }
 
+#ifdef BUILD_SYCL_MODULE
 /// Integrate a subset of Redwood frames (for faster SYCL/CPU parity checks).
 static VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
                                       const core::Device &device,
@@ -149,6 +150,7 @@ static VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
 
     return vbg;
 }
+#endif
 
 TEST_P(VoxelBlockGridPermuteDevices, Construct) {
     core::Device device = GetParam();

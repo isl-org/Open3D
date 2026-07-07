@@ -90,7 +90,9 @@ static void NNS_KnnDirectTuneDouble(benchmark::State& state,
 // 1M points, 1000 queries (matches the NNS_KnnSearch_1M_k* baseline in
 // NearestNeighborSearch.cpp). k=1/8/32 sample the small/mid/max K-buckets
 // that the direct path dispatches (kSYCLKnnSmallKMax == 32).
-BENCHMARK_CAPTURE(NNS_KnnDirectTuneFloat, SYCL_KnnDirectTune_1M_f32, 1000000,
+BENCHMARK_CAPTURE(NNS_KnnDirectTuneFloat,
+                  SYCL_KnnDirectTune_1M_f32,
+                  1000000,
                   1000)
         ->ArgNames({"sg_per_wg", "tile_pts", "k"})
         ->ArgsProduct({{2, 4, 8, 16, 32, 64},
@@ -103,7 +105,9 @@ BENCHMARK_CAPTURE(NNS_KnnDirectTuneFloat, SYCL_KnnDirectTune_1M_f32, 1000000,
 // tile_points up to the double-safe range (<=2048, see kKnnDirectTilePoints
 // sizing discussion) and subgroups_per_wg up to the k=32 work-group-size
 // ceiling, to confirm a shared (float+double) default stays valid for double.
-BENCHMARK_CAPTURE(NNS_KnnDirectTuneDouble, SYCL_KnnDirectTune_1M_f64, 1000000,
+BENCHMARK_CAPTURE(NNS_KnnDirectTuneDouble,
+                  SYCL_KnnDirectTune_1M_f64,
+                  1000000,
                   1000)
         ->ArgNames({"sg_per_wg", "tile_pts", "k"})
         ->ArgsProduct({{8, 16, 32}, {512, 1024, 2048}, {1, 8, 32}})

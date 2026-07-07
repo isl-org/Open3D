@@ -85,8 +85,7 @@ DeviceEntry MakeDeviceEntry(const sycl::device& sycl_device) {
     props.discrete_gpu =
             (props.device_type == "gpu") &&
             !entry.sycl_device.get_info<sid::host_unified_memory>();
-    props.sub_group_sizes =
-            entry.sycl_device.get_info<sid::sub_group_sizes>();
+    props.sub_group_sizes = entry.sycl_device.get_info<sid::sub_group_sizes>();
     return entry;
 }
 
