@@ -31,6 +31,7 @@ env:
   CUDA_VERSION: "12.6.0"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
+  INSTALL_DIR: "C:\\Program Files\\Open3D"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
@@ -38,6 +39,9 @@ jobs:
   windows:
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -136,7 +140,7 @@ jobs:
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -171,6 +175,12 @@ jobs:
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
+      - name: Generate package attestation
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
+
       - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: actions/upload-artifact@v4
@@ -197,13 +207,26 @@ jobs:
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
+          $cmakeCachePath = Join-Path $env:BUILD_DIR "CMakeCache.txt"
+          $Env:OPEN3D_VERSION_FULL = (Select-String -Path $cmakeCachePath -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          $open3dAppPath = Join-Path $env:INSTALL_DIR "bin\Open3D"
+          Compress-Archive -Path $open3dAppPath -DestinationPath `
+            "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
+          echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `
+            $Env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Generate viewer attestation
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
-          path: C:\Program Files\Open3D\bin\Open3D
+          path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
           if-no-files-found: error
 
       - name: Update devel release with viewer
@@ -211,10 +234,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path "C:/Open3D/build/CMakeCache.txt" -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
-          Compress-Archive -Path "C:/Program Files/Open3D/bin/Open3D" -DestinationPath `
-            "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          bash .github/workflows/update_release.sh "open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
+          bash .github/workflows/update_release.sh "${{ env.VIEWER_ZIP_NAME }}"
 
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
@@ -229,16 +249,16 @@ jobs:
           mkdir build
           cd build
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             ..
           cmake --build . --config ${{ matrix.CONFIG }}
           if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
-          Remove-Item "C:\Program Files\Open3D" -Recurse
+          Remove-Item -LiteralPath $env:INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
       - name: Install Open3D python build requirements
-        working-directory: ${{ env.SOURCE_DIR }}
+        working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -U pip==${{ env.PIP_VER }}
@@ -261,6 +281,9 @@ jobs:
     name: Build wheel
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -331,7 +354,7 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
@@ -350,6 +373,11 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Generate wheel attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4

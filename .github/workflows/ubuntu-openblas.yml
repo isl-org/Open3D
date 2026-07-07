@@ -37,6 +37,9 @@ jobs:
   openblas-arm64:
     permissions:
       contents: write  # Release upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-24.04-arm   # latest
     strategy:
       fail-fast: false
@@ -82,6 +85,11 @@ jobs:
 
       - name: Docker test
         run: docker/docker_test.sh "${DOCKER_TAG}"
+
+      - name: Generate wheel attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v4
