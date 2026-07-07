@@ -68,6 +68,7 @@ jobs:
         run: |
           brew install ccache glslang spirv-cross
           # Fix gfortran not found issue
+          brew install gcc
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
@@ -221,8 +222,9 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
 
-          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          ln -s $(which gfortran-13) /usr/local/bin/gfortran
+          # Fix gfortran not found issue
+          brew install gcc
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           brew install ccache glslang spirv-cross 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
