@@ -52,11 +52,14 @@ endif()
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 # On Windows, running tests from the build folder needs tbb.dll to be in the same folder.
+# Use the TBB::tbb namespaced target, since it exists both when TBB is built from
+# source (bare "tbb" target, aliased to TBB::tbb) and when it's found via the oneAPI
+# TBB package for SYCL builds (only TBB::tbb is defined, no bare "tbb" target).
 if (WIN32)
   add_custom_command(
       TARGET tests
       POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:TBB::tbb> "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>/"
   )
 endif()
 
