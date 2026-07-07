@@ -210,9 +210,12 @@ build_pip_package() {
         cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
     fi
     set -x
-    if [ ! -f CMakeCache.txt ]; then
-        cmake -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
-    fi
+    # Always (re-)run cmake: the build directory may have been inherited from
+    # a previous "build-lib" step (e.g. CI's split lib+wheel jobs) whose
+    # CMakeCache.txt was configured with BUILD_PYTHON_MODULE=OFF, so skipping
+    # this based on CMakeCache.txt already existing would leave the Makefile
+    # without a pip-package target.
+    cmake -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
     set +x
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
         echo "Building Open3D C++ Core only..."
@@ -223,7 +226,10 @@ build_pip_package() {
     fi
     popd
 
-    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
+    # A CUDA-enabled build also gets a companion CPU-only "open3d-cpu" wheel
+    # built alongside it (for users without a CUDA GPU); a CPU-only build IS
+    # already the CPU wheel, so there is nothing extra to build in that case.
+    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
         echo "Building open3d-cpu wheel..."
         mkdir -p build_cpu

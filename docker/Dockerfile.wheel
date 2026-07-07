@@ -89,12 +89,17 @@ RUN ccache -M 4G \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
+# BASE_IMAGE may already be a previously built Open3D lib image with pyenv
+# installed (see docker_build.sh's "build-lib" mode / CI's split lib+wheel
+# jobs), so only bootstrap pyenv itself if it is not already present.
+RUN if [ ! -d "$PYENV_ROOT" ]; then \
+        wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
+    fi \
         && pyenv update \
-        && pyenv install $PYTHON_VERSION \
+        && pyenv install -s $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+        && ln -sf $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
