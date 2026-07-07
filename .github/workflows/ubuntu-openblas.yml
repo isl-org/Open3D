@@ -70,7 +70,9 @@ jobs:
   build-wheel-arm64:
     name: Build Wheel ARM64
     permissions:
-      contents: read
+      contents: write  # Release upload
+      id-token: write
+      attestations: write
     runs-on: ubuntu-24.04-arm
     needs: build-lib-arm64
     strategy:
