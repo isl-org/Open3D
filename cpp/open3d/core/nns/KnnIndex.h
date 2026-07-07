@@ -32,6 +32,17 @@ void KnnSearchCUDA(const Tensor& points,
 #ifdef BUILD_SYCL_MODULE
 /// SYCL KNN search. tile_bytes controls the −2*q*p distance tile budget.
 /// See kSYCLKnnDefaultTileBytes in NeighborSearchCommon.h for tuning guidance.
+///
+/// \param max_tile_queries, tile_points_alignment  AddMM tile-shape tunables
+///   (see ChooseTileSize in KnnSearchSYCLImpl.h). max_tile_queries defaults
+///   to 2048, amortizing oneMKL GEMM call overhead while keeping tile_bytes
+///   within budget at the tile_points floor (256). Only the tuning
+///   benchmark overrides these; production callers (KnnIndex::SearchKnn)
+///   use the defaults.
+/// \param force_addmm_path  Bypass UseKnnDirect and always take the
+///   AddMM path, even when (dim, knn) would qualify for the direct-distance
+///   path. Only used by the tuning benchmark to A/B the two paths on the
+///   same (dim, knn); production callers always leave this false.
 template <class T, class TIndex>
 void KnnSearchSYCL(const Tensor& points,
                    const Tensor& points_row_splits,
@@ -41,7 +52,10 @@ void KnnSearchSYCL(const Tensor& points,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
                    Tensor& neighbors_distance,
-                   int64_t tile_bytes);
+                   int64_t tile_bytes,
+                   int64_t max_tile_queries = 2048,
+                   int64_t tile_points_alignment = 128,
+                   bool force_addmm_path = false);
 #endif
 
 class KnnIndex : public NNSIndex {

@@ -21,23 +21,23 @@
 //
 // KNN small-k path (k ≤ kSYCLKnnMidKMax)
 // ────────────────────────────────────────
-// UpdateTopKFromTileSYCL<K> fuses: Add_(point_norms) + SelectTopK + Merge
+// UpdateTopKFromTile<K> fuses: Add_(point_norms) + SelectTopK + Merge
 // into a single per-query scan over the tile, maintaining a running max-heap
 // in global memory (fits in GRF for k ≤ kSYCLKnnSmallKMax).  No intermediate
-// tile_top or merged tensors are needed.  FinalizeTopKSYCL adds |q|² once (P2)
+// tile_top or merged tensors are needed.  FinalizeTopK adds |q|² once (P2)
 // and heap-sorts into ascending order.
 //
 // KNN large-k path (k > kSYCLKnnMidKMax)
 // ────────────────────────────────────────
-// Falls back to the legacy SelectTopKQueriesSYCL + MergeTopKQueriesSYCL pair.
-// P2 applies: |q|² is NOT added to the tile; AddQueryNormsToDistancesSYCL adds
+// Falls back to the legacy SelectTopKQueries + MergeTopKQueries pair.
+// P2 applies: |q|² is NOT added to the tile; AddQueryNormsToDistances adds
 // it once at the end.  P8 note: for k > kSYCLKnnMidKMax the SelectTopK path
 // launches one oneDPL partial_sort per query sequentially.
 //
 // Radius / Hybrid
 // ───────────────
-// P2 applies: CountWithinThresholdQueriesSYCL and
-// GatherWithinThresholdQueriesSYCL take the per-query adjusted threshold
+// P2 applies: CountWithinThresholdQueries and
+// GatherWithinThresholdQueries take the per-query adjusted threshold
 // (radius² − |q|²), avoiding the Add_(query_norms) tile pass.  Returned
 // distances are the full L2 (partial + |q|²), clamped ≥ 0 (C1).
 
@@ -100,7 +100,10 @@ void KnnSearchSYCL(const Tensor& points,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
                    Tensor& neighbors_distance,
-                   int64_t tile_bytes) {
+                   int64_t tile_bytes,
+                   int64_t max_tile_queries,
+                   int64_t tile_points_alignment,
+                   bool force_addmm_path) {
     const Device device = points.GetDevice();
     const Dtype dtype = points.GetDtype();
     const Dtype index_dtype = Dtype::FromType<TIndex>();
@@ -159,20 +162,21 @@ void KnnSearchSYCL(const Tensor& points,
                 batch_output_allocators[batch_idx].NeighborsDistance().View(
                         {num_queries_i, batch_knn});
 
-        if (UseKnnDirectSYCL(points_i.GetShape(1), batch_knn)) {
+        if (!force_addmm_path &&
+            UseKnnDirect(points_i.GetShape(1), batch_knn)) {
             // Direct-distance path (no AddMM, no centering — see
-            // DispatchKnnDirectSYCL docs): use the ORIGINAL, uncentered
+            // DispatchKnnDirect docs): use the ORIGINAL, uncentered
             // points/queries slices since |p-q|² is computed directly
             // and is translation-sensitive in implementation (not in
             // result).
             const Tensor points_raw = points.Slice(0, point_begin, point_end);
             const Tensor queries_raw = queries.Slice(0, query_begin, query_end);
-            DispatchKnnDirectSYCL<T, TIndex>(queue, points_raw.GetDataPtr<T>(),
-                                             queries_raw.GetDataPtr<T>(),
-                                             points_i.GetShape(1), num_points_i,
-                                             num_queries_i, batch_knn,
-                                             out_distances.GetDataPtr<T>(),
-                                             out_indices.GetDataPtr<TIndex>());
+            DispatchKnnDirect<T, TIndex>(queue, points_raw.GetDataPtr<T>(),
+                                         queries_raw.GetDataPtr<T>(),
+                                         points_i.GetShape(1), num_points_i,
+                                         num_queries_i, batch_knn,
+                                         out_distances.GetDataPtr<T>(),
+                                         out_indices.GetDataPtr<TIndex>());
             queue.wait_and_throw();
             continue;
         }
@@ -182,8 +186,9 @@ void KnnSearchSYCL(const Tensor& points,
         Tensor query_norms = queries_i.Mul(queries_i).Sum({1});
 
         int64_t tile_queries = 0, tile_points = 0;
-        ChooseTileSizeSYCL(num_queries_i, num_points_i, sizeof(T), tile_bytes,
-                           tile_queries, tile_points);
+        ChooseTileSize(num_queries_i, num_points_i, sizeof(T), tile_bytes,
+                       tile_queries, tile_points, max_tile_queries,
+                       tile_points_alignment);
 
         // Shared tile buffer for AddMM output (−2*q*p).
         Tensor temp_distances =
@@ -253,7 +258,7 @@ void KnnSearchSYCL(const Tensor& points,
             }
         } else {
             // ── Large-k path (k > kSYCLKnnMidKMax): legacy Select + Merge ──
-            // P2: |q|² not in tile; AddQueryNormsToDistancesSYCL adds it once.
+            // P2: |q|² not in tile; AddQueryNormsToDistances adds it once.
             Tensor tile_sort_indices = Tensor::Empty(
                     {tile_queries, tile_points}, index_dtype, device);
             Tensor tile_top_indices = Tensor::Empty({tile_queries, batch_knn},
@@ -307,7 +312,7 @@ void KnnSearchSYCL(const Tensor& points,
                     Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
                     Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
 
-                    SelectTopKQueriesSYCL<T, TIndex>(
+                    SelectTopKQueries<T, TIndex>(
                             device, temp_view.GetDataPtr<T>(),
                             temp_view.GetStride(0), num_queries_iter,
                             num_points_iter, batch_knn, TIndex(p),
@@ -315,7 +320,7 @@ void KnnSearchSYCL(const Tensor& points,
                             tile_sort_indices.GetStride(0),
                             ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
                             batch_knn);
-                    MergeTopKQueriesSYCL<T, TIndex>(
+                    MergeTopKQueries<T, TIndex>(
                             device, bdv.GetDataPtr<T>(),
                             biv.GetDataPtr<TIndex>(), batch_knn,
                             ttdv.GetDataPtr<T>(), ttiv.GetDataPtr<TIndex>(),
@@ -336,7 +341,7 @@ void KnnSearchSYCL(const Tensor& points,
             }
 
             // P2: add |q|² once per query to the final distances.
-            AddQueryNormsToDistancesSYCL<T, TIndex>(
+            AddQueryNormsToDistances<T, TIndex>(
                     device, num_queries_i, batch_knn, indices_ptr,
                     distances_ptr, query_norms.GetDataPtr<T>());
         }
@@ -430,8 +435,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     CenterPointsAndQueries<T>(points_c, queries_c);
 
     int64_t tile_queries = 0, tile_points = 0;
-    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
-                       tile_queries, tile_points);
+    ChooseTileSize(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
+                   tile_queries, tile_points);
     Tensor temp_distances =
             Tensor::Empty({tile_queries, tile_points}, dtype, device);
 
@@ -477,7 +482,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
 
                 // P2: CountWithinThreshold uses per-query adjusted threshold.
-                CountWithinThresholdQueriesSYCL<T>(
+                CountWithinThresholdQueries<T>(
                         device, temp_view.GetDataPtr<T>(),
                         temp_view.GetStride(0), num_queries_iter,
                         num_points_iter, query_norms_tile.GetDataPtr<T>(),
@@ -549,7 +554,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
                 temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
 
-                GatherWithinThresholdQueriesSYCL<T, TIndex>(
+                GatherWithinThresholdQueries<T, TIndex>(
                         device, temp_view.GetDataPtr<T>(),
                         temp_view.GetStride(0), num_queries_iter,
                         num_points_iter, query_norms_tile.GetDataPtr<T>(),
@@ -599,8 +604,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 // Hybrid search: count all neighbors within radius while keeping only the
 // best max_knn per query in fixed-size output tensors.
 //
-// P2: |q|² is deferred to AddQueryNormsToHybridDistancesSYCL.
-// CountAndSelectTopKQueriesSYCL fuses radius counting with top-k selection.
+// P2: |q|² is deferred to AddQueryNormsToHybridDistances.
+// CountAndSelectTopKQueries fuses radius counting with top-k selection.
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -651,8 +656,8 @@ void HybridSearchSYCL(const Tensor& points,
     CenterPointsAndQueries<T>(points_c, queries_c);
 
     int64_t tile_queries = 0, tile_points = 0;
-    ChooseTileSizeSYCL(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
-                       tile_queries, tile_points);
+    ChooseTileSize(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
+                   tile_queries, tile_points);
     Tensor temp_distances =
             Tensor::Empty({tile_queries, tile_points}, dtype, device);
     const Dtype idx_dtype = Dtype::FromType<TIndex>();
@@ -719,7 +724,7 @@ void HybridSearchSYCL(const Tensor& points,
                 Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
                 Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
 
-                CountAndSelectTopKQueriesSYCL<T, TIndex>(
+                CountAndSelectTopKQueries<T, TIndex>(
                         device, temp_view.GetDataPtr<T>(),
                         temp_view.GetStride(0), num_queries_iter,
                         num_points_iter, max_knn, TIndex(point_begin + p),
@@ -728,7 +733,7 @@ void HybridSearchSYCL(const Tensor& points,
                         tile_sort_indices.GetStride(0),
                         ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
                         max_knn);
-                MergeTopKQueriesSYCL<T, TIndex>(
+                MergeTopKQueries<T, TIndex>(
                         device, best_dv.GetDataPtr<T>(),
                         best_iv.GetDataPtr<TIndex>(), max_knn,
                         ttdv.GetDataPtr<T>(), ttiv.GetDataPtr<TIndex>(),
@@ -747,15 +752,15 @@ void HybridSearchSYCL(const Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
     neighbors_count =
             Tensor::Empty({num_queries}, Dtype::FromType<TIndex>(), device);
-    FinalizeHybridResultsSYCL<T, TIndex>(device, counts.GetDataPtr<int64_t>(),
-                                         num_queries, max_knn,
-                                         neighbors_index.GetDataPtr<TIndex>(),
-                                         neighbors_distance.GetDataPtr<T>(),
-                                         neighbors_count.GetDataPtr<TIndex>());
+    FinalizeHybridResults<T, TIndex>(device, counts.GetDataPtr<int64_t>(),
+                                     num_queries, max_knn,
+                                     neighbors_index.GetDataPtr<TIndex>(),
+                                     neighbors_distance.GetDataPtr<T>(),
+                                     neighbors_count.GetDataPtr<TIndex>());
 
     // P2: add |q|² back to the partial distances stored in neighbors_distance.
     // Must use the CENTERED queries (queries_c) to match the centered partials.
-    AddQueryNormsToHybridDistancesSYCL<T, TIndex>(
+    AddQueryNormsToHybridDistances<T, TIndex>(
             device, num_queries, max_knn, neighbors_index.GetDataPtr<TIndex>(),
             neighbors_distance.GetDataPtr<T>(),
             queries_c.Mul(queries_c).Sum({1}).GetDataPtr<T>());
@@ -768,7 +773,9 @@ void HybridSearchSYCL(const Tensor& points,
             const Tensor& points, const Tensor& points_row_splits,             \
             const Tensor& queries, const Tensor& queries_row_splits, int knn,  \
             Tensor& neighbors_index, Tensor& neighbors_row_splits,             \
-            Tensor& neighbors_distance, int64_t tile_bytes);                   \
+            Tensor& neighbors_distance, int64_t tile_bytes,                    \
+            int64_t max_tile_queries, int64_t tile_points_alignment,           \
+            bool force_addmm_path);                                            \
     template void FixedRadiusSearchSYCL<T, TIndex>(                            \
             const Tensor& points, const Tensor& queries, double radius,        \
             const Tensor& points_row_splits, const Tensor& queries_row_splits, \

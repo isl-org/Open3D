@@ -14,27 +14,26 @@
 // −2*q*p distance tile for each (query-tile × point-tile) pair.
 //
 // P1+P9 – Fused per-tile kernel (small k ≤ kSYCLKnnMidKMax):
-//   UpdateTopKFromTileSYCL<K> runs one work-item per query.  It reads the
+//   UpdateTopKFromTile<K> runs one work-item per query.  It reads the
 //   AddMM output, adds |p|² on the fly (P2 – |q|² deferred to Finalize), and
 //   maintains a running max-heap in global memory.  Template K is the
 //   compile-time heap capacity (batch_knn rounded up to the dispatch bucket).
-//   For K ≤ kSYCLKnnSmallKMax (32) the d[K]/idx[K] arrays fit in GRF
-//   registers, eliminating the old fixed local_dists[256] scratch spill that
-//   occurred even when knn=3.  For K in {64,128,256,512} the arrays spill to
-//   per-work-item scratch but the allocation is proportional to k, not fixed.
+//   For K ≤ kSYCLKnnSmallKMax (32) the d[K]/idx[K] arrays are GRF-resident
+//   (no scratch spill); for K in {64,128,256,512} they spill to per-work-item
+//   scratch, sized proportional to K.
 //
-//   FinalizeTopKSYCL<K> heap-sorts the result and adds |q|² (C1 clamped) in
-//   one pass, replacing the old separate query-norm Add_ pass.
+//   FinalizeTopK<K> heap-sorts the result and adds |q|² (C1 clamped) in one
+//   pass.
 //
 // Legacy path (mid k, threshold search):
-//   SelectTopKQueriesSYCL (K-dispatched heap) and MergeTopKQueriesSYCL serve
-//   hybrid search and k > kSYCLKnnMidKMax.  Hybrid tiles use
-//   CountAndSelectTopKQueriesSYCL to fuse radius counting with top-k.
+//   SelectTopKQueries (K-dispatched heap) and MergeTopKQueries serve hybrid
+//   search and k > kSYCLKnnMidKMax.  Hybrid tiles use
+//   CountAndSelectTopKQueries to fuse radius counting with top-k.
 //
 // P2 – Drop |q|² from the distance tile:
 //   All selection/count/gather kernels compare partial_dist = −2qp + |p|²
 //   against an adjusted per-query threshold = radius² − |q|².  KNN callers
-//   add |q|² back once in Finalize / AddQueryNormsToDistancesSYCL.
+//   add |q|² back once in Finalize / AddQueryNormsToDistances.
 //
 // C1 – Negative distance clamp: partial_dist = max(0, −2qp + |p|²).
 // C4 – Tie-break: equal distances resolved by smaller global point index.
@@ -64,19 +63,26 @@ namespace nns {
 // ─── Tile sizing ──────────────────────────────────────────────────────────
 
 /// Compute tile dimensions that bound the −2*q*p tile to \p tile_bytes.
-/// tile_queries is capped at 128 (a good oneMKL GEMM row-tile width).
-inline void ChooseTileSizeSYCL(int64_t num_queries,
+/// tile_queries is capped at \p max_tile_queries (a good oneMKL GEMM row-tile
+/// width; 128 by default, see benchmarks/core/NearestNeighborSearchSYCLAddMMTuning.cpp
+/// for the sweep that validated this value). tile_points is rounded down to
+/// a multiple of \p tile_points_alignment (128 by default) once it exceeds
+/// that alignment, keeping the column tile GEMM/cache-line friendly.
+inline void ChooseTileSize(int64_t num_queries,
                                int64_t num_points,
                                int64_t element_size,
                                int64_t tile_bytes,
                                int64_t& tile_queries,
-                               int64_t& tile_points) {
-    tile_queries = std::min<int64_t>(num_queries, 128);
+                               int64_t& tile_points,
+                               int64_t max_tile_queries = 128,
+                               int64_t tile_points_alignment = 128) {
+    tile_queries = std::min<int64_t>(num_queries, max_tile_queries);
     tile_queries = std::max<int64_t>(tile_queries, 1);
     tile_points = std::max<int64_t>(tile_bytes / (tile_queries * element_size),
                                     int64_t(256));
-    if (tile_points > 128) {
-        tile_points = (tile_points / 128) * 128;
+    if (tile_points > tile_points_alignment) {
+        tile_points = (tile_points / tile_points_alignment) *
+                     tile_points_alignment;
     }
     tile_points = std::min<int64_t>(tile_points, num_points);
     tile_points = std::max<int64_t>(tile_points, 1);
@@ -149,13 +155,12 @@ inline void HeapSort(T* d, TIndex* idx) {
 /// bucket ≥ actual knn).
 ///
 ///  K ≤ kSYCLKnnSmallKMax (32): d[K]/idx[K] live in GRF – no scratch spill.
-///  K ≤ kSYCLKnnMidKMax  (512): spill to scratch, but proportional to K,
-///                               not the old fixed 256.
+///  K ≤ kSYCLKnnMidKMax  (512): spill to scratch, proportional to K.
 ///
-/// Fuses three passes from the old code: Add_(point_norms) +
-/// SelectTopKQueriesSYCL + MergeTopKQueriesSYCL.
+/// Fuses three passes into one: Add_(point_norms) + SelectTopKQueries +
+/// MergeTopKQueries.
 ///
-/// P2: |q|² NOT added; callers add it once in FinalizeTopKSYCL.
+/// P2: |q|² NOT added; callers add it once in FinalizeTopK.
 /// C1: partial_dist = max(0, −2qp + |p|²).
 /// C4: equal distances resolved by smaller global point index.
 ///
@@ -168,9 +173,9 @@ inline void HeapSort(T* d, TIndex* idx) {
 /// @param threshold       Adjusted per-query threshold = radius² − |q|².
 ///                        Caller passes the per-query array value for each
 ///                        work-item's own query; the scalar path is used by
-///                        the hybrid SelectTopKQueriesSYCL variant.
+///                        the hybrid SelectTopKQueries variant.
 template <typename T, typename TIndex, int K>
-void UpdateTopKFromTileSYCL(sycl::queue& queue,
+void UpdateTopKFromTile(sycl::queue& queue,
                             const T* neg2qp_ptr,
                             int64_t distance_stride,
                             const T* point_norms_ptr,
@@ -201,8 +206,8 @@ void UpdateTopKFromTileSYCL(sycl::queue& queue,
                 // Scan: fused |p|² add, heap insert.
                 // Note: partial_dist = −2qp + |p|² may be negative (|q|² not
                 // yet added).  Do NOT clamp here; C1 clamping is applied in
-                // FinalizeTopKSYCL / GatherWithinThreshold once |q|² is added
-                // back.
+                // FinalizeTopK / GatherWithinThresholdQueries once |q|² is
+                // added back.
                 for (int64_t p = 0; p < num_points; ++p) {
                     const T dist = qrow[p] + point_norms_ptr[p];
                     if (use_threshold && dist > threshold) continue;
@@ -233,7 +238,7 @@ void UpdateTopKFromTileSYCL(sycl::queue& queue,
 /// @param actual_k          Real knn value (≤ K).
 /// @param query_norms_ptr   |q|² per query (nullptr to skip, e.g. threshold).
 template <typename T, typename TIndex, int K>
-void FinalizeTopKSYCL(sycl::queue& queue,
+void FinalizeTopK(sycl::queue& queue,
                       int64_t num_queries,
                       const T* running_dist_ptr,
                       const TIndex* running_idx_ptr,
@@ -299,7 +304,7 @@ void DispatchUpdateTopKFromTile(sycl::queue& queue,
                                 bool use_threshold,
                                 T threshold) {
 #define CALL_UPDATE(Kval)                                                     \
-    UpdateTopKFromTileSYCL<T, TIndex, Kval>(                                  \
+    UpdateTopKFromTile<T, TIndex, Kval>(                                     \
             queue, neg2qp_ptr, distance_stride, point_norms_ptr, num_queries, \
             num_points, point_offset, best_dist_ptr, best_idx_ptr,            \
             use_threshold, threshold)
@@ -336,10 +341,10 @@ void DispatchFinalizeTopK(sycl::queue& queue,
                           int64_t actual_k,
                           int64_t k_bucket,
                           const T* query_norms_ptr) {
-#define CALL_FINALIZE(Kval)                                                 \
-    FinalizeTopKSYCL<T, TIndex, Kval>(queue, num_queries, running_dist_ptr, \
-                                      running_idx_ptr, out_dist_ptr,        \
-                                      out_idx_ptr, actual_k, query_norms_ptr)
+#define CALL_FINALIZE(Kval)                                              \
+    FinalizeTopK<T, TIndex, Kval>(queue, num_queries, running_dist_ptr,  \
+                                  running_idx_ptr, out_dist_ptr,         \
+                                  out_idx_ptr, actual_k, query_norms_ptr)
     if (k_bucket <= 1)
         CALL_FINALIZE(1);
     else if (k_bucket <= 2)
@@ -365,7 +370,7 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 
 // ─── Direct-distance KNN (no AddMM, no centering) ────────────────────────
 // Cooperative, SLM-tiled brute-force KNN for low-dimension, low-k queries
-// (the dominant point-cloud regime: D ≤ kSYCLKnnDirectMaxDim,
+// (the dominant point-cloud regime: D ≤ kKnnDirectMaxDim,
 // K ≤ kSYCLKnnSmallKMax). This bypasses the oneMKL AddMM tiling used by the
 // rest of this file entirely: |p-q|² is accumulated directly as a sum of
 // squared per-dimension differences, so there is no |q|²-2qp+|p|²
@@ -396,19 +401,24 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 // without recompiling; SG, NDIM and K stay compile-time so the per-lane
 // arrays remain register-resident.
 
-// Performance note: This direct path is 2-3 orders of magnitude faster than the
-// indirect path on an A770! Both paths can benefit from tuning.
+// Performance note: on an A770 this direct path is 2 orders of magnitude
+// faster than the indirect path
 
-constexpr int64_t kSYCLKnnDirectSubgroupSize = 16;
-constexpr int64_t kSYCLKnnDirectSubgroupsPerWG = 8;
-constexpr int64_t kSYCLKnnDirectTilePoints = 256;
-constexpr int64_t kSYCLKnnDirectMaxDim = 8;
+// subgroups_per_wg=32 (512 work-items/WG at SG=16) and tile_points=2048 are
+// the tuned defaults for dim=3 point clouds on Intel Xe iGPUs (see
+// benchmarks/core/NearestNeighborSearchSYCLTuning.cpp); tile_points is
+// clamped further for large dim / double by the local-memory check in
+// DispatchKnnDirect (see kKnnDirectMaxDim).
+constexpr int64_t kKnnDirectSubgroupSize = 16;
+constexpr int64_t kKnnDirectSubgroupsPerWG = 32;
+constexpr int64_t kKnnDirectTilePoints = 2048;
+constexpr int64_t kKnnDirectMaxDim = 8;
 
 template <typename T, typename TIndex, int NDIM, int K, int SG>
 class KnnDirectKernel;
 
 template <typename T, typename TIndex, int NDIM, int K, int SG>
-void KnnDirectSYCL(sycl::queue& queue,
+void KnnDirect(sycl::queue& queue,
                    const T* points_ptr,
                    const T* queries_ptr,
                    int64_t num_points,
@@ -593,21 +603,24 @@ void KnnDirectSYCL(sycl::queue& queue,
     });
 }
 
-template <typename T, typename TIndex, int NDIM>
-void DispatchKnnDirectK(sycl::queue& queue,
-                        const T* points_ptr,
-                        const T* queries_ptr,
-                        int64_t num_points,
-                        int64_t num_queries,
-                        int64_t actual_k,
-                        T* out_dist_ptr,
-                        TIndex* out_idx_ptr,
-                        int64_t subgroups_per_wg,
-                        int64_t tile_points) {
+/// K-bucket dispatch for a fixed compile-time sub-group width \p SG. Kept
+/// separate from DispatchKnnDirectK so the same K-bucket switch can be
+/// instantiated at two different SG widths (see DispatchKnnDirectK) without
+/// duplicating the bucket logic.
+template <typename T, typename TIndex, int NDIM, int SG>
+void DispatchKnnDirectKForSG(sycl::queue& queue,
+                             const T* points_ptr,
+                             const T* queries_ptr,
+                             int64_t num_points,
+                             int64_t num_queries,
+                             int64_t actual_k,
+                             T* out_dist_ptr,
+                             TIndex* out_idx_ptr,
+                             int64_t subgroups_per_wg,
+                             int64_t tile_points) {
     const int64_t k_bucket = KBucket(actual_k);
-    constexpr int SG = std::is_same_v<T, double> ? 8 : 16;
 #define CALL_DIRECT(Kval)                                                      \
-    KnnDirectSYCL<T, TIndex, NDIM, Kval, SG>(                                  \
+    KnnDirect<T, TIndex, NDIM, Kval, SG>(                                      \
             queue, points_ptr, queries_ptr, num_points, num_queries, actual_k, \
             out_dist_ptr, out_idx_ptr, subgroups_per_wg, tile_points)
     if (k_bucket <= 1)
@@ -625,11 +638,57 @@ void DispatchKnnDirectK(sycl::queue& queue,
 #undef CALL_DIRECT
 }
 
+// float always uses sub-group width 16 (smaller per-lane footprint, no
+// register-spill risk). double prefers width 8 -- halving lanes-per-query
+// doubles the per-lane register budget for the 8-byte d[K]/idx[K] arrays,
+// avoiding scratch spills at large K on discrete GPUs. Not all devices
+// support width 8 (e.g. integrated Xe iGPUs expose only {16, 32}), so both
+// SG=8 and SG=16 kernels are compiled for double and this function queries
+// the device at runtime to pick a supported width.
+template <typename T, typename TIndex, int NDIM>
+void DispatchKnnDirectK(sycl::queue& queue,
+                        const T* points_ptr,
+                        const T* queries_ptr,
+                        int64_t num_points,
+                        int64_t num_queries,
+                        int64_t actual_k,
+                        T* out_dist_ptr,
+                        TIndex* out_idx_ptr,
+                        int64_t subgroups_per_wg,
+                        int64_t tile_points) {
+    if constexpr (std::is_same_v<T, double>) {
+        const auto sg_sizes =
+                queue.get_device()
+                        .get_info<sycl::info::device::sub_group_sizes>();
+        const bool supports_subgroup_8 =
+                std::find(sg_sizes.begin(), sg_sizes.end(), size_t(8)) !=
+                sg_sizes.end();
+        if (supports_subgroup_8) {
+            DispatchKnnDirectKForSG<T, TIndex, NDIM, 8>(
+                    queue, points_ptr, queries_ptr, num_points, num_queries,
+                    actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,
+                    tile_points);
+        } else {
+            DispatchKnnDirectKForSG<T, TIndex, NDIM, 16>(
+                    queue, points_ptr, queries_ptr, num_points, num_queries,
+                    actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,
+                    tile_points);
+        }
+    } else {
+        DispatchKnnDirectKForSG<T, TIndex, NDIM, 16>(
+                queue, points_ptr, queries_ptr, num_points, num_queries,
+                actual_k, out_dist_ptr, out_idx_ptr, subgroups_per_wg,
+                tile_points);
+    }
+}
+
 /// Dispatch the direct-distance KNN path by compile-time dimension (1..8)
 /// and K-bucket (≤ 32). Writes directly into the caller-allocated output
-/// buffers; no public API / build plumbing changes are required.
+/// buffers; no public API / build plumbing changes are required. The
+/// double-precision sub-group width (8 vs 16) is chosen at runtime inside
+/// DispatchKnnDirectK by querying the device; float always uses width 16.
 template <typename T, typename TIndex>
-void DispatchKnnDirectSYCL(
+void DispatchKnnDirect(
         sycl::queue& queue,
         const T* points_ptr,
         const T* queries_ptr,
@@ -639,8 +698,26 @@ void DispatchKnnDirectSYCL(
         int64_t actual_k,
         T* out_dist_ptr,
         TIndex* out_idx_ptr,
-        int64_t subgroups_per_wg = kSYCLKnnDirectSubgroupsPerWG,
-        int64_t tile_points = kSYCLKnnDirectTilePoints) {
+        int64_t subgroups_per_wg = kKnnDirectSubgroupsPerWG,
+        int64_t tile_points = kKnnDirectTilePoints) {
+    // kKnnDirectTilePoints is tuned for the common case (dim ≤ 3, see
+    // benchmarks/core/NearestNeighborSearchSYCLTuning.cpp), where the
+    // resulting per-work-group SLM usage (2 * tile_points * dim * sizeof(T))
+    // is well inside typical device budgets. For larger `dim` (up to
+    // kKnnDirectMaxDim) or double precision, that same tile_points could
+    // exceed the device's actual local memory size, so clamp it down here
+    // using the real device limit (queried once, cheap) rather than baking a
+    // dim/dtype-specific constant into the caller.
+    {
+        const size_t local_mem_bytes =
+                queue.get_device()
+                        .get_info<sycl::info::device::local_mem_size>();
+        // Leave 10% headroom for other local allocations / runtime overhead.
+        const int64_t max_tile_points_by_slm = static_cast<int64_t>(
+                (local_mem_bytes * 9 / 10) / (2 * dim * sizeof(T)));
+        tile_points = std::min(tile_points,
+                               std::max<int64_t>(max_tile_points_by_slm, 1));
+    }
 #define CALL_DIM(NDIMVAL)                                                      \
     DispatchKnnDirectK<T, TIndex, NDIMVAL>(                                    \
             queue, points_ptr, queries_ptr, num_points, num_queries, actual_k, \
@@ -672,15 +749,15 @@ void DispatchKnnDirectSYCL(
             break;
         default:
             utility::LogError(
-                    "DispatchKnnDirectSYCL only supports dim 1 to {}.",
-                    kSYCLKnnDirectMaxDim);
+                    "DispatchKnnDirect only supports dim 1 to {}.",
+                    kKnnDirectMaxDim);
     }
 #undef CALL_DIM
 }
 
 /// True if (dim, knn) qualifies for the direct-distance SYCL KNN path.
-inline bool UseKnnDirectSYCL(int64_t dim, int64_t knn) {
-    return dim >= 1 && dim <= kSYCLKnnDirectMaxDim && knn <= kSYCLKnnSmallKMax;
+inline bool UseKnnDirect(int64_t dim, int64_t knn) {
+    return dim >= 1 && dim <= kKnnDirectMaxDim && knn <= kSYCLKnnSmallKMax;
 }
 
 // ─── Legacy Select / Merge (mid-k and large-k paths) ─────────────────────
@@ -719,7 +796,7 @@ inline void HeapifyDownActive(T* local_d,
 
 /// Mid-k heap select with compile-time bucket K (≥ knn, from KBucket).
 template <typename T, typename TIndex, int K>
-void SelectTopKQueriesHeapSYCL(sycl::queue& queue,
+void SelectTopKQueriesHeap(sycl::queue& queue,
                                const T* distances_ptr,
                                int64_t distance_query_stride,
                                int64_t num_queries,
@@ -798,7 +875,7 @@ void SelectTopKQueriesHeapSYCL(sycl::queue& queue,
 
 /// Hybrid tile pass: count points within radius and select top-k in one scan.
 template <typename T, typename TIndex, int K>
-void CountAndSelectTopKQueriesHeapSYCL(sycl::queue& queue,
+void CountAndSelectTopKQueriesHeap(sycl::queue& queue,
                                        const T* partial_dist_ptr,
                                        int64_t distance_stride,
                                        int64_t num_queries,
@@ -879,7 +956,7 @@ void CountAndSelectTopKQueriesHeapSYCL(sycl::queue& queue,
 }  // namespace detail
 
 template <typename T, typename TIndex>
-void DispatchSelectTopKQueriesSYCL(sycl::queue& queue,
+void DispatchSelectTopKQueries(sycl::queue& queue,
                                    const T* distances_ptr,
                                    int64_t distance_query_stride,
                                    int64_t num_queries,
@@ -895,7 +972,7 @@ void DispatchSelectTopKQueriesSYCL(sycl::queue& queue,
                                    T radius_sq,
                                    T scalar_threshold) {
 #define CALL_SELECT(Kval)                                                      \
-    detail::SelectTopKQueriesHeapSYCL<T, TIndex, Kval>(                        \
+    detail::SelectTopKQueriesHeap<T, TIndex, Kval>(                           \
             queue, distances_ptr, distance_query_stride, num_queries,          \
             num_points, knn, index_offset, out_indices_ptr, out_distances_ptr, \
             out_query_stride, use_threshold, query_norms_ptr, radius_sq,       \
@@ -924,7 +1001,7 @@ void DispatchSelectTopKQueriesSYCL(sycl::queue& queue,
 }
 
 template <typename T, typename TIndex>
-void DispatchCountAndSelectTopKQueriesSYCL(sycl::queue& queue,
+void DispatchCountAndSelectTopKQueries(sycl::queue& queue,
                                            const T* partial_dist_ptr,
                                            int64_t distance_stride,
                                            int64_t num_queries,
@@ -939,7 +1016,7 @@ void DispatchCountAndSelectTopKQueriesSYCL(sycl::queue& queue,
                                            T* out_distances_ptr,
                                            int64_t out_query_stride) {
 #define CALL_COUNT_SELECT(Kval)                                                \
-    detail::CountAndSelectTopKQueriesHeapSYCL<T, TIndex, Kval>(                \
+    detail::CountAndSelectTopKQueriesHeap<T, TIndex, Kval>(                   \
             queue, partial_dist_ptr, distance_stride, num_queries, num_points, \
             knn, index_offset, query_norms_ptr, radius_sq, counts_ptr,         \
             out_indices_ptr, out_distances_ptr, out_query_stride)
@@ -975,7 +1052,7 @@ void DispatchCountAndSelectTopKQueriesSYCL(sycl::queue& queue,
 ///   use_threshold is true and this is non-null, threshold is
 ///   radius_sq − query_norms_ptr[q] (P2 hybrid). Otherwise scalar_threshold.
 template <typename T, typename TIndex>
-void SelectTopKQueriesSYCL(const Device& device,
+void SelectTopKQueries(const Device& device,
                            const T* distances_ptr,
                            int64_t distance_query_stride,
                            int64_t num_queries,
@@ -999,7 +1076,7 @@ void SelectTopKQueriesSYCL(const Device& device,
 
     if (knn <= kSYCLKnnMidKMax) {
         const int64_t k_bucket = KBucket(knn);
-        DispatchSelectTopKQueriesSYCL<T, TIndex>(
+        DispatchSelectTopKQueries<T, TIndex>(
                 queue, distances_ptr, distance_query_stride, num_queries,
                 num_points, knn, k_bucket, index_offset, out_indices_ptr,
                 out_distances_ptr, out_query_stride, use_threshold,
@@ -1059,11 +1136,10 @@ void SelectTopKQueriesSYCL(const Device& device,
     }
 }
 
-/// Merge two sorted (ascending) per-query top-K arrays.
-/// Identical to the old MergeTopKQueriesSYCL but split into the two paths
-/// based on kSYCLKnnMidKMax (was fixed at 256).
+/// Merge two sorted (ascending) per-query top-K arrays. Uses a linear merge
+/// for knn ≤ kSYCLKnnMidKMax, else an oneDPL partial_sort fallback (P8).
 template <typename T, typename TIndex>
-void MergeTopKQueriesSYCL(const Device& device,
+void MergeTopKQueries(const Device& device,
                           const T* curr_dist_ptr,
                           const TIndex* curr_idx_ptr,
                           int64_t curr_stride,
@@ -1190,7 +1266,7 @@ void MergeTopKQueriesSYCL(const Device& device,
 /// Add |q|² to partial distances and clamp ≥ 0 (C1).  Called once after all
 /// point tiles for the SelectTopK / Merge path (mid-K and large-K).
 template <typename T, typename TIndex>
-void AddQueryNormsToDistancesSYCL(const Device& device,
+void AddQueryNormsToDistances(const Device& device,
                                   int64_t num_queries,
                                   int64_t knn,
                                   const TIndex* indices_ptr,
@@ -1212,7 +1288,7 @@ void AddQueryNormsToDistancesSYCL(const Device& device,
 /// Count points within the adjusted per-query threshold (P2).
 /// threshold_q = radius² − |q|², so we compare partial_dist directly.
 template <typename T>
-void CountWithinThresholdQueriesSYCL(const Device& device,
+void CountWithinThresholdQueries(const Device& device,
                                      const T* partial_dist_ptr,
                                      int64_t distance_stride,
                                      int64_t num_queries,
@@ -1238,7 +1314,7 @@ void CountWithinThresholdQueriesSYCL(const Device& device,
 /// Hybrid tile: accumulate radius counts and select top-k partial distances
 /// in one pass per query (mid-k only; k ≤ kSYCLKnnMidKMax).
 template <typename T, typename TIndex>
-void CountAndSelectTopKQueriesSYCL(const Device& device,
+void CountAndSelectTopKQueries(const Device& device,
                                    const T* partial_dist_ptr,
                                    int64_t distance_stride,
                                    int64_t num_queries,
@@ -1257,16 +1333,16 @@ void CountAndSelectTopKQueriesSYCL(const Device& device,
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
     if (knn <= kSYCLKnnMidKMax) {
         const int64_t k_bucket = KBucket(knn);
-        DispatchCountAndSelectTopKQueriesSYCL<T, TIndex>(
+        DispatchCountAndSelectTopKQueries<T, TIndex>(
                 queue, partial_dist_ptr, distance_stride, num_queries,
                 num_points, knn, k_bucket, index_offset, query_norms_ptr,
                 radius_sq, counts_ptr, out_indices_ptr, out_distances_ptr,
                 out_query_stride);
     } else {
-        CountWithinThresholdQueriesSYCL<T>(
+        CountWithinThresholdQueries<T>(
                 device, partial_dist_ptr, distance_stride, num_queries,
                 num_points, query_norms_ptr, radius_sq, counts_ptr);
-        SelectTopKQueriesSYCL<T, TIndex>(
+        SelectTopKQueries<T, TIndex>(
                 device, partial_dist_ptr, distance_stride, num_queries,
                 num_points, knn, index_offset, scratch_indices_ptr,
                 scratch_query_stride, out_indices_ptr, out_distances_ptr,
@@ -1278,7 +1354,7 @@ void CountAndSelectTopKQueriesSYCL(const Device& device,
 /// Gather indices (and full L2 distances) within the per-query threshold.
 /// Returned distances = partial + |q|², clamped ≥ 0 (C1).
 template <typename T, typename TIndex>
-void GatherWithinThresholdQueriesSYCL(const Device& device,
+void GatherWithinThresholdQueries(const Device& device,
                                       const T* partial_dist_ptr,
                                       int64_t distance_stride,
                                       int64_t num_queries,
@@ -1316,7 +1392,7 @@ void GatherWithinThresholdQueriesSYCL(const Device& device,
 
 /// Clip hybrid neighbor counts to max_knn and zero-fill the unused tail.
 template <typename T, typename TIndex>
-void FinalizeHybridResultsSYCL(const Device& device,
+void FinalizeHybridResults(const Device& device,
                                const int64_t* counts_ptr,
                                int64_t num_queries,
                                int64_t max_knn,
@@ -1340,7 +1416,7 @@ void FinalizeHybridResultsSYCL(const Device& device,
 /// Per-query final distances for hybrid search need |q|² added and clamped.
 /// Called after the SelectTopK/Merge pass that produced partial distances.
 template <typename T, typename TIndex>
-void AddQueryNormsToHybridDistancesSYCL(const Device& device,
+void AddQueryNormsToHybridDistances(const Device& device,
                                         int64_t num_queries,
                                         int64_t max_knn,
                                         const TIndex* indices_ptr,

@@ -559,6 +559,37 @@ TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPU) {
     }
 }
 
+// Double-precision K-bucket path coverage (regression for the subgroup-size
+// dispatch in DispatchKnnDirectK): verify parity with CPU for k values that
+// hit each dispatch bucket (1, 2, 4, 8, 16, 32), using double precision so
+// the direct-distance path's double-only sub-group-width selection (SG=8 on
+// devices that support it, SG=16 fallback otherwise) is exercised end to end
+// on whatever the current device actually supports.
+TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPUDouble) {
+    core::Tensor dataset_f = MakeSYCLTestDataset(cpu);
+    core::Tensor dataset = dataset_f.To(core::Float64);
+    core::Tensor query = core::Tensor::Init<double>(
+            {{0.064705, 0.043921, 0.087843}, {0.051, 0.031, 0.071}}, cpu);
+
+    for (int k : {1, 2, 3, 4, 5, 8, 9, 16, 17, 32}) {
+        core::nns::NearestNeighborSearch nns_cpu(dataset, core::Int32);
+        nns_cpu.KnnIndex();
+        core::Tensor idx_cpu, dist_cpu;
+        std::tie(idx_cpu, dist_cpu) = nns_cpu.KnnSearch(query, k);
+
+        core::nns::NearestNeighborSearch nns_sycl(dataset.To(sycl),
+                                                  core::Int32);
+        nns_sycl.KnnIndex();
+        core::Tensor idx_sycl, dist_sycl;
+        std::tie(idx_sycl, dist_sycl) = nns_sycl.KnnSearch(query.To(sycl), k);
+
+        EXPECT_TRUE(idx_sycl.To(cpu).AllClose(idx_cpu))
+                << "k=" << k << ": index mismatch";
+        EXPECT_TRUE(dist_sycl.To(cpu).AllClose(dist_cpu, 1e-9, 1e-9))
+                << "k=" << k << ": distance mismatch";
+    }
+}
+
 // tile_bytes override: a smaller tile should produce the same result as the
 // default (correctness across tile boundaries).
 TEST_F(SYCLNNSTest, KnnSearchNonDefaultTileBytes) {

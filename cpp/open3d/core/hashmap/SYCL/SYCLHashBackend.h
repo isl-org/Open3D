@@ -23,31 +23,28 @@
 
 // SYCLHashBackend — device-side open-addressing hash table (linear probing).
 //
-// History (superseded behavior and root causes)
-//   • LOCKED slot + spin until publish: on Intel Xe, subgroup lanes run in
-//     lockstep; a waiting lane could starve the publishing lane and hang the
-//     device (UR_RESULT_ERROR_DEVICE_LOST). Current design publishes in one
-//     CAS.
-//   • Separate slot_state[] and slot_buf_index[]: two loads per probe; replaced
-//     by a single packed uint64 per slot (state, buf_index, fingerprint).
-//   • Insert probe after acquire on slot only: key reads could hit stale EU L1
-//     and miss an existing key, inserting duplicates; fixed with a device
-//     seq_cst fence before comparing keys when the fingerprint matches.
-//   • CAS to OCCUPIED before key/value were visible device-wide: probers saw
-//     uninitialized keys; fixed by writing the buffer, seq_cst fence, then CAS.
-//   • GetActiveIndices: one global atomic per occupied slot caused contention;
-//     replaced by work-group exclusive scan and one fetch_add per group.
-//   • Rehash keyed only on live size: tombstones could fill the table and
-//     remove all EMPTY sentinels; non_empty_count (occupied + deleted) triggers
-//     rebuild before that happens.
+// Design notes
+//   • Slot transitions publish in a single CAS (Xe subgroup lanes run in
+//     lockstep; a spinning/waiting lane can hang the device).
+//   • Each slot is one packed uint64 (state, buf_index, fingerprint) — a
+//     single load per probe.
+//   • A device seq_cst fence separates writing a slot's key/value from the
+//     CAS that publishes it, so probers never see stale or uninitialized
+//     data.
+//   • GetActiveIndices uses one work-group exclusive scan + one fetch_add
+//     per group, not one atomic per occupied slot.
+//   • Rehash triggers on non_empty_count (occupied + deleted), not live
+//     size alone, so tombstones cannot silently fill the table.
 //
 // Algorithm
 //   Table: USM array of packed slots (see PackSlot). Keys/values live in an
 //   external HashBackendBuffer; each OCCUPIED slot stores a buf_index. Probe
 //   index is (home + i) & (bucket_count - 1) with bucket_count a power of two.
 //   HashMix (MurmurHash3 fmix64) is applied to FNV-1a before masking so local
-//   keys do not cluster in low bits. A 16-bit fingerprint from the mixed hash
-//   filters most key-buffer gathers on probe.
+//   keys do not cluster in low bits. A 28-bit fingerprint from the mixed hash
+//   filters most key-buffer gathers on probe, using bits otherwise unused
+//   between the packed state and buf_index fields at zero extra memory cost
+//   (see PackSlot).
 //   Insert (wait-free): linear probe; on EMPTY claim the first DELETED seen for
 //   reuse. Allocate one buffer element, copy key/values (vectorized blocks),
 //   device seq_cst fence, then CAS slot EMPTY/DELETED → OCCUPIED. Losers
@@ -64,29 +61,37 @@ namespace open3d {
 namespace core {
 
 // EMPTY must be 0 so memset-initialized slot_data_ is an empty table.
-enum SYCLHashSlotState : uint32_t {
-    kSYCLSlotEmpty = 0,
-    kSYCLSlotOccupied = 1,
-    kSYCLSlotDeleted = 2,
+enum HashSlotState : uint32_t {
+    kSlotEmpty = 0,
+    kSlotOccupied = 1,
+    kSlotDeleted = 2,
 };
 
 namespace {
 
-constexpr int64_t kSYCLHashWgSize = 256;
+// Insert/Find/Erase throughput improves monotonically with wg_size up to the
+// device max (see benchmarks/core/HashMapSYCLTuning.cpp); clamped at
+// construction time to the actual device max, see SYCLHashBackend's
+// constructor.
+constexpr int64_t kHashWgSize = 1024;
 
-// Packed slot: [63:48] fingerprint, [35:32] state, [31:0] buf_index.
-inline uint64_t PackSlot(uint32_t state, buf_index_t bi, uint16_t fingerprint) {
-    return (static_cast<uint64_t>(fingerprint) << 48) |
+// bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier),
+// i.e. the inverse of the target max load factor. 
+constexpr int64_t kHashBucketCountMultiplier = 2;
+
+// Packed slot: [63:36] fingerprint (28 bits), [35:32] state, [31:0] buf_index.
+inline uint64_t PackSlot(uint32_t state, buf_index_t bi, uint32_t fingerprint) {
+    return (static_cast<uint64_t>(fingerprint) << 36) |
            (static_cast<uint64_t>(state) << 32) | static_cast<uint64_t>(bi);
 }
 
 inline void UnpackSlot(uint64_t packed,
                        uint32_t& state,
                        buf_index_t& bi,
-                       uint16_t& fingerprint) {
+                       uint32_t& fingerprint) {
     bi = static_cast<buf_index_t>(packed & 0xffffffffULL);
     state = static_cast<uint32_t>((packed >> 32) & 0xfULL);
-    fingerprint = static_cast<uint16_t>(packed >> 48);
+    fingerprint = static_cast<uint32_t>(packed >> 36);
 }
 
 // Round up to power of two for `(home + probe) & (bucket_count - 1)` indexing.
@@ -130,20 +135,20 @@ struct SYCLHashDeviceLookup {
         const int64_t mask = bucket_count - 1;
         const uint64_t hash = HashMix(hash_fn(key));
         const int64_t home = static_cast<int64_t>(hash & mask);
-        const uint16_t my_fingerprint =
-                static_cast<uint16_t>((hash >> 16) & 0xffffULL);
+        const uint32_t my_fingerprint =
+                static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
         for (int64_t probe = 0; probe < bucket_count; ++probe) {
             const int64_t idx = (home + probe) & mask;
             uint64_t packed = slot_data[idx];
             uint32_t s;
             buf_index_t bi;
-            uint16_t fp;
+            uint32_t fp;
             UnpackSlot(packed, s, bi, fp);
-            if (s == kSYCLSlotEmpty) {
+            if (s == kSlotEmpty) {
                 break;
             }
-            if (s == kSYCLSlotOccupied && fp == my_fingerprint) {
+            if (s == kSlotOccupied && fp == my_fingerprint) {
                 const Key* slot_key =
                         static_cast<const Key*>(accessor.GetKeyPtr(bi));
                 if (eq_fn(*slot_key, key)) {
@@ -155,15 +160,16 @@ struct SYCLHashDeviceLookup {
     }
 };
 
-/// SYCL DeviceHashBackend; algorithm and history are documented at the top of
-/// this file. bucket_count_ = NextPowerOfTwo(max(capacity * 2, 1)).
+/// SYCL DeviceHashBackend; algorithm is documented at the top of this file.
+/// bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier)
 template <typename Key, typename Hash, typename Eq>
 class SYCLHashBackend : public DeviceHashBackend {
 public:
     SYCLHashBackend(int64_t init_capacity,
                     int64_t key_dsize,
                     const std::vector<int64_t>& value_dsizes,
-                    const Device& device);
+                    const Device& device,
+                    int64_t wg_size = kHashWgSize);
     ~SYCLHashBackend();
 
     void Reserve(int64_t capacity) override {}
@@ -212,6 +218,7 @@ protected:
     int* occupied_count_ = nullptr;
     int* non_empty_count_ = nullptr;
     int64_t bucket_count_ = 0;
+    int64_t wg_size_ = kHashWgSize;
 
     sycl::queue queue_;
 };
@@ -221,9 +228,15 @@ SYCLHashBackend<Key, Hash, Eq>::SYCLHashBackend(
         int64_t init_capacity,
         int64_t key_dsize,
         const std::vector<int64_t>& value_dsizes,
-        const Device& device)
+        const Device& device,
+        int64_t wg_size)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device),
+      wg_size_(wg_size),
       queue_(sy::SYCLContext::GetInstance().GetDefaultQueue(device)) {
+    const int64_t device_max_wg_size = static_cast<int64_t>(
+            queue_.get_device()
+                    .get_info<sycl::info::device::max_work_group_size>());
+    wg_size_ = std::min(wg_size_, std::max<int64_t>(1, device_max_wg_size));
     Allocate(init_capacity);
 }
 
@@ -323,8 +336,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
             const int64_t mask = bucket_count - 1;
             const uint64_t hash = HashMix(hash_fn(key));
             const int64_t home = static_cast<int64_t>(hash & mask);
-            const uint16_t my_fingerprint =
-                    static_cast<uint16_t>((hash >> 16) & 0xffffULL);
+            const uint32_t my_fingerprint =
+                    static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
             bool finished = false;
             buf_index_t my_bi = SYCLHashBackendBufferAccessor::kInvalidBufIndex;
@@ -346,10 +359,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                     uint64_t packed = st.load(sycl::memory_order::acquire);
                     uint32_t s;
                     buf_index_t bi;
-                    uint16_t fp;
+                    uint32_t fp;
                     UnpackSlot(packed, s, bi, fp);
 
-                    if (s == kSYCLSlotOccupied) {
+                    if (s == kSlotOccupied) {
                         if (fp == my_fingerprint) {
                             sycl::atomic_fence(sycl::memory_order::seq_cst,
                                                sycl::memory_scope::device);
@@ -365,7 +378,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                         continue;
                     }
 
-                    if (s == kSYCLSlotDeleted) {
+                    if (s == kSlotDeleted) {
                         if (first_deleted < 0) first_deleted = idx;
                         continue;
                     }
@@ -417,18 +430,18 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                                     : 0ULL;
                     const uint32_t prev_state = static_cast<uint32_t>(
                             (expected_packed >> 32) & 0xfULL);
-                    if ((prev_state == kSYCLSlotEmpty ||
-                         prev_state == kSYCLSlotDeleted) &&
+                    if ((prev_state == kSlotEmpty ||
+                         prev_state == kSlotDeleted) &&
                         tst.compare_exchange_strong(
                                 expected_packed,
-                                PackSlot(kSYCLSlotOccupied, my_bi,
+                                PackSlot(kSlotOccupied, my_bi,
                                          my_fingerprint),
                                 sycl::memory_order::acq_rel,
                                 sycl::memory_order::relaxed)) {
                         output_buf_indices[tid] = my_bi;
                         output_masks[tid] = true;
                         my_new_occupied = 1;
-                        if (prev_state == kSYCLSlotEmpty) {
+                        if (prev_state == kSlotEmpty) {
                             my_new_nonempty = 1;
                         }
                         finished = true;
@@ -465,10 +478,11 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
         }
     };
 
+    const int64_t wg_size = wg_size_;
     const int64_t global_size =
-            ((count + kSYCLHashWgSize - 1) / kSYCLHashWgSize) * kSYCLHashWgSize;
+            ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
-              cgh.parallel_for(sycl::nd_range<1>(global_size, kSYCLHashWgSize),
+              cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                insert_kernel);
           }).wait_and_throw();
 }
@@ -495,8 +509,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                 const int64_t mask = bucket_count - 1;
                 const uint64_t hash = HashMix(hash_fn(key));
                 const int64_t home = static_cast<int64_t>(hash & mask);
-                const uint16_t my_fingerprint =
-                        static_cast<uint16_t>((hash >> 16) & 0xffffULL);
+                const uint32_t my_fingerprint =
+                        static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
                 bool found = false;
                 buf_index_t result = 0;
@@ -508,13 +522,13 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                     uint64_t packed = st.load(sycl::memory_order::acquire);
                     uint32_t s;
                     buf_index_t bi;
-                    uint16_t fp;
+                    uint32_t fp;
                     UnpackSlot(packed, s, bi, fp);
 
-                    if (s == kSYCLSlotEmpty) {
+                    if (s == kSlotEmpty) {
                         break;
                     }
-                    if (s == kSYCLSlotOccupied && fp == my_fingerprint) {
+                    if (s == kSlotOccupied && fp == my_fingerprint) {
                         const Key* slot_key =
                                 static_cast<const Key*>(accessor.GetKeyPtr(bi));
                         if (eq_fn(*slot_key, key)) {
@@ -528,10 +542,11 @@ void SYCLHashBackend<Key, Hash, Eq>::Find(const void* input_keys,
                 output_buf_indices[tid] = found ? result : 0;
             };
 
+    const int64_t wg_size = wg_size_;
     const int64_t global_size =
-            ((count + kSYCLHashWgSize - 1) / kSYCLHashWgSize) * kSYCLHashWgSize;
+            ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
-              cgh.parallel_for(sycl::nd_range<1>(global_size, kSYCLHashWgSize),
+              cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                find_kernel);
           }).wait_and_throw();
 }
@@ -558,8 +573,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
         const int64_t mask = bucket_count - 1;
         const uint64_t hash = HashMix(hash_fn(key));
         const int64_t home = static_cast<int64_t>(hash & mask);
-        const uint16_t my_fingerprint =
-                static_cast<uint16_t>((hash >> 16) & 0xffffULL);
+        const uint32_t my_fingerprint =
+                static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
         bool erased = false;
         for (int64_t probe = 0; probe < bucket_count; ++probe) {
@@ -570,18 +585,18 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
             uint64_t packed = st.load(sycl::memory_order::acquire);
             uint32_t s;
             buf_index_t bi;
-            uint16_t fp;
+            uint32_t fp;
             UnpackSlot(packed, s, bi, fp);
 
-            if (s == kSYCLSlotEmpty) {
+            if (s == kSlotEmpty) {
                 break;
             }
-            if (s == kSYCLSlotOccupied && fp == my_fingerprint) {
+            if (s == kSlotOccupied && fp == my_fingerprint) {
                 const Key* slot_key =
                         static_cast<const Key*>(accessor.GetKeyPtr(bi));
                 if (eq_fn(*slot_key, key)) {
                     uint64_t expected_packed = packed;
-                    uint64_t deleted_val = PackSlot(kSYCLSlotDeleted, bi, fp);
+                    uint64_t deleted_val = PackSlot(kSlotDeleted, bi, fp);
                     if (st.compare_exchange_strong(
                                 expected_packed, deleted_val,
                                 sycl::memory_order::acq_rel,
@@ -600,10 +615,11 @@ void SYCLHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
         output_masks[tid] = erased;
     };
 
+    const int64_t wg_size = wg_size_;
     const int64_t global_size =
-            ((count + kSYCLHashWgSize - 1) / kSYCLHashWgSize) * kSYCLHashWgSize;
+            ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
-              cgh.parallel_for(sycl::nd_range<1>(global_size, kSYCLHashWgSize),
+              cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                erase_kernel);
           }).wait_and_throw();
 }
@@ -618,7 +634,7 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
             MemoryManager::Malloc(sizeof(int), this->device_));
     queue_.memset(d_count, 0, sizeof(int)).wait_and_throw();
 
-    constexpr int64_t kWgSize = 256;
+    const int64_t kWgSize = wg_size_;
 
     auto scan_kernel = [=](sycl::nd_item<1> item) {
         int64_t idx = item.get_global_id(0);
@@ -629,7 +645,7 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
         if (idx < bucket_count) {
             const uint64_t packed = slot_data[idx];
             uint32_t s = static_cast<uint32_t>((packed >> 32) & 0xfULL);
-            if (s == kSYCLSlotOccupied) {
+            if (s == kSlotOccupied) {
                 is_occupied = true;
                 bi = static_cast<buf_index_t>(packed & 0xffffffffULL);
             }
@@ -683,7 +699,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Clear() {
 template <typename Key, typename Hash, typename Eq>
 void SYCLHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
     this->capacity_ = capacity;
-    bucket_count_ = NextPowerOfTwo(std::max<int64_t>(capacity * 2, 1));
+    bucket_count_ = NextPowerOfTwo(std::max<int64_t>(
+            capacity * kHashBucketCountMultiplier, 1));
 
     this->buffer_ = std::make_shared<HashBackendBuffer>(
             this->capacity_, this->key_dsize_, this->value_dsizes_,

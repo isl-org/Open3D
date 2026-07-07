@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -50,6 +51,17 @@ struct SYCLDevice {
     /// memory.
     bool discrete_gpu = false;
     uint64_t global_mem_size = 0;  ///< Global memory size in bytes.
+    /// Sub-group (SIMD/wave) widths natively supported by the device, e.g.
+    /// {8, 16, 32} on discrete Arc GPUs vs {16, 32} on some integrated Xe
+    /// GPUs. 
+    std::vector<size_t> sub_group_sizes{};
+
+    /// True if \p size is one of the device's natively supported sub-group
+    /// widths (safe to request via `[[sycl::reqd_sub_group_size(size)]]`).
+    bool SupportsSubgroupSize(size_t size) const {
+        return std::find(sub_group_sizes.begin(), sub_group_sizes.end(),
+                         size) != sub_group_sizes.end();
+    }
 };
 
 #ifdef BUILD_SYCL_MODULE

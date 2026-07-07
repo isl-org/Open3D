@@ -34,3 +34,13 @@ target_sources(benchmarks PRIVATE
 )
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
 target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Direct-dispatch hyperparameter sweep for the SYCL kNN and HashMap kernels;
+# needs -fsycl (it calls DispatchKnnDirect directly). 
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(benchmarks PRIVATE
+        core/NearestNeighborSearchSYCLTuning.cpp
+        core/NearestNeighborSearchSYCLAddMMTuning.cpp
+        core/HashMapSYCLTuning.cpp
+    )
+endif()
