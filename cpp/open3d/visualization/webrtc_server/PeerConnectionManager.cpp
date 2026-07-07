@@ -456,8 +456,8 @@ bool PeerConnectionManager::WindowStillUsed(const std::string &window_uid) {
 const Json::Value PeerConnectionManager::HangUp(const std::string &peerid) {
     bool result = false;
     PeerConnectionObserver *pc_observer = nullptr;
-    std::string hangup_window_uid;
     {
+        std::string hangup_window_uid;
         std::lock_guard<std::mutex> mutex_lock(peerid_to_connection_mutex_);
         auto it = peerid_to_connection_.find(peerid);
         if (it != peerid_to_connection_.end()) {
