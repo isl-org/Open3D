@@ -82,9 +82,9 @@ bool GaussianSplatOpenGLContext::InitializeStandalone() {
 
 #if !defined(_WIN32)
     if (std::strcmp(GetSessionType(), "wayland") == 0) {
-        utility::LogInfo(
+        utility::LogDebug(
                 "GaussianSplatOpenGLContext: Wayland session detected; "
-                "using X11/GLX via XWayland for Filament compatibility.");
+                "using X11/GLX via XWayland.");
     }
 #endif
 
@@ -100,9 +100,8 @@ bool GaussianSplatOpenGLContext::InitializeStandalone() {
     glfwDefaultWindowHints();
     if (!window) {
         utility::LogWarning(
-                "GaussianSplatOpenGLContext: glfwCreateWindow failed. "
-                "Linux offscreen rendering now requires an X11/XWayland "
-                "server.");
+                "GaussianSplatOpenGLContext: GS helper window failed. "
+                "Gaussian Splat rendering is not available.");
         return false;
     }
 
