@@ -18,7 +18,8 @@
 
 #pragma once
 
-#include <pc/video_track_source.h>
+#include <api/scoped_refptr.h>
+#include <rtc_base/ref_counted_object.h>
 
 #include "open3d/visualization/webrtc_server/BitmapTrackSource.h"
 
@@ -34,14 +35,15 @@ namespace webrtc_server {
 template <class T>
 class VideoFilter : public BitmapTrackSource {
 public:
-    static rtc::scoped_refptr<VideoFilter> Create(
-            rtc::scoped_refptr<BitmapTrackSourceInterface> video_source,
+    static webrtc::scoped_refptr<VideoFilter> Create(
+            webrtc::scoped_refptr<BitmapTrackSourceInterface> video_source,
             const std::map<std::string, std::string>& opts) {
         std::unique_ptr<T> source = absl::WrapUnique(new T(video_source, opts));
         if (!source) {
             return nullptr;
         }
-        return new rtc::RefCountedObject<VideoFilter>(std::move(source));
+        return webrtc::scoped_refptr<VideoFilter>(
+                new webrtc::RefCountedObject<VideoFilter>(std::move(source)));
     }
 
 protected:
@@ -61,7 +63,7 @@ protected:
     }
 
 private:
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
+    webrtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
         return source_.get();
     }
     std::unique_ptr<T> source_;

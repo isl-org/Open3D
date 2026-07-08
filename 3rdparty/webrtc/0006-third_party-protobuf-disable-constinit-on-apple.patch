@@ -1,0 +1,37 @@
+Subject: [PATCH] third_party/protobuf: disable constinit on Apple in port_def.inc
+
+Apple Clang >= 12 expands PROTOBUF_CONSTINIT to constinit or
+[[clang::require_constant_initialization]], which produces a hard
+"variable does not have a constant initializer" error for weak default
+instance pointers on Apple platforms (Xcode 15.4). Skip both branches
+on __APPLE__ so PROTOBUF_CONSTINIT expands to nothing there.
+
+Note: this patch must be applied with the working directory at the
+`third_party` git root (not `third_party/protobuf`, which is a plain
+subdirectory and not a repository root) -- see apply_webrtc_patches.sh.
+
+diff --git a/protobuf/src/google/protobuf/port_def.inc b/protobuf/src/google/protobuf/port_def.inc
+--- a/protobuf/src/google/protobuf/port_def.inc
++++ b/protobuf/src/google/protobuf/port_def.inc
+@@ -469,7 +469,7 @@
+ #  define PROTOBUF_CONSTEXPR constexpr
+ # endif
+ #else
+-# if defined(__cpp_constinit) && !defined(__CYGWIN__)
++# if defined(__cpp_constinit) && !defined(__CYGWIN__) && !defined(__APPLE__)
+ #  define PROTOBUF_CONSTINIT constinit
+ #  define PROTOBUF_CONSTEXPR constexpr
+ #  define PROTOBUF_CONSTINIT_DEFAULT_INSTANCES
+@@ -477,10 +477,9 @@
+ // constant-initializing weak default instance pointers. Versions 12.0 and
+ // higher seem to work, except that XCode 12.5.1 shows the error even though it
+ // uses Clang 12.0.5.
+-#elif !defined(__CYGWIN__) && !defined(__MINGW32__) &&                 \
++# elif !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__APPLE__) && \
+     ABSL_HAVE_CPP_ATTRIBUTE(clang::require_constant_initialization) && \
+-    ((defined(__APPLE__) && PROTOBUF_CLANG_MIN(13, 0)) ||              \
+-     (!defined(__APPLE__) && PROTOBUF_CLANG_MIN(12, 0)))
++    PROTOBUF_CLANG_MIN(12, 0)
+ #  define PROTOBUF_CONSTINIT [[clang::require_constant_initialization]]
+ #  define PROTOBUF_CONSTEXPR constexpr
+ #  define PROTOBUF_CONSTINIT_DEFAULT_INSTANCES
