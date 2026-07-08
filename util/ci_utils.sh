@@ -247,8 +247,14 @@ build_pip_package() {
         mkdir -p build_cpu
         pushd build_cpu
         if [ ! -f CMakeCache.txt ]; then
-            cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_PYTHON_MODULE=ON \
-                "${cmakeOptions[@]}" ..
+            # cmakeOptions already contains "-DBUILD_CUDA_MODULE=ON" (added
+            # above for the main build). CMake resolves repeated -D flags
+            # left-to-right with the last one winning, so BUILD_CUDA_MODULE=OFF
+            # must come AFTER cmakeOptions is expanded, or it would be
+            # silently overridden back to ON, defeating the point of this
+            # CPU-only companion wheel.
+            cmake "${cmakeOptions[@]}" \
+                -DBUILD_PYTHON_MODULE=ON -DBUILD_CUDA_MODULE=OFF ..
         fi
         make VERBOSE=1 -j"$NPROC" pip-package
         popd

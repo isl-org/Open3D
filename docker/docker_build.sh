@@ -387,9 +387,10 @@ sycl-shared_export_env() {
 
     options="$(echo "$@" | tr ' ' '|')"
 
-    if [[ "$options" =~ py3(7|8|9|10|11|12|13) ]]; then
+    # Matches e.g. "py3.10" as passed by the SYCL workflow (py${{
+    # matrix.python_version }}, where python_version is dotted, e.g. "3.10").
+    if [[ "$options" =~ py3\.(7|8|9|10|11|12|13|14) ]]; then
         PYTHON_VERSION=${BASH_REMATCH[0]#py}
-        PYTHON_VERSION="${PYTHON_VERSION:0:1}.${PYTHON_VERSION:1}"
         export BUILD_PYTHON_MODULE=ON
     fi
 
