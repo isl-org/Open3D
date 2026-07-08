@@ -210,16 +210,24 @@ build_pip_package() {
         cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
     fi
     set -x
-    # Always (re-)run cmake with --fresh: the build directory may have been
-    # inherited from a previous "build-lib" step (e.g. CI's split lib+wheel
-    # jobs), whose CMakeCache.txt was configured with BUILD_PYTHON_MODULE=OFF
-    # and/or a different Python interpreter (e.g. a "dummy" Python version
-    # used only to build the C++ core). Reusing that cache would either skip
-    # the pip-package target entirely, or silently keep stale cached
-    # Python3_EXECUTABLE/Torch paths that don't match the Python version we
-    # are packaging for now. --fresh discards CMakeCache.txt/CMakeFiles and
-    # reconfigures from scratch; ccache still makes the ensuing rebuild fast.
-    cmake --fresh -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" "${cmakeOptions[@]}" ..
+    # Always (re-)run cmake: the build directory may have been inherited from
+    # a previous "build-lib" step (e.g. CI's split lib+wheel jobs), whose
+    # CMakeCache.txt was configured with BUILD_PYTHON_MODULE=OFF and/or a
+    # different Python interpreter (e.g. a "dummy" Python version used only
+    # to build the C++ core). Reusing that cache unmodified would either skip
+    # the pip-package target entirely, or silently keep a stale cached
+    # Python3_EXECUTABLE that doesn't match the Python version we are
+    # packaging for now. Explicitly force Python3_EXECUTABLE to the active
+    # interpreter (from PATH) so find_package(Python3) / FindPytorch.cmake
+    # re-derive all dependent paths (include dirs, Torch, etc.) for it.
+    # Avoid --fresh here: it wipes CMakeFiles/ (all compiled objects) which,
+    # on Docker-based builds layered on top of an already-built "build-lib"
+    # image, does not actually reclaim space (union filesystem) and can
+    # exhaust runner disk; a plain reconfigure only rebuilds what changed.
+    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
+        -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+        -DPython3_EXECUTABLE="$(command -v python3)" \
+        "${cmakeOptions[@]}" ..
     set +x
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
         echo "Building Open3D C++ Core only..."
