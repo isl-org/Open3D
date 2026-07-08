@@ -120,10 +120,7 @@ jobs:
           arch: x64
 
       - name: Download WebRTC sources
-        # shell: bash uses Git Bash on Windows, which transparently converts
-        # Windows-style env paths (e.g. OPEN3D_DIR, WEBRTC_WORK_ROOT) so they
-        # work in bash string and pushd contexts.
-        shell: bash
+        shell: bash # Git Bash transparently converts Windows-style env paths
         run: |
           source "$OPEN3D_DIR/3rdparty/webrtc/webrtc_build.sh"
           download_webrtc_sources

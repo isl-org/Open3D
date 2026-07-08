@@ -49,12 +49,7 @@ webrtc_work_root() {
 webrtc_setup_path() {
     local root
     root="$(webrtc_work_root)"
-    # On Windows the work root is a native path like 'C:\WebRTC'. The colon in
-    # the drive letter is bash's PATH separator, which would split
-    # 'C:\WebRTC/depot_tools' into the two entries 'C' and '\WebRTC/depot_tools'.
-    # '\WebRTC/...' then causes sha256sum to prefix its output with '\' (GNU
-    # coreutils escapes paths that contain backslashes), making the CIPD hash
-    # check fail. cygpath is available in Git Bash / MSYS2; convert to POSIX.
+    # On Windows: C:\WebRTC -> /c/WebRTC. (colon is problematic in bash paths.)
     if command -v cygpath >/dev/null 2>&1; then
         root="$(cygpath -u "$root")"
     fi

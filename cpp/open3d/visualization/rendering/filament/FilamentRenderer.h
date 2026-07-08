@@ -156,7 +156,6 @@ private:
     bool needs_wait_after_draw_ = false;
 #if defined(__APPLE__)
     // Scratch buffer for RequestReadPixels' Metal RGBA readback workaround;
-    // reused across frames and resized only when the frame size changes.
     std::vector<uint8_t> read_pixels_rgba_buffer_;
 #endif
 };

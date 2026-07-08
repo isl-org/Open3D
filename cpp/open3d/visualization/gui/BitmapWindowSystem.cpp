@@ -45,8 +45,6 @@ struct BitmapEvent {
     virtual void Execute() = 0;
 };
 
-// Forward declaration: BitmapDrawEvent needs a pointer to BitmapEventQueue
-// to clear the per-window pending-draw flag before calling OnDraw().
 struct BitmapEventQueue;
 
 struct BitmapDrawEvent : public BitmapEvent {
@@ -105,23 +103,20 @@ struct BitmapTextInputEvent : public BitmapEvent {
     }
 };
 
-/// Thread safe event queue (multiple producers and consumers).
-/// pop_front() and push() are protected by a mutex.
-/// push() may fail if the mutex cannot be acquired immediately.
-/// empty() is not protected and is not reliable.
+/// Thread safe event queue (multiple producers and consumers). pop_front() and
+/// push() are protected by a mutex. push() may fail if the mutex cannot be
+/// acquired immediately. empty() is not protected and is not reliable.
 ///
-/// Extended to support:
+/// Also supports:
 /// - Draw coalescing: at most one pending draw per window (push_draw).
-/// - Input coalescing: MOVE/DRAG replace latest, WHEEL accumulates
-///   dx/dy (replace_or_merge_mouse). Old mouse positions are stale;
-///   processing them forces stale frames to be encoded and sent.
+/// - Input coalescing: MOVE/DRAG replace latest, WHEEL accumulates dx/dy
+/// (replace_or_merge_mouse). Old mouse positions are stale and discarded.
 struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
     using value_t = std::shared_ptr<BitmapEvent>;
     using super = std::queue<value_t>;
 
     using super::empty;  // not reliable
     using super::super;
-
     // pop + front needs to be atomic for thread safety. This is exception safe
     // since shared_ptr copy ctor is noexcept, when it is returned by value.
     value_t pop_front() {
@@ -130,7 +125,6 @@ struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
         super::pop();
         return evt;
     }
-
     void push(const value_t &event) {
         if (evt_q_mutex_.try_lock()) {
             super::push(event);
@@ -171,11 +165,9 @@ struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
     }
 
     // For MOVE/DRAG: replace the last queued event of the same (target, type)
-    // with the new event (latest absolute position wins; camera controllers
-    // derive delta from absolute coords so intermediate positions are useless).
+    // with the new event (latest absolute position wins).
     // For WHEEL: accumulate wheel.dx/dy into the last queued event of the same
-    // (target, type) so that the total scroll amount is preserved even when
-    // multiple notches fire faster than the render loop.
+    // (target, type) so that the total scroll amount is preserved.
     // Falls back to a normal push when no matching event is at the back.
     void replace_or_merge_mouse(const value_t &event) {
         std::lock_guard<std::mutex> lock(evt_q_mutex_);

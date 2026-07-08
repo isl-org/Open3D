@@ -12,12 +12,11 @@ WEBRTC_SRC="${2:?WebRTC src path}"
 # IMPORTANT: <dir> must be the *root* of a git checkout (i.e. the directory
 # containing .git), not an arbitrary subdirectory. `git apply` run from a
 # subdirectory with paths relative to that subdirectory silently no-ops
-# ("Skipped patch ..." on stderr, exit 0) instead of applying or erroring, at
-# least with the git version used by our CI/dev images. Patches touching
-# files under a git-tracked *plain* subdirectory (e.g. third_party/protobuf,
-# which is not itself a repository root) must therefore be applied from the
-# enclosing repo root (third_party) with paths prefixed accordingly (e.g.
-# protobuf/src/...) -- see 0006 and 0009.
+# ("Skipped patch ..." on stderr, exit 0) instead of applying or erroring.
+# Patches touching files under a git-tracked *plain* subdirectory (e.g.
+# third_party/protobuf, which is not itself a repository root) must therefore be
+# applied from the enclosing repo root (third_party) with paths prefixed
+# accordingly (e.g.  protobuf/src/...) -- see 0006 and 0009.
 #
 # A patch is considered "already applied" when it applies in reverse; in that
 # case it is skipped without error so the script is safe to re-run and tolerant

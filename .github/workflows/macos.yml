@@ -204,10 +204,6 @@ jobs:
 
           # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
           # brew install gcc is required so that `brew --prefix gcc` resolves;
-          # without it, the symlink below silently points to a literal,
-          # unexpanded glob string and gfortran remains "not found" later.
-          # Use a glob instead of a hardcoded gfortran-<N> version, since the
-          # runner's default gcc/gfortran version can change over time.
           brew install gcc
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 

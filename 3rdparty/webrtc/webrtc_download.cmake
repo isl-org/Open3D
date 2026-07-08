@@ -8,17 +8,9 @@ set(WEBRTC_VER e8b4d4c)
 set(WEBRTC_BASE_URL
     https://github.com/isl-org/open3d_downloads/releases/download/webrtc-v4)
 
-# Windows prebuilt WebRTC ships four variants (Debug / Release x /MT[d] //
-# MD[d] runtime). Visual Studio (a multi-config generator) selects Debug vs.
-# Release at *build* time (`cmake --build . --config ...`), not at CMake
-# configure time, so CMAKE_BUILD_TYPE cannot be used to decide which single
-# variant to download. For multi-config generators, the STATIC_WINDOWS_RUNTIME
-# choice (mt vs md) is still fixed at configure time, but the Debug/Release
-# pick is deferred to build time via a `$<CONFIG>` generator expression, so
-# only the variant actually built is ever downloaded (see the
-# add_custom_command below). Single-config generators (Ninja, Makefiles)
-# resolve to one variant now, defaulting to Release if CMAKE_BUILD_TYPE is
-# unset.
+# Windows: four prebuilt variants (Debug/Release x /MT[d]/MD[d]). Multi-config
+# generators pick Debug vs Release at build time via $<CONFIG>; single-config
+# generators download one variant at configure time (Release if unset).
 get_property(WEBRTC_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
 if (APPLE)
@@ -27,9 +19,6 @@ if (APPLE)
     )
     set(WEBRTC_SHA256 3c2592a3bd9efcee591924007857342fec3753e2ae68695baeb2b8774f0e3abc)
 elseif (WIN32)
-    # Prebuilt WebRTC is a static lib for both MSVC runtimes. A shared Open3D
-    # build links it into open3d.dll and always uses the dynamic runtime, so
-    # only BUILD_SHARED_LIBS=ON + STATIC_WINDOWS_RUNTIME=ON is unsupported.
     if (BUILD_SHARED_LIBS AND STATIC_WINDOWS_RUNTIME)
         message(FATAL_ERROR "Pre-built WebRTC does not support "
             "BUILD_SHARED_LIBS=ON with STATIC_WINDOWS_RUNTIME=ON. Use "
@@ -53,9 +42,6 @@ elseif (WIN32)
     if(NOT WEBRTC_MULTI_CONFIG)
         # Single-config generator: resolve to one variant now, as with the
         # other platforms below.
-        if(NOT CMAKE_BUILD_TYPE)
-            set(CMAKE_BUILD_TYPE Release)
-        endif()
         if(CMAKE_BUILD_TYPE STREQUAL Debug)
             set(WEBRTC_URL ${WEBRTC_DEBUG_URL})
             set(WEBRTC_SHA256 ${WEBRTC_DEBUG_SHA256})
@@ -77,14 +63,7 @@ else()  # Linux
 endif()
 
 if(WIN32 AND WEBRTC_MULTI_CONFIG)
-    # Multi-config (Visual Studio): don't download both variants up front.
-    # ExternalProject_Add's URL/URL_HASH are resolved once at configure time
-    # into a fixed download script, so they can't pick a variant based on
-    # $<CONFIG>. Instead, drive the download from a plain add_custom_command
-    # whose OUTPUT path embeds $<CONFIG>; multi-config generators only build
-    # the outputs needed for the config actually requested
-    # (`cmake --build . --config ...`), so only one variant -- the one
-    # actually built -- ever gets downloaded.
+    # ExternalProject_Add cannot vary URL per config; use add_custom_command + webrtc_fetch_variant.cmake.
     set(WEBRTC_PREBUILT_ROOT "${CMAKE_BINARY_DIR}/webrtc/$<CONFIG>")
     set(WEBRTC_STAMP "${WEBRTC_PREBUILT_ROOT}/webrtc_fetch.stamp")
     add_custom_command(

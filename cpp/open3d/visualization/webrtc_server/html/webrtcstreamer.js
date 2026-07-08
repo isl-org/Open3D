@@ -50,9 +50,9 @@ let WebRtcStreamer = (function() {
         this.onClose = onClose;
         this.commsFetch = commsFetch;
 
-        // Pending coalesced pointer/wheel events. A single requestAnimationFrame
-        // flushes both at most once per browser frame (~60 Hz), preventing a
-        // backlog of stale events from queuing up on the server.
+        // Pending coalesced pointer/wheel events. A single
+        // requestAnimationFrame flushes both at most once per browser frame
+        // (~60 Hz).
         this.pendingPointerEvent = null;  // MOVE or DRAG (latest wins)
         this.pendingWheelEvent = null;    // WHEEL (dx/dy accumulated)
         this.rafPending = false;
@@ -138,10 +138,8 @@ let WebRtcStreamer = (function() {
      * e.g. window_0.
      * @param {string} audiourl Od of WebRTC audio stream
      * @param {string} options Options of WebRTC call
-     * @param {string} stream Local stream to send
      */
-    WebRtcStreamer.prototype.connect = function(
-            videourl, audiourl, options, localstream) {
+    WebRtcStreamer.prototype.connect = function(videourl, audiourl, options) {
         this.disconnect();
 
         // getIceServers is not already received
@@ -156,12 +154,11 @@ let WebRtcStreamer = (function() {
                     .then((response) => response.json())
                     .then((response) => logAndReturn(response))
                     .then((response) => this.onReceiveGetIceServers.call(
-                                  this, response, videourl, audiourl, options,
-                                  localstream))
+                                  this, response, videourl, audiourl, options))
                     .catch((error) => this.onError('getIceServers ' + error));
         } else {
             this.onReceiveGetIceServers(
-                    this.iceServers, videourl, audiourl, options, localstream);
+                    this.iceServers, videourl, audiourl, options);
         }
 
         // Set callback functions.
@@ -480,7 +477,7 @@ let WebRtcStreamer = (function() {
      * GetIceServers callback
      */
     WebRtcStreamer.prototype.onReceiveGetIceServers = function(
-            iceServers, videourl, audiourl, options, stream) {
+            iceServers, videourl, audiourl, options) {
         this.iceServers = iceServers;
         this.pcConfig = iceServers || {iceServers: []};
         try {
@@ -495,47 +492,25 @@ let WebRtcStreamer = (function() {
                 callurl += '&options=' + encodeURIComponent(options);
             }
 
-            if (stream) {
-                this.pc.addStream(stream);
-            }
-
-            // Prefer VP9 via the standard setCodecPreferences() API.
-            // Must be called on the transceiver BEFORE createOffer().
-            // For receive-only mode (no local stream), we create the video
-            // transceiver explicitly — offerToReceiveVideo creates it lazily
-            // inside createOffer(), which is too late to set preferences.
-            // Falls back silently to VP8 if the browser does not support the
-            // API or if VP9 is not in the browser's capabilities.
+            // Prefer VP9 on recv-only video (before createOffer). Sending is
+            // C++.
             var pc = this.pc;
-            if (typeof RTCRtpReceiver !== 'undefined' &&
-                    RTCRtpReceiver.getCapabilities && pc.addTransceiver) {
+            if (pc.addTransceiver && typeof RTCRtpReceiver !== 'undefined' &&
+                RTCRtpReceiver.getCapabilities) {
                 var videoCaps = RTCRtpReceiver.getCapabilities('video');
                 if (videoCaps) {
-                    var vp9Codecs = videoCaps.codecs.filter(function(c) {
+                    var preferredCodecs = videoCaps.codecs.filter(function(c) {
                         return c.mimeType === 'video/VP9';
                     });
-                    if (vp9Codecs.length) {
-                        var preferredCodecs = vp9Codecs.concat(
+                    if (preferredCodecs.length) {
+                        preferredCodecs = preferredCodecs.concat(
                                 videoCaps.codecs.filter(function(c) {
                                     return c.mimeType !== 'video/VP9';
                                 }));
-                        if (stream) {
-                            // Local video being sent: find the transceiver
-                            // addStream() created and apply preferences.
-                            pc.getTransceivers().forEach(function(t) {
-                                if (t.sender && t.sender.track &&
-                                        t.sender.track.kind === 'video' &&
-                                        t.setCodecPreferences) {
-                                    t.setCodecPreferences(preferredCodecs);
-                                }
-                            });
-                        } else {
-                            // Receive-only: create transceiver explicitly.
-                            var vt = pc.addTransceiver(
-                                    'video', {direction: 'recvonly'});
-                            if (vt.setCodecPreferences) {
-                                vt.setCodecPreferences(preferredCodecs);
-                            }
+                        var videoReceiver = pc.addTransceiver(
+                                'video', {direction: 'recvonly'});
+                        if (videoReceiver.setCodecPreferences) {
+                            videoReceiver.setCodecPreferences(preferredCodecs);
                         }
                     }
                 }
@@ -664,13 +639,12 @@ let WebRtcStreamer = (function() {
                 const recvs = pc.getReceivers();
 
                 recvs.forEach((recv) => {
+                    // Minimize browser jitter buffer to reduce playout latency.
+                    // 1. RTP playout-delay header extensions with min=max=0 via the
+                    // WebRTC-ForceSendPlayoutDelay field trial.
+                    // 2. Set jitterBufferTarget to 0 for browsers that honour the
+                    // JS API.
                     if (recv.track && recv.track.kind === 'video') {
-                        // Minimize browser jitter buffer to reduce playout
-                        // latency. The server already sends RTP playout-delay
-                        // header extensions with min=max=0 via the
-                        // WebRTC-ForceSendPlayoutDelay field trial, but set
-                        // jitterBufferTarget as well for browsers that honour
-                        // the JS API over the in-band RTP extension.
                         if (typeof recv.jitterBufferTarget !== 'undefined') {
                             recv.jitterBufferTarget = 0;
                         }
@@ -686,13 +660,9 @@ let WebRtcStreamer = (function() {
         };
 
         // Local datachannel sends data.
-        // Use reliable ordered delivery (the default). While unordered +
-        // unreliable would reduce head-of-line blocking for mouse MOVE/DRAG,
-        // the same channel carries discrete events (BUTTON_DOWN/UP, key events,
-        // resize) and application-level RPC (tensorboard/update_geometry etc.)
-        // that must not be lost or reordered. Mouse coalescing (rAF + server-
-        // side replace_or_merge_mouse) already prevents event backlog, so the
-        // extra reliability is free in practice on a local network.
+        // Use reliable ordered delivery (the default). Unordered +
+        // unreliable would introduce errors in application RPC
+        // (tensorboard/update_geometry etc.) logic.
         try {
             this.dataChannel = pc.createDataChannel('ClientDataChannel');
             var dataChannel = this.dataChannel;
@@ -758,11 +728,9 @@ let WebRtcStreamer = (function() {
      */
     WebRtcStreamer.prototype.onTrack = function(event) {
         console.log('Remote track added: ' + event.track.kind);
-
         if (event.track.kind !== 'video') {
             return;
         }
-
         var stream = event.streams && event.streams[0];
         if (!stream) {
             if (!this.remoteStream) {

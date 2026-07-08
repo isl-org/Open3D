@@ -1,19 +1,12 @@
-# Fetches and extracts a single prebuilt WebRTC variant.
-#
-# Invoked via `cmake -P` from a custom command (see webrtc_download.cmake)
-# rather than ExternalProject_Add's URL/URL_HASH, so that the URL can be
-# selected lazily, per-config, with a $<CONFIG> generator expression. This
-# avoids downloading unused Debug/Release variants on Windows: a Visual
-# Studio (multi-config) build only runs this script for whichever config is
-# actually being built (`cmake --build . --config ...`), typically just one.
+# Cmake script to fetch and extract a single prebuilt WebRTC variant at build
+# time by multi-config generators (Visual Studio).
 #
 # Required -D args:
 #   URL    -- archive URL to download
 #   SHA256 -- expected sha256 of the archive
 #   DEST   -- extraction directory (recreated on a (re-)download)
 #   STAMP  -- marker file created on success; if it already exists, this
-#             script is a no-op (nothing to do, matching variant already
-#             extracted at DEST).
+#             script is a no-op.
 foreach(var URL SHA256 DEST STAMP)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "webrtc_fetch_variant.cmake: -D${var}=... is required")
