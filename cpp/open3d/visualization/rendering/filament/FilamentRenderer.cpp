@@ -189,8 +189,8 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 }
 
 void FilamentRenderer::BeginFrame() {
-    const bool run_gs_pipeline =
-            gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_);
+    const bool run_gs_pipeline = gaussian_splat_renderer_ &&
+                                 ScenesHaveGaussianSplatGeometry(scenes_);
 
     // We will complete render to buffer requests first
     if (!buffer_renderers_.empty()) {
@@ -215,34 +215,36 @@ void FilamentRenderer::BeginFrame() {
 #if !defined(__APPLE__)
             // Drain any pending Filament (OpenGL) work before the geometry pass
             // begins. Filament renders on its own driver thread with an OpenGL
-            // backend; flushAndWait() enqueues glFinish() there and blocks until
-            // it completes. This ensures the shared interop textures from the
-            // previous frame are no longer in use by the GL driver before Vulkan
-            // compute overwrites them. (Vulkan and Filament run independent queues;
-            // there is no shared queue between them.)
+            // backend; flushAndWait() enqueues glFinish() there and blocks
+            // until it completes. This ensures the shared interop textures from
+            // the previous frame are no longer in use by the GL driver before
+            // Vulkan compute overwrites them. (Vulkan and Filament run
+            // independent queues; there is no shared queue between them.)
             engine_.flushAndWait();
 #endif
 
-            // Dispatch Gaussian splat geometry work before Filament's beginFrame
-        // so our queue submissions do not conflict with Filament's frame.
-        //
-        // Build live_views from ALL views that must not be pruned: scene views
-        // (including cached-but-inactive ones) AND active buffer-renderer views
-        // whose capture is still pending.  Buffer-renderer views must be added
-        // BEFORE PruneOutputs() so their outputs are not destroyed mid-capture.
-        std::unordered_set<const FilamentView*> live_views;
-        for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-            scene->ForEachView([&live_views](const FilamentView& view) {
-                live_views.insert(&view);
-            });
-            scene->ForEachActiveView([this, &scene](FilamentView& view) {
-                gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
-            });
-        }
-        for (const auto& br : buffer_renderers_) {
-            live_views.insert(static_cast<FilamentView*>(&br->GetView()));
-        }
-        gaussian_splat_renderer_->PruneOutputs(live_views);
+            // Dispatch Gaussian splat geometry work before Filament's
+            // beginFrame
+            // so our queue submissions do not conflict with Filament's frame.
+            //
+            // Build live_views from ALL views that must not be pruned: scene
+            // views (including cached-but-inactive ones) AND active
+            // buffer-renderer views whose capture is still pending.
+            // Buffer-renderer views must be added BEFORE PruneOutputs() so
+            // their outputs are not destroyed mid-capture.
+            std::unordered_set<const FilamentView*> live_views;
+            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
+                scene->ForEachView([&live_views](const FilamentView& view) {
+                    live_views.insert(&view);
+                });
+                scene->ForEachActiveView([this, &scene](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
+                });
+            }
+            for (const auto& br : buffer_renderers_) {
+                live_views.insert(static_cast<FilamentView*>(&br->GetView()));
+            }
+            gaussian_splat_renderer_->PruneOutputs(live_views);
         }
     }
 
@@ -260,7 +262,8 @@ void FilamentRenderer::Draw() {
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
 #if !defined(__APPLE__)
-        if (gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_)) {
+        if (gaussian_splat_renderer_ &&
+            ScenesHaveGaussianSplatGeometry(scenes_)) {
             // Wait for Filament's OpenGL scene draw to finish so the shared
             // depth texture is fully written before the composite pass reads
             // it.
@@ -290,7 +293,8 @@ void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
 #if defined(__APPLE__)
-        if (gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_)) {
+        if (gaussian_splat_renderer_ &&
+            ScenesHaveGaussianSplatGeometry(scenes_)) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth

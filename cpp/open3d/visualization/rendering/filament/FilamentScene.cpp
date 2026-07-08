@@ -101,23 +101,23 @@ const std::unordered_map<std::string, MaterialHandle>& ShaderMappings() {
     // Built on first use so MaterialHandle::Next() ids in
     // FilamentResourceManager.cpp are initialized first (avoids SIOF).
     static const std::unordered_map<std::string, MaterialHandle> mappings = {
-        {"defaultLit", ResourceManager::kDefaultLit},
-        {"defaultLitTransparency",
-         ResourceManager::kDefaultLitWithTransparency},
-        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
-        {"defaultUnlitTransparency",
-         ResourceManager::kDefaultUnlitWithTransparency},
-        {"defaultUnlit", ResourceManager::kDefaultUnlit},
-        {"normals", ResourceManager::kDefaultNormalShader},
-        {"depth", ResourceManager::kDefaultDepthShader},
-        {"depthValue", ResourceManager::kDefaultDepthValueShader},
-        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
-        {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
-        {"unlitPolygonOffset",
-         ResourceManager::kDefaultUnlitPolygonOffsetShader},
-        {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
-        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+            {"defaultLit", ResourceManager::kDefaultLit},
+            {"defaultLitTransparency",
+             ResourceManager::kDefaultLitWithTransparency},
+            {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
+            {"defaultUnlitTransparency",
+             ResourceManager::kDefaultUnlitWithTransparency},
+            {"defaultUnlit", ResourceManager::kDefaultUnlit},
+            {"normals", ResourceManager::kDefaultNormalShader},
+            {"depth", ResourceManager::kDefaultDepthShader},
+            {"depthValue", ResourceManager::kDefaultDepthValueShader},
+            {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
+            {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+            {"unlitPolygonOffset",
+             ResourceManager::kDefaultUnlitPolygonOffsetShader},
+            {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+            {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
+            {"unlitLine", ResourceManager::kDefaultLineShader}};
     return mappings;
 }
 
