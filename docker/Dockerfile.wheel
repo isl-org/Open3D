@@ -104,8 +104,12 @@ RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# BASE_IMAGE may already have this cloned (see docker_build.sh's "build-lib"
+# mode / CI's split lib+wheel jobs), so skip if it already exists.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}; \
+    fi
 
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
