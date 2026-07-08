@@ -210,14 +210,26 @@ jobs:
           cmake --version
           $CMAKE_ARGS = @()
           if ('${{ matrix.device }}' -eq 'xpu') {
-            # Runs setvars.bat via cmd and imports
-            # all resulting env vars into the current PowerShell process.
+            # Runs setvars.bat via cmd and imports all resulting env vars into
+            # the current PowerShell process AND into $GITHUB_ENV. The latter
+            # is required because each workflow step ("Config", "Build",
+            # "Package", ...) runs in a brand new process: env vars set only
+            # via [System.Environment]::SetEnvironmentVariable (default scope
+            # Process) do NOT survive past this step. Without $GITHUB_ENV,
+            # later steps (e.g. Build) lose LIB/INCLUDE/PATH set by
+            # setvars.bat, so icx fails to find its own runtime libs (e.g.
+            # libircmt.lib) when ExternalProject sub-builds (zlib,
+            # directxheaders, ...) run their own fresh compiler ABI detection
+            # during the Build step.
             Write-Host "Initializing oneAPI environment via setvars.bat..."
             $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
             if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
             $setOutput | ForEach-Object {
               if ($_ -match '^([^=]+)=(.*)$') {
-                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
+                $varName = $Matches[1]
+                $varValue = $Matches[2]
+                [System.Environment]::SetEnvironmentVariable($varName, $varValue)
+                "$varName=$varValue" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
               }
             }
             $CMAKE_GENERATOR = "Ninja"
