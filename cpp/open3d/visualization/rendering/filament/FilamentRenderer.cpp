@@ -50,6 +50,21 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+namespace {
+
+inline bool ScenesHaveGaussianSplatGeometry(
+        const std::unordered_map<REHandle_abstract,
+                                 std::unique_ptr<FilamentScene>>& scenes) {
+    for (const auto& [handle, scene] : scenes) {
+        if (scene->HasGaussianSplatGeometry()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
 FilamentRenderer::FilamentRenderer(filament::Engine& engine,
                                    void* native_drawable,
                                    FilamentResourceManager& resource_mgr)
@@ -174,6 +189,9 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 }
 
 void FilamentRenderer::BeginFrame() {
+    const bool run_gs_pipeline =
+            gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_);
+
     // We will complete render to buffer requests first
     if (!buffer_renderers_.empty()) {
         for (auto& br : buffer_renderers_) {
@@ -193,18 +211,19 @@ void FilamentRenderer::BeginFrame() {
 
     if (gaussian_splat_renderer_) {
         gaussian_splat_renderer_->BeginFrame();
+        if (run_gs_pipeline) {
 #if !defined(__APPLE__)
-        // Drain any pending Filament (OpenGL) work before the geometry pass
-        // begins. Filament renders on its own driver thread with an OpenGL
-        // backend; flushAndWait() enqueues glFinish() there and blocks until
-        // it completes. This ensures the shared interop textures from the
-        // previous frame are no longer in use by the GL driver before Vulkan
-        // compute overwrites them. (Vulkan and Filament run independent queues;
-        // there is no shared queue between them.)
-        engine_.flushAndWait();
+            // Drain any pending Filament (OpenGL) work before the geometry pass
+            // begins. Filament renders on its own driver thread with an OpenGL
+            // backend; flushAndWait() enqueues glFinish() there and blocks until
+            // it completes. This ensures the shared interop textures from the
+            // previous frame are no longer in use by the GL driver before Vulkan
+            // compute overwrites them. (Vulkan and Filament run independent queues;
+            // there is no shared queue between them.)
+            engine_.flushAndWait();
 #endif
 
-        // Dispatch Gaussian splat geometry work before Filament's beginFrame
+            // Dispatch Gaussian splat geometry work before Filament's beginFrame
         // so our queue submissions do not conflict with Filament's frame.
         //
         // Build live_views from ALL views that must not be pruned: scene views
@@ -224,6 +243,7 @@ void FilamentRenderer::BeginFrame() {
             live_views.insert(static_cast<FilamentView*>(&br->GetView()));
         }
         gaussian_splat_renderer_->PruneOutputs(live_views);
+        }
     }
 
     frame_started_ = renderer_->beginFrame(swap_chain_);
@@ -240,7 +260,7 @@ void FilamentRenderer::Draw() {
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
 #if !defined(__APPLE__)
-        if (gaussian_splat_renderer_) {
+        if (gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_)) {
             // Wait for Filament's OpenGL scene draw to finish so the shared
             // depth texture is fully written before the composite pass reads
             // it.
@@ -270,7 +290,7 @@ void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
 #if defined(__APPLE__)
-        if (gaussian_splat_renderer_) {
+        if (gaussian_splat_renderer_ && ScenesHaveGaussianSplatGeometry(scenes_)) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
