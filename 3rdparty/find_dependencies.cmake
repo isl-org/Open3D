@@ -963,10 +963,10 @@ endif()
 # targets (which Open3D::3rdparty_curl/openssl are).
 if(UNIX AND NOT APPLE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-        "-Wl,--start-group"
+        "-Wl,-("
         Open3D::3rdparty_curl
         Open3D::3rdparty_openssl
-        "-Wl,--end-group")
+        "-Wl,-)")
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
 endif()
