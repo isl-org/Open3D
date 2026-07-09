@@ -104,12 +104,6 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
-      # Pre-built WebRTC on Windows is only available for the static
-      # (/MT, /MTd) MSVC runtime. SYCL (xpu) builds always force the dynamic
-      # (/MD, /MDd) runtime instead (icx rejects -fsycl combined with /MT),
-      # so WebRTC must stay disabled for xpu legs regardless of
-      # STATIC_RUNTIME, to avoid RuntimeLibrary link mismatches.
-      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device != 'xpu' ) && 'ON' || 'OFF' }}
       BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.device == 'xpu' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
@@ -258,7 +252,6 @@ jobs:
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
@@ -577,7 +570,6 @@ jobs:
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `

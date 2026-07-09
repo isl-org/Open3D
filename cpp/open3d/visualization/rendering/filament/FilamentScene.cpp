@@ -97,33 +97,38 @@ using MaterialHandle = open3d::visualization::rendering::MaterialHandle;
 using ResourceManager =
         open3d::visualization::rendering::FilamentResourceManager;
 
-std::unordered_map<std::string, MaterialHandle> shader_mappings = {
-        {"defaultLit", ResourceManager::kDefaultLit},
-        {"defaultLitTransparency",
-         ResourceManager::kDefaultLitWithTransparency},
-        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
-        {"defaultUnlitTransparency",
-         ResourceManager::kDefaultUnlitWithTransparency},
-        {"defaultUnlit", ResourceManager::kDefaultUnlit},
-        {"normals", ResourceManager::kDefaultNormalShader},
-        {"depth", ResourceManager::kDefaultDepthShader},
-        {"depthValue", ResourceManager::kDefaultDepthValueShader},
-        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
-        {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
-        {"unlitPolygonOffset",
-         ResourceManager::kDefaultUnlitPolygonOffsetShader},
-        {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
-        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+const std::unordered_map<std::string, MaterialHandle>& ShaderMappings() {
+    // Built on first use so MaterialHandle::Next() ids in
+    // FilamentResourceManager.cpp are initialized first (avoids SIOF).
+    static const std::unordered_map<std::string, MaterialHandle> mappings = {
+            {"defaultLit", ResourceManager::kDefaultLit},
+            {"defaultLitTransparency",
+             ResourceManager::kDefaultLitWithTransparency},
+            {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
+            {"defaultUnlitTransparency",
+             ResourceManager::kDefaultUnlitWithTransparency},
+            {"defaultUnlit", ResourceManager::kDefaultUnlit},
+            {"normals", ResourceManager::kDefaultNormalShader},
+            {"depth", ResourceManager::kDefaultDepthShader},
+            {"depthValue", ResourceManager::kDefaultDepthValueShader},
+            {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
+            {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+            {"unlitPolygonOffset",
+             ResourceManager::kDefaultUnlitPolygonOffsetShader},
+            {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+            {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
+            {"unlitLine", ResourceManager::kDefaultLineShader}};
+    return mappings;
+}
 
-MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
-MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
-MaterialHandle kMesh = ResourceManager::kDefaultLit;
-
-MaterialHandle kColoredPointcloud = ResourceManager::kDefaultUnlit;
-MaterialHandle kPointcloud = ResourceManager::kDefaultLit;
-
-MaterialHandle kLineset = ResourceManager::kDefaultUnlit;
+MaterialHandle ShaderToMaterial(const std::string& shader_name) {
+    const auto& mappings = ShaderMappings();
+    auto it = mappings.find(shader_name);
+    if (it != mappings.end() && it->second) {
+        return it->second;
+    }
+    return ResourceManager::kDefaultUnlit;
+}
 
 }  // namespace defaults_mapping
 
@@ -638,8 +643,7 @@ MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
         filament::RenderableManager::Builder& builder,
         const MaterialRecord& material) {
     // TODO: put this in a method
-    auto shader = defaults_mapping::shader_mappings[material.shader];
-    if (!shader) shader = defaults_mapping::kColorOnlyMesh;
+    auto shader = defaults_mapping::ShaderToMaterial(material.shader);
 
     auto material_instance = resource_mgr_.CreateMaterialInstance(shader);
     auto wmat_instance = resource_mgr_.GetMaterialInstance(material_instance);
@@ -1644,8 +1648,7 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {
         // TODO: put this in a method
-        auto shader = defaults_mapping::shader_mappings[material.shader];
-        if (!shader) shader = defaults_mapping::kColorOnlyMesh;
+        auto shader = defaults_mapping::ShaderToMaterial(material.shader);
         auto old_mi = geom->mat.mat_instance;
         auto new_mi = resource_mgr_.CreateMaterialInstance(shader);
         auto wmat_instance = resource_mgr_.GetMaterialInstance(new_mi);

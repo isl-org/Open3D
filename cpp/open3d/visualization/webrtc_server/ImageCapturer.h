@@ -10,11 +10,12 @@
 
 #pragma once
 
-#include <api/video/i420_buffer.h>
+#include <api/scoped_refptr.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
 #include <media/base/video_broadcaster.h>
 #include <media/base/video_common.h>
+#include <rtc_base/ref_counted_object.h>
 
 #include <memory>
 
@@ -26,7 +27,7 @@ namespace open3d {
 namespace visualization {
 namespace webrtc_server {
 
-class ImageCapturer : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
+class ImageCapturer : public webrtc::VideoSourceInterface<webrtc::VideoFrame> {
 public:
     ImageCapturer(const std::string& url_,
                   const std::map<std::string, std::string>& opts);
@@ -39,23 +40,23 @@ public:
     ImageCapturer(const std::map<std::string, std::string>& opts);
 
     virtual void AddOrUpdateSink(
-            rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-            const rtc::VideoSinkWants& wants) override;
+            webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+            const webrtc::VideoSinkWants& wants) override;
 
     virtual void RemoveSink(
-            rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+            webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
     void OnCaptureResult(const std::shared_ptr<core::Tensor>& frame);
 
 protected:
     int width_;
     int height_;
-    rtc::VideoBroadcaster broadcaster_;
+    webrtc::VideoBroadcaster broadcaster_;
 };
 
 class ImageTrackSource : public BitmapTrackSource {
 public:
-    static rtc::scoped_refptr<BitmapTrackSourceInterface> Create(
+    static webrtc::scoped_refptr<BitmapTrackSourceInterface> Create(
             const std::string& window_uid,
             const std::map<std::string, std::string>& opts) {
         std::unique_ptr<ImageCapturer> capturer =
@@ -63,10 +64,9 @@ public:
         if (!capturer) {
             return nullptr;
         }
-        rtc::scoped_refptr<BitmapTrackSourceInterface> video_source =
-                new rtc::RefCountedObject<ImageTrackSource>(
-                        std::move(capturer));
-        return video_source;
+        return webrtc::scoped_refptr<BitmapTrackSourceInterface>(
+                new webrtc::RefCountedObject<ImageTrackSource>(
+                        std::move(capturer)));
     }
 
     void OnFrame(const std::shared_ptr<core::Tensor>& frame) final override {
@@ -78,7 +78,7 @@ protected:
         : BitmapTrackSource(/*remote=*/false), capturer_(std::move(capturer)) {}
 
 private:
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
+    webrtc::VideoSourceInterface<webrtc::VideoFrame>* source() override {
         return capturer_.get();
     }
     std::unique_ptr<ImageCapturer> capturer_;
