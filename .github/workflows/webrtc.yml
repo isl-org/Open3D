@@ -5,238 +5,178 @@ on:
   workflow_dispatch:
     inputs:
       webrtc_commit:
-        description: 'Specify WebRTC commit to build.'
+        description: 'WebRTC src commit (full or short).'
         required: false
-        default: '60e674842ebae283cc6b2627f4b6f2f8186f3317'  # Date: Wed Apr 7 19:12:13 2021 +0200
+        default: 'e8b4d4c5952a8fb7b35c2a6cba4e8c3de2ea2e1e'
       depot_tools_commit:
-        description: 'Specify Depot Tools commit to to use for the build.'
+        description: 'depot_tools commit (override pin in webrtc_build.sh).'
         required: false
-        default: 'e1a98941d3ab10549be6d82d0686bb0fb91ec903' # Date: Wed Apr 7 21:35:29 2021 +0000
-      build_linux:
-        description: 'Build Linux binary (x86_64)'
-        type: boolean
-        required: false
-        default: true
-      build_macos:
-        description: 'Build macOS binary (arm64)'
-        type: boolean
-        required: false
-        default: true
-      build_windows_static:
-        description: 'Build Windows Static Runtime binary (x86_64)'
-        type: boolean
-        required: false
-        default: true
-      build_windows_dll:
-        description: 'Build Windows DLL (Dynamic Runtime) binary (x86_64)'
-        type: boolean
-        required: false
-        default: true
+        default: '10eda50a3fd9c34ad8d31ec74e5f4eb5823d60f6'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
+  WEBRTC_WORK_ROOT: ${{ github.workspace }}/..
+  GCLIENT_JOBS: 8
 
 jobs:
 
   Unix:
     permissions:
-      contents: write  # upload
+      contents: read
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      # `enabled` carries the workflow_dispatch toggle into the matrix so that
-      # individual entries can be skipped (the matrix context is not available
-      # in a job-level `if`, so per-entry gating is done at the step level).
       matrix:
         include:
           - os: ubuntu-22.04
-            platform: linux
-            enabled: ${{ github.event.inputs.build_linux }}
-            artifact_name: webrtc_release_ubuntu-22.04
+            package_suffix: linux_cxx-abi-1
           - os: macos-14
-            platform: macos
-            enabled: ${{ github.event.inputs.build_macos }}
-            artifact_name: webrtc_release_macos-14-arm64
-    runs-on: ${{ matrix.os }}
+            package_suffix: macos_arm64
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set parallel build jobs
-        run: echo "NPROC=$(getconf _NPROCESSORS_ONLN)" >> "$GITHUB_ENV"
-
-      - name: Set up Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.12'
 
-      - name: Install dependencies (Linux)
-        if: matrix.enabled == 'true' && matrix.platform == 'linux'
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           install_dependencies_ubuntu
 
       - name: Download WebRTC sources
-        if: matrix.enabled == 'true'
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           download_webrtc_sources
 
       - name: Build WebRTC
-        if: matrix.enabled == 'true'
         run: |
           source 3rdparty/webrtc/webrtc_build.sh
           build_webrtc
 
       - name: Upload WebRTC
-        if: matrix.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
+          name: webrtc_${{ matrix.package_suffix }}
           path: |
             webrtc_*.tar.gz
-            checksum_*.txt
+            checksum_webrtc_*.tar.gz
           if-no-files-found: error
 
   Windows:
     permissions:
-      contents: write  # upload
-    # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
+      contents: read
+    runs-on: windows-2022
     strategy:
       fail-fast: false
-      # `enabled` carries the workflow_dispatch toggle into the matrix so that
-      # individual entries can be skipped (the matrix context is not available
-      # in a job-level `if`, so per-entry gating is done at the step level).
       matrix:
         include:
-          - variant: static
+          - config: Release
             static_runtime: ON
-            zip_suffix: win
-            checksum_file: checksum_win.txt
-            enabled: ${{ github.event.inputs.build_windows_static }}
-            artifact_name: webrtc_release_windows_static
-          - variant: dll
+            tag: Release_mt
+          - config: Release
             static_runtime: OFF
-            zip_suffix: win_dll
-            checksum_file: checksum_win_dll.txt
-            enabled: ${{ github.event.inputs.build_windows_dll }}
-            artifact_name: webrtc_release_windows_dll
-    runs-on: windows-2022
+            tag: Release_md
+          - config: Debug
+            static_runtime: ON
+            tag: Debug_mt
+          - config: Debug
+            static_runtime: OFF
+            tag: Debug_md
     env:
-      WORK_DIR: "C:\\WebRTC"  # Not enough space in D:
-      OPEN3D_DIR: "D:\\a\\open3d\\open3d"
-      DEPOT_TOOLS_UPDATE: 1   # Fix cannot find python3_bin_reldir.txt
-      DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      WORK_DIR: 'C:\WebRTC'
+      OPEN3D_DIR: ${{ github.workspace }}
+      WEBRTC_WORK_ROOT: 'C:\WebRTC'
+      DEPOT_TOOLS_UPDATE: 0        # belt-and-suspenders; also set by webrtc_setup_path
+      DEPOT_TOOLS_WIN_TOOLCHAIN: 0 # use locally installed VS, not the Chromium toolchain
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set parallel build jobs
-        shell: pwsh
-        run: echo "NPROC=$env:NUMBER_OF_PROCESSORS" >> $env:GITHUB_ENV
-
-      - name: Set up Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.12'
 
-      - name: Disk space
-        if: matrix.enabled == 'true'
+      - name: Prepare work directory
         shell: pwsh
         run: |
           Get-PSDrive
-          New-Item -ItemType Directory -Force -Path "$env:WORK_DIR" | Out-Null
+          New-Item -ItemType Directory -Force -Path $env:WORK_DIR
 
       - name: Setup PATH for Visual Studio
-        if: matrix.enabled == 'true'
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
       - name: Download WebRTC sources
-        if: matrix.enabled == 'true'
-        shell: pwsh
-        working-directory: ${{ env.WORK_DIR }}
+        shell: bash # Git Bash transparently converts Windows-style env paths
         run: |
-          $ErrorActionPreference = 'Stop'
-          echo "Get depot_tools"
-          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          git -C depot_tools checkout $env:DEPOT_TOOLS_COMMIT
-          $env:Path = (Get-Item depot_tools).FullName + ";" + $env:Path
-
-          echo "Get WebRTC"
-          New-Item -ItemType Directory -Force -Path webrtc | Out-Null
-          Push-Location webrtc
-          fetch webrtc
-          git -C src checkout $env:WEBRTC_COMMIT
-          git -C src submodule update --init --recursive
-          echo "gclient sync"
-          gclient sync -D --force --reset
-          Pop-Location
-          curl "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" -o skipcache
+          source "$OPEN3D_DIR/3rdparty/webrtc/webrtc_build.sh"
+          download_webrtc_sources
 
       - name: Patch WebRTC
-        if: matrix.enabled == 'true'
         shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           Copy-Item "$env:OPEN3D_DIR/3rdparty/webrtc/CMakeLists.txt" webrtc/
           Copy-Item "$env:OPEN3D_DIR/3rdparty/webrtc/webrtc_common.cmake" webrtc/
+          bash "$env:OPEN3D_DIR/3rdparty/webrtc/apply_webrtc_patches.sh" `
+            "$env:OPEN3D_DIR" "$env:WORK_DIR/webrtc/src"
 
-      - name: Build WebRTC (Release and Debug)
-        if: matrix.enabled == 'true'
+      - name: Build and package WebRTC
         shell: pwsh
         working-directory: ${{ env.WORK_DIR }}
         env:
-          STATIC_WINDOWS_RUNTIME: ${{ matrix.static_runtime }}
+          BUILD_CONFIG: ${{ matrix.config }}
+          STATIC_RT: ${{ matrix.static_runtime }}
+          WIN_TAG: ${{ matrix.tag }}
         run: |
           $ErrorActionPreference = 'Stop'
-          # Use real ninja.exe for CMake; depot_tools/ninja breaks generator detection.
-          $cmakeNinja = (Get-Command ninja.exe -ErrorAction SilentlyContinue).Source
-          if (-not $cmakeNinja) {
-            $cmakeNinja = "${env:ProgramFiles}\CMake\bin\ninja.exe"
-          }
-          if (-not (Test-Path -LiteralPath $cmakeNinja)) {
-            throw "Cannot find ninja.exe for CMake (tried PATH and $cmakeNinja)"
-          }
-
-          foreach ($config in @('Release', 'Debug')) {
-            New-Item -ItemType Directory -Force -Path webrtc/build | Out-Null
-            Push-Location webrtc/build
-            cmake -G Ninja `
-              -D CMAKE_MAKE_PROGRAM="$cmakeNinja" `
-              -D CMAKE_BUILD_TYPE=$config `
-              -D "CMAKE_INSTALL_PREFIX=$env:WORK_DIR/webrtc_release/$config" `
-              -D "STATIC_WINDOWS_RUNTIME=$env:STATIC_WINDOWS_RUNTIME" `
-              ..
-            ninja -j $env:NPROC install
-            Pop-Location
-            Remove-Item -Recurse -Force webrtc/build
-          }
-
-      - name: Package WebRTC
-        if: matrix.enabled == 'true'
-        shell: pwsh
-        working-directory: ${{ env.WORK_DIR }}
-        env:
-          ZIP_SUFFIX: ${{ matrix.zip_suffix }}
-          CHECKSUM_FILE: ${{ matrix.checksum_file }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $env:WEBRTC_COMMIT_SHORT = (git -C webrtc/src rev-parse --short=7 HEAD)
-          $zipName = "webrtc_${env:WEBRTC_COMMIT_SHORT}_${env:ZIP_SUFFIX}.zip"
-          cmake -E tar cv $zipName --format=zip -- webrtc_release
-          cmake -E sha256sum $zipName | Tee-Object -FilePath $env:CHECKSUM_FILE
+          # Locate the VS-installed ninja.exe *before* prepending depot_tools to
+          # PATH.  depot_tools contains a Unix wrapper script named 'ninja' (no
+          # extension) that Windows cannot execute; if depot_tools appears first
+          # in PATH cmake -G Ninja picks up that script and fails with
+          # "unknown error" when trying to run 'ninja --version'.
+          $ninjaExe = (Get-Command ninja.exe -ErrorAction Stop).Source
+          $env:Path = (Get-Item depot_tools).FullName + ';' + $env:Path
+          $installRoot = Join-Path $env:WORK_DIR "webrtc_pkg"
+          if (Test-Path $installRoot) { Remove-Item -Recurse -Force $installRoot }
+          New-Item -ItemType Directory -Force -Path webrtc/build | Out-Null
+          Push-Location webrtc/build
+          $debugFlag = if ($env:BUILD_CONFIG -eq 'Debug') { 'ON' } else { 'OFF' }
+          cmake -G Ninja `
+            -D CMAKE_MAKE_PROGRAM="$ninjaExe" `
+            -D CMAKE_BUILD_TYPE=$env:BUILD_CONFIG `
+            -D WEBRTC_IS_DEBUG=$debugFlag `
+            -D WEBRTC_STATIC_MSVC_RUNTIME=$env:STATIC_RT `
+            -D CMAKE_INSTALL_PREFIX=$installRoot `
+            ..
+          ninja install
+          Pop-Location
+          $short = (git -C webrtc/src rev-parse --short=7 HEAD)
+          $zip = "webrtc_${short}_win_$env:WIN_TAG.zip"
+          Push-Location $installRoot
+          cmake -E tar cvf (Join-Path $env:OPEN3D_DIR $zip) --format=zip .
+          Pop-Location
+          cmake -E sha256sum (Join-Path $env:OPEN3D_DIR $zip) | Tee-Object -FilePath (Join-Path $env:OPEN3D_DIR "checksum_$zip")
 
       - name: Upload WebRTC
-        if: matrix.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
+          name: webrtc_win_${{ matrix.tag }}
           path: |
-            ${{ env.WORK_DIR }}/webrtc_*.zip
-            ${{ env.WORK_DIR }}/checksum_*.txt
+            webrtc_*_win_*.zip
+            checksum_webrtc_*_win_*.zip
           if-no-files-found: error

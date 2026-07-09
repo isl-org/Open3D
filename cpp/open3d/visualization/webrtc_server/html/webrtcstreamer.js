@@ -12,18 +12,6 @@
 // any purpose.
 // ----------------------------------------------------------------------------
 
-(function() {
-const enableLogging = false;
-if (enableLogging === false) {
-    if (typeof window.console === 'undefined') {
-        window.console = {};
-    }
-    window.console.log = window.console.info = window.console.debug =
-            window.console.warning = window.console.assert =
-                    window.console.error = function() {};
-}
-}());
-
 let WebRtcStreamer = (function() {
     // Immediately-executing anonymous functions to enforce variable scope.
 
@@ -49,8 +37,6 @@ let WebRtcStreamer = (function() {
         this.pc = null;
         this.dataChannel = null;
 
-        this.pcOptions = {optional: [{DtlsSrtpKeyAgreement: true}]};
-
         this.mediaConstraints = {
             offerToReceiveAudio: true,
             offerToReceiveVideo: true,
@@ -58,10 +44,18 @@ let WebRtcStreamer = (function() {
 
         this.iceServers = null;
         this.earlyCandidates = [];
+        this.remoteStream = null;
 
         // Open3D-specific functions.
         this.onClose = onClose;
         this.commsFetch = commsFetch;
+
+        // Pending coalesced pointer/wheel events. A single
+        // requestAnimationFrame flushes both at most once per browser frame
+        // (~60 Hz).
+        this.pendingPointerEvent = null;  // MOVE or DRAG (latest wins)
+        this.pendingWheelEvent = null;    // WHEEL (dx/dy accumulated)
+        this.rafPending = false;
     }
 
     const logAndReturn = function(value) {
@@ -144,10 +138,8 @@ let WebRtcStreamer = (function() {
      * e.g. window_0.
      * @param {string} audiourl Od of WebRTC audio stream
      * @param {string} options Options of WebRTC call
-     * @param {string} stream Local stream to send
      */
-    WebRtcStreamer.prototype.connect = function(
-            videourl, audiourl, options, localstream) {
+    WebRtcStreamer.prototype.connect = function(videourl, audiourl, options) {
         this.disconnect();
 
         // getIceServers is not already received
@@ -162,12 +154,11 @@ let WebRtcStreamer = (function() {
                     .then((response) => response.json())
                     .then((response) => logAndReturn(response))
                     .then((response) => this.onReceiveGetIceServers.call(
-                                  this, response, videourl, audiourl, options,
-                                  localstream))
+                                  this, response, videourl, audiourl, options))
                     .catch((error) => this.onError('getIceServers ' + error));
         } else {
             this.onReceiveGetIceServers(
-                    this.iceServers, videourl, audiourl, options, localstream);
+                    this.iceServers, videourl, audiourl, options);
         }
 
         // Set callback functions.
@@ -180,6 +171,26 @@ let WebRtcStreamer = (function() {
         if (typeof this.dataChannel != 'undefined') {
             this.dataChannel.send(JSON.stringify(jsonData));
         }
+    };
+
+    // Schedule a requestAnimationFrame flush of pending coalesced events.
+    // Only one rAF is scheduled at a time; calling again while one is already
+    // pending is a no-op. When the frame fires, the latest pointer event and
+    // the accumulated wheel event (if any) are sent and cleared.
+    WebRtcStreamer.prototype._scheduleRafFlush = function() {
+        if (this.rafPending) return;
+        this.rafPending = true;
+        requestAnimationFrame(() => {
+            this.rafPending = false;
+            if (this.pendingPointerEvent !== null) {
+                this.sendJsonData(this.pendingPointerEvent);
+                this.pendingPointerEvent = null;
+            }
+            if (this.pendingWheelEvent !== null) {
+                this.sendJsonData(this.pendingWheelEvent);
+                this.pendingWheelEvent = null;
+            }
+        });
     };
 
     WebRtcStreamer.prototype.addEventListeners = function(windowUID) {
@@ -333,7 +344,9 @@ let WebRtcStreamer = (function() {
                 // - Open3D: L=1, M=2, R=4
                 // - JavaScript: L=1, R=2, M=4
                 event.preventDefault();
-                var open3dMouseEvent = {
+                // Throttle to one event per animation frame. Only the latest
+                // absolute position matters; intermediate positions are stale.
+                this.pendingPointerEvent = {
                     window_uid: windowUID,
                     class_name: 'MouseEvent',
                     type: event.buttons === 0 ? 'MOVE' : 'DRAG',
@@ -344,7 +357,7 @@ let WebRtcStreamer = (function() {
                         buttons: event.buttons,  // MouseButtons ORed together
                     },
                 };
-                this.sendJsonData(open3dMouseEvent);
+                this._scheduleRafFlush();
             }, false);
             this.videoElt.addEventListener('touchmove', (event) => {
                 // TODO: Known differences. Currently only left-key drag works.
@@ -352,7 +365,8 @@ let WebRtcStreamer = (function() {
                 // - JavaScript: L=1, R=2, M=4
                 event.preventDefault();
                 var rect = event.target.getBoundingClientRect();
-                var open3dMouseEvent = {
+                // Throttle to one event per animation frame (latest wins).
+                this.pendingPointerEvent = {
                     window_uid: windowUID,
                     class_name: 'MouseEvent',
                     type: 'DRAG',
@@ -363,7 +377,7 @@ let WebRtcStreamer = (function() {
                         buttons: 1,  // MouseButtons ORed together
                     },
                 };
-                this.sendJsonData(open3dMouseEvent);
+                this._scheduleRafFlush();
             }, false);
             this.videoElt.addEventListener('mouseleave', (event) => {
                 var open3dMouseEvent = {
@@ -397,20 +411,36 @@ let WebRtcStreamer = (function() {
                 dx = dx === 0 ? dx : (-dx / Math.abs(dx)) * 1;
                 dy = dy === 0 ? dy : (-dy / Math.abs(dy)) * 1;
 
-                var open3dMouseEvent = {
-                    window_uid: windowUID,
-                    class_name: 'MouseEvent',
-                    type: 'WHEEL',
-                    x: event.offsetX,
-                    y: event.offsetY,
-                    modifiers: WebRtcStreamer._getModifiers(event),
-                    wheel: {
-                        dx: dx,
-                        dy: dy,
-                        isTrackpad: isTrackpad ? 1 : 0,
-                    },
-                };
-                this.sendJsonData(open3dMouseEvent);
+                if (this.pendingWheelEvent === null) {
+                    // First wheel event in this frame: create a new pending
+                    // event and schedule a flush.
+                    this.pendingWheelEvent = {
+                        window_uid: windowUID,
+                        class_name: 'MouseEvent',
+                        type: 'WHEEL',
+                        x: event.offsetX,
+                        y: event.offsetY,
+                        modifiers: WebRtcStreamer._getModifiers(event),
+                        wheel: {
+                            dx: dx,
+                            dy: dy,
+                            isTrackpad: isTrackpad ? 1 : 0,
+                        },
+                    };
+                    this._scheduleRafFlush();
+                } else {
+                    // Subsequent wheel events in the same frame: accumulate
+                    // dx/dy so the total scroll amount is preserved, and
+                    // update cursor position to the latest coordinates.
+                    this.pendingWheelEvent.wheel.dx += dx;
+                    this.pendingWheelEvent.wheel.dy += dy;
+                    this.pendingWheelEvent.x = event.offsetX;
+                    this.pendingWheelEvent.y = event.offsetY;
+                    this.pendingWheelEvent.modifiers =
+                            WebRtcStreamer._getModifiers(event);
+                    this.pendingWheelEvent.wheel.isTrackpad =
+                            isTrackpad ? 1 : 0;
+                }
             }, {passive: false});
         }
     };
@@ -420,8 +450,10 @@ let WebRtcStreamer = (function() {
      */
     WebRtcStreamer.prototype.disconnect = function() {
         if (this.videoElt) {
-            this.videoElt.src = '';
+            this.videoElt.srcObject = null;
+            this.videoElt.removeAttribute('src');
         }
+        this.remoteStream = null;
         if (this.pc) {
             WebRtcStreamer
                     .remoteCall(
@@ -445,7 +477,7 @@ let WebRtcStreamer = (function() {
      * GetIceServers callback
      */
     WebRtcStreamer.prototype.onReceiveGetIceServers = function(
-            iceServers, videourl, audiourl, options, stream) {
+            iceServers, videourl, audiourl, options) {
         this.iceServers = iceServers;
         this.pcConfig = iceServers || {iceServers: []};
         try {
@@ -460,8 +492,28 @@ let WebRtcStreamer = (function() {
                 callurl += '&options=' + encodeURIComponent(options);
             }
 
-            if (stream) {
-                this.pc.addStream(stream);
+            // Prefer VP9 on recv-only video (before createOffer). Sending is
+            // C++.
+            var pc = this.pc;
+            if (pc.addTransceiver && typeof RTCRtpReceiver !== 'undefined' &&
+                RTCRtpReceiver.getCapabilities) {
+                var videoCaps = RTCRtpReceiver.getCapabilities('video');
+                if (videoCaps) {
+                    var preferredCodecs = videoCaps.codecs.filter(function(c) {
+                        return c.mimeType === 'video/VP9';
+                    });
+                    if (preferredCodecs.length) {
+                        preferredCodecs = preferredCodecs.concat(
+                                videoCaps.codecs.filter(function(c) {
+                                    return c.mimeType !== 'video/VP9';
+                                }));
+                        var videoReceiver = pc.addTransceiver(
+                                'video', {direction: 'recvonly'});
+                        if (videoReceiver.setCodecPreferences) {
+                            videoReceiver.setCodecPreferences(preferredCodecs);
+                        }
+                    }
+                }
             }
 
             // clear early candidates
@@ -536,9 +588,8 @@ let WebRtcStreamer = (function() {
     WebRtcStreamer.prototype.createPeerConnection = function() {
         console.log(
                 'createPeerConnection  config: ' +
-                JSON.stringify(this.pcConfig) +
-                ' option:' + JSON.stringify(this.pcOptions));
-        this.pc = new RTCPeerConnection(this.pcConfig, this.pcOptions);
+                JSON.stringify(this.pcConfig));
+        this.pc = new RTCPeerConnection(this.pcConfig);
         var pc = this.pc;
         pc.peerid = Math.random();
 
@@ -546,9 +597,8 @@ let WebRtcStreamer = (function() {
         pc.onicecandidate = function(evt) {
             bind.onIceCandidate.call(bind, evt);
         };
-        pc.onaddstream = function(
-                evt) {  // TODO: Deprecated. Switch to ontrack.
-            bind.onAddStream.call(bind, evt);
+        pc.ontrack = function(evt) {
+            bind.onTrack.call(bind, evt);
         };
         pc.oniceconnectionstatechange = function(evt) {
             console.log(
@@ -589,17 +639,30 @@ let WebRtcStreamer = (function() {
                 const recvs = pc.getReceivers();
 
                 recvs.forEach((recv) => {
-                    if (recv.track && recv.track.kind === 'video' &&
-                        typeof recv.getParameters != 'undefined') {
-                        console.log(
-                                'codecs:' +
-                                JSON.stringify(recv.getParameters().codecs));
+                    // Minimize browser jitter buffer to reduce playout latency.
+                    // 1. RTP playout-delay header extensions with min=max=0 via the
+                    // WebRTC-ForceSendPlayoutDelay field trial.
+                    // 2. Set jitterBufferTarget to 0 for browsers that honour the
+                    // JS API.
+                    if (recv.track && recv.track.kind === 'video') {
+                        if (typeof recv.jitterBufferTarget !== 'undefined') {
+                            recv.jitterBufferTarget = 0;
+                        }
+                        if (typeof recv.getParameters != 'undefined') {
+                            console.log(
+                                    'codecs:' +
+                                    JSON.stringify(
+                                            recv.getParameters().codecs));
+                        }
                     }
                 });
             }
         };
 
-        // Local datachannel sends data
+        // Local datachannel sends data.
+        // Use reliable ordered delivery (the default). Unordered +
+        // unreliable would introduce errors in application RPC
+        // (tensorboard/update_geometry etc.) logic.
         try {
             this.dataChannel = pc.createDataChannel('ClientDataChannel');
             var dataChannel = this.dataChannel;
@@ -624,8 +687,7 @@ let WebRtcStreamer = (function() {
 
         console.log(
                 'Created RTCPeerConnection with config: ' +
-                JSON.stringify(this.pcConfig) +
-                'option:' + JSON.stringify(this.pcOptions));
+                JSON.stringify(this.pcConfig));
         return pc;
     };
 
@@ -662,12 +724,25 @@ let WebRtcStreamer = (function() {
     };
 
     /*
-     * RTCPeerConnection AddTrack callback
+     * RTCPeerConnection ontrack callback (Unified Plan).
      */
-    WebRtcStreamer.prototype.onAddStream = function(event) {
-        console.log('Remote track added:' + JSON.stringify(event));
+    WebRtcStreamer.prototype.onTrack = function(event) {
+        console.log('Remote track added: ' + event.track.kind);
+        if (event.track.kind !== 'video') {
+            return;
+        }
+        var stream = event.streams && event.streams[0];
+        if (!stream) {
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+            }
+            this.remoteStream.addTrack(event.track);
+            stream = this.remoteStream;
+        } else {
+            this.remoteStream = stream;
+        }
 
-        this.videoElt.srcObject = event.stream;
+        this.videoElt.srcObject = stream;
         var promise = this.videoElt.play();
         if (typeof promise !== 'undefined') {
             var bind = this;

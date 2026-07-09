@@ -1,25 +1,25 @@
-# This CMake file is intended to be used inside Dockerfile.webrtc.
+# CMake driver for building the WebRTC prebuilt static libraries.
+# Invoked by webrtc_build.sh (Unix CI) and webrtc.yml (Windows CI).
+# Copied to <work>/webrtc/ alongside webrtc_common.cmake before cmake is
+# configured from <work>/webrtc/build/.
 #
-# 1) We assume the following directory structure:
-#    /
-#    ├── depot_tools              # ${DEPOT_TOOLS_ROOT}, should be added to PATH
-#    └── webrtc                   # ${WEBRTC_ROOT}
-#        ├── CMakeLists.txt       # This CMakeLists.txt itself (copied to container)
-#        ├── webrtc_common.cmake  # Common configs for WebRTC (copied to container)
-#        ├── .gclient
-#        └── src             # The actual git directory
+# Expected directory layout:
+#   <work>/
+#   ├── depot_tools/         # ${DEPOT_TOOLS_ROOT}, must be on PATH
+#   └── webrtc/              # ${WEBRTC_ROOT} = ${PROJECT_SOURCE_DIR}
+#       ├── CMakeLists.txt   # this file
+#       ├── webrtc_common.cmake
+#       ├── .gclient
+#       └── src/             # WebRTC source tree
 #
-# 2) CMake will compile two libraries libwebrtc.a and libwebrtc_extra.a.
-#    - libwebrtc.a compilation is driven by Ninja, the output will be in:
-#      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc.a
-#    - libwebrtc_extra.a compilation is driven by Ninja but CMake packages the
-#      object files into a static library, the output will be in:
-#      ${WEBRTC_ROOT}/src/out/Release/obj/libwebrtc_extra.a
+# Outputs (relative to CMAKE_INSTALL_PREFIX):
+#   lib/libwebrtc.a         - main WebRTC static lib (built by gn/ninja)
+#   lib/libwebrtc_extra.a   - supplementary objects packaged by CMake
+#   include/                - headers from webrtc/src/
 #
-# 3) Finally, `make install` will install headers and binaries to
-#    - build/lib
-#    - build/include
-
+# Build:
+#   cmake -G Ninja -DCMAKE_INSTALL_PREFIX=<prefix> <work>/webrtc
+#   ninja -j$(nproc) install
 cmake_minimum_required(VERSION 3.18)
 project(webrtc CXX)
 
@@ -31,7 +31,9 @@ cmake_dependent_option(WEBRTC_IS_DEBUG
     "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" ON)
-option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" ON)
+if(MSVC)
+    option(WEBRTC_STATIC_MSVC_RUNTIME "Use /MT or /MTd for WebRTC (Windows)" ON)
+endif()
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})
@@ -56,12 +58,10 @@ set(WEBRTC_NINJA_ROOT ${WEBRTC_ROOT}/src/out/${WEBRTC_BUILD})
 # Common configs for WebRTC
 include(${PROJECT_SOURCE_DIR}/webrtc_common.cmake)
 
-# Generate build/args.gn
-if(NOT EXISTS ${WEBRTC_NINJA_ROOT}/args.gn)
-    get_webrtc_args(WEBRTC_ARGS)
-    file(WRITE ${WEBRTC_NINJA_ROOT}/args.gn ${WEBRTC_ARGS})
-    message(STATUS "Configs written to ${WEBRTC_NINJA_ROOT}/args.gn")
-endif()
+get_webrtc_args(WEBRTC_ARGS)
+file(MAKE_DIRECTORY "${WEBRTC_NINJA_ROOT}")
+file(WRITE "${WEBRTC_NINJA_ROOT}/args.gn" "${WEBRTC_ARGS}")
+message(STATUS "WebRTC args.gn -> ${WEBRTC_NINJA_ROOT}/args.gn")
 
 # libwebrtc.a
 add_custom_target(webrtc
@@ -83,19 +83,13 @@ set_target_properties(webrtc_extra PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${WEBRTC_NINJA_ROOT}/obj
 )
 
-# Install headers and binaries
-# /webrtc_install
-# |-- include
-# |   |-- api
-# |   |-- audio
-#    ...
-# |   |-- tools_webrtc
-# |   `-- video
-# `-- lib
-#     |-- libwebrtc.a
-#     `-- libwebrtc_extra.a
+# Install headers and libs into CMAKE_INSTALL_PREFIX:
+#   include/   - all .h/.hpp/.inc headers mirroring webrtc/src/ structure
+#   lib/       - libwebrtc.a  libwebrtc_extra.a  (or .lib on Windows)
 file(GLOB_RECURSE WEBRTC_INCLUDES RELATIVE ${WEBRTC_ROOT}/src
     ${WEBRTC_ROOT}/src/*.h
+    ${WEBRTC_ROOT}/src/*.hpp
+    ${WEBRTC_ROOT}/src/*.inc
     )
 foreach(header ${WEBRTC_INCLUDES})
     get_filename_component(dir ${header} DIRECTORY)
@@ -106,3 +100,22 @@ install(FILES
     ${WEBRTC_NINJA_ROOT}/obj/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}
     DESTINATION lib
 )
+
+# Release prebuilts: strip debug sections from installed static libraries (Unix/macOS).
+# MSVC .lib files are kept small via GN symbol_level=0; COFF static libs have no
+# equivalent strip tool in the MSVC toolchain.
+if(NOT WEBRTC_IS_DEBUG AND UNIX AND CMAKE_STRIP)
+    # macOS strip uses -S (debug symbols only); GNU strip uses --strip-debug.
+    if(APPLE)
+        set(_webrtc_strip_flags -S)
+    else()
+        set(_webrtc_strip_flags --strip-debug)
+    endif()
+    install(CODE "
+        file(GLOB _webrtc_libs \"\${CMAKE_INSTALL_PREFIX}/lib/*${CMAKE_STATIC_LIBRARY_SUFFIX}\")
+        foreach(_lib \${_webrtc_libs})
+            execute_process(COMMAND \"${CMAKE_STRIP}\" ${_webrtc_strip_flags} \"\${_lib}\"
+                ERROR_QUIET)
+        endforeach()
+    ")
+endif()
