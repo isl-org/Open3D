@@ -955,13 +955,18 @@ endif()
 # needs OpenSSL symbols and, depending on how the final link line gets
 # flattened by CMake (e.g. when Open3D itself is a shared library and must
 # fully resolve all symbols at build time), they can end up in an order where
-# ld's single left-to-right archive scan fails to resolve symbols. Use
-# CMake's LINK_GROUP genex (3.24+) so GNU ld rescans this group of libraries
-# until all symbols resolve, regardless of order. This is a no-op on
-# platforms without GNU ld (falls back to plain linking).
+# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
+# in --start-group and --end-group on UNIX (non-Apple) to ensure GNU ld
+# rescans this group of libraries until all symbols resolve, regardless of
+# order. We avoid CMake's modern LINK_GROUP RESCAN generator expression here
+# because it produces developer warnings when applied to INTERFACE library
+# targets (which Open3D::3rdparty_curl/openssl are).
 if(UNIX AND NOT APPLE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-        "$<LINK_GROUP:RESCAN,Open3D::3rdparty_curl,Open3D::3rdparty_openssl>")
+        "-Wl,--start-group"
+        Open3D::3rdparty_curl
+        Open3D::3rdparty_openssl
+        "-Wl,--end-group")
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
 endif()
