@@ -66,4 +66,30 @@ function(open3d_show_and_abort_on_warning target)
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
         $<$<COMPILE_LANGUAGE:ISPC>:--werror>
     )
+    if (USE_HIP)
+        # HIP's <hip/hip_runtime.h> marks the runtime API nodiscard where CUDA's
+        # does not, so host .cpp including it via the compat shim trip
+        # -Werror=unused-result under -Wall (the CUDA build suppresses the same
+        # nodiscard, NVCC warning 2809). Relax just that warning; do not blanket
+        # -Wno-error. The HIP device TUs get no -Werror here at all.
+        target_compile_options(${target} PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=unused-result>
+            $<$<COMPILE_LANGUAGE:HIP>:-Wno-unused-result>)
+        # MinimumOBB/OBE.cpp: gcc 13 emits a false -Wmaybe-uninitialized on
+        # Eigen's SIMD stores into best_R/best_radii, which ARE initialized to
+        # Identity()/Zero() at declaration -- a known gcc+Eigen false positive,
+        # not a real bug and not HIP-specific. Relax just that warning.
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            target_compile_options(${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=maybe-uninitialized>)
+        endif()
+        # On Windows USE_HIP forces an all-clang toolchain, so the host .cpp are
+        # clang-compiled. clang reports the ignored nodiscard hipError_t under
+        # -Wunused-value (gcc spells it -Wunused-result, relaxed above); demote
+        # that one too. Host-only, clang-only: the Linux gcc build is unchanged.
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(${target} PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=unused-value>)
+        endif()
+    endif()
 endfunction()

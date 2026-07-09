@@ -36,6 +36,69 @@
 namespace open3d {
 namespace core {
 
+#if defined(USE_HIP)
+
+// HIP has no inline PTX; provide the same helpers with HIP/clang builtins.
+// getLaneId() returns the lane within the 32-lane bitonic group (0..31), so on
+// a 64-lane wavefront the two halves each behave as a 32-lane NVIDIA warp (see
+// DeviceDefs.cuh). These select kernels launch 1-D blocks, so the in-group
+// lane is threadIdx.x & 31.
+#define GET_BITFIELD_U32(OUT, VAL, POS, LEN) \
+    OUT = ((VAL) >> (POS)) & ((1u << (LEN)) - 1u)
+
+#define GET_BITFIELD_U64(OUT, VAL, POS, LEN) \
+    OUT = ((VAL) >> (POS)) & ((1ull << (LEN)) - 1ull)
+
+__device__ __forceinline__ unsigned int getBitfield(unsigned int val,
+                                                     int pos,
+                                                     int len) {
+    return (val >> pos) & ((1u << len) - 1u);
+}
+
+__device__ __forceinline__ uint64_t getBitfield(uint64_t val, int pos, int len) {
+    return (val >> pos) & ((1ull << len) - 1ull);
+}
+
+__device__ __forceinline__ unsigned int setBitfield(unsigned int val,
+                                                     unsigned int toInsert,
+                                                     int pos,
+                                                     int len) {
+    unsigned int mask = ((1u << len) - 1u) << pos;
+    return (val & ~mask) | ((toInsert << pos) & mask);
+}
+
+__device__ __forceinline__ int getLaneId() {
+    return static_cast<int>(threadIdx.x & 31u);
+}
+
+__device__ __forceinline__ unsigned getLaneMaskLt() {
+    unsigned lane = threadIdx.x & 31u;
+    return (1u << lane) - 1u;
+}
+
+__device__ __forceinline__ unsigned getLaneMaskLe() {
+    unsigned lane = threadIdx.x & 31u;
+    return (lane >= 31u) ? 0xffffffffu : ((1u << (lane + 1u)) - 1u);
+}
+
+__device__ __forceinline__ unsigned getLaneMaskGt() {
+    return ~getLaneMaskLe();
+}
+
+__device__ __forceinline__ unsigned getLaneMaskGe() {
+    return ~getLaneMaskLt();
+}
+
+__device__ __forceinline__ void namedBarrierWait(int name, int numThreads) {
+    __syncthreads();
+}
+
+__device__ __forceinline__ void namedBarrierArrived(int name, int numThreads) {
+    __syncthreads();
+}
+
+#else
+
 // defines to simplify the SASS assembly structure file/line in the profiler
 #define GET_BITFIELD_U32(OUT, VAL, POS, LEN) \
     asm("bfe.u32 %0, %1, %2, %3;" : "=r"(OUT) : "r"(VAL), "r"(POS), "r"(LEN));
@@ -110,6 +173,8 @@ __device__ __forceinline__ void namedBarrierArrived(int name, int numThreads) {
                  : "r"(name), "r"(numThreads)
                  : "memory");
 }
+
+#endif  // USE_HIP
 
 }  // namespace core
 }  // namespace open3d

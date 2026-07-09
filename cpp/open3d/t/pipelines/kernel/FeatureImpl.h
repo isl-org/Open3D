@@ -16,7 +16,7 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
 using std::max;
 using std::min;
 #endif
@@ -104,7 +104,7 @@ OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
     spfh[idx * 33 + h_index3 + 22] += hist_incr;
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ComputeFPFHFeatureCUDA
 #else
 void ComputeFPFHFeatureCPU

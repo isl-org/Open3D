@@ -327,6 +327,43 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     by following the `official
     documentation. <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_
 
+AMD GPU support (ROCm/HIP)
+``````````````````````````
+
+Open3D's core tensor module (``open3d.core`` and ``open3d.t``) can be built for
+AMD GPUs with `ROCm <https://rocm.docs.amd.com/>`_, using HIP as the device
+language. Enable it by configuring with ``-DUSE_HIP=ON``; this reuses the
+``BUILD_CUDA_MODULE`` code paths but selects the HIP toolchain instead of CUDA,
+and links the ROCm math libraries (hipBLAS/hipSOLVER/hipSPARSE). A working ROCm
+installation (providing ``hipcc``/``amdclang++`` and the hip* libraries, by
+default under ``/opt/rocm``) is required.
+
+.. code-block:: bash
+
+    # In the build directory
+    cmake -DUSE_HIP=ON \
+          -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ \
+          -DCMAKE_PREFIX_PATH=/opt/rocm \
+          ..
+    cmake --build . -j$(nproc)
+
+Without ``-DCMAKE_HIP_ARCHITECTURES`` the HIP toolchain auto-detects the AMD
+GPUs installed on the build host (via ``rocm_agent_enumerator``); a host with
+no AMD GPU must pass the architecture explicitly. Set it to build for a
+specific GPU, or for several at once, e.g.
+``-DCMAKE_HIP_ARCHITECTURES=gfx1100`` or
+``-DCMAKE_HIP_ARCHITECTURES="gfx90a;gfx1100"``. ``rocminfo`` prints the
+architecture of the installed GPU.
+
+.. note::
+    ROCm support targets Linux and covers the core tensor and ``open3d.t``
+    GPU code paths. A few CUDA-only features are not yet available on ROCm but
+    do not fail the build: the NPP-based GPU image filters report the operation
+    as unsupported at runtime (run them on the CPU device instead), the
+    non-default SlabHash hashmap backend is unused (the default StdGPU backend
+    is selected), and the ML ops (``BUILD_PYTORCH_OPS``/``BUILD_TENSORFLOW_OPS``)
+    remain CUDA-only.
+
 WebRTC remote visualization
 ```````````````````````````
 

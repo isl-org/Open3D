@@ -9,7 +9,11 @@
 
 #include <cmath>
 
-#ifdef __CUDACC__
+// hipcc defines __HIPCC__ (not __CUDACC__), so include it or these methods
+// become host-only and device kernels (RegistrationCUDA.cu et al.) fail to
+// call MiniVec's ctor/operator[]. Same __CUDACC__-vs-__HIPCC__ device/host
+// guard issue handled at the other device-decorated sites in this port.
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #define FN_SPECIFIERS inline __host__ __device__
 #else
 #define FN_SPECIFIERS inline

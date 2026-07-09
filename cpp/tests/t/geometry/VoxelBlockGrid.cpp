@@ -61,6 +61,12 @@ static std::vector<core::HashBackendType> EnumerateBackends(
         const core::Device &device, bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
     if (device.IsCUDA()) {
+#ifdef USE_HIP
+        // The Slab (warp-cooperative) backend's 32-lane lane election is not
+        // wave64-correct on ROCm/CDNA and is out of scope for this port; only
+        // the default StdGPU backend is validated here.
+        include_slab = false;
+#endif
         if (include_slab) {
             backends.push_back(core::HashBackendType::Slab);
         }

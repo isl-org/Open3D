@@ -7,6 +7,68 @@
 
 #include "open3d/t/geometry/kernel/NPPImage.h"
 
+#if defined(USE_HIP)
+
+// NVIDIA Performance Primitives has no ROCm equivalent. On the HIP build the
+// GPU image-filter ops are an explicitly-unsupported path: these stubs satisfy
+// the link from Image.cpp's CUDA branch and report the limitation at runtime.
+// The CPU (IPP) image path and every other GPU kernel are unaffected. See the
+// AMD GPU support section of docs/compilation.rst for the unsupported ops.
+
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/Image.h"
+#include "open3d/utility/Logging.h"
+
+namespace open3d {
+namespace t {
+namespace geometry {
+namespace npp {
+
+static void NppUnsupportedOnHIP() {
+    utility::LogError(
+            "GPU image filtering (NPP) is not supported on ROCm/HIP; use the "
+            "CPU device for this operation.");
+}
+
+void RGBToGray(const core::Tensor &, core::Tensor &) { NppUnsupportedOnHIP(); }
+
+void Dilate(const core::Tensor &, core::Tensor &, int) {
+    NppUnsupportedOnHIP();
+}
+
+void Resize(const core::Tensor &,
+            core::Tensor &,
+            t::geometry::Image::InterpType) {
+    NppUnsupportedOnHIP();
+}
+
+void Filter(const core::Tensor &, core::Tensor &, const core::Tensor &) {
+    NppUnsupportedOnHIP();
+}
+
+void FilterBilateral(const core::Tensor &,
+                     core::Tensor &,
+                     int,
+                     float,
+                     float) {
+    NppUnsupportedOnHIP();
+}
+
+void FilterGaussian(const core::Tensor &, core::Tensor &, int, float) {
+    NppUnsupportedOnHIP();
+}
+
+void FilterSobel(const core::Tensor &, core::Tensor &, core::Tensor &, int) {
+    NppUnsupportedOnHIP();
+}
+
+}  // namespace npp
+}  // namespace geometry
+}  // namespace t
+}  // namespace open3d
+
+#else  // !USE_HIP
+
 #include <npp.h>
 
 #include "open3d/core/CUDAUtils.h"
@@ -484,3 +546,5 @@ void FilterSobel(const core::Tensor &src_im,
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
+
+#endif  // USE_HIP

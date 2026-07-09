@@ -30,7 +30,7 @@ namespace voxel_grid {
 using index_t = int;
 using ArrayIndexer = TArrayIndexer<index_t>;
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void GetVoxelCoordinatesAndFlattenedIndicesCUDA
 #else
 void GetVoxelCoordinatesAndFlattenedIndicesCPU
@@ -141,7 +141,7 @@ template <typename input_depth_t,
           typename tsdf_t,
           typename weight_t,
           typename color_t>
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void IntegrateCUDA
 #else
 void IntegrateCPU
@@ -288,12 +288,12 @@ void IntegrateCPU
         *weight_ptr = weight + 1;
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::cuda::Synchronize();
 #endif
 }
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void EstimateRangeCUDA
 #else
 void EstimateRangeCPU
@@ -337,7 +337,7 @@ void EstimateRangeCPU
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
@@ -346,7 +346,7 @@ void EstimateRangeCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
     using std::max;
     using std::min;
 #endif
@@ -434,7 +434,7 @@ void EstimateRangeCPU
                     }
                 }
             });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     int needed_frag_count = count[0].Item<int>();
 #else
     int needed_frag_count = (*count_ptr).load();
@@ -486,7 +486,7 @@ void EstimateRangeCPU
                 float z_min = frag_ptr[0];
                 float z_max = frag_ptr[1];
                 float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
 #else
@@ -498,7 +498,7 @@ void EstimateRangeCPU
 #endif
             });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::cuda::Synchronize();
 #endif
 
@@ -533,7 +533,7 @@ struct MiniVecCache {
 };
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void RayCastCUDA
 #else
 void RayCastCPU
@@ -559,7 +559,7 @@ void RayCastCPU
     using Eq = utility::MiniVecEq<index_t, 3>;
 
     auto device_hashmap = hashmap->GetDeviceHashBackend();
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     auto cuda_hashmap =
             std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(
                     device_hashmap);
@@ -675,7 +675,7 @@ void RayCastCPU
     index_t resolution2 = block_resolution * block_resolution;
     index_t resolution3 = resolution2 * block_resolution;
 
-#ifndef __CUDACC__
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
     using std::max;
     using std::sqrt;
 #endif
@@ -781,7 +781,7 @@ void RayCastCPU
 
         if (mask_indexer.GetDataPtr()) {
             mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -790,7 +790,7 @@ void RayCastCPU
         }
         if (index_indexer.GetDataPtr()) {
             index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -799,7 +799,7 @@ void RayCastCPU
         }
         if (interp_ratio_indexer.GetDataPtr()) {
             interp_ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -809,7 +809,7 @@ void RayCastCPU
         if (interp_ratio_dx_indexer.GetDataPtr()) {
             interp_ratio_dx_ptr =
                     interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -819,7 +819,7 @@ void RayCastCPU
         if (interp_ratio_dy_indexer.GetDataPtr()) {
             interp_ratio_dy_ptr =
                     interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -829,7 +829,7 @@ void RayCastCPU
         if (interp_ratio_dz_indexer.GetDataPtr()) {
             interp_ratio_dz_ptr =
                     interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #pragma unroll
 #endif
             for (int i = 0; i < 8; ++i) {
@@ -1026,13 +1026,13 @@ void RayCastCPU
         }  // surface-found
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::cuda::Synchronize();
 #endif
 }
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ExtractPointCloudCUDA
 #else
 void ExtractPointCloudCPU
@@ -1085,7 +1085,7 @@ void ExtractPointCloudCPU
     index_t n = n_blocks * resolution3;
 
     // Output
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::Tensor count(std::vector<index_t>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1139,7 +1139,7 @@ void ExtractPointCloudCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
         valid_size = count[0].Item<index_t>();
         count[0] = 0;
 #else
@@ -1274,7 +1274,7 @@ void ExtractPointCloudCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     index_t total_count = count.Item<index_t>();
 #else
     index_t total_count = (*count_ptr).load();
@@ -1283,13 +1283,13 @@ void ExtractPointCloudCPU
     utility::LogDebug("{} vertices extracted", total_count);
     valid_size = total_count;
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+#if defined(BUILD_CUDA_MODULE) && (defined(__CUDACC__) || defined(__HIPCC__))
     core::cuda::Synchronize();
 #endif
 }
 
 template <typename tsdf_t, typename weight_t, typename color_t>
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 void ExtractTriangleMeshCUDA
 #else
 void ExtractTriangleMeshCPU
@@ -1434,7 +1434,7 @@ void ExtractTriangleMeshCPU
     });
 
     // Pass 1: determine valid number of vertices (if not preset)
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     core::Tensor count(std::vector<index_t>{0}, {}, core::Int32, device);
 
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1473,7 +1473,7 @@ void ExtractTriangleMeshCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
         vertex_count = count.Item<index_t>();
 #else
         vertex_count = (*count_ptr).load();
@@ -1495,7 +1495,7 @@ void ExtractTriangleMeshCPU
     ArrayIndexer block_keys_indexer(block_keys, 1);
     ArrayIndexer vertex_indexer(vertices, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1620,7 +1620,7 @@ void ExtractTriangleMeshCPU
     triangles = core::Tensor({triangle_count, 3}, core::Int32, device);
     ArrayIndexer triangle_indexer(triangles, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1678,7 +1678,7 @@ void ExtractTriangleMeshCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     triangle_count = count.Item<index_t>();
 #else
     triangle_count = (*count_ptr).load();
