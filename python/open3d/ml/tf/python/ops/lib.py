@@ -20,8 +20,6 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-# The op library is built directly into the package root (no cpu/cuda
-# subfolder); CUDA availability is resolved at runtime by Open3D itself.
 _lib_path.append(
     _os.path.join(_package_root, 'open3d_tf_ops' + _lib_suffix + _lib_ext))
 

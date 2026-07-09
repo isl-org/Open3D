@@ -13,52 +13,53 @@
 namespace open3d {
 namespace tests {
 
-TEST(Device, DefaultConstructor) {
-    core::Device device;
-    EXPECT_EQ(device.GetType(), core::Device::DeviceType::CPU);
-    EXPECT_EQ(device.GetID(), 0);
+namespace {
+
+void ExpectDevice(const core::Device& device,
+                  core::Device::DeviceType type,
+                  int id) {
+    EXPECT_EQ(device.GetType(), type);
+    EXPECT_EQ(device.GetID(), id);
 }
 
-TEST(Device, CPUMustBeID0) {
-    EXPECT_EQ(core::Device("CPU:0").GetID(), 0);
+}  // namespace
+
+// Default, typed, and string device construction plus parsing.
+TEST(Device, ConstructionAndParsing) {
+    // Default is CPU:0.
+    ExpectDevice(core::Device(), core::Device::DeviceType::CPU, 0);
+    // DeviceType + numeric id.
+    ExpectDevice(core::Device(core::Device::DeviceType::CUDA, 1),
+                 core::Device::DeviceType::CUDA, 1);
+    // Type name string + id.
+    ExpectDevice(core::Device("CUDA", 0), core::Device::DeviceType::CUDA, 0);
+
+    const struct {
+        const char* str;
+        core::Device::DeviceType type;
+        int id;
+    } kCases[] = {
+            {"CPU:0", core::Device::DeviceType::CPU, 0},    // Type:id form.
+            {"CUDA:1", core::Device::DeviceType::CUDA, 1},  // Uppercase CUDA.
+            {"cuda:1", core::Device::DeviceType::CUDA, 1},  // Lowercase type.
+            {"cuda", core::Device::DeviceType::CUDA, 0},  // Bare type -> id 0.
+            {"cpu", core::Device::DeviceType::CPU, 0},    // Bare CPU -> id 0.
+    };
+    for (const auto& c : kCases) {
+        ExpectDevice(core::Device(c.str), c.type, c.id);
+    }
+
+    // CPU allows only device id 0.
     EXPECT_THROW(core::Device("CPU:1"), std::runtime_error);
-}
 
-TEST(Device, SpecifiedConstructor) {
-    core::Device device(core::Device::DeviceType::CUDA, 1);
-    EXPECT_EQ(device.GetType(), core::Device::DeviceType::CUDA);
-    EXPECT_EQ(device.GetID(), 1);
-}
-
-TEST(Device, StringConstructor) {
-    core::Device device("CUDA:1");
-    EXPECT_EQ(device.GetType(), core::Device::DeviceType::CUDA);
-    EXPECT_EQ(device.GetID(), 1);
-}
-
-TEST(Device, StringConstructorLower) {
-    core::Device device("cuda:1");
-    EXPECT_EQ(device.GetType(), core::Device::DeviceType::CUDA);
-    EXPECT_EQ(device.GetID(), 1);
-}
-
-TEST(Device, BareTypeStringDefaultsToDevice0) {
-    core::Device cuda_device("cuda");
-    EXPECT_EQ(cuda_device.GetType(), core::Device::DeviceType::CUDA);
-    EXPECT_EQ(cuda_device.GetID(), 0);
-    core::Device cpu_device("cpu");
-    EXPECT_EQ(cpu_device.GetType(), core::Device::DeviceType::CPU);
-    EXPECT_EQ(cpu_device.GetID(), 0);
-    EXPECT_EQ(core::Device("CUDA", 0).GetID(), 0);
-}
-
-TEST(Device, TensorToAcceptsDeviceString) {
+    // Tensor::To accepts canonical and bare CPU strings.
     core::Tensor t =
             core::Tensor::Ones({2}, core::Float32, core::Device("CPU:0"));
     EXPECT_EQ(t.To(core::Device("CPU:0")).GetDevice(), core::Device("CPU:0"));
     EXPECT_EQ(t.To(core::Device("cpu")).GetDevice(), core::Device("CPU:0"));
 }
 
+// Smoke: logs enumerated available devices.
 TEST(Device, PrintAvailableDevices) { core::Device::PrintAvailableDevices(); }
 
 }  // namespace tests

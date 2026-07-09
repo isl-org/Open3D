@@ -210,20 +210,10 @@ build_pip_package() {
         cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
     fi
     set -x
-    # Always (re-)run cmake: the build directory may have been inherited from
-    # a previous "build-lib" step (e.g. CI's split lib+wheel jobs), whose
-    # CMakeCache.txt was configured with BUILD_PYTHON_MODULE=OFF and/or a
-    # different Python interpreter (e.g. a "dummy" Python version used only
-    # to build the C++ core). Reusing that cache unmodified would either skip
-    # the pip-package target entirely, or silently keep a stale cached
-    # Python3_EXECUTABLE that doesn't match the Python version we are
-    # packaging for now. Explicitly force Python3_EXECUTABLE to the active
-    # interpreter (from PATH) so find_package(Python3) / FindPytorch.cmake
-    # re-derive all dependent paths (include dirs, Torch, etc.) for it.
-    # Avoid --fresh here: it wipes CMakeFiles/ (all compiled objects) which,
-    # on Docker-based builds layered on top of an already-built "build-lib"
-    # image, does not actually reclaim space (union filesystem) and can
-    # exhaust runner disk; a plain reconfigure only rebuilds what changed.
+    # Always rerun cmake and unset Python cache variables to update cache for
+    # the current Python and build options.  This avoids incorrect/inherited
+    # Python config and ensures all paths are correct.  Do not use --fresh: it
+    # unnecessarily wipes build objects and wastes disk/CI time.
     cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
         -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
         -DPython3_EXECUTABLE="$(command -v python3)" \
@@ -243,24 +233,26 @@ build_pip_package() {
     # already the CPU wheel, so there is nothing extra to build in that case.
     if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
-        echo "Building open3d-cpu wheel..."
-        mkdir -p build_cpu
-        pushd build_cpu
-        if [ ! -f CMakeCache.txt ]; then
-            # cmakeOptions already contains "-DBUILD_CUDA_MODULE=ON" (added
-            # above for the main build). CMake resolves repeated -D flags
-            # left-to-right with the last one winning, so BUILD_CUDA_MODULE=OFF
-            # must come AFTER cmakeOptions is expanded, or it would be
-            # silently overridden back to ON, defeating the point of this
-            # CPU-only companion wheel.
-            cmake "${cmakeOptions[@]}" \
-                -DBUILD_PYTHON_MODULE=ON -DBUILD_CUDA_MODULE=OFF ..
-        fi
+        echo "Building open3d-cpu wheel (reusing single build folder)..."
+        # 1. Back up the CUDA-enabled wheel(s) to a temporary directory outside build/
+        mkdir -p pip_package_backup
+        cp build/lib/python_package/pip_package/*.whl pip_package_backup/
+
+        # 2. Reconfigure the existing build directory with CUDA disabled
+        pushd build
+        # We must make sure BUILD_CUDA_MODULE=OFF overrides any ON from cmakeOptions.
+        # Repeating -D left-to-right makes the last one win, so we place it after cmakeOptions.
+        set -x
+        cmake "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
+        set +x
+
+        # 3. Build the CPU companion wheel
         make VERBOSE=1 -j"$NPROC" pip-package
         popd
-        mkdir -p build/lib/python_package/pip_package
-        cp build_cpu/lib/python_package/pip_package/open3d_cpu*.whl \
-            build/lib/python_package/pip_package/ || true
+
+        # 4. Restore the backed-up CUDA wheel(s) into the pip_package directory
+        mv pip_package_backup/*.whl build/lib/python_package/pip_package/
+        rm -rf pip_package_backup
     fi
     echo
 }

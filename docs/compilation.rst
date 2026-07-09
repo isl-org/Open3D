@@ -30,15 +30,15 @@ System requirements
   ``libOpen3D``, so no separate NVIDIA runtime pip packages are required at
   import time. For building from source, install the CUDA toolkit
   (``nvidia-smi``, ``nvcc -V``) and configure with ``-DBUILD_CUDA_MODULE=ON``
-  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default). We recommend using CUDA 12+
+  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default). We recommend using CUDA 13+
   for the best compatibility with recent GPUs and optional external
   dependencies such as Tensorflow or PyTorch.
 
 * Shared libraries: Open3D builds with ``BUILD_SHARED_LIBS=ON`` by default,
-  producing a single ``libOpen3D.so`` / ``Open3D.dll`` that contains CPU,
-  CUDA, and SYCL code together. Python wheels ship one ``pybind`` extension
+  producing a single ``libOpen3D.so`` / ``Open3D.dll`` that contains CPU and one
+  of CUDA or SYCL code together. Python wheels ship one ``pybind`` extension
   module that links against this single library and picks the available
-  device (CPU/CUDA/SYCL) at runtime.
+  device (CPU + CUDA or SYCL) at runtime.
 
 * Ccache 4.0+ (optional, recommended): ccache is a compiler cache that can
   speed up the compilation process by avoiding recompilation of the same
@@ -344,20 +344,25 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
 ABI dependency and compatibility
 ---------------------------------
 
-When compiling Open3D from source or using prebuilt wheels with machine learning (ML) framework bindings (such as PyTorch or TensorFlow) and hardware acceleration (such as CUDA or SYCL), maintaining Application Binary Interface (ABI) compatibility across all dependencies is critical.
-
-An ABI mismatch between Open3D, the ML frameworks, and the underlying runtime libraries can lead to compilation failures, linker errors, or runtime crashes (such as segmentation faults).
+When compiling Open3D from source or using prebuilt wheels with machine learning
+(ML) framework bindings (such as PyTorch or TensorFlow) and hardware
+acceleration (such as CUDA or SYCL), maintaining Application Binary Interface
+(ABI) compatibility across all dependencies is critical.  An ABI mismatch
+between Open3D, the ML frameworks, and the underlying runtime libraries can lead
+to compilation failures, linker errors, or runtime crashes (such as segmentation
+faults).
 
 ABI Dependency Tree
 ````````````````````
 
-The diagram below illustrates how Open3D and its custom operators depend on the underlying runtime ABI libraries:
+The diagram below illustrates how Open3D and its custom operators depend on the
+underlying runtime ABI libraries:
 
 .. code-block:: text
 
        +-----------------------------------------------------+
        |                 Runtime ABI Library                 |
-       |             (glibc, nvidia-rt, sycl-rt)             |
+       |     (glibc, libstdc++, cuda-runtime, sycl-runtime)  |
        +-----------+--------------+--------------+-----------+
                    ^              ^              ^
                    |              |              |
@@ -382,7 +387,10 @@ As shown in the diagram:
 * These custom operators depend directly on the installed ML frameworks (``pytorch`` and ``tensorflow``).
 * Both the ML frameworks and the custom operators must link against the exact same runtime ABI libraries.
 
-Consequently, the dependency versions must be compatible. Typically, the major and minor versions of the toolchains and runtime libraries used at build time must match those used by the installed ML frameworks, and the runtime environment must satisfy the compatibility guarantees of each library.
+Consequently, the dependency versions must be compatible. Typically, the major
+and minor versions of the toolchains and runtime libraries used at build time
+must match those used by the installed ML frameworks, and the runtime
+environment must satisfy the compatibility guarantees of each library.
 
 Runtime ABI Libraries and Compatibility Guarantees
 `````````````````````````````````````````````````````

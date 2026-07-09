@@ -108,13 +108,9 @@ if (BUILD_GUI)
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )
-        # visualization_impl is an OBJECT library: target_link_libraries only
-        # propagates usage requirements (e.g. include dirs) for it, it does
-        # not reliably order the build against custom/ExternalProject
-        # targets like ext_vkmemalloc/ext_vmahpp on all generators (observed
-        # missing vk_mem_alloc.hpp with the Visual Studio generator when
-        # building a narrow target such as "pip-package"). Add an explicit
-        # dependency to guarantee correct build order.
+        # visualization_impl is an OBJECT library; add_dependencies ensures
+        # correct build order with ext_vkmemalloc/ext_vmahpp across all
+        # generators.
         add_dependencies(visualization_impl ext_vkmemalloc ext_vmahpp)
     endif()
 

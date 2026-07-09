@@ -18,9 +18,9 @@ _o3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:
     match_torch_ver = '.'.join(
         str(v) for v in _o3d_torch_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: Open3D needs PyTorch version {}, but '
-                    'version {} is installed!'.format(match_torch_ver,
-                                                      _torch.__version__))
+    raise RuntimeError('Version mismatch: Open3D needs PyTorch version {}, but '
+                       'version {} is installed!'.format(
+                           match_torch_ver, _torch.__version__))
 
 # Precompiled wheels at
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
@@ -68,8 +68,6 @@ if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
           "Otherwise, install PyTorch with CUDA {}.".format(
               _build_config["CUDA_VERSION"], _torch.version.cuda,
               _build_config["CUDA_VERSION"]))
-# The op library is built directly into the package root (no cpu/cuda
-# subfolder); CUDA availability is resolved at runtime by Open3D itself.
 _lib_path.append(
     _os.path.join(_package_root, 'open3d_torch_ops' + _lib_suffix + _lib_ext))
 

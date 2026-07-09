@@ -58,9 +58,7 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-# BASE_IMAGE may already be a previously built Open3D lib image with pyenv
-# installed (see docker_build.sh's "build-lib" mode / CI's split lib+wheel
-# jobs), so only bootstrap pyenv itself if it is not already present.
+# Install pyenv if it is not already present in BASE_IMAGE.
 RUN if [ ! -d "$PYENV_ROOT" ]; then \
         curl https://pyenv.run | bash; \
     fi \
@@ -104,13 +102,7 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build
-# The build/ directory may already exist and be configured (with
-# BUILD_PYTHON_MODULE=OFF and/or a different Python interpreter) if
-# BASE_IMAGE is a previously-built lib image (see docker_build.sh's
-# "build-lib" mode / CI's split lib+wheel jobs). Use --fresh so cmake
-# discards any stale cache (e.g. BUILD_PYTHON_MODULE, Python3_EXECUTABLE)
-# and reconfigures cleanly instead of failing on `mkdir build` or silently
-# keeping a mismatched Python interpreter cached.
+# Use cmake --fresh to clear old configs and ensure correct Python/CMake settings in build/.
 RUN mkdir -p build \
  && cd build \
  && cmake --fresh \

@@ -89,9 +89,7 @@ RUN ccache -M 4G \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-# BASE_IMAGE may already be a previously built Open3D lib image with pyenv
-# installed (see docker_build.sh's "build-lib" mode / CI's split lib+wheel
-# jobs), so only bootstrap pyenv itself if it is not already present.
+# Install pyenv if it is not already present in BASE_IMAGE.
 RUN if [ ! -d "$PYENV_ROOT" ]; then \
         wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
     fi \
@@ -104,8 +102,7 @@ RUN python --version && pip --version
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
-# BASE_IMAGE may already have this cloned (see docker_build.sh's "build-lib"
-# mode / CI's split lib+wheel jobs), so skip if it already exists.
+# Install Open3D-ML if it is not already present in BASE_IMAGE.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
         git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}; \
@@ -127,9 +124,6 @@ RUN source /root/Open3D/util/ci_utils.sh \
  && install_python_dependencies with-jupyter
 
 # Open3D Jupyter dependencies
-# --yes: BASE_IMAGE may already have this keyring (see docker_build.sh's
-# "build-lib" mode / CI's split lib+wheel jobs); avoid gpg prompting to
-# overwrite it interactively (which fails with no /dev/tty in a build step).
 RUN mkdir -p /etc/apt/keyrings \
  && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
  | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
@@ -153,7 +147,6 @@ RUN export NPROC=$(($(nproc)+2)) \
  && source /root/Open3D/util/ci_utils.sh \
  && build_pip_package build_azure_kinect build_jupyter \
  && if [ "${CI:-}a" != a ]; then \
-        rm -rf build_cpu; \
         if [ -d build ]; then \
             find build -mindepth 1 -maxdepth 1 -not -name lib -exec rm -rf {} +; \
         fi; \

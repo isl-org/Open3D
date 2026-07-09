@@ -97,9 +97,7 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-# BASE_IMAGE may already be a previously built Open3D lib image with pyenv
-# installed (see docker_build.sh's "build-lib" mode / CI's split lib+wheel
-# jobs), so only bootstrap pyenv itself if it is not already present.
+# Install pyenv if it is not already present in BASE_IMAGE.
 RUN if [ ! -d "$PYENV_ROOT" ]; then \
         wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
     fi \
@@ -141,8 +139,7 @@ RUN ccache --version \
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
-# BASE_IMAGE may already have this cloned (see docker_build.sh's "build-lib"
-# mode / CI's split lib+wheel jobs), so skip if it already exists.
+# Install Open3D-ML if it is not already present in BASE_IMAGE.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
         git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}; \
@@ -166,9 +163,7 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
-# --yes: BASE_IMAGE may already have this keyring (see docker_build.sh's
-# "build-lib" mode / CI's split lib+wheel jobs); avoid gpg prompting to
-# overwrite it interactively (which fails with no /dev/tty in a build step).
+# Avoid gpg prompting to overwrite it interactively.
 RUN mkdir -p /etc/apt/keyrings \
  && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
  | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
