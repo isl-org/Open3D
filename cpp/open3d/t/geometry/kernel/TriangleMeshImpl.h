@@ -23,7 +23,9 @@ namespace trianglemesh {
 
 #if defined(SYCL_LANGUAGE_VERSION)
 using sycl::isnan;
-#elif !defined(__CUDACC__)
+#elif defined(__CUDACC__)
+using ::isnan;  // CUDA provides host/device isnan() in the global namespace.
+#else
 #include <cmath>
 using std::isnan;  // CPU only
 #endif

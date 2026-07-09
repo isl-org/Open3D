@@ -50,13 +50,7 @@ public:
     std::vector<V> vals_;
 };
 
-// SYCL hash map is unsupported on SYCL CPU.
-class HashMapPermuteDevices : public PermuteDevicesWithSYCL {
-protected:
-    void SetUp() override {
-        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
-    }
-};
+class HashMapPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         HashMap,
         HashMapPermuteDevices,

@@ -37,11 +37,6 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
 #endif
 #if defined(BUILD_SYCL_MODULE)
     else if (device.IsSYCL()) {
-        // Lock-free insert/probe scheme relies on GPU coherence; broken on
-        // SYCL CPU.
-        if (sy::IsCPUDevice(device)) {
-            utility::LogError("SYCL hash map is not supported on SYCL CPU.");
-        }
         return CreateSYCLHashBackend(init_capacity, key_dtype,
                                      key_element_shape, value_dtypes,
                                      value_element_shapes, device, backend);

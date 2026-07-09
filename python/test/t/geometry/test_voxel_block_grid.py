@@ -76,8 +76,7 @@ def _integrate_redwood_frames(device,
     return vbg
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_voxel_block_grid_construct(device):
     vbg = o3d.t.geometry.VoxelBlockGrid(
         attr_names=["tsdf", "weight", "color"],
@@ -88,7 +87,7 @@ def test_voxel_block_grid_construct(device):
         block_count=10,
         device=device,
     )
-    assert vbg.hashmap().capacity == 10
+    assert vbg.hashmap().capacity() == 10
 
 
 @pytest.mark.skipif(not _sycl_gpu_available(), reason="SYCL GPU required.")

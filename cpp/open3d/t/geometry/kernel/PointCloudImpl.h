@@ -99,19 +99,12 @@ void UnprojectCPU
                     float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
                               depth_scale;
                     if (d > 0 && d < depth_max) {
-                        int idx;
-#if defined(__CUDACC__)
-                        idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-#elif defined(SYCL_LANGUAGE_VERSION)
-                        auto count_atomic_ref = sycl::atomic_ref<int,
-                                                                 sycl::memory_order::acq_rel,
-                                                                 sycl::memory_scope::device,
-                                                                 sycl::access::address_space::global_space>(
-                                *count_ptr);
-                        idx = count_atomic_ref.fetch_add(1);
-#else
-                        idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
-#endif
+                        // Use the OPEN3D_ATOMIC_ADD macro (defined outside
+                        // this dispatch macro's argument list) instead of an
+                        // inline #if/#elif chain: MSVC's preprocessor cannot
+                        // parse directives nested inside an open macro-call
+                        // argument list (DISPATCH_DTYPE_TO_TEMPLATE above).
+                        int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
                         float x_c = 0, y_c = 0, z_c = 0;
                         ti.Unproject(static_cast<float>(x),

@@ -233,6 +233,13 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
             Indexer scalar_out_indexer =
                     indexer.GetPerOutputIndexer(output_idx);
             auto num_elements_scalar = scalar_out_indexer.NumWorkloads();
+            if (num_elements_scalar == 0) {
+                // nd_range with global size 0 is not well-defined across
+                // SYCL backends and can skip the reduction's identity-init
+                // write, leaving the output uninitialized. The caller
+                // already Fill()-ed dst with the identity, so just skip.
+                continue;
+            }
             auto num_work_groups = num_elements_scalar / elements_per_group;
             if (num_elements_scalar > elements_per_group * num_work_groups)
                 ++num_work_groups;

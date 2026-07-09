@@ -414,7 +414,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 "SYCL fixed radius search does not support "
                 "ignore_query_point.");
     }
-    // Count/gather kernels corrupt output on SYCL CPU; GPU-only for now.
+    // Count/gather kernels segfault on SYCL CPU for large datasets
+    // (~30k+ points); GPU-only for now.
     if (sy::IsCPUDevice(points.GetDevice())) {
         utility::LogError(
                 "SYCL fixed radius search is not supported on "
@@ -624,11 +625,10 @@ void HybridSearchSYCL(const Tensor& points,
     if (metric != Metric::L2) {
         utility::LogError("SYCL hybrid search only supports L2 metric.");
     }
-    // See FixedRadiusSearchSYCL: unsupported on SYCL CPU.
+    // See FixedRadiusSearchSYCL: segfaults on SYCL CPU for large datasets.
     if (sy::IsCPUDevice(points.GetDevice())) {
         utility::LogError("SYCL hybrid search is not supported on SYCL CPU.");
     }
-
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const Dtype dtype = points.GetDtype();

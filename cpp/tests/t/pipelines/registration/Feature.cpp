@@ -21,13 +21,7 @@
 namespace open3d {
 namespace tests {
 
-// FPFH uses HybridSearch/FixedRadiusSearch, unsupported on SYCL CPU.
-class FeaturePermuteDevices : public PermuteDevicesWithSYCL {
-protected:
-    void SetUp() override {
-        if (core::sy::IsCPUDevice(GetParam())) GTEST_SKIP();
-    }
-};
+class FeaturePermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         Feature,
         FeaturePermuteDevices,
@@ -35,6 +29,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(FeaturePermuteDevices, SelectByIndex) {
     core::Device device = GetParam();
+    // HybridSearch (used by ComputeFPFHFeature) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     open3d::geometry::PointCloud pcd_legacy;
     data::BunnyMesh bunny;
@@ -69,6 +65,8 @@ TEST_P(FeaturePermuteDevices, SelectByIndex) {
 
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
     core::Device device = GetParam();
+    // HybridSearch segfaults on SYCL CPU for large datasets.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     open3d::geometry::PointCloud pcd_legacy;
     data::BunnyMesh byunny;
@@ -117,6 +115,8 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
 
 TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
     core::Device device = GetParam();
+    // HybridSearch (used by ComputeFPFHFeature) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const float kVoxelSize = 0.05f;
     const float kFPFHRadius = kVoxelSize * 5;

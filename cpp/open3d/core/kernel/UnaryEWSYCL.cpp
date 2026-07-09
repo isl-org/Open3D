@@ -191,7 +191,8 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                 scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.fill(dst_ptr, scalar_element, num_elements);
+                queue.fill(dst_ptr, scalar_element, num_elements)
+                        .wait_and_throw();
             });
         } else if (src_device == dst_device) {  // non-contiguous or broadcast
                                                 // on same SYCL device
@@ -204,17 +205,19 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                 DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
                     const int64_t blocks = object_byte_size / block_size;
                     queue.parallel_for(n, [indexer, blocks](int64_t i) {
-                        // reinterpret_cast required: GetInputPtr returns char*
-                        // and block_t may be sycl::vec<> which is not
-                        // trivially related to char via static_cast.
-                        const block_t* src = reinterpret_cast<const block_t*>(
-                                indexer.GetInputPtr(0, i));
-                        block_t* dst = reinterpret_cast<block_t*>(
-                                indexer.GetOutputPtr(i));
-                        for (int64_t b = 0; b < blocks; ++b) {
-                            dst[b] = src[b];
-                        }
-                    });
+                             // reinterpret_cast required: GetInputPtr
+                             // returns char* and block_t may be
+                             // sycl::vec<> which is not trivially related
+                             // to char via static_cast.
+                             const block_t* src =
+                                     reinterpret_cast<const block_t*>(
+                                             indexer.GetInputPtr(0, i));
+                             block_t* dst = reinterpret_cast<block_t*>(
+                                     indexer.GetOutputPtr(i));
+                             for (int64_t b = 0; b < blocks; ++b) {
+                                 dst[b] = src[b];
+                             }
+                         }).wait_and_throw();
                 });
             } else {
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
@@ -223,9 +226,9 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                         using dst_t = scalar_t;
                         const int64_t n = indexer.NumWorkloads();
                         queue.parallel_for(n, [indexer](int64_t i) {
-                            CopyElementKernel<src_t, dst_t> ef(indexer);
-                            ef(i);
-                        });
+                                 CopyElementKernel<src_t, dst_t> ef(indexer);
+                                 ef(i);
+                             }).wait_and_throw();
                     });
                 });
             }

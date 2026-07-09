@@ -65,12 +65,17 @@
 // avoid slow memcpy or byte-by-byte copy in kernels.
 // Block sizes match kBlockCopyDivisors in BlockCopyDispatch.h.
 // Not used in the CPU version since memcpy is relatively fast on CPU.
+//
+// Declared at namespace scope (not as a local class inside the macro's
+// lambda) because nvcc disallows types with no linkage as template
+// arguments for __global__ function template instantiations.
+struct BlockCopy64 {
+    int4 v[4];
+};
+
 #define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
     [&] {                                              \
         if (DIVISOR == 64) {                           \
-            struct BlockCopy64 {                       \
-                int4 v[4];                             \
-            };                                         \
             using block_t = BlockCopy64;               \
             return __VA_ARGS__();                      \
         } else if (DIVISOR == 16) {                    \

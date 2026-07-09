@@ -74,8 +74,7 @@ def get_pcds(dtype, device):
     return source, target
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_icp_convergence_criteria_constructor(device):
 
     # Constructor.
@@ -87,8 +86,7 @@ def test_icp_convergence_criteria_constructor(device):
     assert convergence_criteria.relative_rmse == 1e-06
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_registration_result_constructor(device):
     dtype = o3c.float64
 

@@ -34,7 +34,8 @@ def test_knn_index(device):
         assert nns.multi_radius_index()
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device",
+                         list_devices(enable_sycl=True, also_sycl_cpu=False))
 def test_knn_search(device):
     dtype = o3c.float32
 
