@@ -12,9 +12,6 @@ set(WEBRTC_BASE_URL
 # generators pick Debug vs Release at build time via $<CONFIG>; single-config
 # generators download one variant at configure time (Release if unset).
 get_property(WEBRTC_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if (WIN32 AND NOT WEBRTC_MULTI_CONFIG)
-    message(SEND_ERROR "CMake config does not support Windows single config generators!") 
-endif()
 
 if (APPLE)
     set(WEBRTC_URL
@@ -65,7 +62,7 @@ else()  # Linux
     set(WEBRTC_SHA256 0209f722974fa7b9da9d1c8e279694cf2c4db81e079a325bcadb1b6e0c3b6981)
 endif()
 
-if(WIN32)
+if(WIN32 AND WEBRTC_MULTI_CONFIG)
     # ExternalProject_Add cannot vary URL per config; use add_custom_command + webrtc_fetch_variant.cmake.
     set(WEBRTC_PREBUILT_ROOT "${CMAKE_BINARY_DIR}/webrtc/$<CONFIG>")
     set(WEBRTC_STAMP "${WEBRTC_PREBUILT_ROOT}/webrtc_fetch.stamp")
