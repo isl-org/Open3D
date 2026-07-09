@@ -15,7 +15,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-FixedRadiusIndex::FixedRadiusIndex() {};
+FixedRadiusIndex::FixedRadiusIndex(){};
 
 FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
                                    double radius) {
@@ -41,7 +41,7 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, radius, index_dtype);
 };
 
-FixedRadiusIndex::~FixedRadiusIndex() {};
+FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius,

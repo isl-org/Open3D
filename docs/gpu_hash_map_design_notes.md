@@ -42,7 +42,7 @@ Read-heavy workloads after construction:
 - SlabHash can be very fast if access patterns suit warp traversal, but pointer chasing through slab chains can be less cache-friendly than flat open addressing when buckets get long.
 
 Delete-heavy or churn-heavy workloads:
-- SYCL is weakest here as currently implemented. Deletes leave tombstones in `slot_state_`, `Reserve` is a stub, and `Size()` is derived from heap top via [cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h]( /home/ssheorey/Documents/Open3D-2/cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h#L116) rather than a live-entry count. That means churn can increase probe lengths and can also make load factor / size semantics drift from actual live occupancy.
+- SYCL is weakest here as currently implemented. Deletes leave tombstones in `slot_state_`, `Reserve` is a stub, and `Size()` is derived from heap top via [cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h](cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h#L116) rather than a live-entry count. That means churn can increase probe lengths and can also make load factor / size semantics drift from actual live occupancy.
 - stdgpu should handle erase more gracefully because deletion and container occupancy are owned by the container itself.
 - SlabHash is better than the current SYCL path for churn because it has explicit erase passes and node management, though linked structures still carry allocator and fragmentation costs.
 
@@ -63,7 +63,7 @@ Portability and maintainability:
 
 **Current SYCL Weak Points**
 The main limitations in the current SYCL implementation are structural, not incidental:
-- `Reserve()` is empty in [cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h]( /home/ssheorey/Documents/Open3D-2/cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h#L67).
+- `Reserve()` is empty in [cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h](cpp/open3d/core/hashmap/SYCL/SYCLHashBackend.h#L67).
 - `Size()` uses heap top, so after deletions it overcounts historical allocations rather than live entries.
 - `GetActiveIndices()` uses a single global atomic append counter, which can bottleneck.
 - `Find()` reads `slot_state[idx]` directly instead of consistently using acquire atomic loads, unlike `Insert()` and `Erase()`.

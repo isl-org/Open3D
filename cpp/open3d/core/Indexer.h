@@ -221,7 +221,17 @@ enum class DtypePolicy {
 class TensorIterator {
 public:
     TensorIterator(const Tensor& tensor)
-        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {}
+        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {
+        is_contiguous_ = true;
+        int64_t expected_byte_stride = input_.dtype_byte_size_;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            if (input_.byte_strides_[d] != expected_byte_stride) {
+                is_contiguous_ = false;
+                break;
+            }
+            expected_byte_stride *= input_.shape_[d];
+        }
+    }
 
     OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
         int64_t num_workloads = 1;
@@ -235,16 +245,7 @@ public:
         if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
             return nullptr;
         }
-        bool is_contiguous = true;
-        int64_t expected_byte_stride = input_.dtype_byte_size_;
-        for (int64_t d = ndims_ - 1; d >= 0; --d) {
-            if (input_.byte_strides_[d] != expected_byte_stride) {
-                is_contiguous = false;
-                break;
-            }
-            expected_byte_stride *= input_.shape_[d];
-        }
-        if (is_contiguous) {
+        if (is_contiguous_) {
             return static_cast<char*>(input_.data_ptr_) +
                    workload_idx * input_.dtype_byte_size_;
         }
@@ -261,6 +262,7 @@ public:
 protected:
     TensorRef input_;
     int64_t ndims_;
+    bool is_contiguous_;
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.
@@ -650,7 +652,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator() {};
+        Iterator(){};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 

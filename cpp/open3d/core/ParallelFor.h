@@ -197,7 +197,16 @@ void ParallelFor(const Device& device,
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #elif defined(SYCL_LANGUAGE_VERSION)
-    ParallelForSYCL_(device, n, func);
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        int num_threads = utility::EstimateMaxThreads();
+        ParallelForCPU_(device, num_threads, [&](int64_t i) {
+            int64_t start = n * i / num_threads;
+            int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
+            vec_func(start, end);
+        });
+    }
 #else
     int num_threads = utility::EstimateMaxThreads();
     ParallelForCPU_(device, num_threads, [&](int64_t i) {
@@ -212,7 +221,11 @@ void ParallelFor(const Device& device,
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #elif defined(SYCL_LANGUAGE_VERSION)
-    ParallelForSYCL_(device, n, func);
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
 #else
     ParallelForCPU_(device, n, func);
 #endif

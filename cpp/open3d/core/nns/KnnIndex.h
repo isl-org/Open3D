@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "open3d/Macro.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/NNSIndex.h"
@@ -44,18 +45,18 @@ void KnnSearchCUDA(const Tensor& points,
 ///   path. Only used by the tuning benchmark to A/B the two paths on the
 ///   same (dim, knn); production callers always leave this false.
 template <class T, class TIndex>
-void KnnSearchSYCL(const Tensor& points,
-                   const Tensor& points_row_splits,
-                   const Tensor& queries,
-                   const Tensor& queries_row_splits,
-                   int knn,
-                   Tensor& neighbors_index,
-                   Tensor& neighbors_row_splits,
-                   Tensor& neighbors_distance,
-                   int64_t tile_bytes,
-                   int64_t max_tile_queries = 2048,
-                   int64_t tile_points_alignment = 128,
-                   bool force_addmm_path = false);
+OPEN3D_API void KnnSearchSYCL(const Tensor& points,
+                              const Tensor& points_row_splits,
+                              const Tensor& queries,
+                              const Tensor& queries_row_splits,
+                              int knn,
+                              Tensor& neighbors_index,
+                              Tensor& neighbors_row_splits,
+                              Tensor& neighbors_distance,
+                              int64_t tile_bytes,
+                              int64_t max_tile_queries = 2048,
+                              int64_t tile_points_alignment = 128,
+                              bool force_addmm_path = false);
 #endif
 
 class KnnIndex : public NNSIndex {
