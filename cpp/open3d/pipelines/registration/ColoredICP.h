@@ -27,7 +27,7 @@ class RegistrationResult;
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
-    ~TransformationEstimationForColoredICP() override{};
+    ~TransformationEstimationForColoredICP() override {};
 
     TransformationEstimationType GetTransformationEstimationType()
             const override {
