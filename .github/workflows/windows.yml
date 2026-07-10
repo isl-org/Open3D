@@ -136,11 +136,15 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
+          # Keep 3rdparty downloads inside BUILD_DIR so the build-wheel artifact
+          # zip includes headers (e.g. vk_mem_alloc.hpp) that ExternalProject
+          # stamps would otherwise skip re-downloading on a fresh checkout.
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
             -DBUILD_PYTHON_MODULE=OFF `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -357,16 +361,21 @@ jobs:
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
-          # BUILD_JUPYTER_EXTENSION requires BUILD_WEBRTC=ON, but this wheel
-          # is built with shared libs, for which no WebRTC DLL is available
-          # on Windows yet (see BUILD_WEBRTC comment in build-lib job above).
-          cmake --fresh -G "Visual Studio 17 2022" -A x64 `
+          # Reuse the static build-lib artifact (OFF + STATIC_RUNTIME=ON). Do not
+          # use cmake --fresh: that would drop CMakeCache while leaving
+          # ExternalProject stamps that skip re-download of missing headers.
+          # Match build-lib download dir so VMA/etc. resolve inside the zip.
+          cmake -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
+            -DBUILD_SHARED_LIBS=OFF `
+            -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
