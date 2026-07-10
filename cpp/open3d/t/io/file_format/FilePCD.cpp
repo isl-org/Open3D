@@ -10,6 +10,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "open3d/core/Dtype.h"
@@ -734,10 +735,12 @@ static bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
         header.pointsize += 3 * field_normal_x.size;
     }
     if (pointcloud.HasPointColors()) {
+        // uint32 packed BGR (TYPE U): same bytes as PCL float packing, but
+        // avoids denormal float ASCII round-trips under Intel FTZ/DAZ.
         PCLPointField field_colors;
         field_colors.name = "rgb";
         field_colors.count = 1;
-        field_colors.type = 'F';
+        field_colors.type = 'U';
         field_colors.size = 4;
         header.fields.push_back(field_colors);
 
@@ -901,11 +904,11 @@ void ColorToUint8<std::uint32_t>(const std::uint32_t *input_color,
     output_color[3] = 0;
 }
 
-static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
+static core::Tensor PackColorsToUint32(const core::Tensor &colors_contiguous) {
     core::Tensor packed_color =
             core::Tensor::Empty({colors_contiguous.GetLength(), 1},
-                                core::Float32, core::Device("CPU:0"));
-    auto packed_color_ptr = packed_color.GetDataPtr<float>();
+                                core::UInt32, core::Device("CPU:0"));
+    auto packed_color_ptr = packed_color.GetDataPtr<std::uint32_t>();
 
     DISPATCH_DTYPE_TO_TEMPLATE(colors_contiguous.GetDtype(), [&]() {
         auto colors_ptr = colors_contiguous.GetDataPtr<scalar_t>();
@@ -914,8 +917,6 @@ static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
                               std::uint8_t rgba[4] = {0};
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
-                              // Write packed bits directly; avoid float
-                              // assignment which Intel FTZ can zero.
                               std::memcpy(packed_color_ptr + workload_idx,
                                           rgba, 4 * sizeof(std::uint8_t));
                           });
@@ -1011,8 +1012,8 @@ static bool WritePCDData(FILE *file,
     }
 
     if (pointcloud.HasPointColors()) {
-        t_map["colors"] = PackColorsToFloat(t_map["colors"]);
-        attribute_ptrs.emplace_back(core::Float32, t_map["colors"].GetDataPtr(),
+        t_map["colors"] = PackColorsToUint32(t_map["colors"]);
+        attribute_ptrs.emplace_back(core::UInt32, t_map["colors"].GetDataPtr(),
                                     1);
     }
 
