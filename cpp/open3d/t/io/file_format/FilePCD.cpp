@@ -914,9 +914,10 @@ static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
                               std::uint8_t rgba[4] = {0};
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
-                              float val = 0;
-                              std::memcpy(&val, rgba, 4 * sizeof(std::uint8_t));
-                              packed_color_ptr[workload_idx] = val;
+                              // Write packed bits directly; avoid float
+                              // assignment which Intel FTZ can zero.
+                              std::memcpy(packed_color_ptr + workload_idx,
+                                          rgba, 4 * sizeof(std::uint8_t));
                           });
     });
 

@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "open3d/io/FileFormatIO.h"
@@ -618,11 +619,17 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     return true;
 }
 
-float ConvertRGBToFloat(const Eigen::Vector3d &color) {
+// Pack BGR color bytes into the PCD "float" field bit pattern.
+// Writes through memcpy so Intel FTZ cannot flush denormal packed values.
+static void PackRGBColorBits(const Eigen::Vector3d &color, void *dst) {
     auto rgb = utility::ColorToUint8(color);
     std::uint8_t rgba[4] = {rgb(2), rgb(1), rgb(0), 0};
+    std::memcpy(dst, rgba, 4);
+}
+
+float ConvertRGBToFloat(const Eigen::Vector3d &color) {
     float value;
-    memcpy(&value, rgba, 4);
+    PackRGBColorBits(color, &value);
     return value;
 }
 
@@ -669,7 +676,7 @@ bool WritePCDData(FILE *file,
             }
             if (has_color) {
                 const auto &color = pointcloud.colors_[i];
-                data[idx] = ConvertRGBToFloat(color);
+                PackRGBColorBits(color, &data[idx]);
             }
             fwrite(data.get(), sizeof(float), header.elementnum, file);
             if (i % 1000 == 0) {
@@ -702,7 +709,7 @@ bool WritePCDData(FILE *file,
             }
             if (has_color) {
                 const auto &color = pointcloud.colors_[i];
-                buffer[idx * strip_size + i] = ConvertRGBToFloat(color);
+                PackRGBColorBits(color, &buffer[idx * strip_size + i]);
             }
             if (i % 1000 == 0) {
                 reporter.Update(i);

@@ -207,12 +207,18 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
-    # Turn off fast math for IntelLLVM DPC++ compiler.
-    # Fast math does not work with some of our NaN handling logics.
+    # IEEE-compliant FP for IntelLLVM / icx (Windows SYCL and Linux SYCL).
+    # -fno-fast-math: preserve NaN handling used throughout Open3D.
+    # -no-ftz: icx enables flush-to-zero by default at -O1+, which destroys
+    #   denormal float bit patterns. PCD packs RGB into a float via memcpy;
+    #   those packed values are typically denormal, so FTZ zeroes colors on
+    #   write/read and breaks PointCloud IO tests (color error ~220/255).
+    # -ffp-contract=off: avoid FMA fusion that shifts Image filter golden
+    #   results by 1 ULP vs MSVC reference data on Windows.
     target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
-    target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-no-ftz>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=off>)
 
     # Enable strip
     open3d_enable_strip(${target})
