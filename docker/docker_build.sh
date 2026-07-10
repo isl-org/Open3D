@@ -171,6 +171,7 @@ openblas_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+        --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.openblas .
     popd
@@ -222,14 +223,19 @@ cuda_wheel_build() {
         BUILD_TENSORFLOW_OPS=OFF
     else
         BUILD_PYTHON_MODULE=ON
-        # Pick up devel tars from OPEN3D_ARTIFACTS_DIR or ./open3d-artifacts
+        # Pick up devel tars from OPEN3D_ARTIFACTS_DIR or ./open3d-artifacts.
+        # When CI already downloaded into open3d-artifacts/, skip the no-op cp
+        # (cp -a same-file fails with exit 1 under set -e).
         local artifacts_src="${OPEN3D_ARTIFACTS_DIR:-${HOST_OPEN3D_ROOT}/open3d-artifacts}"
         mkdir -p "${HOST_OPEN3D_ROOT}/open3d-artifacts"
         if [[ -d "${artifacts_src}" ]]; then
-            # Copy matching tars into the Docker build context
             shopt -s nullglob
             OPEN3D_CPU_DEVEL_TAR=""
             OPEN3D_CUDA_DEVEL_TAR=""
+            local artifacts_dst="${HOST_OPEN3D_ROOT}/open3d-artifacts"
+            local artifacts_src_resolved artifacts_dst_resolved
+            artifacts_src_resolved="$(cd "${artifacts_src}" && pwd -P)"
+            artifacts_dst_resolved="$(cd "${artifacts_dst}" && pwd -P)"
             for f in "${artifacts_src}"/open3d-devel-*.tar.xz; do
                 local base
                 base="$(basename "$f")"
@@ -238,7 +244,9 @@ cuda_wheel_build() {
                 else
                     OPEN3D_CPU_DEVEL_TAR="${base}"
                 fi
-                cp -a "$f" "${HOST_OPEN3D_ROOT}/open3d-artifacts/"
+                if [[ "${artifacts_src_resolved}" != "${artifacts_dst_resolved}" ]]; then
+                    cp -a "$f" "${artifacts_dst}/"
+                fi
             done
             shopt -u nullglob
         fi
