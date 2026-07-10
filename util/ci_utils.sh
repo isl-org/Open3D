@@ -457,7 +457,14 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    install_python_dependencies with-cuda purge-cache
+    # Match the classic build_pip_package() torch ABI: build open3d_torch_ops
+    # against the CPU torch already installed in the wheel image. Installing
+    # CUDA torch here links ops to libc10_cuda.so, which then fails
+    # "Test wheel CPU" (CPU runner + requirements-torch.txt / CPU torch).
+    # Main's CUDA wheel tests pass for the same reason (ops stay CPU-linked).
+    if ! python -c "import torch" >/dev/null 2>&1; then
+        install_python_dependencies purge-cache
+    fi
 
     local commonOptions=(
         "-DOPEN3D_USE_INSTALLED_LIBRARY=ON"
@@ -482,6 +489,23 @@ build_pip_package_from_installed() {
     local wheel_out="build_wheel_out"
     mkdir -p "${wheel_out}"
 
+    # CPU companion wheel first (same torch ABI as the CUDA wheel below).
+    echo
+    echo "=== CPU companion wheel (Open3D_ROOT=${OPEN3D_CPU_ROOT}) ==="
+    mkdir -p build_cpu_wheel
+    pushd build_cpu_wheel
+    set -x
+    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
+        -DOpen3D_ROOT="${OPEN3D_CPU_ROOT}" \
+        -DCMAKE_PREFIX_PATH="${OPEN3D_CPU_ROOT}" \
+        -DBUILD_CUDA_MODULE=OFF \
+        "${commonOptions[@]}" \
+        ..
+    set +x
+    make VERBOSE=1 -j"$NPROC" pip-package
+    cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
+    popd
+
     echo
     echo "=== CUDA wheel (Open3D_ROOT=${OPEN3D_CUDA_ROOT}) ==="
     mkdir -p build_cuda_wheel
@@ -499,22 +523,6 @@ build_pip_package_from_installed() {
         echo "ERROR: 3rdparty ExternalProject dirs present in installed-mode build"
         exit 1
     fi
-    make VERBOSE=1 -j"$NPROC" pip-package
-    cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
-    popd
-
-    echo
-    echo "=== CPU companion wheel (Open3D_ROOT=${OPEN3D_CPU_ROOT}) ==="
-    mkdir -p build_cpu_wheel
-    pushd build_cpu_wheel
-    set -x
-    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
-        -DOpen3D_ROOT="${OPEN3D_CPU_ROOT}" \
-        -DCMAKE_PREFIX_PATH="${OPEN3D_CPU_ROOT}" \
-        -DBUILD_CUDA_MODULE=OFF \
-        "${commonOptions[@]}" \
-        ..
-    set +x
     make VERBOSE=1 -j"$NPROC" pip-package
     cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
     popd
