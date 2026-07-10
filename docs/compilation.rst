@@ -217,6 +217,42 @@ Finally, verify the Python installation with:
 Compilation options
 -------------------
 
+Build Python against an installed library
+`````````````````````````````````````````
+
+CI builds Linux CUDA wheels by first packaging the C++ library as
+``open3d-devel-*.tar.xz``, then compiling only the Python module (and optional
+ML ops) against that package. Locally you can use the same path:
+
+.. code-block:: bash
+
+    # 1) Build and install / package the C++ library (no Python module required)
+    cmake -S . -B build_lib \
+          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_PYTHON_MODULE=OFF \
+          -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_PYTORCH_OPS=OFF \
+          -DBUILD_TENSORFLOW_OPS=OFF
+    cmake --build build_lib --target package --parallel
+    # Extract open3d-devel-*-cuda-*.tar.xz to e.g. /opt/open3d-cuda
+
+    # 2) Build the wheel against the installed prefix
+    cmake -S . -B build_wheel \
+          -DOPEN3D_USE_INSTALLED_LIBRARY=ON \
+          -DOpen3D_ROOT=/opt/open3d-cuda \
+          -DBUILD_PYTHON_MODULE=ON \
+          -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_PYTORCH_OPS=ON
+    cmake --build build_wheel --target pip-package --parallel
+
+``OPEN3D_USE_INSTALLED_LIBRARY=ON`` skips compiling the C++ core and heavy
+third-party ExternalProjects. Torch/TensorFlow ops still compile in this mode
+when enabled; their ABI depends on the Python / framework versions, so they are
+not part of the shared devel package.
+
+The default (``OPEN3D_USE_INSTALLED_LIBRARY=OFF``) remains a full in-tree build
+with ``make pip-package``.
+
 OpenMP
 ``````
 

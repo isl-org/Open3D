@@ -209,11 +209,46 @@ cuda_wheel_build() {
         DEVELOPER_BUILD=OFF
     fi
 
+    # build-lib: produce CPU/CUDA devel packages + viewer + tests bundle
+    # (no Python wheel). Otherwise build wheels (from devel tars when present).
+    local OPEN3D_BUILD_MODE=wheel
+    local OPEN3D_CPU_DEVEL_TAR=""
+    local OPEN3D_CUDA_DEVEL_TAR=""
     if [[ "build-lib" =~ ^($options)$ ]]; then
-       BUILD_PYTHON_MODULE=OFF
+        OPEN3D_BUILD_MODE=lib
+        BUILD_PYTHON_MODULE=OFF
+        # ML ops belong in the wheel stage (Python/Torch/TF ABI).
+        BUILD_PYTORCH_OPS=OFF
+        BUILD_TENSORFLOW_OPS=OFF
     else
-       BUILD_PYTHON_MODULE=ON
+        BUILD_PYTHON_MODULE=ON
+        # Pick up devel tars from OPEN3D_ARTIFACTS_DIR or ./open3d-artifacts
+        local artifacts_src="${OPEN3D_ARTIFACTS_DIR:-${HOST_OPEN3D_ROOT}/open3d-artifacts}"
+        mkdir -p "${HOST_OPEN3D_ROOT}/open3d-artifacts"
+        if [[ -d "${artifacts_src}" ]]; then
+            # Copy matching tars into the Docker build context
+            shopt -s nullglob
+            OPEN3D_CPU_DEVEL_TAR=""
+            OPEN3D_CUDA_DEVEL_TAR=""
+            for f in "${artifacts_src}"/open3d-devel-*.tar.xz; do
+                local base
+                base="$(basename "$f")"
+                if [[ "${base}" == *"-cuda-"* ]]; then
+                    OPEN3D_CUDA_DEVEL_TAR="${base}"
+                else
+                    OPEN3D_CPU_DEVEL_TAR="${base}"
+                fi
+                cp -a "$f" "${HOST_OPEN3D_ROOT}/open3d-artifacts/"
+            done
+            shopt -u nullglob
+        fi
+        echo "[cuda_wheel_build()] CPU devel tar: ${OPEN3D_CPU_DEVEL_TAR:-<none>}"
+        echo "[cuda_wheel_build()] CUDA devel tar: ${OPEN3D_CUDA_DEVEL_TAR:-<none>}"
     fi
+
+    # Docker COPY requires the path to exist in the build context.
+    mkdir -p "${HOST_OPEN3D_ROOT}/open3d-artifacts"
+    touch "${HOST_OPEN3D_ROOT}/open3d-artifacts/.keep"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -225,12 +260,21 @@ cuda_wheel_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+        --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+        --build-arg OPEN3D_CPU_DEVEL_TAR="${OPEN3D_CPU_DEVEL_TAR}" \
+        --build-arg OPEN3D_CUDA_DEVEL_TAR="${OPEN3D_CUDA_DEVEL_TAR}" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.wheel .
     popd
 
-    if [ "$BUILD_PYTHON_MODULE" != "OFF" ]; then
+    if [[ "${OPEN3D_BUILD_MODE}" = "lib" ]]; then
+        docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+            bash -c "cp -a /open3d-artifacts/open3d-* /opt/mount/ \
+                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount/ \
+                && chown -R $(id -u):$(id -g) /opt/mount/open3d-* \
+                && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
+    else
         python_package_dir=/root/Open3D/build/lib/python_package
         docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
             bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
@@ -562,34 +606,44 @@ function main() {
 
     # CUDA wheels
     cuda_wheel_py310_dev)
-        cuda_wheel_build py310 dev
+        shift
+        cuda_wheel_build py310 dev "$@"
         ;;
     cuda_wheel_py311_dev)
-        cuda_wheel_build py311 dev
+        shift
+        cuda_wheel_build py311 dev "$@"
         ;;
     cuda_wheel_py312_dev)
-        cuda_wheel_build py312 dev
+        shift
+        cuda_wheel_build py312 dev "$@"
         ;;
     cuda_wheel_py313_dev)
-        cuda_wheel_build py313 dev
+        shift
+        cuda_wheel_build py313 dev "$@"
         ;;
     cuda_wheel_py314_dev)
-        cuda_wheel_build py314 dev
+        shift
+        cuda_wheel_build py314 dev "$@"
         ;;
     cuda_wheel_py310)
-        cuda_wheel_build py310
+        shift
+        cuda_wheel_build py310 "$@"
         ;;
     cuda_wheel_py311)
-        cuda_wheel_build py311
+        shift
+        cuda_wheel_build py311 "$@"
         ;;
     cuda_wheel_py312)
-        cuda_wheel_build py312
+        shift
+        cuda_wheel_build py312 "$@"
         ;;
     cuda_wheel_py313)
-        cuda_wheel_build py313
+        shift
+        cuda_wheel_build py313 "$@"
         ;;
     cuda_wheel_py314)
-        cuda_wheel_build py314
+        shift
+        cuda_wheel_build py314 "$@"
         ;;
 
     # ML CIs

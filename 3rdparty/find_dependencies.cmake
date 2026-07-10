@@ -489,6 +489,13 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
+# When building only pybind (+ ML ops) against an installed Open3D devel
+# package, skip all heavy ExternalProjects (assimp, embree, vtk, filament, …).
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    include(${CMAKE_CURRENT_LIST_DIR}/find_dependencies_installed.cmake)
+    return()
+endif()
+
 # Threads
 open3d_find_package_3rdparty_library(3rdparty_threads
     REQUIRED
