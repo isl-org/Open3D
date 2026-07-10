@@ -53,12 +53,14 @@ if(WIN32)
     # the translation unit, which fails to compile under icx with "requires
     # target feature 'ssse3'". Explicitly enable ssse3 for icx on Windows; Clang
     # accepts -m<feature> flags even in its MSVC-compatible ("icx.exe") driver
-    # mode. Ensure we keep /EHsc (C++ exception handling) enabled, since overriding
-    # CMAKE_CXX_FLAGS clobbers CMake's standard default flag /EHsc on Windows.
+    # mode. Start from the inherited ${CMAKE_CXX_FLAGS} (which already carries
+    # CMake's standard Windows defaults, e.g. /DWIN32 /D_WINDOWS /EHsc) rather
+    # than a hardcoded literal, so librealsense's WIN32-guarded code (e.g.
+    # rostime's sys/timeb.h vs sys/time.h switch) keeps seeing WIN32 defined.
     if(BUILD_SYCL_MODULE)
         list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS
-            "-DCMAKE_C_FLAGS:STRING=-mssse3"
-            "-DCMAKE_CXX_FLAGS:STRING=/EHsc -mssse3"
+            "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} -mssse3"
+            "-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS} -mssse3"
         )
     endif()
 else()
