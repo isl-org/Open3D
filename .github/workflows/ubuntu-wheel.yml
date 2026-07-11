@@ -61,6 +61,7 @@ jobs:
           name: open3d-cpp-tests
           path: open3d-cpp-tests.tar.xz
           if-no-files-found: error
+          retention-days: 1
 
   # Runs in parallel with build-wheel (both need only build-lib).
   test-cpp:

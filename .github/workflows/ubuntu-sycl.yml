@@ -63,6 +63,7 @@ jobs:
         with:
           name: open3d-lib-sycl-shared
           path: open3d-lib-sycl-shared.tar.xz
+          retention-days: 1
 
       - name: Upload C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}

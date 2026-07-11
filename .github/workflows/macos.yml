@@ -89,6 +89,7 @@ jobs:
         with:
           name: open3d-build-${{ matrix.os }}
           path: build.tar.xz
+          retention-days: 1
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |

@@ -66,6 +66,7 @@ jobs:
         with:
           name: open3d-lib-arm64
           path: open3d-lib-arm64.tar.gz
+          retention-days: 1
 
   build-wheel-arm64:
     name: Build Wheel ARM64

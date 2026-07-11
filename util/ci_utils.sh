@@ -457,12 +457,14 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    # Match the classic build_pip_package() torch ABI: build open3d_torch_ops
-    # against the CPU torch already installed in the wheel image. Installing
-    # CUDA torch here links ops to libc10_cuda.so, which then fails
-    # "Test wheel CPU" (CPU runner + requirements-torch.txt / CPU torch).
-    # Main's CUDA wheel tests pass for the same reason (ops stay CPU-linked).
-    if ! python -c "import torch" >/dev/null 2>&1; then
+    # The CPU wheel builds open3d_torch_ops against the CPU torch installed in
+    # the wheel image (matches classic build_pip_package() ABI). The CUDA wheel
+    # ships without ML ops: CUDA torch ops require a CUDA-enabled torch install
+    # (c10/cuda headers) and are currently broken, so we build it with ML ops
+    # OFF (see per-wheel cmake calls below). This yields the intended matrix:
+    # CPU wheel = ML ops, CUDA wheel = no ML ops.
+    if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]] &&
+        ! python -c "import torch" >/dev/null 2>&1; then
         install_python_dependencies purge-cache
     fi
 
@@ -471,9 +473,6 @@ build_pip_package_from_installed() {
         "-DDEVELOPER_BUILD=${DEVELOPER_BUILD}"
         "-DBUILD_SHARED_LIBS=ON"
         "-DBUILD_PYTHON_MODULE=ON"
-        "-DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-        "-DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-        "-DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}"
         "-DBUILD_AZURE_KINECT=${BUILD_AZURE_KINECT}"
         "-DBUILD_LIBREALSENSE=ON"
         "-DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}"
@@ -499,6 +498,9 @@ build_pip_package_from_installed() {
         -DOpen3D_ROOT="${OPEN3D_CPU_ROOT}" \
         -DCMAKE_PREFIX_PATH="${OPEN3D_CPU_ROOT}" \
         -DBUILD_CUDA_MODULE=OFF \
+        -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+        -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        -DBUNDLE_OPEN3D_ML="${BUNDLE_OPEN3D_ML}" \
         "${commonOptions[@]}" \
         ..
     set +x
@@ -511,10 +513,15 @@ build_pip_package_from_installed() {
     mkdir -p build_cuda_wheel
     pushd build_cuda_wheel
     set -x
+    # CUDA wheel ships without ML ops: CUDA torch ops need CUDA-enabled torch
+    # (only CPU torch is installed here) and are currently broken.
     cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
         -DOpen3D_ROOT="${OPEN3D_CUDA_ROOT}" \
         -DCMAKE_PREFIX_PATH="${OPEN3D_CUDA_ROOT}" \
         -DBUILD_CUDA_MODULE=ON \
+        -DBUILD_TENSORFLOW_OPS=OFF \
+        -DBUILD_PYTORCH_OPS=OFF \
+        -DBUNDLE_OPEN3D_ML=OFF \
         "${commonOptions[@]}" \
         ..
     set +x
