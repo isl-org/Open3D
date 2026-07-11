@@ -31,10 +31,13 @@ if(WIN32)
     endif()
     # For CUDA builds, we must also copy the CUDA DLLs. Alternately, add
     # $Env:CUDA_PATH/bin to $Env:PATH to avoid this copy.
+    # Use $<TARGET_FILE_DIR:Draw> (the actual executable output dir) so this
+    # works for both multi-config generators (Visual Studio: build/Release) and
+    # single-config generators (Ninja on Windows SYCL/icx: build/).
     add_custom_command(TARGET Draw POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
-                        ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>
-                        COMMENT "Copying Open3D DLLs to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+                        $<TARGET_FILE_DIR:Draw>
+                        COMMENT "Copying Open3D DLLs to $<TARGET_FILE_DIR:Draw>")
 endif()
 if (MSVC)
     add_compile_options(/utf-8)  # fmt 12+ requires /utf-8 with MSVC

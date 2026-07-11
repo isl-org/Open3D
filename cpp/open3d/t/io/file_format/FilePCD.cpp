@@ -917,8 +917,8 @@ static core::Tensor PackColorsToUint32(const core::Tensor &colors_contiguous) {
                               std::uint8_t rgba[4] = {0};
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
-                              std::memcpy(packed_color_ptr + workload_idx,
-                                          rgba, 4 * sizeof(std::uint8_t));
+                              std::memcpy(packed_color_ptr + workload_idx, rgba,
+                                          4 * sizeof(std::uint8_t));
                           });
     });
 

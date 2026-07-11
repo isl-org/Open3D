@@ -14,10 +14,6 @@ on:
         description: "Set to OFF for Release wheels"
         required: false
         default: "ON"
-      oneapi_cmake_debug:
-        description: "Verbose oneAPI path diagnostics and CMAKE_FIND_DEBUG_MODE on xpu legs"
-        required: false
-        default: "OFF"
 
   push:
     branches:
@@ -37,8 +33,6 @@ env:
   INSTALL_DIR: "C:\\Program Files\\Open3D"
   NPROC: 6
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-  # workflow_dispatch oneapi_cmake_debug=ON enables -Verbose install logs and cmake --debug-find
-  OPEN3D_ONEAPI_DEBUG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oneapi_cmake_debug == 'ON' && '1' || '0' }}
 
 jobs:
   windows:
@@ -150,17 +144,7 @@ jobs:
         if: ${{ matrix.device == 'xpu' }}
         shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
-        env:
-          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
         run: ./util/install_oneapi_windows.ps1
-
-      - name: Debug oneAPI layout before CMake
-        if: ${{ matrix.device == 'xpu' }}
-        shell: pwsh
-        working-directory: ${{ env.SRC_DIR }}
-        env:
-          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
-        run: ./util/print_oneapi_windows_paths.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -182,6 +166,7 @@ jobs:
           path: open3d_ml
 
       - name: Install PyTorch requirements
+        if: ${{ env.BUILD_PYTORCH_OPS == 'ON' }}
         run: |
           if ( '${{ matrix.device }}' -eq 'cuda' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
@@ -468,14 +453,6 @@ jobs:
         env:
           OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
         run: ./util/install_oneapi_windows.ps1
-
-      - name: Debug oneAPI layout before CMake
-        if: ${{ matrix.device == 'xpu' }}
-        shell: pwsh
-        working-directory: ${{ env.SRC_DIR }}
-        env:
-          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
-        run: ./util/print_oneapi_windows_paths.ps1
 
       - name: Install glslang via vcpkg
         run: |

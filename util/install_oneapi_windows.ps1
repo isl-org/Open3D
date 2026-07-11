@@ -26,9 +26,6 @@ $ONEAPI_WIN_BASE_COMPONENTS = @(
     "intel.oneapi.win.mkl.devel"
 ) -join ":"
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$PrintPathsScript = Join-Path $ScriptDir 'print_oneapi_windows_paths.ps1'
-
 $TempRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:TEMP }
 $WorkDir = Join-Path $TempRoot "open3d_oneapi_$([guid]::NewGuid().ToString('N'))"
 $InstallLogArchive = Join-Path $TempRoot 'open3d_oneapi_install_logs'
@@ -80,15 +77,4 @@ try {
     }
     Pop-Location
     Remove-Item -Recurse -Force $WorkDir -ErrorAction SilentlyContinue
-}
-
-Write-Host "OneAPI bootstrapper reported success (exit code 0)."
-if (Test-Path -LiteralPath $PrintPathsScript) {
-    if ($Verbose) {
-        & $PrintPathsScript -Verbose
-    } else {
-        & $PrintPathsScript
-    }
-} else {
-    Write-Warning "Missing $PrintPathsScript"
 }

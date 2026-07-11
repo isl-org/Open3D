@@ -31,10 +31,25 @@ from open3d._build_config import _build_config
 _added_dll_dirs = []
 if sys.platform == "win32":  # Unix: Use rpath to find libraries
     _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
-    # SYCL wheels depend on Intel DPC++ runtime packages (dpcpp-cpp-rt) installed
-    # in the same environment. Their DLLs live under site-packages/*.data/...
+    # SYCL wheels depend on Intel DPC++ runtime packages (dpcpp-cpp-rt and its
+    # dependencies: intel-sycl-rt, intel-cmplr-lib-rt, intel-opencl-rt, ...)
+    # installed in the same environment. These pip wheels ship their DLLs in a
+    # "<name>.data/data/Library/bin" wheel data dir, which pip installs to the
+    # environment's data scheme root (sys.prefix), i.e. "<prefix>/Library/bin".
+    # The ".data" dir does not persist under site-packages after install, so we
+    # add the prefix-relative "Library/bin" (and its subdirs) to the DLL search
+    # path. We also scan site-packages for any residual ".data" layout as a
+    # fallback for non-standard install schemes.
     if _build_config["BUILD_SYCL_MODULE"]:
         _intel_pip_dll_dirs = set()
+        _library_bin_roots = [Path(sys.prefix) / "Library" / "bin"]
+        for _lib_bin in _library_bin_roots:
+            if not _lib_bin.is_dir():
+                continue
+            _intel_pip_dll_dirs.add(_lib_bin)
+            for _child in _lib_bin.iterdir():
+                if _child.is_dir():
+                    _intel_pip_dll_dirs.add(_child)
         _site_package_roots = [Path(_p) for _p in site.getsitepackages()]
         _user_site = site.getusersitepackages()
         if _user_site:
