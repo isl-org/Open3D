@@ -55,7 +55,7 @@ EGLDisplay GetHardwareDisplay() {
 }  // namespace
 
 std::unique_ptr<EGLOffscreenContext> EGLOffscreenContext::Create(int width,
-                                                                  int height) {
+                                                                 int height) {
     // Constructor is private; use a raw new/reset via a helper deleter-free
     // pattern since std::make_unique cannot access it.
     std::unique_ptr<EGLOffscreenContext> ctx(new EGLOffscreenContext());
@@ -107,8 +107,7 @@ bool EGLOffscreenContext::Initialize(int width, int height) {
                                      EGL_NONE};
     EGLConfig config;
     EGLint num_configs = 0;
-    if (!eglChooseConfig(display_, config_attribs, &config, 1,
-                         &num_configs) ||
+    if (!eglChooseConfig(display_, config_attribs, &config, 1, &num_configs) ||
         num_configs == 0) {
         utility::LogWarning("EGLOffscreenContext: eglChooseConfig() failed.");
         return false;
@@ -132,8 +131,8 @@ bool EGLOffscreenContext::Initialize(int width, int height) {
                                       EGL_CONTEXT_OPENGL_PROFILE_MASK,
                                       EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
                                       EGL_NONE};
-    context_ = eglCreateContext(display_, config, EGL_NO_CONTEXT,
-                                context_attribs);
+    context_ =
+            eglCreateContext(display_, config, EGL_NO_CONTEXT, context_attribs);
     if (context_ == EGL_NO_CONTEXT) {
         utility::LogWarning("EGLOffscreenContext: eglCreateContext() failed.");
         return false;
@@ -156,8 +155,7 @@ bool EGLOffscreenContext::MakeCurrent() {
     if (display_ == EGL_NO_DISPLAY || context_ == EGL_NO_CONTEXT) {
         return false;
     }
-    return eglMakeCurrent(display_, surface_, surface_, context_) ==
-           EGL_TRUE;
+    return eglMakeCurrent(display_, surface_, surface_, context_) == EGL_TRUE;
 }
 
 bool EGLOffscreenContext::SwapBuffers() {
@@ -170,7 +168,7 @@ bool EGLOffscreenContext::SwapBuffers() {
 void EGLOffscreenContext::ReleaseCurrent() {
     if (display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
-                      EGL_NO_CONTEXT);
+                       EGL_NO_CONTEXT);
     }
 }
 

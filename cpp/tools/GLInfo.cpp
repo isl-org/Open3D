@@ -30,8 +30,7 @@ void ReportEGLGLInfo() {
                 "query GPU info.");
         return;
     }
-    utility::LogInfo("GLInfo: using EGL {}.{} offscreen context", major,
-                     minor);
+    utility::LogInfo("GLInfo: using EGL {}.{} offscreen context", major, minor);
 
     eglBindAPI(EGL_OPENGL_API);
     const EGLint config_attribs[] = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -60,9 +59,8 @@ void ReportEGLGLInfo() {
 
     utility::LogInfo("GL_VERSION:\t{}",
                      reinterpret_cast<const char *>(glGetString(GL_VERSION)));
-    utility::LogInfo(
-            "GL_RENDERER:\t{}",
-            reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
+    utility::LogInfo("GL_RENDERER:\t{}",
+                     reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     utility::LogInfo("GL_VENDOR:\t{}",
                      reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
 
@@ -106,8 +104,7 @@ bool TryGLVersion(int major,
 
     glfwSetErrorCallback(GLFWErrorCallback);
     if (!glfwInit()) {
-        utility::LogDebug(
-                "Failed to initialize GLFW (no display available)");
+        utility::LogDebug("Failed to initialize GLFW (no display available)");
         return false;
     }
 
@@ -122,7 +119,8 @@ bool TryGLVersion(int major,
     if (!window_) {
         utility::LogDebug("Failed to create window");
         glfwTerminate();
-        return true;  // GLFW initialized fine; this GL version is just unsupported.
+        return true;  // GLFW initialized fine; this GL version is just
+                      // unsupported.
     } else {
         glfwMakeContextCurrent(window_);
     }

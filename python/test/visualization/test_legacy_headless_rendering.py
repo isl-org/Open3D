@@ -37,7 +37,7 @@ def capture_headless():
 
 
 @pytest.mark.skipif(platform.system() != "Linux",
-                     reason="EGL offscreen rendering fallback is Linux-only")
+                    reason="EGL offscreen rendering fallback is Linux-only")
 def test_legacy_visualizer_headless_capture():
     """Test that the legacy Visualizer can render offscreen via EGL when no
     windowing system display is available, in the standard Open3D binary."""
