@@ -2,7 +2,7 @@ include(ExternalProject)
 
 if (WIN32)
     set(CIVETWEB_CXX_FLAGS /EHsc)
-elif(UNIX AND NOT APPLE)
+elseif(UNIX AND NOT APPLE)
     set(CIVETWEB_CXX_FLAGS -D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>)
 endif()
 ExternalProject_Add(
