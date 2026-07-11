@@ -30,6 +30,12 @@ target_sources(visualization PRIVATE
     utility/SelectionPolygonVolume.cpp
 )
 
+if (NOT APPLE AND NOT WIN32)
+    target_sources(visualization PRIVATE
+        visualizer/EGLOffscreenContext.cpp
+    )
+endif()
+
 target_sources(visualization PRIVATE
     visualizer/RenderOption.cpp
     visualizer/RenderOptionWithEditing.cpp

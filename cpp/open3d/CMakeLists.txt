@@ -137,10 +137,18 @@ open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
 # GLX (X11) and EGL (Wayland) are needed by the OpenGL compute backend for
-# Gaussian splatting.  The context class detects the display server at runtime
+# Gaussian splatting. The context class detects the display server at runtime
 # and uses GLX on X11, EGL on Wayland.
+#
+# EGL is also required (unconditionally) on Linux for the legacy visualizer's
+# GPU-accelerated offscreen rendering fallback (EGLOffscreenContext), used
+# when no windowing system display is available.
 if (NOT APPLE)
-    find_package(OpenGL COMPONENTS EGL)
+    if (UNIX AND NOT APPLE)
+        find_package(OpenGL COMPONENTS EGL REQUIRED)
+    else()
+        find_package(OpenGL COMPONENTS EGL)
+    endif()
     if (OpenGL_EGL_FOUND)
         target_link_libraries(Open3D PRIVATE OpenGL::EGL)
     endif()

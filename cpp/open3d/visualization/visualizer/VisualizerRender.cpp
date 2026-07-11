@@ -71,7 +71,7 @@ bool Visualizer::InitOpenGL() {
 }
 
 void Visualizer::Render(bool render_screen) {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     view_control_ptr_->SetViewMatrices();
 
@@ -124,7 +124,12 @@ void Visualizer::Render(bool render_screen) {
         renderer_ptr->Render(*opt, *view_control_ptr_);
     }
 
-    glfwSwapBuffers(window_);
+    if (!headless_) {
+        // Pbuffer-backed EGL surfaces are single-buffered offscreen render
+        // targets; there is no window compositor swap needed in headless
+        // mode, and window_ is null there.
+        glfwSwapBuffers(window_);
+    }
 }
 
 void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
@@ -147,10 +152,20 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 }
 
 void Visualizer::CopyViewStatusToClipboard() {
+    if (!window_) {  // no clipboard access headless
+        utility::LogWarning(
+                "Clipboard is not available in headless rendering mode.");
+        return;
+    }
     glfwSetClipboardString(window_, GetViewStatus().c_str());
 }
 
 void Visualizer::CopyViewStatusFromClipboard() {
+    if (!window_) {  // no clipboard access headless
+        utility::LogWarning(
+                "Clipboard is not available in headless rendering mode.");
+        return;
+    }
     const char *clipboard_string_buffer = glfwGetClipboardString(window_);
     if (clipboard_string_buffer != nullptr) {
         std::string clipboard_string(clipboard_string_buffer);
@@ -192,7 +207,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
         Render(true);
         is_redraw_required_ = false;
     } else {
-        glfwMakeContextCurrent(window_);
+        MakeContextCurrent();
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),

@@ -11,6 +11,10 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 
+#if defined(__linux__)
+#include "open3d/visualization/visualizer/EGLOffscreenContext.h"
+#endif
+
 #if defined(__APPLE__) && defined(BUILD_GUI)
 namespace bluegl {
 int bind();
@@ -34,15 +38,12 @@ private:
         // framework build version of Python.
         glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
+        // Try to initialize GLFW against a real windowing system platform
+        // (X11/Wayland/Cocoa/Win32). If no display is available (e.g. no
+        // DISPLAY/WAYLAND_DISPLAY on Linux), this fails and
+        // Visualizer::CreateVisualizerWindow() falls back to an offscreen
+        // EGL context instead of GLFW's software (OSMesa) NULL platform.
         init_status_ = glfwInit();
-        if (init_status_ != GLFW_TRUE) {
-            glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
-            init_status_ = glfwInit();
-        }
-        if (init_status_ == GLFW_TRUE) init_status_ = glfwGetPlatform();
-        if (init_status_ == GLFW_PLATFORM_NULL) {
-            utility::LogWarning("GLFW initialized for headless rendering.");
-        }
     }
 
     GLFWContext(const GLFWContext &) = delete;
@@ -116,27 +117,57 @@ bool Visualizer::CreateVisualizerWindow(
 #endif  //__APPLE__
         return true;
     }
+    if (headless_) {  // offscreen EGL context already created
+        utility::LogDebug("[Visualizer] Reusing offscreen EGL context.");
+        UpdateWindowTitle();
+        return true;
+    }
 
     utility::LogDebug("[Visualizer] Creating window.");
     glfwSetErrorCallback(GLFWContext::GLFWErrorCallback);
     glfw_context_ = GLFWContext::GetInstance();
     if (glfw_context_->InitStatus() == GLFW_FALSE) {
+#if defined(__linux__)
+        // No windowing system display is available (e.g. no
+        // DISPLAY/WAYLAND_DISPLAY). Fall back to a GPU-accelerated offscreen
+        // EGL context so headless rendering works in the standard binary.
+        utility::LogInfo(
+                "[Visualizer] No display detected, falling back to EGL "
+                "offscreen rendering.");
+        egl_context_ = EGLOffscreenContext::Create(width, height);
+        if (!egl_context_) {
+            utility::LogWarning(
+                    "Failed to create EGL offscreen context. Headless "
+                    "rendering requires an EGL-capable GPU driver (e.g. "
+                    "Mesa or NVIDIA).");
+            return false;
+        }
+        headless_ = true;
+        if (!InitOpenGL()) {
+            return false;
+        }
+        if (!InitViewControl()) {
+            return false;
+        }
+        if (!InitRenderOption()) {
+            return false;
+        }
+        view_control_ptr_->ChangeWindowSize(width, height);
+        UpdateWindowTitle();
+        is_initialized_ = true;
+        return true;
+#else
         utility::LogWarning("Failed to initialize GLFW");
         return false;
+#endif
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    int visible_hint = visible ? 1 : 0;
-    if (glfw_context_->InitStatus() == GLFW_PLATFORM_NULL) {
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_FALSE);
-        visible_hint = 0;  // NULL platform does not support visible window
-    } else {
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    }
-    glfwWindowHint(GLFW_VISIBLE, visible_hint);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
     if (!window_) {
@@ -241,11 +272,31 @@ void Visualizer::DestroyVisualizerWindow() {
 
     utility::LogDebug("[Visualizer] Destroying window.");
     is_initialized_ = false;
+    MakeContextCurrent();
     glDeleteVertexArrays(1, &vao_id_);
     vao_id_ = 0;
-    glfwDestroyWindow(window_);
-    window_ = nullptr;
+    if (window_) {
+        glfwDestroyWindow(window_);
+        window_ = nullptr;
+    }
     glfw_context_.reset();
+#if defined(__linux__)
+    egl_context_.reset();
+#endif
+    headless_ = false;
+    should_close_ = false;
+}
+
+void Visualizer::MakeContextCurrent() {
+    if (headless_) {
+#if defined(__linux__)
+        if (egl_context_) {
+            egl_context_->MakeCurrent();
+        }
+#endif
+        return;
+    }
+    glfwMakeContextCurrent(window_);
 }
 
 void Visualizer::RegisterAnimationCallback(
@@ -271,7 +322,7 @@ void Visualizer::UpdateWindowTitle() {
 }
 
 void Visualizer::BuildUtilities() {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
@@ -305,7 +356,11 @@ void Visualizer::Run() {
 }
 
 void Visualizer::Close() {
-    glfwSetWindowShouldClose(window_, GL_TRUE);
+    if (headless_) {
+        should_close_ = true;
+    } else {
+        glfwSetWindowShouldClose(window_, GL_TRUE);
+    }
     utility::LogDebug("[Visualizer] Window closing.");
 }
 
@@ -313,11 +368,15 @@ bool Visualizer::WaitEvents() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     if (is_redraw_required_) {
         WindowRefreshCallback(window_);
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
+    if (headless_) {
+        // No windowing system events to wait for in headless/EGL mode.
+        return !should_close_;
+    }
     glfwWaitEvents();
     return !glfwWindowShouldClose(window_);
 }
@@ -326,11 +385,14 @@ bool Visualizer::PollEvents() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     if (is_redraw_required_) {
         WindowRefreshCallback(window_);
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
+    if (headless_) {
+        return !should_close_;
+    }
     glfwPollEvents();
     return !glfwWindowShouldClose(window_);
 }
@@ -348,7 +410,7 @@ bool Visualizer::AddGeometry(
         return false;
     }
 
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->GetGeometryType() ==
         geometry::Geometry::GeometryType::Unspecified) {
@@ -436,7 +498,7 @@ bool Visualizer::RemoveGeometry(
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete = NULL;
     for (auto &geometry_renderer_ptr : geometry_renderer_ptrs_) {
         if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
@@ -458,7 +520,7 @@ bool Visualizer::ClearGeometries() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     geometry_renderer_ptrs_.clear();
     geometry_ptrs_.clear();
     return UpdateGeometry();
@@ -466,7 +528,7 @@ bool Visualizer::ClearGeometries() {
 
 bool Visualizer::UpdateGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
         if (geometry_ptr == nullptr ||
@@ -483,6 +545,9 @@ void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
+    if (!window_) {  // no-op headless: no window/monitor concept
+        return;
+    }
     if (!fullscreen) {
         // Wayland ignores window position
         glfwSetWindowMonitor(window_, NULL, saved_window_pos_(0),
@@ -518,7 +583,7 @@ void Visualizer::ToggleFullScreen() {
 }
 
 bool Visualizer::IsFullScreen() {
-    return glfwGetWindowMonitor(window_) != nullptr;
+    return window_ && glfwGetWindowMonitor(window_) != nullptr;
 }
 
 void Visualizer::PrintVisualizerHelp() {

@@ -680,9 +680,6 @@ if(NOT USE_SYSTEM_GLEW)
         INCLUDE_DIRS
             include/
     )
-    if(ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(3rdparty_glew PUBLIC GLEW_OSMESA)
-    endif()
     if(WIN32)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_STATIC)
     endif()
@@ -1474,21 +1471,14 @@ if(BUILD_GUI)
     endif() # if(NOT USE_SYSTEM_FILAMENT)
 endif()
 
-# Headless rendering
-if (ENABLE_HEADLESS_RENDERING)
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        REQUIRED
-        PACKAGE OSMesa
-        INCLUDE_DIRS OSMESA_INCLUDE_DIR
-        LIBRARIES OSMESA_LIBRARY
-    )
-else()
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        PACKAGE OpenGL
-        TARGETS OpenGL::GL
-    )
-    set(USE_SYSTEM_OPENGL ON)
-endif()
+# OpenGL. Headless rendering on Linux uses a GPU-accelerated offscreen EGL
+# context (see EGLOffscreenContext) instead of a software OSMesa build, so
+# there is no separate headless configuration here.
+open3d_find_package_3rdparty_library(3rdparty_opengl
+    PACKAGE OpenGL
+    TARGETS OpenGL::GL
+)
+set(USE_SYSTEM_OPENGL ON)
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
 
 # RPC interface

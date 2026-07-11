@@ -662,11 +662,16 @@ test_cpp_example() {
     # Now I am in Open3D/build/
 }
 
-# Install dependencies needed for building documentation
+# Install dependencies needed for building documentation. This no longer
+# needs a compiler toolchain: docs are built against a pre-built Open3D wheel
+# (see build_docs() below), which already includes GUI/rendering and, on
+# Linux, GPU-accelerated EGL offscreen rendering for notebook execution.
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies from $(pwd)
+    # Provides runtime OpenGL/EGL libraries needed by the legacy visualizer
+    # for GPU-accelerated headless rendering of notebook outputs.
     util/install_deps_ubuntu.sh assume-yes
     $SUDO apt-get install --yes \
         libxml2-dev libxslt-dev \
@@ -675,15 +680,12 @@ install_docs_dependencies() {
         texlive \
         texlive-latex-extra \
         ghostscript \
-        pandoc \
-        ccache
+        pandoc
     echo
     echo Install Python dependencies for building docs
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    which cmake || python -m pip install -U -q cmake
-    python -m pip install -U -q -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
@@ -699,71 +701,29 @@ install_docs_dependencies() {
         -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
-# Build documentation
+# Build documentation (Sphinx + Doxygen + Jupyter notebooks) against an
+# already-installed Open3D Python wheel (built by the standard cpu-shared-ml
+# job; see .github/workflows/ubuntu.yml). A single pass now covers notebook
+# execution and visualization.{gui,rendering} API docs, since the standard
+# binary supports both GUI and (on Linux) GPU-accelerated EGL headless
+# rendering; there is no separate headless build.
 # Usage: build_docs $DEVELOPER_BUILD
 build_docs() {
-    echo "Using cmake: $(command -v cmake)"
-    cmake --version
-    echo NPROC="$NPROC"
-    mkdir -p build
-    cd build
     set +u
     DEVELOPER_BUILD="$1"
     set -u
     if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-        DEVELOPER_BUILD=ON
         DOC_ARGS=""
     else
         DOC_ARGS="--is_release"
         echo "Building docs for a new Open3D release"
-        echo
-        echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
-        echo
     fi
-    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
-        "-DCMAKE_BUILD_TYPE=Release"
-        "-DWITH_OPENMP=ON"
-        "-DBUILD_AZURE_KINECT=ON"
-        "-DBUILD_LIBREALSENSE=ON"
-        "-DBUILD_TENSORFLOW_OPS=ON"
-        "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_EXAMPLES=OFF"
-    )
-    set -x # Echo commands on
-    cmake "${cmakeOptions[@]}" \
-        -DENABLE_HEADLESS_RENDERING=ON \
-        -DBUNDLE_OPEN3D_ML=OFF \
-        -DBUILD_GUI=OFF \
-        -DBUILD_WEBRTC=OFF \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
-        ..
-    make python-package -j$NPROC
-    make -j$NPROC
-    bin/GLInfo
-    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
-    cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
-    python -m pip uninstall --yes open3d
-    cd ../build
-    set +x # Echo commands off
-    echo
-    echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
-    echo
     set -x # Echo commands on
-    cmake "${cmakeOptions[@]}" \
-        -DENABLE_HEADLESS_RENDERING=OFF \
-        -DBUNDLE_OPEN3D_ML=ON \
-        -DBUILD_GUI=ON \
-        -DBUILD_WEBRTC=ON \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
-        ..
-    make python-package -j$NPROC
-    make -j$NPROC
-    bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
-    python -c "from open3d import *; import open3d; print(open3d)"
-    cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
+    cd docs # Open3D/docs
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
+        --py_api_rst=always --py_example_rst=always --sphinx --doxygen
+    cd ..
     set +x # Echo commands off
 }
 
