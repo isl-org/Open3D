@@ -16,6 +16,10 @@
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 
+#if defined(__linux__)
+#include "open3d/visualization/visualizer/EGLOffscreenContext.h"
+#endif
+
 #if defined(BUILD_GUI)
 namespace bluegl {
 int bind();
@@ -124,10 +128,18 @@ void Visualizer::Render(bool render_screen) {
         renderer_ptr->Render(*opt, *view_control_ptr_);
     }
 
-    if (!headless_) {
-        // Pbuffer-backed EGL surfaces are single-buffered offscreen render
-        // targets; there is no window compositor swap needed in headless
-        // mode, and window_ is null there.
+    if (headless_) {
+#if defined(__linux__)
+        // EGL pbuffers formally report EGL_RENDER_BUFFER == EGL_BACK_BUFFER,
+        // so (as with the windowed GLFW path) the just-rendered content must
+        // be swapped to the front buffer before InitOpenGL's
+        // glReadBuffer(GL_FRONT) can see it, e.g. from
+        // CaptureScreenFloatBuffer(do_render=false).
+        if (egl_context_) {
+            egl_context_->SwapBuffers();
+        }
+#endif
+    } else {
         glfwSwapBuffers(window_);
     }
 }

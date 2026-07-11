@@ -43,6 +43,14 @@ public:
     /// \brief Release the context from the calling thread.
     void ReleaseCurrent();
 
+    /// \brief Present the pbuffer's back buffer, mirroring
+    /// glfwSwapBuffers() for the windowed GLFW path. EGL pbuffers are
+    /// formally double-buffered (EGL_RENDER_BUFFER == EGL_BACK_BUFFER), so
+    /// this call is needed before reading GL_FRONT (e.g. in
+    /// Visualizer::CaptureScreenFloatBuffer(do_render=false)) to guarantee
+    /// the rendered content is visible there on any EGL implementation.
+    bool SwapBuffers();
+
     int GetWidth() const { return width_; }
     int GetHeight() const { return height_; }
 

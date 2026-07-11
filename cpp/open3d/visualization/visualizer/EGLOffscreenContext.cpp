@@ -160,6 +160,13 @@ bool EGLOffscreenContext::MakeCurrent() {
            EGL_TRUE;
 }
 
+bool EGLOffscreenContext::SwapBuffers() {
+    if (display_ == EGL_NO_DISPLAY || surface_ == EGL_NO_SURFACE) {
+        return false;
+    }
+    return eglSwapBuffers(display_, surface_) == EGL_TRUE;
+}
+
 void EGLOffscreenContext::ReleaseCurrent() {
     if (display_ != EGL_NO_DISPLAY) {
         eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
