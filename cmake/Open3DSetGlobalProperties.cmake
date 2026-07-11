@@ -170,10 +170,7 @@ function(open3d_set_global_properties target)
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
             # Note: /MP is not compatible with the Intel oneAPI DPC++/C++
-            # compiler (icx) when SYCL offloading (-fsycl) is enabled: icx
-            # errors with "'-MP' is not supported with offloading enabled".
-            # Use build-time parallelism (Option 1) instead when
-            # BUILD_SYCL_MODULE is ON.
+            # compiler (icx) when SYCL offloading (-fsycl) is enabled
             if(NOT BUILD_SYCL_MODULE)
                 target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
             endif()
@@ -213,8 +210,6 @@ function(open3d_set_global_properties target)
     #   -O1+, which destroys denormal float bit patterns. PCD packs RGB into
     #   a float via memcpy; those packed values are typically denormal when
     #   R<128, so FTZ/DAZ zeroes colors (MaxDistance*255 == 127*sqrt(3)≈220).
-    # -ffp-contract=off: avoid FMA fusion that shifts Image filter golden
-    #   results by 1 ULP vs MSVC reference data on Windows.
     # Windows icx is clang-cl and ignores GNU-style -f/-no- flags; forward
     # them with /clang: so they actually take effect on the Windows XPU CI.
     if(WIN32)
@@ -226,7 +221,6 @@ function(open3d_set_global_properties target)
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-fno-fast-math>
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-no-ftz>
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-mno-daz-ftz>
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-ffp-contract=off>)
 
     # Enable strip
     open3d_enable_strip(${target})

@@ -24,6 +24,7 @@ elseif (WIN32)
             "BUILD_SHARED_LIBS=ON with STATIC_WINDOWS_RUNTIME=ON. Use "
             "STATIC_WINDOWS_RUNTIME=OFF or BUILD_WEBRTC_FROM_SOURCE=ON.")
     endif()
+    # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
     if(STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
         set(WEBRTC_DEBUG_TAG Debug_mt)
         set(WEBRTC_DEBUG_SHA256 b537cce72f758fbcd214fbca80ecfb26228d23c728119abc499c4b333e5f0786)

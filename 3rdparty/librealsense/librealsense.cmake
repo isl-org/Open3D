@@ -47,16 +47,10 @@ set(LIBREALSENSE_CMAKE_CXX_FLAGS "")
 set(LIBREALSENSE_EXTRA_CMAKE_ARGS "")
 if(WIN32)
     # icx (IntelLLVM), used as the CXX/C compiler for Windows SYCL (xpu) builds,
-    # enforces target-feature checks that MSVC's cl.exe does not: librealsense's
-    # SSE helper files (sse-align.cpp, sse-pointcloud.cpp, sse imagery) call
+    # enforces target-feature checks that MSVC's cl.exe does not: librealsense uses 
     # always_inline intrinsics like _mm_shuffle_epi8 without enabling ssse3 for
     # the translation unit, which fails to compile under icx with "requires
-    # target feature 'ssse3'". Explicitly enable ssse3 for icx on Windows; Clang
-    # accepts -m<feature> flags even in its MSVC-compatible ("icx.exe") driver
-    # mode. Start from the inherited ${CMAKE_CXX_FLAGS} (which already carries
-    # CMake's standard Windows defaults, e.g. /DWIN32 /D_WINDOWS /EHsc) rather
-    # than a hardcoded literal, so librealsense's WIN32-guarded code (e.g.
-    # rostime's sys/timeb.h vs sys/time.h switch) keeps seeing WIN32 defined.
+    # target feature 'ssse3'". Explicitly enable ssse3 for icx on Windows;
     if(BUILD_SYCL_MODULE)
         list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS
             "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} -mssse3"
@@ -101,8 +95,6 @@ ExternalProject_Add(
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_TOOLS=OFF
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-        # checking CXX_COMPILER_ID is not supported.
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>

@@ -35,6 +35,7 @@ else()
     message(STATUS "NASM assembler not found - libjpeg-turbo performance may suffer")
 endif()
 
+# IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
 if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
     set(WITH_CRT_DLL OFF)
 else()

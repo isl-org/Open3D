@@ -50,15 +50,7 @@ endif()
 
 
 if(WIN32)
-    # icx.exe hard-errors ("invalid argument 'MT' not allowed with
-    # '-fsycl'") when compiling any translation unit with -fsycl together
-    # with the static (/MT, /MTd) MSVC runtime. Since embree's SYCL support
-    # (embree4_sycl, ze_wrapper) is built in the same ExternalProject
-    # configure/build as the non-SYCL ISA libs, force the dynamic runtime
-    # (/MD, /MDd) for all of embree's libs when BUILD_SYCL_MODULE=ON,
-    # regardless of STATIC_WINDOWS_RUNTIME. This also matches upstream
-    # embree's own Windows SYCL build docs, which never enable
-    # USE_STATIC_RUNTIME (default OFF) together with EMBREE_SYCL_SUPPORT.
+    # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
     if(BUILD_SYCL_MODULE)
         set(EMBREE_USE_STATIC_RUNTIME OFF)
     else()

@@ -31,9 +31,6 @@ if(WIN32)
     endif()
     # For CUDA builds, we must also copy the CUDA DLLs. Alternately, add
     # $Env:CUDA_PATH/bin to $Env:PATH to avoid this copy.
-    # Use $<TARGET_FILE_DIR:Draw> (the actual executable output dir) so this
-    # works for both multi-config generators (Visual Studio: build/Release) and
-    # single-config generators (Ninja on Windows SYCL/icx: build/).
     add_custom_command(TARGET Draw POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy ${copy_dlls}
                         $<TARGET_FILE_DIR:Draw>

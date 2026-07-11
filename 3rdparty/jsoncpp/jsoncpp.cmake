@@ -2,9 +2,7 @@ include(ExternalProject)
 
 find_package(Git QUIET REQUIRED)
 
-# SYCL builds always force the dynamic (/MD, /MDd) MSVC runtime for the
-# whole project regardless of STATIC_WINDOWS_RUNTIME (icx rejects -fsycl
-# combined with the static runtime), so jsoncpp must match.
+# IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
 if(BUILD_SYCL_MODULE)
     set(JSONCPP_USE_STATIC_RUNTIME OFF)
 else()

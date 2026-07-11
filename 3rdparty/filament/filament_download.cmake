@@ -15,10 +15,7 @@ else()
     if(WIN32)
         set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.54.0/filament-v1.54.0-windows.tgz)
         set(FILAMENT_SHA256 370b85dbaf1a3be26a5a80f60c912f11887748ddd1c42796a83fe989f5805f7b)
-        # Note: when BUILD_SYCL_MODULE is ON, Open3D forces the dynamic
-        # (/MD, /MDd) MSVC runtime for the whole project regardless of
-        # STATIC_WINDOWS_RUNTIME (icx rejects -fsycl combined with the
-        # static runtime), so the prebuilt Filament libs must match.
+        # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
         if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
             string(APPEND lib_dir /x86_64/mt)
         else()

@@ -5,9 +5,7 @@ include(ExternalProject)
 
 # Define the compile flags for Windows
 if(WIN32)
-    # SYCL builds always force the dynamic (/MD, /MDd) MSVC runtime for the
-    # whole project regardless of STATIC_WINDOWS_RUNTIME (icx rejects
-    # -fsycl combined with the static runtime), so zeromq must match.
+    # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
     if(BUILD_SYCL_MODULE)
         set(ZEROMQ_USE_STATIC_RUNTIME OFF)
     else()

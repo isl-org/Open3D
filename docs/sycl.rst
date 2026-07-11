@@ -49,7 +49,7 @@ raycasting on Intel GPUs, you will also need the
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-manylinux_2_31_x86_64.whl>`__
       - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-manylinux_2_31_x86_64.whl>`__
-      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
 
     * - Windows SYCL
       - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-win_amd64.whl>`__
@@ -57,6 +57,7 @@ raycasting on Intel GPUs, you will also need the
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-win_amd64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-win_amd64.whl>`__
       - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-win_amd64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-win-x86_64-0.19.0.tar.xz>`__
 
 Usage
 ------
