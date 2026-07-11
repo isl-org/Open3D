@@ -46,5 +46,6 @@ def test_legacy_visualizer_headless_capture():
     proc.join(timeout=30)
     if proc.exitcode is None:
         proc.kill()
-        assert False, __name__ + " did not complete."
+        proc.join()  # Reap the killed process to avoid leaving a zombie.
+        pytest.fail(__name__ + " did not complete.")
     assert proc.exitcode == 0

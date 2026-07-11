@@ -7,7 +7,9 @@
 
 #include "open3d/visualization/visualizer/Visualizer.h"
 
+#include <chrono>
 #include <memory>
+#include <thread>
 
 #include "open3d/geometry/TriangleMesh.h"
 
@@ -374,7 +376,12 @@ bool Visualizer::WaitEvents() {
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
     if (headless_) {
-        // No windowing system events to wait for in headless/EGL mode.
+        // There are no windowing system events to wait for in headless/EGL
+        // mode. WaitEvents() is documented to block, so without an
+        // animation callback, Run()'s `while (WaitEvents())` loop would
+        // otherwise busy-spin at 100% CPU until Close() is called; sleep
+        // briefly to approximate blocking behavior instead.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         return !should_close_;
     }
     glfwWaitEvents();

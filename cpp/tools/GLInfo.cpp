@@ -32,7 +32,23 @@ void ReportEGLGLInfo() {
     }
     utility::LogInfo("GLInfo: using EGL {}.{} offscreen context", major, minor);
 
-    eglBindAPI(EGL_OPENGL_API);
+    // Single cleanup path: surface/context are destroyed (harmless on
+    // EGL_NO_SURFACE/EGL_NO_CONTEXT) and the display terminated on every
+    // exit, including early returns below.
+    EGLSurface surface = EGL_NO_SURFACE;
+    EGLContext context = EGL_NO_CONTEXT;
+    auto cleanup = [&]() {
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(display, context);
+        eglDestroySurface(display, surface);
+        eglTerminate(display);
+    };
+
+    if (!eglBindAPI(EGL_OPENGL_API)) {
+        utility::LogWarning("GLInfo: eglBindAPI(EGL_OPENGL_API) failed.");
+        cleanup();
+        return;
+    }
     const EGLint config_attribs[] = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
                                      EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
                                      EGL_NONE};
@@ -41,19 +57,20 @@ void ReportEGLGLInfo() {
     if (!eglChooseConfig(display, config_attribs, &config, 1, &num_configs) ||
         num_configs == 0) {
         utility::LogWarning("GLInfo: eglChooseConfig failed.");
+        cleanup();
         return;
     }
     const EGLint pbuffer_attribs[] = {EGL_WIDTH, 640, EGL_HEIGHT, 480,
                                       EGL_NONE};
-    EGLSurface surface =
-            eglCreatePbufferSurface(display, config, pbuffer_attribs);
+    surface = eglCreatePbufferSurface(display, config, pbuffer_attribs);
     const EGLint context_attribs[] = {EGL_CONTEXT_MAJOR_VERSION, 3,
                                       EGL_CONTEXT_MINOR_VERSION, 3, EGL_NONE};
-    EGLContext context =
+    context =
             eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
     if (surface == EGL_NO_SURFACE || context == EGL_NO_CONTEXT ||
         !eglMakeCurrent(display, surface, surface, context)) {
         utility::LogWarning("GLInfo: failed to create/activate EGL context.");
+        cleanup();
         return;
     }
 
@@ -64,15 +81,15 @@ void ReportEGLGLInfo() {
     utility::LogInfo("GL_VENDOR:\t{}",
                      reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
 
-    eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    eglDestroyContext(display, context);
-    eglDestroySurface(display, surface);
-    eglTerminate(display);
+    cleanup();
 }
 #endif  // defined(__linux__)
 
-// Returns false if GLFW could not create a window (e.g. no display), in
-// which case the caller should fall back to an offscreen EGL context.
+// Returns false only if GLFW itself failed to initialize (e.g. no display),
+// in which case the caller should fall back to an offscreen EGL context.
+// Returns true if GLFW initialized successfully, even if glfwCreateWindow()
+// failed for this specific GL version/profile combination (unsupported by
+// the driver) -- that is a per-version failure, not a "no display" signal.
 bool TryGLVersion(int major,
                   int minor,
                   bool forwardCompat,

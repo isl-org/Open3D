@@ -720,10 +720,10 @@ build_docs() {
     fi
     python -c "from open3d import *; import open3d; print(open3d)"
     set -x # Echo commands on
-    cd docs # Open3D/docs
+    cd "${OPEN3D_SOURCE_ROOT}/docs" # Works regardless of caller's cwd.
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
         --py_api_rst=always --py_example_rst=always --sphinx --doxygen
-    cd ..
+    cd - >/dev/null
     set +x # Echo commands off
 }
 
