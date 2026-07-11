@@ -131,12 +131,17 @@ jobs:
       - name: Docker test
         run: docker/docker_test.sh "${DOCKER_TAG}"
 
+      # !cancelled() so the wheel built in the "Docker build" step is still
+      # attested, uploaded, and released even when "Docker test" (which runs the
+      # C++ unit tests) failed.
       - name: Generate wheel attestation
+        if: ${{ !cancelled() }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel to GitHub artifacts
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           path: ${{ env.PIP_PKG_NAME }}
@@ -144,7 +149,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

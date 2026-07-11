@@ -284,7 +284,7 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate package attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.device != 'cuda' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
@@ -324,7 +324,7 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate viewer attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
@@ -398,14 +398,16 @@ jobs:
       # (reconfigure + build only the Python module) instead of recompiling the
       # C++ library once per Python version. SYCL (xpu) wheels build fresh in
       # build-wheel since they need the icx/Ninja toolchain.
+      # !cancelled() so the build artifact is still uploaded (and build-wheel can
+      # reuse it) even when the preceding "Run C++ unit tests" step failed.
       - name: Compress build directory
         working-directory: "C:/"
-        if: ${{ matrix.device == 'cpu' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.CONFIG == 'Release' }}
+        if: ${{ !cancelled() && matrix.device == 'cpu' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.CONFIG == 'Release' }}
         run: |
            Compress-Archive -Path "${{ env.BUILD_DIR }}" -DestinationPath "${{ env.SRC_DIR }}/open3d_build.zip"
 
       - name: Upload build artifact
-        if: ${{ matrix.device == 'cpu' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.CONFIG == 'Release' }}
+        if: ${{ !cancelled() && matrix.device == 'cpu' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-build-windows
@@ -424,6 +426,10 @@ jobs:
       artifact-metadata: write
     runs-on: windows-2022
     needs: build-lib
+    # Build wheels even if build-lib failed only due to C++ unit tests: the
+    # compiled library / build artifact is still produced and uploaded (the
+    # unit-test step and the artifact-upload steps do not gate each other).
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
