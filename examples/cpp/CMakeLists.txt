@@ -91,6 +91,15 @@ endif()
 
 if(BUILD_WEBRTC)
     open3d_add_example(DrawWebRTC)
+    # Static MKL + monolithic libwebrtc.a need a late --start-group pass on Linux.
+    if(UNIX AND NOT APPLE AND NOT USE_BLAS)
+        target_link_libraries(DrawWebRTC PRIVATE
+            "-Wl,--start-group"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "-Wl,--end-group")
+    endif()
 endif()
 
 if (BUILD_LIBREALSENSE)

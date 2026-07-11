@@ -1,0 +1,45 @@
+Subject: [PATCH] pc: fix GCC ambiguous PayloadType to int conversion
+
+webrtc::PayloadType has multiple conversion operators (one inherited
+from StrongAlias) that GCC flags as ambiguous when implicitly
+converting to int. idstruct->id can be either a plain int or a
+PayloadType depending on IdStruct, so unwrap it explicitly with a
+small helper that dispatches on whether T is already integral.
+
+diff --git a/pc/used_ids.h b/pc/used_ids.h
+--- a/pc/used_ids.h
++++ b/pc/used_ids.h
+@@ -12,11 +12,22 @@
+ 
+ #include <set>
+ #include <vector>
++#include <type_traits>
+ 
+ #include "media/base/codec.h"
+ #include "rtc_base/checks.h"
+ 
+ namespace webrtc {
++
++template <typename T>
++constexpr int AsInt(const T& t) {
++    if constexpr (std::is_integral_v<T>) {
++        return t;
++    } else {
++        return t.value();
++    }
++}
++
+ template <typename IdStruct>
+ class UsedIds {
+  public:
+@@ -39,8 +50,8 @@ class UsedIds {
+ 
+   // Finds and sets an unused id if the `idstruct` id is already in use.
+   void FindAndSetIdUsed(IdStruct* idstruct) {
+-    const int original_id = idstruct->id;
+-    int new_id = idstruct->id;
++    const int original_id = AsInt(idstruct->id);
++    int new_id = AsInt(idstruct->id);
+ 
+     if (original_id > max_allowed_id_ || original_id < min_allowed_id_) {
+       // If the original id is not in range - this is an id that can't be

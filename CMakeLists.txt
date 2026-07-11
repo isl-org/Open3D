@@ -34,7 +34,7 @@ endif()
 include(CMakeDependentOption)
 
 # Open3D build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   ON )
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
@@ -147,6 +147,13 @@ option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
 option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
 
+# Build Python bindings (and optional ML ops) against an installed Open3D
+# devel package via find_package(Open3D). Skips compiling the C++ core and
+# heavy 3rdparty ExternalProjects. Default OFF keeps the full in-tree build.
+option(OPEN3D_USE_INSTALLED_LIBRARY
+    "Build Python module (and optional ML ops) against find_package(Open3D); skip building the C++ core"
+    OFF)
+
 # Release build options
 option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
 if (NOT DEVELOPER_BUILD)
@@ -223,10 +230,6 @@ if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
     message(WARNING "Headless rendering disables the Open3D GUI")
     set(BUILD_GUI OFF)
 endif()
-if(APPLE AND NOT BUILD_FILAMENT_FROM_SOURCE AND NOT FILAMENT_PRECOMPILED_ROOT)
-    message(WARNING
-        "Gaussian splatting requires Filament >= 1.57.2 backend Metal platform headers. Set FILAMENT_PRECOMPILED_ROOT to a compatible release package, or enable BUILD_FILAMENT_FROM_SOURCE.")
-endif()
 if(APPLE)
     find_program(XCRUN_EXECUTABLE xcrun)
     if(NOT XCRUN_EXECUTABLE)
@@ -254,6 +257,16 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_WEBRTC)
 endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
+endif()
+if(OPEN3D_USE_INSTALLED_LIBRARY AND NOT BUILD_PYTHON_MODULE)
+    message(FATAL_ERROR "OPEN3D_USE_INSTALLED_LIBRARY=ON requires BUILD_PYTHON_MODULE=ON")
+endif()
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    # Installed mode only builds pybind (+ optional ML ops). Disable targets
+    # that require compiling the in-tree C++ core.
+    set(BUILD_EXAMPLES OFF CACHE BOOL "Build Open3D examples programs" FORCE)
+    set(BUILD_UNIT_TESTS OFF CACHE BOOL "Build Open3D unit tests" FORCE)
+    set(BUILD_BENCHMARKS OFF CACHE BOOL "Build the micro benchmarks" FORCE)
 endif()
 
 # Parse Open3D version number
@@ -561,20 +574,35 @@ include(Open3DSYCLTargetSources)
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    # Prefer an explicit Open3D_ROOT / Open3D_DIR from the caller (CI extracts
+    # open3d-devel-*.tar.xz and points CMAKE_PREFIX_PATH / Open3D_ROOT at it).
+    find_package(Open3D CONFIG REQUIRED)
+    message(STATUS "OPEN3D_USE_INSTALLED_LIBRARY=ON: using ${Open3D_CONFIG}")
+    get_target_property(_open3d_imported_type Open3D::Open3D TYPE)
+    if(NOT _open3d_imported_type STREQUAL "SHARED_LIBRARY")
+        message(FATAL_ERROR
+            "OPEN3D_USE_INSTALLED_LIBRARY requires a shared libOpen3D "
+            "(BUILD_SHARED_LIBS=ON when the devel package was built).")
+    endif()
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
+endif()
 include(3rdparty/find_dependencies.cmake)
 
-# Open3D library
+# Open3D library (or pybind-only when OPEN3D_USE_INSTALLED_LIBRARY=ON)
 add_subdirectory(cpp)
 
-# Examples
-add_subdirectory(examples)
+if(NOT OPEN3D_USE_INSTALLED_LIBRARY)
+    # Examples
+    add_subdirectory(examples)
 
-# Documentation
-add_subdirectory(docs)
+    # Documentation
+    add_subdirectory(docs)
 
-# Install CMake configuration files
-install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
-export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
+    # Install CMake configuration files
+    install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
+    export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
+endif()
 
 if (Python3_EXECUTABLE)
     # `make check-style` checks style for c++/cuda/python/ipynb files
@@ -592,7 +620,9 @@ if (Python3_EXECUTABLE)
     )
 endif()
 
-include(Open3DPackaging)
+if(NOT OPEN3D_USE_INSTALLED_LIBRARY)
+    include(Open3DPackaging)
+endif()
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.

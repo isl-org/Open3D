@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/RaycastingScene.h"
-#include "pybind/core/tensor_type_caster.h"
+#include "pybind/core/type_caster.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {

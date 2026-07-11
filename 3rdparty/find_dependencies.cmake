@@ -489,6 +489,13 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
+# When building only pybind (+ ML ops) against an installed Open3D devel
+# package, skip all heavy ExternalProjects (assimp, embree, vtk, filament, …).
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    include(${CMAKE_CURRENT_LIST_DIR}/find_dependencies_installed.cmake)
+    return()
+endif()
+
 # Threads
 open3d_find_package_3rdparty_library(3rdparty_threads
     REQUIRED
@@ -951,7 +958,25 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+# curl and openssl (BoringSSL) are mutually referential static archives: curl
+# needs OpenSSL symbols and, depending on how the final link line gets
+# flattened by CMake (e.g. when Open3D itself is a shared library and must
+# fully resolve all symbols at build time), they can end up in an order where
+# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
+# in --start-group and --end-group on UNIX (non-Apple) to ensure GNU ld
+# rescans this group of libraries until all symbols resolve, regardless of
+# order. We avoid CMake's modern LINK_GROUP RESCAN generator expression here
+# because it produces developer warnings when applied to INTERFACE library
+# targets (which Open3D::3rdparty_curl/openssl are).
+if(UNIX AND NOT APPLE)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+        "-Wl,-("
+        Open3D::3rdparty_curl
+        Open3D::3rdparty_openssl
+        "-Wl,-)")
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -1988,11 +2013,43 @@ if(BUILD_WEBRTC)
     open3d_import_3rdparty_library(3rdparty_webrtc
         HIDDEN
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
-        LIB_DIR      ${WEBRTC_LIB_DIR}
-        LIBRARIES    ${WEBRTC_LIBRARIES}
         DEPENDS      ext_webrtc_all
     )
+    # webrtc/webrtc_extra need custom --whole-archive handling (below), so
+    # they can't use open3d_import_3rdparty_library()'s LIBRARIES option.
+    # Install them manually and reference $<INSTALL_INTERFACE:...> paths, so
+    # examples built against an installed *static* Open3D package (i.e. not
+    # from within this build tree) still link against them; see the
+    # LIBRARIES branch of open3d_import_3rdparty_library() for reference.
+    if(NOT BUILD_SHARED_LIBS)
+        foreach(_o3d_webrtc_lib webrtc webrtc_extra)
+            install(FILES "${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                DESTINATION ${Open3D_INSTALL_LIB_DIR}
+                RENAME "${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc_${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        endforeach()
+    endif()
+    set(WEBRTC_INSTALLED_LIB
+        "$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc")
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "-Wl,--whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "-Wl,--no-whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    else()
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    endif()
     target_link_libraries(3rdparty_webrtc INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+    # libwebrtc.a and libturbojpeg.a both export jpeg_* symbols (WebRTC bundles libjpeg).
+    if(UNIX AND NOT APPLE)
+        target_link_options(3rdparty_webrtc INTERFACE "LINKER:--allow-multiple-definition")
+    endif()
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
     endif()

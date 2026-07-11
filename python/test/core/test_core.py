@@ -127,6 +127,20 @@ def test_device():
 
     assert o3c.Device("CUDA", 1).__str__() == "CUDA:1"
 
+    device = o3c.Device("cuda")
+    assert device.get_type() == o3c.Device.DeviceType.CUDA
+    assert device.get_id() == 0
+
+
+def test_tensor_to_device_string():
+    t = o3c.Tensor([1, 2, 3])
+    assert t.to("cpu:0").device == o3c.Device("cpu:0")
+    assert t.to("cpu").device == o3c.Device("cpu:0")
+    if o3c.cuda.is_available():
+        t_gpu = t.to("cuda:0")
+        assert t_gpu.device.get_type() == o3c.Device.DeviceType.CUDA
+        assert t_gpu.to("cpu").device == o3c.Device("cpu:0")
+
 
 @pytest.mark.parametrize("dtype", list_dtypes())
 @pytest.mark.parametrize("device", list_devices(enable_sycl=True))

@@ -31,10 +31,12 @@ public:
     explicit Device(DeviceType device_type, int device_id);
 
     /// Constructor from device type string and device id.
+    /// Use ``Device("cuda")`` or ``Device("CUDA:0")`` for id 0.
     explicit Device(const std::string& device_type, int device_id);
 
-    /// Constructor from string, e.g. "CUDA:0".
-    explicit Device(const std::string& type_colon_id);
+    /// Constructor from string, e.g. ``"CUDA:0"``, ``"cuda"``, or ``"cpu"``.
+    /// Bare type names use device id 0.
+    Device(const std::string& device_str);
 
     bool operator==(const Device& other) const;
 
