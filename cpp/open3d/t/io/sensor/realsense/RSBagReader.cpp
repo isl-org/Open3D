@@ -25,6 +25,70 @@
 namespace open3d {
 namespace t {
 namespace io {
+namespace {
+
+rs2_option GetPostProcessingOption(const std::string &option_name) {
+    static const std::unordered_map<std::string, rs2_option> options = {
+            {"filter_magnitude", RS2_OPTION_FILTER_MAGNITUDE},
+            {"filter_smooth_alpha", RS2_OPTION_FILTER_SMOOTH_ALPHA},
+            {"filter_smooth_delta", RS2_OPTION_FILTER_SMOOTH_DELTA},
+            {"holes_fill", RS2_OPTION_HOLES_FILL},
+    };
+    const auto it = options.find(option_name);
+    if (it == options.end()) {
+        utility::LogError("Unsupported RealSense post-processing option: {}",
+                          option_name);
+    }
+    return it->second;
+}
+
+rs2::filter ConfigurePostProcessingFilter(
+        const rs2::filter &filter,
+        const RSBagReader::PostProcessingFilter &filter_config) {
+    rs2::filter configured_filter = filter;
+    for (const auto &option : filter_config.options_) {
+        const rs2_option rs_option = GetPostProcessingOption(option.first);
+        if (!configured_filter.supports(rs_option)) {
+            utility::LogError(
+                    "RealSense post-processing filter '{}' does not support "
+                    "option '{}'.",
+                    filter_config.filter_name_, option.first);
+        }
+        configured_filter.set_option(rs_option, option.second);
+    }
+    return configured_filter;
+}
+
+rs2::filter MakePostProcessingFilter(
+        const RSBagReader::PostProcessingFilter &filter_config) {
+    if (filter_config.filter_name_ == "decimation") {
+        return ConfigurePostProcessingFilter(rs2::decimation_filter(),
+                                             filter_config);
+    } else if (filter_config.filter_name_ == "spatial") {
+        return ConfigurePostProcessingFilter(rs2::spatial_filter(),
+                                             filter_config);
+    } else if (filter_config.filter_name_ == "temporal") {
+        return ConfigurePostProcessingFilter(rs2::temporal_filter(),
+                                             filter_config);
+    } else if (filter_config.filter_name_ == "hole_filling") {
+        return ConfigurePostProcessingFilter(rs2::hole_filling_filter(),
+                                             filter_config);
+    }
+    utility::LogError("Unsupported RealSense post-processing filter: {}",
+                      filter_config.filter_name_);
+}
+
+std::vector<rs2::filter> MakePostProcessingFilters(
+        const std::vector<RSBagReader::PostProcessingFilter> &filter_configs) {
+    std::vector<rs2::filter> filters;
+    filters.reserve(filter_configs.size());
+    for (const auto &filter_config : filter_configs) {
+        filters.emplace_back(MakePostProcessingFilter(filter_config));
+    }
+    return filters;
+}
+
+}  // namespace
 
 // If DEFAULT_BUFFER_SIZE is odr-uses, a definition is required.
 // For Fedora33, GCC10, CUDA11.2:
@@ -42,6 +106,24 @@ RSBagReader::~RSBagReader() {
 }
 
 bool RSBagReader::Open(const std::string &filename) {
+    if (IsOpened()) {
+        Close();
+    }
+    post_processing_filters_.clear();
+    return OpenPipeline(filename);
+}
+
+bool RSBagReader::Open(const std::string &filename,
+                       const std::vector<PostProcessingFilter> &filters) {
+    if (IsOpened()) {
+        Close();
+    }
+    MakePostProcessingFilters(filters);
+    post_processing_filters_ = filters;
+    return OpenPipeline(filename);
+}
+
+bool RSBagReader::OpenPipeline(const std::string &filename) {
     if (IsOpened()) {
         Close();
     }
@@ -94,6 +176,8 @@ void RSBagReader::fill_frame_buffer() try {
     tail_fid_ = 0;
     uint64_t next_dev_color_fid = 0;
     uint64_t dev_color_fid = 0;
+    auto post_processing_filters =
+            MakePostProcessingFilters(post_processing_filters_);
 
     while (is_opened_) {
         rs_device.resume();
@@ -123,6 +207,9 @@ void RSBagReader::fill_frame_buffer() try {
                 auto &current_frame =
                         frame_buffer_[head_fid_ % frame_buffer_.size()];
 
+                for (auto &filter : post_processing_filters) {
+                    frames = frames.apply_filter(filter);
+                }
                 frames = align_to_color.process(frames);
                 const auto &color_frame = frames.get_color_frame();
                 // Copy frame data to Tensors
@@ -201,7 +288,7 @@ bool RSBagReader::SeekTimestamp(uint64_t timestamp) {
     }
     seek_to_ = timestamp;  // atomic
     if (is_eof_) {
-        Open(filename_);  // EOF requires restarting pipeline.
+        OpenPipeline(filename_);  // EOF requires restarting pipeline.
     } else {
         need_frames_.notify_one();
     }

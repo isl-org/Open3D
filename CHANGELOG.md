@@ -1,5 +1,6 @@
 ## Main
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add RealSense depth post-processing filters for RSBagReader playback (issue #6164).
 -   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
 -   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.

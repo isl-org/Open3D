@@ -11,6 +11,7 @@
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/t/io/sensor/RGBDSensor.h"
 #include "open3d/t/io/sensor/RGBDVideoReader.h"
+#include "open3d/utility/Logging.h"
 #ifdef BUILD_LIBREALSENSE
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 #include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
@@ -23,6 +24,35 @@ namespace fs = std::filesystem;
 namespace open3d {
 namespace t {
 namespace io {
+namespace {
+
+#ifdef BUILD_LIBREALSENSE
+std::vector<RSBagReader::PostProcessingFilter> PyDictToPostProcessingFilters(
+        const py::dict &filters) {
+    std::vector<RSBagReader::PostProcessingFilter> filter_configs;
+    filter_configs.reserve(py::len(filters));
+    for (const auto &filter_item : filters) {
+        RSBagReader::PostProcessingFilter filter_config;
+        filter_config.filter_name_ = py::cast<std::string>(filter_item.first);
+        if (!py::isinstance<py::dict>(filter_item.second)) {
+            utility::LogError(
+                    "RealSense post-processing filter '{}' options must be a "
+                    "dict.",
+                    filter_config.filter_name_);
+        }
+        const auto options =
+                py::reinterpret_borrow<py::dict>(filter_item.second);
+        for (const auto &option_item : options) {
+            filter_config.options_[py::cast<std::string>(option_item.first)] =
+                    py::cast<float>(option_item.second);
+        }
+        filter_configs.emplace_back(std::move(filter_config));
+    }
+    return filter_configs;
+}
+#endif
+
+}  // namespace
 
 // RGBD video reader trampoline
 class PyRGBDVideoReader : public RGBDVideoReader {
@@ -131,7 +161,10 @@ void pybind_sensor_definitions(py::module &m) {
                      "(default video length) Save frames till this time (us)"},
                     {"buffer_size",
                      "Size of internal frame buffer, increase this if you "
-                     "experience frame drops."}};
+                     "experience frame drops."},
+                    {"filters",
+                     "Ordered dict of RealSense depth post-processing filters "
+                     "and their options."}};
 
     // Class RGBD video metadata
     auto rgbd_video_metadata = static_cast<py::class_<RGBDVideoMetadata>>(
@@ -205,9 +238,20 @@ void pybind_sensor_definitions(py::module &m) {
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open", &RSBagReader::Open,
+            .def("open",
+                 py::overload_cast<const std::string &>(&RSBagReader::Open),
                  py::call_guard<py::gil_scoped_release>(), "filename"_a,
                  "Open an RS bag playback.")
+            .def(
+                    "open",
+                    [](RSBagReader &reader, const fs::path &filename,
+                       const py::dict &filters) {
+                        const auto filter_configs =
+                                PyDictToPostProcessingFilters(filters);
+                        py::gil_scoped_release release;
+                        return reader.Open(filename.string(), filter_configs);
+                    },
+                    "filename"_a, "filters"_a, "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
             .def("is_eof", &RSBagReader::IsEOF,
