@@ -36,7 +36,7 @@ env:
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
-  windows:
+  build-lib:
     permissions:
       contents: write  # upload
       id-token: write
@@ -136,10 +136,15 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
+          # Keep 3rdparty downloads inside BUILD_DIR so the build-wheel artifact
+          # zip includes headers (e.g. vk_mem_alloc.hpp) that ExternalProject
+          # stamps would otherwise skip re-downloading on a fresh checkout.
           cmake -G "Visual Studio 17 2022" -A x64 `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
+            -DBUILD_PYTHON_MODULE=OFF `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -255,23 +260,19 @@ jobs:
             .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
           }
           Remove-Item -LiteralPath $env:INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
-      - name: Install Open3D python build requirements
-        working-directory: ${{ env.SRC_DIR }}
+      - name: Compress build directory
+        working-directory: "C:/"
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -r python/requirements_build.txt
-      - name: Install Python package
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
-      - name: Import python package
-        # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}  # FIXME
-        run: |
-          python -c "import open3d; print('Imported:', open3d)"
-          python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+           Compress-Archive -Path "${{ env.BUILD_DIR }}" -DestinationPath "${{ env.SRC_DIR }}/open3d_build.zip"
+
+      - name: Upload build artifact
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-build-windows
+          path: ${{ env.SRC_DIR }}/open3d_build.zip
+          retention-days: 1
       - name: Disk space used
         run: Get-PSDrive
 
@@ -283,6 +284,7 @@ jobs:
       attestations: write
       artifact-metadata: write
     runs-on: windows-2022
+    needs: build-lib
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -327,6 +329,17 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-windows
+          path: ${{ env.SRC_DIR }}
+
+      - name: Unpack build artifact
+        run: |
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory -Force
+          Expand-Archive -Path ${{ env.SRC_DIR }}\open3d_build.zip -DestinationPath "C:\Open3D\" -Force
+
       - name: Install Python dependencies
         working-directory: ${{ env.SRC_DIR }}
         run: |
@@ -342,23 +355,33 @@ jobs:
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
 
-
       - name: Config
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
+          # Reuse the static build-lib artifact (OFF + STATIC_RUNTIME=ON). Do not
+          # use cmake --fresh: that would drop CMakeCache while leaving
+          # ExternalProject stamps that skip re-download of missing headers.
+          # Match build-lib download dir so VMA/etc. resolve inside the zip.
+          # Clear cached Python/Torch entries: build-lib cached its own Python
+          # (BUILD_PYTHON_MODULE=OFF, no torch); re-detect this runner's Python
+          # (where torch was just installed) so FindPytorch/pybind use it.
           cmake -G "Visual Studio 17 2022" -A x64 `
+            -U "Python3*" -U "PYTHON_*" -U "Pytorch*" -U "Torch*" `
+            -DPython3_EXECUTABLE="$((Get-Command python).Source)" `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}

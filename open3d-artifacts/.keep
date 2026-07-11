@@ -1,0 +1,2 @@
+# Placeholder so Docker COPY open3d-artifacts/ always succeeds.
+# CI copies open3d-devel-*.tar.xz here before wheel builds.

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "open3d/core/Device.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
@@ -15,8 +16,8 @@ class Tensor;
 }
 }  // namespace open3d
 
-// Define type caster allowing implicit conversion to Tensor from common types.
-// Needs to be included in each compilation unit.
+// Type casters for implicit Python conversions. Include in each compilation
+// unit that binds APIs using these types (see open3d_pybind.h).
 namespace pybind11 {
 namespace detail {
 template <>
@@ -27,6 +28,16 @@ public:
 
 private:
     std::unique_ptr<open3d::core::Tensor> holder_;
+};
+
+template <>
+struct type_caster<open3d::core::Device>
+    : public type_caster_base<open3d::core::Device> {
+public:
+    bool load(handle src, bool convert);
+
+private:
+    std::unique_ptr<open3d::core::Device> holder_;
 };
 
 }  // namespace detail
