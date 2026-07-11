@@ -220,7 +220,7 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-fno-fast-math>
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-no-ftz>
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-mno-daz-ftz>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-mno-daz-ftz>)
 
     # Enable strip
     open3d_enable_strip(${target})
