@@ -562,10 +562,14 @@ jobs:
           if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
             $cmakeExtraArgs += '--debug-find'
           }
-          # CPU reuses build-lib's cache (BUILD_PYTHON_MODULE=OFF, no Python/Torch
-          # detected). Re-detect this runner's Python, keep 3rdparty downloads
-          # inside the reused BUILD_DIR so headers resolve, and add wheel-only
-          # features (WebRTC). xpu builds fresh so needs none of this.
+          # Reuse the static build-lib artifact (OFF + STATIC_RUNTIME=ON). Do not
+          # use cmake --fresh: that would drop CMakeCache while leaving
+          # ExternalProject stamps that skip re-download of missing headers.
+          # Match build-lib download dir so VMA/etc. resolve inside the zip.
+          # Clear cached Python/Torch entries: build-lib cached its own Python
+          # (BUILD_PYTHON_MODULE=OFF, no torch); re-detect this runner's Python
+          # (where torch was just installed) so FindPytorch/pybind use it.
+          # xpu builds fresh and does not reuse the CPU artifact.
           $REUSE_ARGS = @()
           if ('${{ matrix.device }}' -ne 'xpu') {
             $REUSE_ARGS += "-U", "Python3*", "-U", "PYTHON_*", "-U", "Pytorch*", "-U", "Torch*", `
@@ -576,12 +580,14 @@ jobs:
           cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs @REUSE_ARGS `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
