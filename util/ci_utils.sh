@@ -457,12 +457,11 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    # The CPU wheel builds open3d_torch_ops against the CPU torch installed in
-    # the wheel image (matches classic build_pip_package() ABI). The CUDA wheel
-    # ships without ML ops: CUDA torch ops require a CUDA-enabled torch install
-    # (c10/cuda headers) and are currently broken, so we build it with ML ops
-    # OFF (see per-wheel cmake calls below). This yields the intended matrix:
-    # CPU wheel = ML ops, CUDA wheel = no ML ops.
+    # Match main's build_pip_package() ML-ops ABI while building the CPU and CUDA
+    # wheels in separate dirs. The wheel image already ships CPU torch/tf, so the
+    # CPU wheel links its ops against CPU torch. Before the CUDA wheel we install
+    # CUDA torch/tf (see below) so its ops link against CUDA torch. Both wheels
+    # build torch/tf ops per BUILD_{PYTORCH,TENSORFLOW}_OPS.
     if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]] &&
         ! python -c "import torch" >/dev/null 2>&1; then
         install_python_dependencies purge-cache
@@ -508,20 +507,27 @@ build_pip_package_from_installed() {
     cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
     popd
 
+    # Install CUDA torch/tf so the CUDA wheel's ops link against CUDA torch
+    # (matches main's build_pip_package). The CPU wheel above is already built
+    # and saved, so replacing torch in the env now is safe.
+    if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]]; then
+        echo "Installing CUDA versions of TensorFlow and PyTorch..."
+        install_python_dependencies with-cuda purge-cache
+    fi
+
     echo
     echo "=== CUDA wheel (Open3D_ROOT=${OPEN3D_CUDA_ROOT}) ==="
     mkdir -p build_cuda_wheel
     pushd build_cuda_wheel
     set -x
-    # CUDA wheel ships without ML ops: CUDA torch ops need CUDA-enabled torch
-    # (only CPU torch is installed here) and are currently broken.
+    # Unset cached Python/Torch entries: torch changed to the CUDA build above.
     cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
         -DOpen3D_ROOT="${OPEN3D_CUDA_ROOT}" \
         -DCMAKE_PREFIX_PATH="${OPEN3D_CUDA_ROOT}" \
         -DBUILD_CUDA_MODULE=ON \
-        -DBUILD_TENSORFLOW_OPS=OFF \
-        -DBUILD_PYTORCH_OPS=OFF \
-        -DBUNDLE_OPEN3D_ML=OFF \
+        -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+        -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        -DBUNDLE_OPEN3D_ML="${BUNDLE_OPEN3D_ML}" \
         "${commonOptions[@]}" \
         ..
     set +x
