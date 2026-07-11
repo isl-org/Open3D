@@ -75,9 +75,9 @@ endif()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
-# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda|xpu}`
+# `build/lib/${CMAKE_BUILD_TYPE}/Python`
 set(PYTHON_COMPILED_MODULE_DIR
-    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,$<IF:$<BOOL:${BUILD_SYCL_MODULE}>,xpu,cpu>>")
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
 
 if (UNIX AND NOT APPLE)
     # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
@@ -97,22 +97,31 @@ if (BUILD_SHARED_LIBS)
     else()
         set(_libopen3d_soname "libOpen3D.so.${OPEN3D_ABI_VERSION}")
     endif()
+    # Use Open3D::Open3D so this works for both in-tree and IMPORTED targets.
     add_custom_command(TARGET pybind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
+            $<TARGET_FILE:Open3D::Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
     )
 endif()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so, libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
-set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
-if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+# Prefer TBB::tbb; fall back to Open3D::tbb from an installed devel package.
+if (TARGET TBB::tbb)
+    set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
+elseif (TARGET Open3D::tbb)
+    set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:Open3D::tbb>)
+else()
+    message(FATAL_ERROR "TBB target required to package Python wheel extras")
 endif()
-if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
+if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if (CPP_LIBRARY AND CPPABI_LIBRARY)
+        list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    endif()
+endif()
+if (WITH_OPENMP AND APPLE)
 # Package libomp v11.1.0, if it is not installed. Later version cause crash on
-# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
-# handled.
+# x86_64 if PyTorch is already imported.
 # https://github.com/microsoft/LightGBM/issues/4229
     list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
     execute_process(COMMAND brew list --versions libomp

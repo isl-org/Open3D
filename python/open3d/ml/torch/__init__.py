@@ -18,9 +18,9 @@ _o3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:
     match_torch_ver = '.'.join(
         str(v) for v in _o3d_torch_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: Open3D needs PyTorch version {}, but '
-                    'version {} is installed!'.format(match_torch_ver,
-                                                      _torch.__version__))
+    raise RuntimeError('Version mismatch: Open3D needs PyTorch version {}, but '
+                       'version {} is installed!'.format(
+                           match_torch_ver, _torch.__version__))
 
 # Precompiled wheels at
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
@@ -61,21 +61,15 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-_lib_arch = ('cpu',)
-if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
-    if _torch.version.cuda == _build_config["CUDA_VERSION"]:
-        _lib_arch = ('cuda', 'cpu')
-    else:
-        print("Warning: Open3D was built with CUDA {} but"
-              "PyTorch was built with CUDA {}. Falling back to CPU for now."
-              "Otherwise, install PyTorch with CUDA {}.".format(
-                  _build_config["CUDA_VERSION"], _torch.version.cuda,
-                  _build_config["CUDA_VERSION"]))
-_lib_path.extend([
-    _os.path.join(_package_root, la,
-                  'open3d_torch_ops' + _lib_suffix + _lib_ext)
-    for la in _lib_arch
-])
+if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
+        _torch.version.cuda != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but"
+          "PyTorch was built with CUDA {}. Falling back to CPU for now."
+          "Otherwise, install PyTorch with CUDA {}.".format(
+              _build_config["CUDA_VERSION"], _torch.version.cuda,
+              _build_config["CUDA_VERSION"]))
+_lib_path.append(
+    _os.path.join(_package_root, 'open3d_torch_ops' + _lib_suffix + _lib_ext))
 
 _load_except = None
 _loaded = False

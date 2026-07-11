@@ -23,7 +23,66 @@ env:
   BUILD_CUDA_MODULE: 'ON'
 
 jobs:
+  # Build CPU + CUDA open3d-devel packages, viewer .deb, and C++ tests bundle.
+  # ML ops are OFF here (Python/Torch/TF ABI is wheel-stage only).
+  build-lib:
+    name: Build Lib
+    runs-on: ubuntu-latest
+    env:
+      DEVELOPER_BUILD: 'ON'
+      CCACHE_TAR_NAME: open3d-ubuntu-2204-cuda-ci-ccache
+      OPEN3D_CPU_RENDERING: true
+      BUILD_PYTORCH_OPS: 'OFF'
+      BUILD_TENSORFLOW_OPS: 'OFF'
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build lib packages
+        run: |
+          # py310 is only used to satisfy docker_build.sh's Python arg; lib mode
+          # does not build Python modules.
+          docker/docker_build.sh cuda_wheel_py310_dev build-lib
+          ls -lh open3d-devel-*.tar.xz open3d-viewer-*.deb open3d-cpp-tests.tar.xz
+      - name: Upload devel packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-devel-packages
+          path: |
+            open3d-devel-*.tar.xz
+            open3d-viewer-*.deb
+          if-no-files-found: error
+      - name: Upload C++ tests bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-cpp-tests
+          path: open3d-cpp-tests.tar.xz
+          if-no-files-found: error
+          retention-days: 1
+
+  # Runs in parallel with build-wheel (both need only build-lib).
+  test-cpp:
+    name: Test C++
+    runs-on: ubuntu-22.04
+    needs: [build-lib]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Download C++ tests bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-cpp-tests
+          path: .
+      - name: Run C++ unit tests
+        run: |
+          source util/ci_utils.sh
+          run_cpp_tests_from_bundle open3d-cpp-tests.tar.xz
+
   build-wheel:
+    needs: build-lib
     permissions:
       contents: write  # Release upload
       id-token: write
@@ -61,10 +120,18 @@ jobs:
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
-      # Be verbose and explicit here such that a developer can directly copy the
-      # `docker/docker_build.sh xxx` command to execute locally.
+      - name: Download devel packages
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-devel-packages
+          path: open3d-artifacts
+      - name: List devel artifacts
+        run: ls -lh open3d-artifacts/
+      # Stock nvidia/cuda base (no fat open3d-lib image). Wheels build against
+      # extracted devel prefixes via OPEN3D_USE_INSTALLED_LIBRARY.
       - name: Docker build
         run: |
+          export OPEN3D_ARTIFACTS_DIR="${GITHUB_WORKSPACE}/open3d-artifacts"
           if [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py310_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.11" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then

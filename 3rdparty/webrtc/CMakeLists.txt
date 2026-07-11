@@ -32,7 +32,7 @@ cmake_dependent_option(WEBRTC_IS_DEBUG
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
 option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" ON)
 if(MSVC)
-    option(WEBRTC_STATIC_MSVC_RUNTIME "Use /MT /MTd for WebRTC (Windows)" ON)
+    option(WEBRTC_STATIC_MSVC_RUNTIME "Use /MT or /MTd for WebRTC (Windows)" ON)
 endif()
 
 # Set paths

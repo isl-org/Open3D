@@ -489,6 +489,13 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
+# When building only pybind (+ ML ops) against an installed Open3D devel
+# package, skip all heavy ExternalProjects (assimp, embree, vtk, filament, …).
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    include(${CMAKE_CURRENT_LIST_DIR}/find_dependencies_installed.cmake)
+    return()
+endif()
+
 # Threads
 open3d_find_package_3rdparty_library(3rdparty_threads
     REQUIRED
@@ -951,7 +958,25 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+# curl and openssl (BoringSSL) are mutually referential static archives: curl
+# needs OpenSSL symbols and, depending on how the final link line gets
+# flattened by CMake (e.g. when Open3D itself is a shared library and must
+# fully resolve all symbols at build time), they can end up in an order where
+# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
+# in --start-group and --end-group on UNIX (non-Apple) to ensure GNU ld
+# rescans this group of libraries until all symbols resolve, regardless of
+# order. We avoid CMake's modern LINK_GROUP RESCAN generator expression here
+# because it produces developer warnings when applied to INTERFACE library
+# targets (which Open3D::3rdparty_curl/openssl are).
+if(UNIX AND NOT APPLE)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+        "-Wl,-("
+        Open3D::3rdparty_curl
+        Open3D::3rdparty_openssl
+        "-Wl,-)")
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)

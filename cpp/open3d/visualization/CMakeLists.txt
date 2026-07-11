@@ -108,6 +108,10 @@ if (BUILD_GUI)
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )
+        # visualization_impl is an OBJECT library; add_dependencies ensures
+        # correct build order with ext_vkmemalloc/ext_vmahpp across all
+        # generators.
+        add_dependencies(visualization_impl ext_vkmemalloc ext_vmahpp)
     endif()
 
     target_sources(visualization PRIVATE

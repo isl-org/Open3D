@@ -11,4 +11,8 @@ if (BUILD_PYTORCH_OPS)
     add_subdirectory(pytorch)
 endif()
 
-add_subdirectory(contrib)
+# ml_contrib is an OBJECT library linked into libOpen3D. Skip it when building
+# only ops/pybind against an installed Open3D (contrib is already in the .so).
+if (NOT OPEN3D_USE_INSTALLED_LIBRARY)
+    add_subdirectory(contrib)
+endif()

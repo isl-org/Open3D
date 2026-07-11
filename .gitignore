@@ -3,6 +3,9 @@
 # Docker build artifacts (wheel, dev package, ccache)
 docker/*.tar.gz
 docker/*.tar.xz
+open3d-artifacts/*.tar.xz
+open3d-artifacts/*.deb
+open3d-artifacts/*.whl
 
 # Windows build temp cmake file
 CMakeSettings.json
