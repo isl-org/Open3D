@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <spz/load-spz.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
-
-#include <spz/load-spz.h>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
@@ -32,9 +32,8 @@ bool CheckAttributeSize(const std::vector<float>& attribute,
                         size_t expected_size,
                         const char* name) {
     if (attribute.size() != expected_size) {
-        utility::LogWarning(
-                "SPZ attribute {} has {} values; expected {}.", name,
-                attribute.size(), expected_size);
+        utility::LogWarning("SPZ attribute {} has {} values; expected {}.",
+                            name, attribute.size(), expected_size);
         return false;
     }
     return true;
@@ -42,10 +41,9 @@ bool CheckAttributeSize(const std::vector<float>& attribute,
 
 }  // namespace
 
-bool ReadPointCloudFromSPZ(
-        const std::string& filename,
-        geometry::PointCloud& pointcloud,
-        const open3d::io::ReadPointCloudOption&) {
+bool ReadPointCloudFromSPZ(const std::string& filename,
+                           geometry::PointCloud& pointcloud,
+                           const open3d::io::ReadPointCloudOption&) {
     const spz::GaussianCloud cloud =
             spz::loadSpz(filename, {spz::CoordinateSystem::UNSPECIFIED});
     if (cloud.numPoints < 0) {
@@ -62,9 +60,8 @@ bool ReadPointCloudFromSPZ(
     const size_t num_points = static_cast<size_t>(cloud.numPoints);
     const size_t sh_coefficients =
             cloud.shDegree > 0
-                    ? static_cast<size_t>((cloud.shDegree + 1) *
-                                          (cloud.shDegree + 1) -
-                                          1)
+                    ? static_cast<size_t>(
+                              (cloud.shDegree + 1) * (cloud.shDegree + 1) - 1)
                     : 0;
     if (!CheckAttributeSize(cloud.positions, num_points * 3, "positions") ||
         !CheckAttributeSize(cloud.scales, num_points * 3, "scales") ||
@@ -123,18 +120,16 @@ bool ReadPointCloudFromSPZ(
                 {cloud.numPoints, static_cast<int64_t>(sh_coefficients), 3},
                 core::Float32, device);
         // SPZ and Open3D both use coefficient-major, RGB-inner ordering.
-        std::copy(cloud.sh.begin(), cloud.sh.end(),
-                  f_rest.GetDataPtr<float>());
+        std::copy(cloud.sh.begin(), cloud.sh.end(), f_rest.GetDataPtr<float>());
         pointcloud.SetPointAttr("f_rest", f_rest);
     }
 
     return pointcloud.IsGaussianSplat();
 }
 
-bool WritePointCloudToSPZ(
-        const std::string& filename,
-        const geometry::PointCloud& pointcloud,
-        const open3d::io::WritePointCloudOption&) {
+bool WritePointCloudToSPZ(const std::string& filename,
+                          const geometry::PointCloud& pointcloud,
+                          const open3d::io::WritePointCloudOption&) {
     if (pointcloud.IsEmpty()) {
         utility::LogWarning("Write SPZ failed: point cloud has 0 points.");
         return false;
@@ -150,8 +145,7 @@ bool WritePointCloudToSPZ(
     const int sh_degree = pointcloud.GaussianSplatGetSHOrder();
     const size_t sh_coefficients =
             sh_degree > 0
-                    ? static_cast<size_t>((sh_degree + 1) * (sh_degree + 1) -
-                                          1)
+                    ? static_cast<size_t>((sh_degree + 1) * (sh_degree + 1) - 1)
                     : 0;
 
     auto to_float32_cpu = [&attributes](const char* name) {
@@ -194,9 +188,9 @@ bool WritePointCloudToSPZ(
         cloud.sh = f_rest.ToFlatVector<float>();
     }
 
-    const spz::PackOptions options{
-            4, spz::CoordinateSystem::UNSPECIFIED,
-            spz::DEFAULT_SH1_BITS, spz::DEFAULT_SH_REST_BITS};
+    const spz::PackOptions options{4, spz::CoordinateSystem::UNSPECIFIED,
+                                   spz::DEFAULT_SH1_BITS,
+                                   spz::DEFAULT_SH_REST_BITS};
     if (!spz::saveSpz(cloud, options, filename)) {
         utility::LogWarning("Write SPZ failed for {}.", filename);
         return false;

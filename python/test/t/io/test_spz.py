@@ -46,8 +46,7 @@ def test_gaussian_splat_spz_round_trip(tmp_path):
     dots = np.sum(original_rot * loaded_rot, axis=1)
     original_norms = np.linalg.norm(original_rot, axis=1)
     loaded_norms = np.linalg.norm(loaded_rot, axis=1)
-    np.testing.assert_allclose(np.abs(dots) /
-                               (original_norms * loaded_norms),
+    np.testing.assert_allclose(np.abs(dots) / (original_norms * loaded_norms),
                                np.ones(2),
                                rtol=0.02,
                                atol=0.02)

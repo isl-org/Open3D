@@ -704,12 +704,12 @@ TEST(TPointCloudIO, ReadWrite3DGSSPZ) {
     // SPZ quantizes coordinates, scales, rotations, opacity, and SH values.
     // The test focuses on preserving the complete attribute schema and
     // approximate values rather than requiring bitwise equality.
-    AllCloseOrShow(pcd_base.GetPointPositions(),
-                   pcd_spz.GetPointPositions(), 0.1, 0.1);
+    AllCloseOrShow(pcd_base.GetPointPositions(), pcd_spz.GetPointPositions(),
+                   0.1, 0.1);
     AllCloseOrShow(pcd_base.GetPointAttr("scale"),
                    pcd_spz.GetPointAttr("scale"), 0.1, 0.1);
-    const float* base_rot = pcd_base.GetPointAttr("rot").GetDataPtr<float>();
-    const float* spz_rot = pcd_spz.GetPointAttr("rot").GetDataPtr<float>();
+    const float *base_rot = pcd_base.GetPointAttr("rot").GetDataPtr<float>();
+    const float *spz_rot = pcd_spz.GetPointAttr("rot").GetDataPtr<float>();
     const int64_t num_points = pcd_base.GetPointPositions().GetLength();
     for (int64_t i = 0; i < num_points; ++i) {
         float dot = 0.0f;
@@ -720,14 +720,14 @@ TEST(TPointCloudIO, ReadWrite3DGSSPZ) {
             base_norm += base_rot[4 * i + j] * base_rot[4 * i + j];
             spz_norm += spz_rot[4 * i + j] * spz_rot[4 * i + j];
         }
-        EXPECT_NEAR(std::abs(dot) /
-                            (std::sqrt(base_norm) * std::sqrt(spz_norm)),
-                    1.0f, 0.02f);
+        EXPECT_NEAR(
+                std::abs(dot) / (std::sqrt(base_norm) * std::sqrt(spz_norm)),
+                1.0f, 0.02f);
     }
     AllCloseOrShow(pcd_base.GetPointAttr("opacity"),
                    pcd_spz.GetPointAttr("opacity"), 0.1, 0.1);
-    AllCloseOrShow(pcd_base.GetPointAttr("f_dc"),
-                   pcd_spz.GetPointAttr("f_dc"), 0.1, 0.1);
+    AllCloseOrShow(pcd_base.GetPointAttr("f_dc"), pcd_spz.GetPointAttr("f_dc"),
+                   0.1, 0.1);
     AllCloseOrShow(pcd_base.GetPointAttr("f_rest"),
                    pcd_spz.GetPointAttr("f_rest"), 0.1, 0.1);
 }

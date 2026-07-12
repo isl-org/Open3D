@@ -95,8 +95,8 @@ bool ReadPointCloudFromSPZ(const std::string &filename,
                            const ReadPointCloudOption &params);
 
 bool WritePointCloudToSPZ(const std::string &filename,
-                         const geometry::PointCloud &pointcloud,
-                         const WritePointCloudOption &params);
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
