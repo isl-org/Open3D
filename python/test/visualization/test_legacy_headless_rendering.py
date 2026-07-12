@@ -7,8 +7,6 @@
 """Tests GPU-accelerated offscreen rendering fallback (EGL) for the legacy
 open3d.visualization.Visualizer, used when no display is available."""
 
-import ctypes
-import glob
 import platform
 import os
 from multiprocessing import Process
@@ -16,26 +14,9 @@ import numpy as np
 import pytest
 
 
-def _try_enable_segfault_backtrace():
-    """Best-effort: dlopen glibc's libSegFault.so so that a crash in this
-    process prints a native (C/C++) backtrace to stderr. This is diagnostic
-    only, e.g. for debugging crashes in the EGL/Mesa/GL stack below Python;
-    it is a no-op (and never raises) if libSegFault.so isn't available."""
-    os.environ.setdefault("SEGFAULT_SIGNALS", "all")
-    candidates = glob.glob("/lib/*/libSegFault.so") + glob.glob(
-        "/usr/lib/*/libSegFault.so")
-    for path in candidates:
-        try:
-            ctypes.CDLL(path)
-            return
-        except OSError:
-            continue
-
-
 def capture_headless():
     """Runs in a separate process with no DISPLAY/WAYLAND_DISPLAY, forcing
     Visualizer to fall back to its offscreen EGL context."""
-    _try_enable_segfault_backtrace()
     os.environ.pop("DISPLAY", None)
     os.environ.pop("WAYLAND_DISPLAY", None)
     import open3d as o3d

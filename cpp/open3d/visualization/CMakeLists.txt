@@ -33,6 +33,7 @@ target_sources(visualization PRIVATE
 if (NOT APPLE AND NOT WIN32)
     target_sources(visualization PRIVATE
         visualizer/EGLOffscreenContext.cpp
+        visualizer/CrashBacktrace.cpp
     )
 endif()
 
