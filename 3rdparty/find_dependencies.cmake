@@ -1656,6 +1656,13 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         if (WIN32)
             find_package(OpenCL REQUIRED)
             target_link_libraries(3rdparty_mkl INTERFACE OpenCL::OpenCL)
+            if(NOT BUILD_SHARED_LIBS)
+                # Static builds export Open3D::3rdparty_mkl (whose link interface
+                # carries the OpenCL::OpenCL imported target) in Open3DTargets.cmake,
+                # so a downstream find_package(Open3D) must re-find OpenCL to
+                # recreate that target (see CUDAToolkit above for the same pattern).
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenCL")
+            endif()
         else()
             target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
         endif()
