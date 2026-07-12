@@ -22,8 +22,13 @@ namespace {
 
 // Prefer a display bound to a physical GPU device (EGL_EXT_device_base /
 // EGL_EXT_platform_device) so that offscreen rendering runs on the GPU. Falls
-// back to the default display (e.g. Mesa's software/DRI selection) if the
-// device extensions are not available.
+// back to the explicit "surfaceless" platform (EGL_MESA_platform_surfaceless)
+// when no device is found, e.g. in a container with no /dev/dri node. We
+// deliberately avoid the implicit eglGetDisplay(EGL_DEFAULT_DISPLAY) platform
+// auto-detection here: on systems without a GPU or windowing server, Mesa's
+// platform probing (Wayland/X11/DRM) can crash instead of falling back
+// gracefully, whereas requesting the surfaceless platform directly is safe
+// and always available with Mesa software rendering (llvmpipe).
 EGLDisplay GetHardwareDisplay() {
     auto eglQueryDevicesEXT = reinterpret_cast<PFNEGLQUERYDEVICESEXTPROC>(
             eglGetProcAddress("eglQueryDevicesEXT"));
@@ -46,9 +51,21 @@ EGLDisplay GetHardwareDisplay() {
             }
         }
     }
+    if (eglGetPlatformDisplayEXT) {
+        utility::LogDebug(
+                "EGLOffscreenContext: no EGL device found, falling back to "
+                "the surfaceless platform (software rendering).");
+        EGLDisplay display =
+                eglGetPlatformDisplayEXT(EGL_PLATFORM_SURFACELESS_MESA,
+                                         /*native_display=*/nullptr, nullptr);
+        if (display != EGL_NO_DISPLAY) {
+            return display;
+        }
+    }
     utility::LogDebug(
-            "EGLOffscreenContext: EGL_EXT_platform_device not available, "
-            "using default EGL display.");
+            "EGLOffscreenContext: EGL_EXT_platform_device and "
+            "EGL_MESA_platform_surfaceless not available, using default "
+            "EGL display.");
     return eglGetDisplay(EGL_DEFAULT_DISPLAY);
 }
 
