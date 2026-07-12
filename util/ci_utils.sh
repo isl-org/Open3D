@@ -637,6 +637,22 @@ run_python_tests() {
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
+    elif ! python -c "
+import open3d
+bc = open3d._build_config
+if bc['BUILD_PYTORCH_OPS']:
+    import open3d.ml.torch
+if bc['BUILD_TENSORFLOW_OPS']:
+    import open3d.ml.tf
+"; then
+        # The compiled ML ops (open3d_torch_ops / open3d_tensorflow_ops) could not
+        # be loaded. This happens when a CUDA-built wheel (ops linked against CUDA
+        # torch/TF) is tested on a CPU-only runner with CPU torch/TF: the import
+        # raises OSError (e.g. libc10_cuda.so missing). Skip the ml_ops tests, whose
+        # collection would otherwise error; the companion open3d-cpu wheel and GPU
+        # CI exercise the ML ops.
+        echo "Skipping ML Ops tests: compiled ops could not be imported (CUDA-built wheel on CPU-only runner)."
+        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error

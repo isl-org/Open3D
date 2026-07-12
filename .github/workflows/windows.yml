@@ -375,13 +375,20 @@ jobs:
             # See Config step for the reason icpx is not used.
             $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
               "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
+            # SYCL Open3D is always built with the dynamic runtime (/MD): icx
+            # -fsycl rejects the static runtime (/MT). The downstream example
+            # must match, otherwise linking Open3D.lib (/MD) into Draw (/MT)
+            # fails with LNK2038, so force STATIC_WINDOWS_RUNTIME=OFF here
+            # regardless of matrix.STATIC_RUNTIME.
+            $STATIC_RUNTIME = "OFF"
           } else {
             $CMAKE_GENERATOR = "Visual Studio 17 2022"
             $CMAKE_ARGS += "-A", "x64"
+            $STATIC_RUNTIME = "${{ matrix.STATIC_RUNTIME }}"
           }
           cmake -G $CMAKE_GENERATOR @CMAKE_ARGS `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
-            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DSTATIC_WINDOWS_RUNTIME=$STATIC_RUNTIME `
             ..
           $buildArgs = @("--build", ".")
           if ('${{ matrix.device }}' -ne 'xpu') {
