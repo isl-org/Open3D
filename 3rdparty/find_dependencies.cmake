@@ -1040,8 +1040,19 @@ if(TARGET Open3D::3rdparty_zlib)
 else()
     target_link_libraries(3rdparty_spz INTERFACE ZLIB::ZLIB)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-     Open3D::3rdparty_spz Open3D::3rdparty_zstd)
+# SPZ depends on zstd (and zlib). With shared Open3D + static 3rdparty
+# archives, GNU ld is one-pass, so group them to avoid unresolved ZSTD_*
+# symbols when link order places libspz.a after libzstd.a.
+if(UNIX AND NOT APPLE)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+        "-Wl,-("
+        Open3D::3rdparty_spz
+        Open3D::3rdparty_zstd
+        "-Wl,-)")
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+         Open3D::3rdparty_spz Open3D::3rdparty_zstd)
+endif()
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
