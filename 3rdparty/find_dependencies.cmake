@@ -1034,25 +1034,19 @@ open3d_import_3rdparty_library(3rdparty_spz
     LIBRARIES    ${SPZ_LIBRARIES}
     DEPENDS      ext_spz
 )
-# Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps before the
-# dependent archive (zstd before spz), leaving unresolved ZSTD_* symbols.
-# Keep both archives as plain paths inside one ld group on 3rdparty_spz so
-# GNU ld rescans them together. Do not INTERFACE-link Open3D::3rdparty_zstd.
+# Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps so libzstd.a
+# precedes libspz.a, leaving unresolved ZSTD_* under one-pass GNU ld. Force
+# absolute archive paths in the correct order on 3rdparty_spz. Do not add
+# -Wl,--start-group/--end-group here: duplicate group markers collide with
+# MKL's GROUPED import and empty its start/end-group (undefined mkl_*).
+# Do not INTERFACE-link Open3D::3rdparty_zstd (avoids reordering).
 set(_spz_archive
     "${SPZ_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(_zstd_archive
     "${ZSTD_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZSTD_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set(_spz_build_link_libs)
-if(UNIX AND NOT APPLE)
-    list(APPEND _spz_build_link_libs
-        "-Wl,--start-group" "${_spz_archive}" "${_zstd_archive}" "-Wl,--end-group")
-else()
-    list(APPEND _spz_build_link_libs "${_spz_archive}" "${_zstd_archive}")
-endif()
-set(_spz_iface_libs)
-foreach(_item IN LISTS _spz_build_link_libs)
-    list(APPEND _spz_iface_libs "$<BUILD_INTERFACE:${_item}>")
-endforeach()
+set(_spz_iface_libs
+    "$<BUILD_INTERFACE:${_spz_archive}>"
+    "$<BUILD_INTERFACE:${_zstd_archive}>")
 # Preserve any INSTALL_INTERFACE entries from open3d_import_3rdparty_library.
 get_target_property(_spz_existing_libs 3rdparty_spz INTERFACE_LINK_LIBRARIES)
 if(_spz_existing_libs)
@@ -1079,7 +1073,6 @@ endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_spz)
 unset(_spz_archive)
 unset(_zstd_archive)
-unset(_spz_build_link_libs)
 unset(_spz_iface_libs)
 unset(_spz_existing_libs)
 unset(_zstd_link_opts)
