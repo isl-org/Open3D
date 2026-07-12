@@ -1034,25 +1034,55 @@ open3d_import_3rdparty_library(3rdparty_spz
     LIBRARIES    ${SPZ_LIBRARIES}
     DEPENDS      ext_spz
 )
-target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zstd)
+# Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps before the
+# dependent archive (zstd before spz), leaving unresolved ZSTD_* symbols.
+# Keep both archives as plain paths inside one ld group on 3rdparty_spz so
+# GNU ld rescans them together. Do not INTERFACE-link Open3D::3rdparty_zstd.
+set(_spz_archive
+    "${SPZ_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(_zstd_archive
+    "${ZSTD_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZSTD_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(_spz_build_link_libs)
+if(UNIX AND NOT APPLE)
+    list(APPEND _spz_build_link_libs
+        "-Wl,--start-group" "${_spz_archive}" "${_zstd_archive}" "-Wl,--end-group")
+else()
+    list(APPEND _spz_build_link_libs "${_spz_archive}" "${_zstd_archive}")
+endif()
+set(_spz_iface_libs)
+foreach(_item IN LISTS _spz_build_link_libs)
+    list(APPEND _spz_iface_libs "$<BUILD_INTERFACE:${_item}>")
+endforeach()
+# Preserve any INSTALL_INTERFACE entries from open3d_import_3rdparty_library.
+get_target_property(_spz_existing_libs 3rdparty_spz INTERFACE_LINK_LIBRARIES)
+if(_spz_existing_libs)
+    foreach(_item IN LISTS _spz_existing_libs)
+        if(_item MATCHES "INSTALL_INTERFACE")
+            list(APPEND _spz_iface_libs "${_item}")
+        endif()
+    endforeach()
+endif()
+if(NOT BUILD_SHARED_LIBS)
+    list(APPEND _spz_iface_libs
+        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_zstd${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+endif()
+set_property(TARGET 3rdparty_spz PROPERTY INTERFACE_LINK_LIBRARIES "${_spz_iface_libs}")
+get_target_property(_zstd_link_opts 3rdparty_zstd INTERFACE_LINK_OPTIONS)
+if(_zstd_link_opts)
+    target_link_options(3rdparty_spz INTERFACE ${_zstd_link_opts})
+endif()
 if(TARGET Open3D::3rdparty_zlib)
     target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zlib)
 else()
     target_link_libraries(3rdparty_spz INTERFACE ZLIB::ZLIB)
 endif()
-# SPZ depends on zstd (and zlib). With shared Open3D + static 3rdparty
-# archives, GNU ld is one-pass, so group them to avoid unresolved ZSTD_*
-# symbols when link order places libspz.a after libzstd.a.
-if(UNIX AND NOT APPLE)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-        "-Wl,-("
-        Open3D::3rdparty_spz
-        Open3D::3rdparty_zstd
-        "-Wl,-)")
-else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-         Open3D::3rdparty_spz Open3D::3rdparty_zstd)
-endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_spz)
+unset(_spz_archive)
+unset(_zstd_archive)
+unset(_spz_build_link_libs)
+unset(_spz_iface_libs)
+unset(_spz_existing_libs)
+unset(_zstd_link_opts)
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
