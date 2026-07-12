@@ -108,8 +108,7 @@ def test_knn_search(device):
                                rtol=1e-5)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_fixed_radius_search(device, dtype):
     dataset_points = o3c.Tensor(
@@ -190,9 +189,10 @@ def test_hybrid_search_random(dtype):
             np.testing.assert_equal(indices.numpy(), indices_cuda.cpu().numpy())
             np.testing.assert_equal(counts.numpy(), counts_cuda.cpu().numpy())
 
-    # SYCL: compare SYCL results against CPU reference.
-    # The last SYCL device is the CPU fallback; len > 1 means a GPU is present.
-    if len(o3c.sycl.get_available_devices()) > 1:
+    # SYCL: compare SYCL results against CPU reference. Also exercises the
+    # CPU-fallback SYCL device (len == 1) now that fixed-radius/hybrid search
+    # support SYCL CPU via the uniform-grid algorithm.
+    if len(o3c.sycl.get_available_devices()) >= 1:
         dataset_size, query_size = 1000, 100
         radius, k = 0.1, 10
 
@@ -261,9 +261,10 @@ def test_fixed_radius_search_random(dtype):
                                        atol=0)
             np.testing.assert_equal(indices.numpy(), indices_cuda.cpu().numpy())
 
-    # SYCL: compare SYCL results against CPU reference.
-    # The last SYCL device is the CPU fallback; len > 1 means a GPU is present.
-    if len(o3c.sycl.get_available_devices()) > 1:
+    # SYCL: compare SYCL results against CPU reference. Also exercises the
+    # CPU-fallback SYCL device (len == 1) now that fixed-radius/hybrid search
+    # support SYCL CPU via the uniform-grid algorithm.
+    if len(o3c.sycl.get_available_devices()) >= 1:
         dataset_size, query_size = 1000, 100
         radius = 0.1
 

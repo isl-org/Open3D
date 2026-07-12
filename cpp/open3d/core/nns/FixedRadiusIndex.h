@@ -377,6 +377,18 @@ void HybridSearchCUDA(const Tensor& points,
 #endif
 
 #ifdef BUILD_SYCL_MODULE
+/// Builds a uniform spatial-hash grid ("cell list") for a SYCL fixed-radius
+/// / hybrid search. Same Tensor-level contract as \ref
+/// BuildSpatialHashTableCUDA; see FixedRadiusSearchSYCLImpl.h for the
+/// device-kernel implementation (count -> device inclusive scan -> scatter).
+template <class T>
+void BuildSpatialHashTableSYCL(const Tensor& points,
+                               double radius,
+                               const Tensor& points_row_splits,
+                               const Tensor& hash_table_splits,
+                               Tensor& hash_table_index,
+                               Tensor& hash_table_cell_splits);
+
 /// SYCL radius search. tile_bytes controls the distance tile budget (P2).
 template <class T, class TIndex>
 void FixedRadiusSearchSYCL(const Tensor& points,

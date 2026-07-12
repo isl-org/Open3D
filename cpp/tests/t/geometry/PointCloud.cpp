@@ -448,7 +448,6 @@ TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
 
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
-    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -1142,7 +1141,6 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
-    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},

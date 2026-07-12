@@ -164,7 +164,6 @@ TEST_P(NNSPermuteDevices, KnnSearch) {
 TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
     // Define test data.
     core::Device device = GetParam();
-    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
     core::Tensor dataset_points = core::Tensor::Init<double>({{0.0, 0.0, 0.0},
                                                               {0.0, 0.0, 0.1},
                                                               {0.0, 0.0, 0.2},
@@ -320,7 +319,6 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
 TEST_P(NNSPermuteDevices, HybridSearch) {
     // Define test data.
     core::Device device = GetParam();
-    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                                              {0.0, 0.0, 0.1},
                                                              {0.0, 0.0, 0.2},
@@ -614,7 +612,6 @@ TEST_F(SYCLNNSTest, KnnSearchNonDefaultTileBytes) {
 
 // Radius search parity: SYCL vs CPU.
 TEST_F(SYCLNNSTest, FixedRadiusSearchMatchesCPU) {
-    if (core::sy::IsCPUDevice(sycl)) GTEST_SKIP();
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -641,7 +638,6 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchMatchesCPU) {
 
 // Radius search C1: coincident query must have distance exactly 0.
 TEST_F(SYCLNNSTest, FixedRadiusSearchCoincidentPoint_C1) {
-    if (core::sy::IsCPUDevice(sycl)) GTEST_SKIP();
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     // Query at point 4 = (0.0, 0.1, 0.1).
     core::Tensor query = core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, sycl);
@@ -658,7 +654,6 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchCoincidentPoint_C1) {
 
 // Hybrid search parity: SYCL vs CPU.
 TEST_F(SYCLNNSTest, HybridSearchMatchesCPU) {
-    if (core::sy::IsCPUDevice(sycl)) GTEST_SKIP();
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -694,7 +689,6 @@ TEST_F(SYCLNNSTest, HybridSearchMatchesCPU) {
 // radius (mirrors registration: room-scale scans, max_correspondence_distance).
 // Exercises float32 cancellation in the radius count/threshold path.
 TEST_F(SYCLNNSTest, HybridSearchLargeOffsetParityCPU) {
-    if (core::sy::IsCPUDevice(sycl)) GTEST_SKIP();
     const int64_t n = 4000;
     const float kOffset = 1000.f;  // non-origin-centered scan coordinates
     const double radius = 0.05;
@@ -734,7 +728,6 @@ TEST_F(SYCLNNSTest, HybridSearchLargeOffsetParityCPU) {
 
 // tile_bytes override for FixedRadiusIndex (exercises P2 across tile bounds).
 TEST_F(SYCLNNSTest, FixedRadiusSearchNonDefaultTileBytes) {
-    if (core::sy::IsCPUDevice(sycl)) GTEST_SKIP();
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, sycl);

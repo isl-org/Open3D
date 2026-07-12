@@ -5,12 +5,15 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// SYCL NNS driver: tiled AddMM distance evaluation with fused top-K selection.
+// SYCL NNS driver.
 //
 // Three search variants are implemented here:
-//   KnnSearchSYCL       – brute-force K nearest neighbors
-//   FixedRadiusSearchSYCL – all neighbors within radius (count + gather)
-//   HybridSearchSYCL    – neighbors within radius, keep best max_knn
+//   KnnSearchSYCL       – brute-force K nearest neighbors: tiled AddMM
+//                         distance evaluation with fused top-K selection.
+//   FixedRadiusSearchSYCL – all neighbors within radius (count + gather),
+//                         via the uniform-grid (cell-list) algorithm.
+//   HybridSearchSYCL    – neighbors within radius, keep best max_knn, via
+//                         the same uniform grid.
 //
 // There are three SYCL KNN paths inside KnnSearchSYCL, chosen per batch after
 // batch_knn = min(knn, num_points).
@@ -30,8 +33,8 @@
 // | Direct         | !force_addmm_path && UseKnnDirect(dim, batch_knn) | dim ∈ [1,8], k ≤ 32 (kSYCLKnnSmallKMax)      |
 // | AddMM fused    | Not direct, batch_knn ≤ 512                      | k ≤ kSYCLKnnMidKMax                           |
 // | AddMM large-k  | Not direct, batch_knn > 512                      | k > kSYCLKnnMidKMax                           |
-// | Fixed-radius SYCL | AddMM + CountWithin + GatherWithin (+ optional sort)   (radius-only)              |           |
-// | Hybrid SYCL       | AddMM + CountAndSelect + MergeTopK (+ finalize + |q|²) (radius + capped top-k)    |           |
+// | Fixed-radius SYCL | Uniform grid: CountNeighbors -> scan -> WriteNeighbors (+ optional device sort) (radius-only) |
+// | Hybrid SYCL       | Uniform grid: single pass, running top-max_knn + count (radius + capped top-k)               |
 //
 // (Note)  force_addmm_path=true (tuning benchmarks only) always skips Direct.
 // 
@@ -67,33 +70,40 @@
 // - Once: AddQueryNormsToDistances (|q|² + clamp).
 // P8 caveat: for k > 512, merge/select can fall back to per-query serial partial_sort (correct, slow).
 // 
-// 4. Fixed-radius (FixedRadiusSearchSYCL)
-// 
+// 4. Fixed-radius (FixedRadiusSearchSYCL) — uniform grid (cell list)
+//
 // Idea: Find every point within radius; neighbor list length varies per query.
+// Ported from FixedRadiusSearchImpl.cuh (CUDA); see FixedRadiusSearchSYCLImpl.h.
 // Algorithm:
-// - Shared AddMM front end (center, norms |p|², |q|², tiles).
-// - Pass 1 — count: per tile, CountWithinThresholdQueries accumulates how many points fall in radius (using P2 threshold).
-// - Host prefix sum of counts → neighbors_row_splits and write offsets; allocate index (and optional distance) buffers.
-// - Pass 2 — gather: re-run the same AddMM tiles; GatherWithinThresholdQueries writes matching indices and full L2 (partial + |q|², clamped).
-// - Optional sort: per-query insertion sort by distance (C4-style index tie-break).
+// - Dataset is bucketed once into a spatial-hash grid with cell size 2*radius
+//   (BuildSpatialHashTableSYCL, called from FixedRadiusIndex::SetTensorData):
+//   count points per cell -> device inclusive scan (oneDPL) -> scatter into
+//   CSR (hash_table_cell_splits, hash_table_index).
+// - Pass 1 — count: CountNeighborsSYCL visits each query's 8 corner-adjacent
+//   bins and counts points within radius.
+// - Device inclusive scan (oneDPL) of counts -> neighbors_row_splits; allocate
+//   index (and optional distance) buffers sized by the scanned total.
+// - Pass 2 — gather: WriteNeighborsSYCL revisits the same 8 bins and writes
+//   matching indices and squared L2 distances.
+// - Optional sort: SortNeighborsByDistanceSYCL, a device-only segmented sort
+//   (oneDPL sort_by_key) per query segment; ties are not secondarily ordered
+//   by index (matches CUDA's cub::DeviceSegmentedRadixSort::SortPairs).
 // Typical use: radius neighborhood queries when you need the full set, not a fixed-k cap.
-// 
-// 5. Hybrid (HybridSearchSYCL)
-// 
+//
+// 5. Hybrid (HybridSearchSYCL) — uniform grid (cell list)
+//
 // Idea: Count everyone in radius, but only keep the closest max_knn in fixed-size outputs (like KNN capped by radius).
+// Ported from FixedRadiusSearchImpl.cuh (CUDA); see FixedRadiusSearchSYCLImpl.h.
 // Algorithm:
-// - Shared AddMM front end (center, norms |p|², |q|², tiles).
+// - Reuses the grid built by BuildSpatialHashTableSYCL (shared with fixed-radius).
 // - Allocate fixed (num_queries, max_knn) index/distance buffers (sentinel empty slots).
-// - Per tile after AddMM:
-//   - CountAndSelectTopKQueries — one scan: bump in-radius count, and select top-max_knn partial distances in-tile
-//     - max_knn ≤ 512: K-bucket heap dispatch
-//     - max_knn > 512: count + SelectTopKQueries fallback
-//   - MergeTopKQueries — merge tile top-k into running best (same merge idea as KNN large-k; P8 partial_sort if max_knn > 512)
-// - FinalizeHybridResults — clip counts to max_knn, zero-fill unused slots; write neighbors_count.
-// - AddQueryNormsToHybridDistances — add |q|² (from centered queries) and clamp (P2/C1).
+// - WriteNeighborsHybridSYCL: single pass over the 8 corner-adjacent bins per
+//   query, maintaining a running top-max_knn (replace-the-current-max) plus
+//   the full in-radius count, then a small per-query bubble sort (bounded by
+//   max_knn, so cheap) to return results in ascending-distance order.
 // Typical use: features / normals / covariances that want “up to K neighbors inside radius.”
-// 
-// Shared conventions (AddMM paths)
+//
+// Shared conventions (AddMM KNN paths)
 // P2: tiles store partial dist −2qp + |p|²; |q|² added at finalize.
 // C1: clamp distances ≥ 0.
 // C4: equal distance → smaller point index wins.
@@ -101,14 +111,17 @@
 //
 // TODO:
 // ====
-// - Only DirectKNN path is well optimized. AddMM based paths can be slow.
-// - Hybrid search should be recast as KNN and then filter.
-// - Fixed-radius search should be recast as filter (stream compaction).
+// - Only DirectKNN path is well optimized. AddMM based KNN paths can be slow.
+// - Hybrid search could be recast as KNN and then filter (deferred; the grid
+//   port already removes the O(N*M) brute force).
 
 #include <algorithm>
+#include <functional>
 #include <limits>
+#include <numeric>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
+#include <oneapi/dpl/numeric>
 #include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLUtils.h"
@@ -117,6 +130,7 @@
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/kernel/FixedRadiusSearchSYCLImpl.h"
 #include "open3d/core/nns/kernel/KnnSearchSYCLImpl.h"
 #include "open3d/utility/Logging.h"
 
@@ -448,21 +462,19 @@ void KnnSearchSYCL(const Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-// Fixed-radius search.
-//
-// Two tiled passes: count (to size the output) then gather.
-// P2: the query-norm Add_ pass is dropped.  CountWithinThreshold and
-//     GatherWithinThreshold compute per-query adjusted thresholds internally
-//     (threshold_q = radius² − |q|²) and add |q|² back to returned distances.
+// Fixed-radius search: uniform-grid (cell-list) algorithm, ported from
+// FixedRadiusSearchImpl.cuh (CUDA). Two passes over the grid: count (to size
+// the output) then gather; both visit only the 8 corner-adjacent hash bins
+// per query (see FixedRadiusSearchSYCLImpl.h for the kernels).
 template <class T, class TIndex>
 void FixedRadiusSearchSYCL(const Tensor& points,
                            const Tensor& queries,
                            double radius,
                            const Tensor& points_row_splits,
                            const Tensor& queries_row_splits,
-                           const Tensor& /*hash_table_splits*/,
-                           const Tensor& /*hash_table_index*/,
-                           const Tensor& /*hash_table_cell_splits*/,
+                           const Tensor& hash_table_splits,
+                           const Tensor& hash_table_index,
+                           const Tensor& hash_table_cell_splits,
                            const Metric metric,
                            const bool ignore_query_point,
                            const bool return_distances,
@@ -470,7 +482,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                            Tensor& neighbors_index,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance,
-                           int64_t tile_bytes) {
+                           int64_t /*tile_bytes*/) {
     if (metric != Metric::L2) {
         utility::LogError("SYCL fixed radius search only supports L2 metric.");
     }
@@ -479,186 +491,107 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 "SYCL fixed radius search does not support "
                 "ignore_query_point.");
     }
-    // Count/gather kernels segfault on SYCL CPU for large datasets
-    // (~30k+ points); GPU-only for now.
-    if (sy::IsCPUDevice(points.GetDevice())) {
-        utility::LogError(
-                "SYCL fixed radius search is not supported on "
-                "SYCL CPU.");
-    }
 
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
-    const Dtype dtype = points.GetDtype();
-    const T radius_sq = static_cast<T>(radius * radius);
+    const T radius_t = static_cast<T>(radius);
+    const T threshold = radius_t * radius_t;  // L2: compare squared distances.
+    const T voxel_size = T(2) * radius_t;
+    const T inv_voxel_size = T(1) / voxel_size;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
-    Tensor counts = Tensor::Zeros({num_queries}, Int64, device);
+    const T* points_ptr = points.GetDataPtr<T>();
+    const T* queries_ptr = queries.GetDataPtr<T>();
+    const uint32_t* hash_index_ptr = hash_table_index.GetDataPtr<uint32_t>();
 
-    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
-    // helper).
-    Tensor points_c = points, queries_c = queries;
-    CenterPointsAndQueries<T>(points_c, queries_c);
-
-    int64_t tile_queries = 0, tile_points = 0;
-    ChooseTileSize(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
-                   tile_queries, tile_points);
-    Tensor temp_distances =
-            Tensor::Empty({tile_queries, tile_points}, dtype, device);
+    Tensor counts = Tensor::Empty({num_queries}, UInt32, device);
+    uint32_t* counts_ptr = counts.GetDataPtr<uint32_t>();
 
     const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
 
     // ── Pass 1: count ────────────────────────────────────────────────────────
     for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-        const int64_t point_begin =
-                points_row_splits[batch_idx].Item<int64_t>();
-        const int64_t point_end =
-                points_row_splits[batch_idx + 1].Item<int64_t>();
         const int64_t query_begin =
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
-        const int64_t num_points_i = points_i.GetShape(0);
-        const int64_t num_queries_i = queries_i.GetShape(0);
-        Tensor point_norms = points_i.Mul(points_i).Sum({1});
-        Tensor query_norms = queries_i.Mul(queries_i).Sum({1});
+        const uint32_t first_cell_idx =
+                hash_table_splits[batch_idx].Item<uint32_t>();
+        const uint32_t hash_table_size =
+                hash_table_splits[batch_idx + 1].Item<uint32_t>() -
+                first_cell_idx;
+        const uint32_t* cell_splits_i =
+                hash_table_cell_splits.GetDataPtr<uint32_t>() +
+                first_cell_idx;
 
-        for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
-            const int64_t num_queries_iter =
-                    std::min(tile_queries, num_queries_i - q);
-            Tensor queries_tile = queries_i.Slice(0, q, q + num_queries_iter);
-            Tensor query_norms_tile =
-                    query_norms.Slice(0, q, q + num_queries_iter);
-            int64_t* counts_ptr =
-                    counts.GetDataPtr<int64_t>() + query_begin + q;
-
-            for (int64_t p = 0; p < num_points_i; p += tile_points) {
-                const int64_t num_points_iter =
-                        std::min(tile_points, num_points_i - p);
-                Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
-                Tensor point_norms_tile =
-                        point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
-                                           .Slice(1, 0, num_points_iter);
-
-                // Partial dist = −2qp + |p|² (no |q|²).
-                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
-                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
-
-                // P2: CountWithinThreshold uses per-query adjusted threshold.
-                CountWithinThresholdQueries<T>(
-                        device, temp_view.GetDataPtr<T>(),
-                        temp_view.GetStride(0), num_queries_iter,
-                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
-                        radius_sq, counts_ptr);
-            }
-        }
+        CountNeighborsSYCL<T>(queue, counts_ptr + query_begin, hash_index_ptr,
+                              cell_splits_i, hash_table_size,
+                              queries_ptr + 3 * query_begin,
+                              query_end - query_begin, points_ptr,
+                              inv_voxel_size, radius_t, threshold);
     }
-
     queue.wait_and_throw();
 
-    // Build row_splits from counts.
-    Tensor counts_cpu = counts.To(Device("CPU:0"));
-    const int64_t* counts_cpu_ptr = counts_cpu.GetDataPtr<int64_t>();
-    std::vector<int64_t> row_splits(num_queries + 1, 0);
-    for (int64_t q = 0; q < num_queries; ++q)
-        row_splits[q + 1] = row_splits[q] + counts_cpu_ptr[q];
-    neighbors_row_splits =
-            Tensor(row_splits, {num_queries + 1}, Int64).To(device);
-
-    std::vector<int64_t> row_offsets(row_splits.begin(), row_splits.end() - 1);
-    Tensor write_offsets = Tensor(row_offsets, {num_queries}, Int64).To(device);
+    // Build row_splits from counts (device inclusive scan; no host fallback).
+    neighbors_row_splits = Tensor::Zeros({num_queries + 1}, Int64, device);
+    int64_t* row_splits_ptr = neighbors_row_splits.GetDataPtr<int64_t>();
+    {
+        auto policy = oneapi::dpl::execution::make_device_policy(queue);
+        // counts_ptr is uint32_t; scan directly into the int64_t row-splits
+        // tail (offset by 1) so element 0 stays the required leading zero.
+        // The explicit int64_t init forces 64-bit accumulation (avoids
+        // overflow for very large neighbor counts).
+        std::inclusive_scan(policy, counts_ptr, counts_ptr + num_queries,
+                            row_splits_ptr + 1, std::plus<int64_t>(),
+                            int64_t(0));
+        queue.wait_and_throw();
+    }
+    int64_t total_neighbors = 0;
+    if (num_queries > 0) {
+        queue.memcpy(&total_neighbors, row_splits_ptr + num_queries,
+                    sizeof(int64_t))
+                .wait_and_throw();
+    }
 
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
     TIndex* neighbors_index_ptr;
     T* neighbors_distance_ptr;
-    output_allocator.AllocIndices(&neighbors_index_ptr, row_splits.back());
+    output_allocator.AllocIndices(&neighbors_index_ptr, total_neighbors);
     if (return_distances || sort) {
         output_allocator.AllocDistances(&neighbors_distance_ptr,
-                                        row_splits.back());
+                                        total_neighbors);
     } else {
         output_allocator.AllocDistances(&neighbors_distance_ptr, 0);
     }
 
     // ── Pass 2: gather ───────────────────────────────────────────────────────
     for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-        const int64_t point_begin =
-                points_row_splits[batch_idx].Item<int64_t>();
-        const int64_t point_end =
-                points_row_splits[batch_idx + 1].Item<int64_t>();
         const int64_t query_begin =
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
-        const int64_t num_points_i = points_i.GetShape(0);
-        const int64_t num_queries_i = queries_i.GetShape(0);
-        Tensor point_norms = points_i.Mul(points_i).Sum({1});
-        Tensor query_norms = queries_i.Mul(queries_i).Sum({1});
+        const uint32_t first_cell_idx =
+                hash_table_splits[batch_idx].Item<uint32_t>();
+        const uint32_t hash_table_size =
+                hash_table_splits[batch_idx + 1].Item<uint32_t>() -
+                first_cell_idx;
+        const uint32_t* cell_splits_i =
+                hash_table_cell_splits.GetDataPtr<uint32_t>() +
+                first_cell_idx;
 
-        for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
-            const int64_t num_queries_iter =
-                    std::min(tile_queries, num_queries_i - q);
-            Tensor queries_tile = queries_i.Slice(0, q, q + num_queries_iter);
-            Tensor query_norms_tile =
-                    query_norms.Slice(0, q, q + num_queries_iter);
-            int64_t* offsets_ptr =
-                    write_offsets.GetDataPtr<int64_t>() + query_begin + q;
-
-            for (int64_t p = 0; p < num_points_i; p += tile_points) {
-                const int64_t num_points_iter =
-                        std::min(tile_points, num_points_i - p);
-                Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
-                Tensor point_norms_tile =
-                        point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
-                                           .Slice(1, 0, num_points_iter);
-
-                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
-                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
-
-                GatherWithinThresholdQueries<T, TIndex>(
-                        device, temp_view.GetDataPtr<T>(),
-                        temp_view.GetStride(0), num_queries_iter,
-                        num_points_iter, query_norms_tile.GetDataPtr<T>(),
-                        radius_sq, TIndex(point_begin + p), offsets_ptr,
-                        neighbors_index_ptr,
-                        (return_distances || sort) ? neighbors_distance_ptr
-                                                   : nullptr);
-            }
-        }
+        WriteNeighborsSYCL<T, TIndex>(
+                queue, neighbors_index_ptr, neighbors_distance_ptr,
+                row_splits_ptr + query_begin, hash_index_ptr, cell_splits_i,
+                hash_table_size, queries_ptr + 3 * query_begin,
+                query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
+                threshold, return_distances || sort);
     }
-
     queue.wait_and_throw();
 
-    if (sort && row_splits.back() > 0) {
-        // Per-query insertion sort on distances (already full L2 from Gather).
-        const int64_t* rs_ptr = neighbors_row_splits.GetDataPtr<int64_t>();
-        queue.parallel_for(sycl::range<1>(num_queries), [=](sycl::id<1> id) {
-            const int64_t q = id[0];
-            const int64_t start = rs_ptr[q], end = rs_ptr[q + 1];
-            const int64_t len = end - start;
-            if (len <= 1) return;
-            TIndex* seg_i = neighbors_index_ptr + start;
-            T* seg_d = neighbors_distance_ptr + start;
-            for (int64_t i = 1; i < len; ++i) {
-                T kd = seg_d[i];
-                TIndex ki = seg_i[i];
-                int64_t j = i - 1;
-                while (j >= 0 &&
-                       (seg_d[j] > kd || (seg_d[j] == kd && seg_i[j] > ki))) {
-                    seg_d[j + 1] = seg_d[j];
-                    seg_i[j + 1] = seg_i[j];
-                    --j;
-                }
-                seg_d[j + 1] = kd;
-                seg_i[j + 1] = ki;
-            }
-        });
-        queue.wait_and_throw();
+    if (sort && total_neighbors > 0) {
+        SortNeighborsByDistanceSYCL<T, TIndex>(
+                device, neighbors_index_ptr, neighbors_distance_ptr,
+                row_splits_ptr, num_queries, total_neighbors);
     }
 
     neighbors_index = output_allocator.NeighborsIndex();
@@ -667,11 +600,11 @@ void FixedRadiusSearchSYCL(const Tensor& points,
         neighbors_distance = Tensor({0}, Dtype::FromType<T>(), device);
 }
 
-// Hybrid search: count all neighbors within radius while keeping only the
-// best max_knn per query in fixed-size output tensors.
-//
-// P2: |q|² is deferred to AddQueryNormsToHybridDistances.
-// CountAndSelectTopKQueries fuses radius counting with top-k selection.
+// Hybrid search: uniform-grid (cell-list) algorithm, ported from
+// FixedRadiusSearchImpl.cuh (CUDA). A single pass over the grid's 8
+// corner-adjacent hash bins per query counts all in-radius neighbors while
+// keeping a running top-max_knn (see WriteNeighborsHybridSYCL in
+// FixedRadiusSearchSYCLImpl.h, including its final per-query bubble sort).
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -679,158 +612,68 @@ void HybridSearchSYCL(const Tensor& points,
                       int max_knn,
                       const Tensor& points_row_splits,
                       const Tensor& queries_row_splits,
-                      const Tensor& /*hash_table_splits*/,
-                      const Tensor& /*hash_table_index*/,
-                      const Tensor& /*hash_table_cell_splits*/,
+                      const Tensor& hash_table_splits,
+                      const Tensor& hash_table_index,
+                      const Tensor& hash_table_cell_splits,
                       const Metric metric,
                       Tensor& neighbors_index,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance,
-                      int64_t tile_bytes) {
+                      int64_t /*tile_bytes*/) {
     if (metric != Metric::L2) {
         utility::LogError("SYCL hybrid search only supports L2 metric.");
     }
-    // See FixedRadiusSearchSYCL: segfaults on SYCL CPU for large datasets.
-    if (sy::IsCPUDevice(points.GetDevice())) {
-        utility::LogError("SYCL hybrid search is not supported on SYCL CPU.");
-    }
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
-    const Dtype dtype = points.GetDtype();
-    const T radius_sq = static_cast<T>(radius * radius);
+    const T radius_t = static_cast<T>(radius);
+    const T threshold = radius_t * radius_t;  // L2: compare squared distances.
+    const T voxel_size = T(2) * radius_t;
+    const T inv_voxel_size = T(1) / voxel_size;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+
+    const T* points_ptr = points.GetDataPtr<T>();
+    const T* queries_ptr = queries.GetDataPtr<T>();
+    const uint32_t* hash_index_ptr = hash_table_index.GetDataPtr<uint32_t>();
 
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
     TIndex* neighbors_index_ptr;
     T* neighbors_distance_ptr;
+    TIndex* neighbors_count_ptr;
     output_allocator.AllocIndices(&neighbors_index_ptr, num_queries * max_knn,
                                   TIndex(-1));
     output_allocator.AllocDistances(&neighbors_distance_ptr,
-                                    num_queries * max_knn,
-                                    std::numeric_limits<T>::max());
-
-    Tensor counts = Tensor::Zeros({num_queries}, Int64, device);
-    Tensor out_indices =
-            output_allocator.NeighborsIndex().View({num_queries, max_knn});
-    Tensor out_distances =
-            output_allocator.NeighborsDistance().View({num_queries, max_knn});
-
-    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
-    // helper).
-    Tensor points_c = points, queries_c = queries;
-    CenterPointsAndQueries<T>(points_c, queries_c);
-
-    int64_t tile_queries = 0, tile_points = 0;
-    ChooseTileSize(num_queries, points.GetShape(0), sizeof(T), tile_bytes,
-                   tile_queries, tile_points);
-    Tensor temp_distances =
-            Tensor::Empty({tile_queries, tile_points}, dtype, device);
-    const Dtype idx_dtype = Dtype::FromType<TIndex>();
-    Tensor tile_sort_indices =
-            Tensor::Empty({tile_queries, tile_points}, idx_dtype, device);
-    Tensor tile_top_indices =
-            Tensor::Empty({tile_queries, max_knn}, idx_dtype, device);
-    Tensor tile_top_distances =
-            Tensor::Empty({tile_queries, max_knn}, dtype, device);
-    Tensor merged_indices =
-            Tensor::Empty({tile_queries, max_knn}, idx_dtype, device);
-    Tensor merged_distances =
-            Tensor::Empty({tile_queries, max_knn}, dtype, device);
-    Tensor merge_scratch =
-            Tensor::Empty({tile_queries, 2 * max_knn}, idx_dtype, device);
+                                    num_queries * max_knn, T(0));
+    output_allocator.AllocCounts(&neighbors_count_ptr, num_queries,
+                                 TIndex(0));
 
     const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
     for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
-        const int64_t point_begin =
-                points_row_splits[batch_idx].Item<int64_t>();
-        const int64_t point_end =
-                points_row_splits[batch_idx + 1].Item<int64_t>();
         const int64_t query_begin =
                 queries_row_splits[batch_idx].Item<int64_t>();
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
-        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
-        const int64_t num_points_i = points_i.GetShape(0);
-        const int64_t num_queries_i = queries_i.GetShape(0);
-        Tensor point_norms = points_i.Mul(points_i).Sum({1});
-        Tensor query_norms = queries_i.Mul(queries_i).Sum({1});
+        const uint32_t first_cell_idx =
+                hash_table_splits[batch_idx].Item<uint32_t>();
+        const uint32_t hash_table_size =
+                hash_table_splits[batch_idx + 1].Item<uint32_t>() -
+                first_cell_idx;
+        const uint32_t* cell_splits_i =
+                hash_table_cell_splits.GetDataPtr<uint32_t>() +
+                first_cell_idx;
 
-        for (int64_t q = 0; q < num_queries_i; q += tile_queries) {
-            const int64_t num_queries_iter =
-                    std::min(tile_queries, num_queries_i - q);
-            Tensor queries_tile = queries_i.Slice(0, q, q + num_queries_iter);
-            Tensor query_norms_tile =
-                    query_norms.Slice(0, q, q + num_queries_iter);
-            Tensor best_iv = out_indices.Slice(
-                    0, query_begin + q, query_begin + q + num_queries_iter);
-            Tensor best_dv = out_distances.Slice(
-                    0, query_begin + q, query_begin + q + num_queries_iter);
-            int64_t* counts_ptr =
-                    counts.GetDataPtr<int64_t>() + query_begin + q;
-
-            for (int64_t p = 0; p < num_points_i; p += tile_points) {
-                const int64_t num_points_iter =
-                        std::min(tile_points, num_points_i - p);
-                Tensor points_tile = points_i.Slice(0, p, p + num_points_iter);
-                Tensor point_norms_tile =
-                        point_norms.Slice(0, p, p + num_points_iter);
-                Tensor temp_view = temp_distances.Slice(0, 0, num_queries_iter)
-                                           .Slice(1, 0, num_points_iter);
-
-                // Partial dist = −2qp + |p|² (no |q|²).
-                AddMM(queries_tile, points_tile.T(), temp_view, -2.0, 0.0);
-                temp_view.Add_(point_norms_tile.View({1, num_points_iter}));
-
-                // Count + select top-max_knn within threshold (one pass,
-                // mid-k).
-                Tensor ttiv = tile_top_indices.Slice(0, 0, num_queries_iter);
-                Tensor ttdv = tile_top_distances.Slice(0, 0, num_queries_iter);
-                Tensor miv = merged_indices.Slice(0, 0, num_queries_iter);
-                Tensor mdv = merged_distances.Slice(0, 0, num_queries_iter);
-
-                CountAndSelectTopKQueries<T, TIndex>(
-                        device, temp_view.GetDataPtr<T>(),
-                        temp_view.GetStride(0), num_queries_iter,
-                        num_points_iter, max_knn, TIndex(point_begin + p),
-                        query_norms_tile.GetDataPtr<T>(), radius_sq, counts_ptr,
-                        tile_sort_indices.GetDataPtr<TIndex>(),
-                        tile_sort_indices.GetStride(0),
-                        ttiv.GetDataPtr<TIndex>(), ttdv.GetDataPtr<T>(),
-                        max_knn);
-                MergeTopKQueries<T, TIndex>(
-                        device, best_dv.GetDataPtr<T>(),
-                        best_iv.GetDataPtr<TIndex>(), max_knn,
-                        ttdv.GetDataPtr<T>(), ttiv.GetDataPtr<TIndex>(),
-                        max_knn, num_queries_iter, max_knn,
-                        merge_scratch.GetDataPtr<TIndex>(),
-                        merge_scratch.GetStride(0), miv.GetDataPtr<TIndex>(),
-                        mdv.GetDataPtr<T>(), max_knn);
-
-                best_iv.AsRvalue() = miv;
-                best_dv.AsRvalue() = mdv;
-            }
-        }
+        WriteNeighborsHybridSYCL<T, TIndex>(
+                queue, neighbors_index_ptr + max_knn * query_begin,
+                neighbors_distance_ptr + max_knn * query_begin,
+                neighbors_count_ptr + query_begin, hash_index_ptr,
+                cell_splits_i, hash_table_size,
+                queries_ptr + 3 * query_begin, query_end - query_begin,
+                points_ptr, inv_voxel_size, radius_t, threshold, max_knn);
     }
+    queue.wait_and_throw();
 
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
-    neighbors_count =
-            Tensor::Empty({num_queries}, Dtype::FromType<TIndex>(), device);
-    FinalizeHybridResults<T, TIndex>(device, counts.GetDataPtr<int64_t>(),
-                                     num_queries, max_knn,
-                                     neighbors_index.GetDataPtr<TIndex>(),
-                                     neighbors_distance.GetDataPtr<T>(),
-                                     neighbors_count.GetDataPtr<TIndex>());
-
-    // P2: add |q|² back to the partial distances stored in neighbors_distance.
-    // Must use the CENTERED queries (queries_c) to match the centered partials.
-    AddQueryNormsToHybridDistances<T, TIndex>(
-            device, num_queries, max_knn, neighbors_index.GetDataPtr<TIndex>(),
-            neighbors_distance.GetDataPtr<T>(),
-            queries_c.Mul(queries_c).Sum({1}).GetDataPtr<T>());
-
-    queue.wait_and_throw();
+    neighbors_count = output_allocator.NeighborsCount();
 }
 
 #define INSTANTIATE(T, TIndex)                                                 \
@@ -861,6 +704,21 @@ INSTANTIATE(float, int32_t)
 INSTANTIATE(float, int64_t)
 INSTANTIATE(double, int32_t)
 INSTANTIATE(double, int64_t)
+
+template void BuildSpatialHashTableSYCL<float>(
+        const Tensor& points,
+        double radius,
+        const Tensor& points_row_splits,
+        const Tensor& hash_table_splits,
+        Tensor& hash_table_index,
+        Tensor& hash_table_cell_splits);
+template void BuildSpatialHashTableSYCL<double>(
+        const Tensor& points,
+        double radius,
+        const Tensor& points_row_splits,
+        const Tensor& hash_table_splits,
+        Tensor& hash_table_index,
+        Tensor& hash_table_cell_splits);
 
 }  // namespace nns
 }  // namespace core

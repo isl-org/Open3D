@@ -119,7 +119,8 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 #endif
     } else if (device.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
-        return true;
+        CALL_BUILD(float, BuildSpatialHashTableSYCL)
+        CALL_BUILD(double, BuildSpatialHashTableSYCL)
 #else
         utility::LogError(
                 "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
