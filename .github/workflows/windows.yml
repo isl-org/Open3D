@@ -573,12 +573,16 @@ jobs:
           # ExternalProject stamps that skip re-download of missing headers.
           # Match build-lib download dir so VMA/etc. resolve inside the zip.
           # Clear cached Python/Torch entries: build-lib cached its own Python
-          # (BUILD_PYTHON_MODULE=OFF, no torch); re-detect this runner's Python
-          # (where torch was just installed) so FindPytorch/pybind use it.
+          # (Python 3.12, BUILD_PYTHON_MODULE=OFF, no torch); re-detect this
+          # runner's Python (where torch was just installed) so FindPytorch/pybind
+          # use it. "_Python3_*" clears FindPython3's INTERNAL artifact cache
+          # (leading underscore, not matched by "Python3*"); without it, the
+          # stale 3.12 include/lib paths make Development.Module detection fail
+          # for every other Python version (only 3.12 wheels would build).
           # xpu builds fresh and does not reuse the CPU artifact.
           $REUSE_ARGS = @()
           if ('${{ matrix.device }}' -ne 'xpu') {
-            $REUSE_ARGS += "-U", "Python3*", "-U", "PYTHON_*", "-U", "Pytorch*", "-U", "Torch*", `
+            $REUSE_ARGS += "-U", "Python3*", "-U", "_Python3_*", "-U", "PYTHON_*", "-U", "Pytorch*", "-U", "Torch*", `
               "-DPython3_EXECUTABLE=$((Get-Command python).Source)", `
               "-DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR=$env:BUILD_DIR/3rdparty_downloads", `
               "-DBUILD_WEBRTC=ON"

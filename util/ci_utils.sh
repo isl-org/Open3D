@@ -212,9 +212,13 @@ build_pip_package() {
     set -x
     # Always rerun cmake and unset Python cache variables to update cache for
     # the current Python and build options.  This avoids incorrect/inherited
-    # Python config and ensures all paths are correct.  Do not use --fresh: it
-    # unnecessarily wipes build objects and wastes disk/CI time.
-    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
+    # Python config and ensures all paths are correct.  '_Python3_*' clears
+    # FindPython3's internal artifact cache (leading underscore, not matched by
+    # 'Python3*'); when a reused build dir was configured with a different Python
+    # (e.g. macOS build-lib uses 3.12), stale include/lib paths otherwise break
+    # Development.Module detection.  Do not use --fresh: it unnecessarily wipes
+    # build objects and wastes disk/CI time.
+    cmake -U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
         -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
         -DPython3_EXECUTABLE="$(command -v python3)" \
         "${cmakeOptions[@]}" ..
@@ -588,16 +592,31 @@ test_wheel() {
     HAVE_PYTORCH_OPS=OFF
     HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
-        HAVE_PYTORCH_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
-        python -W default -c \
-            "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
+        # open3d_torch_ops.so is linked against the torch build (CPU or CUDA)
+        # used when the wheel was built. A CUDA wheel's ops require CUDA torch
+        # (libc10_cuda.so etc.); on a CPU-only test runner we install CPU torch,
+        # so those ops cannot load. Skip the load check in that case (the
+        # companion open3d-cpu wheel exercises this path; GPU CI covers CUDA).
+        if python -c "import sys, open3d, torch; sys.exit(0 if open3d._build_config['BUILD_CUDA_MODULE'] and torch.version.cuda is None else 1)"; then
+            echo "Skipping PyTorch Ops load check: CUDA-built wheel with CPU-only torch."
+        else
+            HAVE_PYTORCH_OPS=ON
+            python -W default -c \
+                "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
+        fi
     fi
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_TENSORFLOW_OPS'])"; then
-        HAVE_TENSORFLOW_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-tensorflow.txt"
-        python -W default -c \
-            "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
+        # Same rationale as PyTorch: CUDA-built TensorFlow ops need a
+        # CUDA-enabled TensorFlow, which is absent on a CPU-only runner.
+        if python -c "import sys, open3d, tensorflow as tf; sys.exit(0 if open3d._build_config['BUILD_CUDA_MODULE'] and not tf.test.is_built_with_cuda() else 1)"; then
+            echo "Skipping TensorFlow Ops load check: CUDA-built wheel with CPU-only TensorFlow."
+        else
+            HAVE_TENSORFLOW_OPS=ON
+            python -W default -c \
+                "import open3d.ml.tf.ops; print('TensorFlow Ops library loaded:', open3d.ml.tf.ops)"
+        fi
     fi
     if [ "$HAVE_TENSORFLOW_OPS" == ON ] && [ "$HAVE_PYTORCH_OPS" == ON ]; then
         echo "Importing TensorFlow and torch in the reversed order"
