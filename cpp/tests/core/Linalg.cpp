@@ -483,7 +483,7 @@ TEST_P(LinalgPermuteDevices, LeastSquares) {
     const float EPSILON = 1e-5;
 
     core::Device device = GetParam();
-    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP() << "MKL Linalg is not supported on SYCL CPU.";
     core::Dtype dtype = core::Float32;
 
     // Solve test.

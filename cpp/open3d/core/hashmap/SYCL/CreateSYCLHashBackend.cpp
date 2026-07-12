@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file CreateSYCLHashBackend.cpp
+/// \brief Dtype-dispatched factory for \ref SYCLHashBackend.
+
 #include "open3d/core/hashmap/Dispatch.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/core/hashmap/SYCL/SYCLHashBackend.h"
@@ -12,7 +15,8 @@
 namespace open3d {
 namespace core {
 
-/// Non-templated factory for the SYCL device hash backend.
+/// Instantiate \ref SYCLHashBackend for \p key_dtype / element shape and value
+/// dtypes. Only \ref HashBackendType::Default is supported on SYCL.
 std::shared_ptr<DeviceHashBackend> CreateSYCLHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,

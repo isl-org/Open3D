@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file VoxelBlockGridSYCL.cpp
+/// \brief SYCL VoxelBlockGrid integration kernels (see VoxelBlockGridImpl.h).
+
 #include <sycl/sycl.hpp>
 
 #include "open3d/core/ParallelFor.h"

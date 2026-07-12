@@ -35,17 +35,8 @@ target_sources(benchmarks PRIVATE
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
 target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Direct-dispatch hyperparameter sweep for the SYCL kNN and HashMap kernels;
-# needs -fsycl (it calls DispatchKnnDirect directly).
 if (BUILD_SYCL_MODULE)
-    open3d_sycl_target_sources(benchmarks PRIVATE
-        core/NearestNeighborSearchSYCLTuning.cpp
-        core/NearestNeighborSearchSYCLAddMMTuning.cpp
-        core/HashMapSYCLTuning.cpp
-    )
     # benchmarks compiles its own SYCL device code above, so it needs the
-    # -fsycl link step regardless of BUILD_SHARED_LIBS. Open3D only
-    # propagates this transitively to consumers when built as a static
-    # library (see cpp/open3d/CMakeLists.txt), so link it directly here too.
+    # -fsycl link step.
     target_link_libraries(benchmarks PRIVATE Open3D::3rdparty_sycl)
 endif()

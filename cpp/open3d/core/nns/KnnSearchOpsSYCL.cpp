@@ -12,34 +12,98 @@
 //   FixedRadiusSearchSYCL – all neighbors within radius (count + gather)
 //   HybridSearchSYCL    – neighbors within radius, keep best max_knn
 //
-// Common tiling strategy
-// ──────────────────────
-// All three variants loop over (query-tile, point-tile) pairs.  For each pair
-// AddMM computes the −2*q*p tile once (O(n·m·d) work, highly optimised by
-// oneMKL).  The remaining passes read the tile (O(n·m)) at most twice, keeping
-// computation well below the GEMM cost.
+// There are three SYCL KNN paths inside KnnSearchSYCL, chosen per batch after
+// batch_knn = min(knn, num_points).
+// 
+// Decision tree
+// 
+// force_addmm_path == false
+//   AND 1 ≤ dim ≤ 8
+//   AND batch_knn ≤ 32          →  Direct |p−q|²
+// else
+//   center data (once)
+//   if batch_knn ≤ 512          →  AddMM + fused top-K
+//   else                        →  AddMM + Select/Merge (large-k)
 //
-// KNN small-k path (k ≤ kSYCLKnnMidKMax)
-// ────────────────────────────────────────
-// UpdateTopKFromTile<K> fuses: Add_(point_norms) + SelectTopK + Merge
-// into a single per-query scan over the tile, maintaining a running max-heap
-// in global memory (fits in GRF for k ≤ kSYCLKnnSmallKMax).  No intermediate
-// tile_top or merged tensors are needed.  FinalizeTopK adds |q|² once (P2)
-// and heap-sorts into ascending order.
+// | Path           | When                                             | Thresholds                                    |
+// |----------------|--------------------------------------------------|-----------------------------------------------|
+// | Direct         | !force_addmm_path && UseKnnDirect(dim, batch_knn) | dim ∈ [1,8], k ≤ 32 (kSYCLKnnSmallKMax)      |
+// | AddMM fused    | Not direct, batch_knn ≤ 512                      | k ≤ kSYCLKnnMidKMax                           |
+// | AddMM large-k  | Not direct, batch_knn > 512                      | k > kSYCLKnnMidKMax                           |
+// | Fixed-radius SYCL | AddMM + CountWithin + GatherWithin (+ optional sort)   (radius-only)              |           |
+// | Hybrid SYCL       | AddMM + CountAndSelect + MergeTopK (+ finalize + |q|²) (radius + capped top-k)    |           |
 //
-// KNN large-k path (k > kSYCLKnnMidKMax)
-// ────────────────────────────────────────
-// Falls back to the legacy SelectTopKQueries + MergeTopKQueries pair.
-// P2 applies: |q|² is NOT added to the tile; AddQueryNormsToDistances adds
-// it once at the end.  P8 note: for k > kSYCLKnnMidKMax the SelectTopK path
-// launches one oneDPL partial_sort per query sequentially.
+// (Note)  force_addmm_path=true (tuning benchmarks only) always skips Direct.
+// 
+// 1. Direct path (DispatchKnnDirect)
+// 
+// Idea: Brute-force L2 as sum_d (p_d − q_d)² — no AddMM, no centering, no |q|² deferral.
+// Algorithm:
+// - One sub-group handles one query; many queries share a work-group.
+// - Point tiles are staged in SLM (double-buffered).
+// - Each lane keeps a private sorted top-K; lanes shuffle-merge within the sub-group; lane 0 writes the result.
+// - Compile-time NDIM (1…8) and K bucket (1…32); float uses SG=16, double prefers SG=8 when supported.
+// Typical use: 3D point clouds, small k (fastest path on Xe).
+// 
+// 2. AddMM fused path (k ≤ 512)
+// 
+// Idea: Expand L2 as |q|² − 2q·p + |p|². oneMKL AddMM builds the −2q·p tile; selection fuses the rest.
+// Algorithm:
+// - Center points/queries (first data row) to reduce float32 cancellation.
+// - Precompute |p|², |q|².
+// - Loop over (query-tile × point-tile):
+//   - AddMM → tile of −2q·p
+//   - UpdateTopKFromTile: add |p|², clamp ≥ 0, update a running max-heap per query (K = KBucket(k))
+// - FinalizeTopK: heap-sort, add |q|², write first batch_knn neighbors.
+// Heap storage: K ≤ 32 → GRF; K ∈ {64…512} → scratch.
+// 
+// 3. AddMM large-k path (k > 512)
+// 
+// Idea: Same AddMM tiling, but Select + Merge instead of a fused running heap.
+// Algorithm:
+// - Same centering + norms + AddMM tiles.
+// - Per point-tile: SelectTopKQueries → tile top-k.
+// - Merge into running best via MergeTopKQueries.
+// - Once: AddQueryNormsToDistances (|q|² + clamp).
+// P8 caveat: for k > 512, merge/select can fall back to per-query serial partial_sort (correct, slow).
+// 
+// 4. Fixed-radius (FixedRadiusSearchSYCL)
+// 
+// Idea: Find every point within radius; neighbor list length varies per query.
+// Algorithm:
+// - Shared AddMM front end (center, norms |p|², |q|², tiles).
+// - Pass 1 — count: per tile, CountWithinThresholdQueries accumulates how many points fall in radius (using P2 threshold).
+// - Host prefix sum of counts → neighbors_row_splits and write offsets; allocate index (and optional distance) buffers.
+// - Pass 2 — gather: re-run the same AddMM tiles; GatherWithinThresholdQueries writes matching indices and full L2 (partial + |q|², clamped).
+// - Optional sort: per-query insertion sort by distance (C4-style index tie-break).
+// Typical use: radius neighborhood queries when you need the full set, not a fixed-k cap.
+// 
+// 5. Hybrid (HybridSearchSYCL)
+// 
+// Idea: Count everyone in radius, but only keep the closest max_knn in fixed-size outputs (like KNN capped by radius).
+// Algorithm:
+// - Shared AddMM front end (center, norms |p|², |q|², tiles).
+// - Allocate fixed (num_queries, max_knn) index/distance buffers (sentinel empty slots).
+// - Per tile after AddMM:
+//   - CountAndSelectTopKQueries — one scan: bump in-radius count, and select top-max_knn partial distances in-tile
+//     - max_knn ≤ 512: K-bucket heap dispatch
+//     - max_knn > 512: count + SelectTopKQueries fallback
+//   - MergeTopKQueries — merge tile top-k into running best (same merge idea as KNN large-k; P8 partial_sort if max_knn > 512)
+// - FinalizeHybridResults — clip counts to max_knn, zero-fill unused slots; write neighbors_count.
+// - AddQueryNormsToHybridDistances — add |q|² (from centered queries) and clamp (P2/C1).
+// Typical use: features / normals / covariances that want “up to K neighbors inside radius.”
+// 
+// Shared conventions (AddMM paths)
+// P2: tiles store partial dist −2qp + |p|²; |q|² added at finalize.
+// C1: clamp distances ≥ 0.
+// C4: equal distance → smaller point index wins.
+// C5: batch_knn = min(knn, num_points).
 //
-// Radius / Hybrid
-// ───────────────
-// P2 applies: CountWithinThresholdQueries and
-// GatherWithinThresholdQueries take the per-query adjusted threshold
-// (radius² − |q|²), avoiding the Add_(query_norms) tile pass.  Returned
-// distances are the full L2 (partial + |q|²), clamped ≥ 0 (C1).
+// TODO:
+// ====
+// - Only DirectKNN path is well optimized. AddMM based paths can be slow.
+// - Hybrid search should be recast as KNN and then filter.
+// - Fixed-radius search should be recast as filter (stream compaction).
 
 #include <algorithm>
 #include <limits>
@@ -82,12 +146,11 @@ static void CenterPointsAndQueries(Tensor& points, Tensor& queries) {
 }
 
 // Batched KNN search.
-//
-// For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair
-//   replaces three separate passes (Add_, SelectTopK, Merge).  The running
-//   max-heap is maintained in global memory between tile iterations and
-//   finalized (sorted + |q|² added) once per query batch.
-//
+///
+/// For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair.
+///     The running max-heap is maintained in global memory between tile
+///     iterations and finalized (sorted + |q|² added) once per query batch.
+///
 // For k > kSYCLKnnMidKMax: legacy Select + Merge path with P2 fix.
 //
 // C5 fix: batch_knn = min(knn, num_points_i) per batch.
@@ -112,10 +175,10 @@ void KnnSearchSYCL(const Tensor& points,
     std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
             batch_size, NeighborSearchAllocator<T, TIndex>(device));
 
-    // Center to avoid float32 cancellation in |q|^2 - 2q*p + |p|^2 (see
-    // helper).
-    Tensor points_c = points, queries_c = queries;
-    CenterPointsAndQueries<T>(points_c, queries_c);
+    // Centering is only needed for the AddMM |q|²−2q·p+|p|² paths. The direct
+    // |p−q|² path does not use it — defer until the first AddMM batch.
+    Tensor points_c, queries_c;
+    bool centered = false;
 
     int64_t* neighbors_row_splits_ptr =
             neighbors_row_splits.GetDataPtr<int64_t>();
@@ -132,10 +195,11 @@ void KnnSearchSYCL(const Tensor& points,
         const int64_t query_end =
                 queries_row_splits[batch_idx + 1].Item<int64_t>();
 
-        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
-        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
-        const int64_t num_points_i = points_i.GetShape(0);
-        const int64_t num_queries_i = queries_i.GetShape(0);
+        const Tensor points_raw = points.Slice(0, point_begin, point_end);
+        const Tensor queries_raw = queries.Slice(0, query_begin, query_end);
+        const int64_t num_points_i = points_raw.GetShape(0);
+        const int64_t num_queries_i = queries_raw.GetShape(0);
+        const int64_t dim = points_raw.GetShape(1);
 
         // C5: clamp knn to the number of available points.
         batch_knn = std::min<int64_t>(knn, num_points_i);
@@ -162,24 +226,25 @@ void KnnSearchSYCL(const Tensor& points,
                 batch_output_allocators[batch_idx].NeighborsDistance().View(
                         {num_queries_i, batch_knn});
 
-        if (!force_addmm_path &&
-            UseKnnDirect(points_i.GetShape(1), batch_knn)) {
-            // Direct-distance path (no AddMM, no centering — see
-            // DispatchKnnDirect docs): use the ORIGINAL, uncentered
-            // points/queries slices since |p-q|² is computed directly
-            // and is translation-sensitive in implementation (not in
-            // result).
-            const Tensor points_raw = points.Slice(0, point_begin, point_end);
-            const Tensor queries_raw = queries.Slice(0, query_begin, query_end);
-            DispatchKnnDirect<T, TIndex>(queue, points_raw.GetDataPtr<T>(),
-                                         queries_raw.GetDataPtr<T>(),
-                                         points_i.GetShape(1), num_points_i,
-                                         num_queries_i, batch_knn,
-                                         out_distances.GetDataPtr<T>(),
-                                         out_indices.GetDataPtr<TIndex>());
+        if (!force_addmm_path && UseKnnDirect(dim, batch_knn)) {
+            // Direct |p−q|² path: no AddMM and no centering.
+            DispatchKnnDirect<T, TIndex>(
+                    queue, points_raw.GetDataPtr<T>(),
+                    queries_raw.GetDataPtr<T>(), dim, num_points_i,
+                    num_queries_i, batch_knn, out_distances.GetDataPtr<T>(),
+                    out_indices.GetDataPtr<TIndex>());
             queue.wait_and_throw();
             continue;
         }
+
+        if (!centered) {
+            points_c = points;
+            queries_c = queries;
+            CenterPointsAndQueries<T>(points_c, queries_c);
+            centered = true;
+        }
+        const Tensor points_i = points_c.Slice(0, point_begin, point_end);
+        const Tensor queries_i = queries_c.Slice(0, query_begin, query_end);
 
         // |p|² and |q|² for distance tiling.
         Tensor point_norms = points_i.Mul(points_i).Sum({1});

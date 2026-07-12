@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file PointCloudSYCL.cpp
+/// \brief SYCL point-cloud kernels (see PointCloudImpl.h / PointCloud.h).
+
 #include <sycl/sycl.hpp>
 
 #include "open3d/core/ParallelFor.h"

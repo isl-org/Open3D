@@ -205,7 +205,11 @@ enum class DtypePolicy {
                             // have bool dtype.
 };
 
-/// Indexer to one Tensor
+/// Indexer to one Tensor.
+///
+/// \p workload_idx is a row-major linear element index. Contiguous tensors use
+/// a fast path in GetPtr(); general strided layouts decode per-dimension
+/// coordinates from byte strides.
 ///
 /// Example usage:
 ///
@@ -241,6 +245,7 @@ public:
         return num_workloads;
     }
 
+    /// Pointer to the element at linear index \p workload_idx, or nullptr.
     OPEN3D_HOST_DEVICE void* GetPtr(int64_t workload_idx) const {
         if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
             return nullptr;

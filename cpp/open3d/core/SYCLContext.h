@@ -94,6 +94,11 @@ public:
     /// SYCLDevice if \p device is not available.
     SYCLDevice GetDeviceProperties(const Device& device);
 
+    /// Explicitly destroy owned SYCL queues. No-op if GetInstance() was never
+    /// called. Safe from Python atexit / normal runtime; avoid relying on C++
+    /// static destruction alone under OpenCL CPU.
+    static void Clear();
+
 private:
     SYCLContext();
 

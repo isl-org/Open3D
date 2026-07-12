@@ -137,6 +137,7 @@ std::shared_ptr<DeviceHashBackend> CreateCUDAHashBackend(
         const HashBackendType& backend);
 
 #if defined(BUILD_SYCL_MODULE)
+/// Factory for the SYCL open-addressing hash backend (\ref SYCLHashBackend).
 std::shared_ptr<DeviceHashBackend> CreateSYCLHashBackend(
         int64_t init_capacity,
         const Dtype& key_dtype,

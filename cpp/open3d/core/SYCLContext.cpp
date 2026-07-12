@@ -13,6 +13,11 @@
 
 #include "open3d/utility/Logging.h"
 
+namespace {
+// Set by SYCLContext ctor; used by static Clear() without calling GetInstance().
+open3d::core::sy::SYCLContext* g_sycl_context = nullptr;
+}  // namespace
+
 namespace open3d {
 namespace core {
 namespace sy {
@@ -96,11 +101,25 @@ struct SYCLContext::Impl {
     std::map<Device, DeviceEntry> devices;
 };
 
-SYCLContext::~SYCLContext() = default;
+SYCLContext::~SYCLContext() { g_sycl_context = nullptr; }
 
 SYCLContext& SYCLContext::GetInstance() {
     static SYCLContext instance;
     return instance;
+}
+
+void SYCLContext::Clear() {
+    if (!g_sycl_context || !g_sycl_context->impl_) return;
+    for (auto& pair : g_sycl_context->impl_->devices) {
+        try {
+            pair.second.queue.wait_and_throw();
+        } catch (...) {
+        }
+    }
+    // Destroy queues while the process is still in a normal runtime state
+    // (e.g. from Python atexit). If done from static destructors / C++ atexit,
+    // OpenCL CPU aborts with glibc heap corruption.
+    g_sycl_context->impl_->devices.clear();
 }
 
 bool SYCLContext::IsAvailable() { return impl_->devices.size() > 0; }
@@ -130,6 +149,7 @@ SYCLDevice SYCLContext::GetDeviceProperties(const Device& device) {
 }
 
 SYCLContext::SYCLContext() : impl_(std::make_unique<Impl>()) {
+    g_sycl_context = this;
     // SYCL GPU.
     // TODO: Currently we only support one GPU device.
     try {

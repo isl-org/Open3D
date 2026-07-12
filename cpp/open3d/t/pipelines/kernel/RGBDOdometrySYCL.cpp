@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file RGBDOdometrySYCL.cpp
+/// \brief SYCL RGB-D odometry kernels (see RGBDOdometryImpl.h).
+
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"

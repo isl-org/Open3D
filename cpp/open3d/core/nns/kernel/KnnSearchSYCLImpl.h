@@ -5,43 +5,35 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// Device-side SYCL implementations for KNN, fixed-radius, and hybrid search.
-// Included only by KnnSearchOpsSYCL.cpp – not part of the public API.
-//
-// Design overview
-// ───────────────
-// The outer driver (KnnSearchOpsSYCL.cpp) uses oneMKL AddMM to compute the
-// −2*q*p distance tile for each (query-tile × point-tile) pair.
-//
-// P1+P9 – Fused per-tile kernel (small k ≤ kSYCLKnnMidKMax):
-//   UpdateTopKFromTile<K> runs one work-item per query.  It reads the
-//   AddMM output, adds |p|² on the fly (P2 – |q|² deferred to Finalize), and
-//   maintains a running max-heap in global memory.  Template K is the
-//   compile-time heap capacity (batch_knn rounded up to the dispatch bucket).
-//   For K ≤ kSYCLKnnSmallKMax (32) the d[K]/idx[K] arrays are GRF-resident
-//   (no scratch spill); for K in {64,128,256,512} they spill to per-work-item
-//   scratch, sized proportional to K.
-//
-//   FinalizeTopK<K> heap-sorts the result and adds |q|² (C1 clamped) in one
-//   pass.
-//
-// Legacy path (mid k, threshold search):
-//   SelectTopKQueries (K-dispatched heap) and MergeTopKQueries serve hybrid
-//   search and k > kSYCLKnnMidKMax.  Hybrid tiles use
-//   CountAndSelectTopKQueries to fuse radius counting with top-k.
-//
-// P2 – Drop |q|² from the distance tile:
-//   All selection/count/gather kernels compare partial_dist = −2qp + |p|²
-//   against an adjusted per-query threshold = radius² − |q|².  KNN callers
-//   add |q|² back once in Finalize / AddQueryNormsToDistances.
-//
-// C1 – Negative distance clamp: partial_dist = max(0, −2qp + |p|²).
-// C4 – Tie-break: equal distances resolved by smaller global point index.
-// C5 – Handled by caller: actual_k = min(knn, num_points).
-//
-// P8 NOTE: oneDPL has no segmented top-k.  For k > kSYCLKnnMidKMax the code
-// falls back to a per-query serial partial_sort (correct but sequential).
-// A SYCL port of Faiss BlockSelect (gpu/impl/L2Select.cu) would remove this.
+/// \file KnnSearchSYCLImpl.h
+/// \brief Device-side SYCL kernels for KNN, fixed-radius, and hybrid search.
+///
+/// Included only by KnnSearchOpsSYCL.cpp; not part of the public API.
+///
+/// The driver uses oneMKL AddMM to compute the −2*q*p distance tile for each
+/// (query-tile × point-tile) pair.
+///
+/// Fused per-tile path (small k ≤ kSYCLKnnMidKMax):
+/// - \ref UpdateTopKFromTile maintains a running max-heap per query from AddMM
+///   tiles; \ref FinalizeTopK heap-sorts and adds |q|² (P2, C1).
+/// - For K ≤ kSYCLKnnSmallKMax (32), heap arrays are GRF-resident; larger
+///   buckets spill to per-work-item scratch.
+///
+/// Legacy path (mid/large k, threshold search):
+/// - \ref SelectTopKQueries, \ref MergeTopKQueries, and hybrid
+///   \ref CountAndSelectTopKQueries.
+///
+/// Direct-distance path (low D, low k):
+/// - \ref KnnDirect / \ref DispatchKnnDirect bypass AddMM; see section below.
+///
+/// Conventions:
+/// - **P2**: partial_dist = −2qp + |p|²; |q|² added once in finalize.
+/// - **C1**: clamp partial_dist ≥ 0.
+/// - **C4**: tie-break by smaller global point index.
+/// - **C5**: actual_k = min(knn, num_points) handled by caller.
+///
+/// **P8**: For k > kSYCLKnnMidKMax, merge uses per-query serial partial_sort
+/// (oneDPL has no segmented top-k).
 
 #pragma once
 
@@ -60,7 +52,8 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-// ─── Tile sizing ──────────────────────────────────────────────────────────
+/// \addtogroup nns_sycl_knn Tile sizing (AddMM path)
+/// @{
 
 /// Compute tile dimensions that bound the −2*q*p tile to \p tile_bytes.
 /// tile_queries is capped at \p max_tile_queries (a good oneMKL GEMM row-tile
@@ -89,8 +82,11 @@ inline void ChooseTileSize(int64_t num_queries,
     tile_points = std::max<int64_t>(tile_points, 1);
 }
 
-// ─── Compile-time heap helpers ────────────────────────────────────────────
-// C4 tie-break: smaller global index wins on equal distance.
+/// @}
+
+/// \addtogroup nns_sycl_knn Compile-time heap helpers
+/// @{
+/// C4 tie-break: smaller global index wins on equal distance.
 
 /// Heapify-down for a compile-time max-heap of size K.  K is a constant so
 /// the compiler can unroll the loop and keep d[]/idx[] in GRF for K ≤ 32.
@@ -148,7 +144,10 @@ inline void HeapSort(T* d, TIndex* idx) {
     }
 }
 
-// ─── Fused per-tile top-K update (compile-time K, small/mid k path) ───────
+/// @}
+
+/// \addtogroup nns_sycl_knn Fused per-tile top-K (small/mid k)
+/// @{
 
 /// Update the per-query running top-K heap using one point-column tile.
 ///
@@ -272,10 +271,11 @@ void FinalizeTopK(sycl::queue& queue,
                        });
 }
 
-// ─── K-dispatch helpers ───────────────────────────────────────────────────
-// K buckets: 1, 2, 4, 8, 16, 32 (GRF register path, no spill) and
-//            64, 128, 256, 512  (scratch-resident, proportional alloc).
-// Dispatch is on the bucket size, not the raw knn, so callers round up first.
+/// @}
+
+/// \addtogroup nns_sycl_knn K-bucket dispatch (fused path)
+/// @{
+/// Dispatch buckets: 1, 2, 4, …, 512 (round knn up with \ref KBucket first).
 
 /// Return the smallest dispatch-bucket value ≥ k.
 inline int64_t KBucket(int64_t k) {
@@ -291,6 +291,7 @@ inline int64_t KBucket(int64_t k) {
     return 512;
 }
 
+/// Instantiate \ref UpdateTopKFromTile for the given \p k_bucket.
 template <typename T, typename TIndex>
 void DispatchUpdateTopKFromTile(sycl::queue& queue,
                                 const T* neg2qp_ptr,
@@ -332,6 +333,7 @@ void DispatchUpdateTopKFromTile(sycl::queue& queue,
 #undef CALL_UPDATE
 }
 
+/// Instantiate \ref FinalizeTopK for the given \p k_bucket.
 template <typename T, typename TIndex>
 void DispatchFinalizeTopK(sycl::queue& queue,
                           int64_t num_queries,
@@ -369,55 +371,38 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 #undef CALL_FINALIZE
 }
 
-// ─── Direct-distance KNN (no AddMM, no centering) ────────────────────────
-// Cooperative, SLM-tiled brute-force KNN for low-dimension, low-k queries
-// (the dominant point-cloud regime: D ≤ kKnnDirectMaxDim,
-// K ≤ kSYCLKnnSmallKMax). This bypasses the oneMKL AddMM tiling used by the
-// rest of this file entirely: |p-q|² is accumulated directly as a sum of
-// squared per-dimension differences, so there is no |q|²-2qp+|p|²
-// cancellation risk and therefore neither data centering nor the P2
-// query-norm deferral above are needed for this path.
-//
-// Work distribution: one sub-group of compile-time width SG handles one
-// query. `subgroups_per_wg` sub-groups (queries) share a work-group and
-// cooperatively cache each `tile_points`-sized chunk of the dataset in SLM
-// once, amortizing that load across every query in the work-group instead
-// of re-reading points per query. Tiles are double-buffered in SLM so the
-// next tile's cooperative load is issued (software-pipelined prefetch)
-// before the current tile is consumed, letting the GPU's load pipeline
-// overlap with the distance-compute loop instead of stalling on it.
-//
-// Each lane keeps a private ascending-sorted top-K (register-resident for
-// K ≤ kSYCLKnnSmallKMax) while scanning its strided share of each tile.
-// Once all tiles are scanned, the SG lanes combine their per-lane top-K via
-// a register/shuffle all-reduce merge (sycl::select_from_group): at each of
-// the log2(SG) rounds, a lane exchanges its whole sorted K-array with its
-// XOR partner and 2-way-merges the two sorted arrays, keeping only the
-// smallest K. After the loop every lane holds the identical final top-K for
-// the query (no SLM/global traffic for the merge itself) — lane 0 writes
-// it out.
-//
-// `subgroups_per_wg` and `tile_points` are plain runtime parameters (not
-// template parameters), so launch geometry can be retuned by benchmarking
-// without recompiling; SG, NDIM and K stay compile-time so the per-lane
-// arrays remain register-resident.
+/// @}
 
-// Performance note: on an A770 this direct path is 2 orders of magnitude
-// faster than the indirect path
+/// \addtogroup nns_sycl_knn Direct-distance KNN (no AddMM)
+/// @{
+///
+/// Cooperative SLM-tiled brute-force KNN for low dimension and low k
+/// (D ≤ \ref kKnnDirectMaxDim, K ≤ kSYCLKnnSmallKMax). Accumulates |p−q|²
+/// directly (no |q|²−2qp+|p|² cancellation); centering and P2 deferral are
+/// not required on this path.
+///
+/// One sub-group of width SG handles one query; \p subgroups_per_wg queries
+/// share a work-group and cooperatively cache each point tile in SLM.
+/// Double-buffered tiles hide load latency. Per-lane top-K arrays merge via
+/// sub-group shuffle (\c select_from_group); lane 0 writes the result.
+///
+/// Tuned defaults for dim=3 on Intel Xe: \ref kKnnDirectSubgroupsPerWG and
+/// \ref kKnnDirectTilePoints (see NearestNeighborSearchSYCLTuning.cpp).
 
-// subgroups_per_wg=32 (512 work-items/WG at SG=16) and tile_points=2048 are
-// the tuned defaults for dim=3 point clouds on Intel Xe iGPUs (see
-// benchmarks/core/NearestNeighborSearchSYCLTuning.cpp); tile_points is
-// clamped further for large dim / double by the local-memory check in
-// DispatchKnnDirect (see kKnnDirectMaxDim).
+/// Default sub-group width for the direct KNN kernel (float path).
 constexpr int64_t kKnnDirectSubgroupSize = 16;
+/// Default sub-groups per work-group (512 work-items at SG=16).
 constexpr int64_t kKnnDirectSubgroupsPerWG = 32;
+/// Default point tile size for SLM staging.
 constexpr int64_t kKnnDirectTilePoints = 2048;
+/// Maximum point dimension compiled for \ref DispatchKnnDirect.
 constexpr int64_t kKnnDirectMaxDim = 8;
 
+/// Named kernel tag for \ref KnnDirect (SYCL kernel naming).
 template <typename T, typename TIndex, int NDIM, int K, int SG>
 class KnnDirectKernel;
 
+/// Launch direct-distance KNN for fixed compile-time NDIM, K, and SG.
 template <typename T, typename TIndex, int NDIM, int K, int SG>
 void KnnDirect(sycl::queue& queue,
                const T* points_ptr,
@@ -639,13 +624,8 @@ void DispatchKnnDirectKForSG(sycl::queue& queue,
 #undef CALL_DIRECT
 }
 
-// float always uses sub-group width 16 (smaller per-lane footprint, no
-// register-spill risk). double prefers width 8 -- halving lanes-per-query
-// doubles the per-lane register budget for the 8-byte d[K]/idx[K] arrays,
-// avoiding scratch spills at large K on discrete GPUs. Not all devices
-// support width 8 (e.g. integrated Xe iGPUs expose only {16, 32}), so both
-// SG=8 and SG=16 kernels are compiled for double and this function queries
-// the device at runtime to pick a supported width.
+/// Choose sub-group width for direct KNN: float uses 16; double uses 8 when
+/// supported, else 16 (see file comment in implementation).
 template <typename T, typename TIndex, int NDIM>
 void DispatchKnnDirectK(sycl::queue& queue,
                         const T* points_ptr,
@@ -759,9 +739,11 @@ inline bool UseKnnDirect(int64_t dim, int64_t knn) {
     return dim >= 1 && dim <= kKnnDirectMaxDim && knn <= kSYCLKnnSmallKMax;
 }
 
-// ─── Legacy Select / Merge (mid-k and large-k paths) ─────────────────────
-// These keep the existing algorithm but fix C1 (clamp), C4 (tie-break), and
-// add P2 support (no |q|² in distances_ptr; per-query threshold for hybrid).
+/// @}
+
+/// \addtogroup nns_sycl_knn Legacy select/merge (mid and large k)
+/// @{
+/// Mid/large-k paths apply C1 clamp, C4 tie-break, and P2 (no |q|² in tiles).
 
 namespace detail {
 
@@ -954,6 +936,7 @@ void CountAndSelectTopKQueriesHeap(sycl::queue& queue,
 
 }  // namespace detail
 
+/// K-bucket dispatch to \ref detail::SelectTopKQueriesHeap.
 template <typename T, typename TIndex>
 void DispatchSelectTopKQueries(sycl::queue& queue,
                                const T* distances_ptr,
@@ -999,6 +982,7 @@ void DispatchSelectTopKQueries(sycl::queue& queue,
 #undef CALL_SELECT
 }
 
+/// K-bucket dispatch to \ref detail::CountAndSelectTopKQueriesHeap.
 template <typename T, typename TIndex>
 void DispatchCountAndSelectTopKQueries(sycl::queue& queue,
                                        const T* partial_dist_ptr,
@@ -1260,7 +1244,10 @@ void MergeTopKQueries(const Device& device,
     }
 }
 
-// ─── P2 finalisation for mid-/large-K paths ───────────────────────────────
+/// @}
+
+/// \addtogroup nns_sycl_knn P2 finalization and radius/hybrid helpers
+/// @{
 
 /// Add |q|² to partial distances and clamp ≥ 0 (C1).  Called once after all
 /// point tiles for the SelectTopK / Merge path (mid-K and large-K).
@@ -1281,8 +1268,6 @@ void AddQueryNormsToDistances(const Device& device,
                                                             query_norms_ptr[q]);
                        });
 }
-
-// ─── Radius / hybrid helpers ──────────────────────────────────────────────
 
 /// Count points within the adjusted per-query threshold (P2).
 /// threshold_q = radius² − |q|², so we compare partial_dist directly.
@@ -1431,6 +1416,8 @@ void AddQueryNormsToHybridDistances(const Device& device,
                                                  query_norms_ptr[q]);
                        });
 }
+
+/// @}
 
 }  // namespace nns
 }  // namespace core

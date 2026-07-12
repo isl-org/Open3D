@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "open3d/core/SYCLContext.h"
 #include "open3d/core/SYCLUtils.h"
 #include "pybind/core/core.h"
 
@@ -27,6 +28,21 @@ void pybind_sycl_utils_definitions(py::module& m) {
 
     m_sycl.def("get_available_devices", sy::GetAvailableSYCLDevices,
                "Return a list of available SYCL devices.");
+
+#ifdef BUILD_SYCL_MODULE
+    // Destroy Open3D-owned SYCL queues while the interpreter is still alive.
+    // C++ static destruction of the same queues under OpenCL CPU aborts with
+    // glibc "corrupted double-linked list". Only Open3D queues are cleared;
+    // other SYCL users (e.g. torch-xpu) are unaffected. Clear() is a no-op if
+    // SYCLContext was never constructed.
+    m_sycl.def("_clear_context", &sy::SYCLContext::Clear,
+               "Destroy Open3D-owned SYCL queues (also registered with "
+               "atexit). Unsafe to use Open3D SYCL after calling this function.");
+    {
+        auto atexit = py::module::import("atexit");
+        atexit.attr("register")(m_sycl.attr("_clear_context"));
+    }
+#endif
 
     m_sycl.def("print_sycl_devices", sy::PrintSYCLDevices,
                "print_all"_a = false,

@@ -5,6 +5,42 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file SYCLHashBackend.h
+/// \brief SYCL device-side open-addressing hash table (linear probing).
+///
+/// \ref SYCLHashBackend implements \ref DeviceHashBackend on SYCL using USM
+/// slots and an external \ref HashBackendBuffer for keys and values.
+///
+/// Design notes:
+/// - Slot transitions publish in a single CAS (Xe subgroup lanes run in
+///   lockstep; a spinning/waiting lane can hang the device).
+/// - Each slot is one packed uint64 (state, buf_index, fingerprint) — a
+///   single load per probe.
+/// - A device seq_cst fence separates writing a slot's key/value from the
+///   CAS that publishes it, so probers never see stale or uninitialized data.
+/// - GetActiveIndices uses one work-group exclusive scan + one fetch_add per
+///   group, not one atomic per occupied slot.
+/// - Rehash triggers on non_empty_count (occupied + deleted), not live size
+///   alone, so tombstones cannot silently fill the table.
+///
+/// Algorithm:
+/// - Table: USM array of packed slots (see PackSlot in the implementation).
+///   Keys/values live in HashBackendBuffer; each OCCUPIED slot stores a
+///   buf_index. Probe index is `(home + i) & (bucket_count - 1)` with
+///   bucket_count a power of two.
+/// - HashMix (MurmurHash3 fmix64) is applied to FNV-1a before masking so local
+///   keys do not cluster in low bits. A 28-bit fingerprint from the same mixed
+///   hash filters most false key-buffer gathers on probe (full equality still
+///   uses \p eq_fn).
+/// - Insert (wait-free): linear probe; on EMPTY claim the first DELETED seen
+///   for reuse. Allocate one buffer element, copy key/values, device seq_cst
+///   fence, then CAS slot EMPTY/DELETED → OCCUPIED.
+/// - Find / Erase: same probe; EMPTY ends the chain. Erase CAS OCCUPIED →
+///   DELETED, frees buffer slot, decrements occupied_count only.
+/// - \ref SYCLHashDeviceLookup: immutable table view for kernels; plain loads,
+///   no atomics. Callers must not mutate the table while a lookup view is in
+///   use.
+
 #pragma once
 
 #include <algorithm>
@@ -21,46 +57,12 @@
 #include "open3d/core/hashmap/SYCL/SYCLHashBackendBufferAccessor.h"
 #include "open3d/utility/Logging.h"
 
-// SYCLHashBackend — device-side open-addressing hash table (linear probing).
-//
-// Design notes
-//   • Slot transitions publish in a single CAS (Xe subgroup lanes run in
-//     lockstep; a spinning/waiting lane can hang the device).
-//   • Each slot is one packed uint64 (state, buf_index, fingerprint) — a
-//     single load per probe.
-//   • A device seq_cst fence separates writing a slot's key/value from the
-//     CAS that publishes it, so probers never see stale or uninitialized
-//     data.
-//   • GetActiveIndices uses one work-group exclusive scan + one fetch_add
-//     per group, not one atomic per occupied slot.
-//   • Rehash triggers on non_empty_count (occupied + deleted), not live
-//     size alone, so tombstones cannot silently fill the table.
-//
-// Algorithm
-//   Table: USM array of packed slots (see PackSlot). Keys/values live in an
-//   external HashBackendBuffer; each OCCUPIED slot stores a buf_index. Probe
-//   index is (home + i) & (bucket_count - 1) with bucket_count a power of two.
-//   HashMix (MurmurHash3 fmix64) is applied to FNV-1a before masking so local
-//   keys do not cluster in low bits. A 28-bit fingerprint from the mixed hash
-//   filters most key-buffer gathers on probe, using bits otherwise unused
-//   between the packed state and buf_index fields at zero extra memory cost
-//   (see PackSlot).
-//   Insert (wait-free): linear probe; on EMPTY claim the first DELETED seen for
-//   reuse. Allocate one buffer element, copy key/values (vectorized blocks),
-//   device seq_cst fence, then CAS slot EMPTY/DELETED → OCCUPIED. Losers
-//   restart from home (duplicate-key check, another empty slot). No per-slot
-//   lock or spin. Buffer slots left allocated when a duplicate key wins the
-//   race (same as CUDA one-slot-per-input). occupied_count / non_empty_count
-//   updated per work-group reduction. Find / Erase: same probe; EMPTY ends the
-//   chain. Erase CAS OCCUPIED → DELETED, frees buffer slot, decrements
-//   occupied_count only. SYCLHashDeviceLookup: immutable table view for
-//   kernels; plain loads, no atomics. Callers must not mutate the table while a
-//   lookup view is in use.
-
 namespace open3d {
 namespace core {
 
-// EMPTY must be 0 so memset-initialized slot_data_ is an empty table.
+/// Slot occupancy for packed hash table entries (see PackSlot layout in this
+/// file's implementation).
+/// kSlotEmpty must be 0 so memset-initialized slot_data_ is an empty table.
 enum HashSlotState : uint32_t {
     kSlotEmpty = 0,
     kSlotOccupied = 1,
@@ -108,7 +110,7 @@ inline int64_t NextPowerOfTwo(int64_t n) {
     return n;
 }
 
-// fmix64 finalizer on FNV-1a output before bucket mask and fingerprint extract.
+// MurmurHash3 fmix64 finalizer on FNV-1a output before bucket mask and fingerprint extract.
 inline uint64_t HashMix(uint64_t h) {
     h ^= h >> 33;
     h *= 0xff51afd7ed558ccdULL;
@@ -120,17 +122,19 @@ inline uint64_t HashMix(uint64_t h) {
 
 }  // namespace
 
-/// Read-only table view for SYCL kernels (see file header). Find() uses plain
-/// loads; the table must stay immutable while the view is used.
+/// Read-only hash table view for SYCL kernels.
+///
+/// Find() uses plain loads; the backing \ref SYCLHashBackend must stay
+/// immutable while this view is used.
 template <typename Key, typename Hash, typename Eq>
 struct SYCLHashDeviceLookup {
-    uint64_t* slot_data = nullptr;
-    int64_t bucket_count = 0;
-    SYCLHashBackendBufferAccessor accessor;
-    Hash hash_fn{};
-    Eq eq_fn{};
+    uint64_t* slot_data = nullptr;  ///< USM packed slot array.
+    int64_t bucket_count = 0;       ///< Power-of-two bucket count.
+    SYCLHashBackendBufferAccessor accessor;  ///< Key/value buffer accessor.
+    Hash hash_fn{};                 ///< Key hash functor.
+    Eq eq_fn{};                     ///< Key equality functor.
 
-    /// Returns buffer index, or static_cast<buf_index_t>(-1) if not found.
+    /// Linear-probe lookup; returns buffer index or -1 if not found.
     buf_index_t Find(const Key& key) const {
         const int64_t mask = bucket_count - 1;
         const uint64_t hash = HashMix(hash_fn(key));
@@ -160,8 +164,9 @@ struct SYCLHashDeviceLookup {
     }
 };
 
-/// SYCL DeviceHashBackend; algorithm is documented at the top of this file.
-/// bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier)
+/// SYCL implementation of \ref DeviceHashBackend (see file header for algorithm).
+///
+/// \p bucket_count_ is `NextPowerOfTwo(capacity * kHashBucketCountMultiplier)`.
 template <typename Key, typename Hash, typename Eq>
 class SYCLHashBackend : public DeviceHashBackend {
 public:
@@ -172,6 +177,7 @@ public:
                     int64_t wg_size = kHashWgSize);
     ~SYCLHashBackend();
 
+    /// Not implemented; SYCL backend grows via rehash in Insert.
     void Reserve(int64_t capacity) override {}
 
     void Insert(const void* input_keys,
@@ -194,7 +200,7 @@ public:
     void Clear() override;
 
     int64_t Size() const override;
-    /// Occupied + deleted slots (HashMap rehash guard; see file header).
+    /// Occupied + deleted slots (rehash guard; see file header).
     int64_t GetNonEmptyCount() const override;
     int64_t GetBucketCount() const override;
     std::vector<int64_t> BucketSizes() const override;
@@ -203,6 +209,7 @@ public:
     void Allocate(int64_t capacity) override;
     void Free() override;
 
+    /// Snapshot for device kernels; table must not be mutated while in use.
     SYCLHashDeviceLookup<Key, Hash, Eq> GetDeviceLookup() const {
         SYCLHashDeviceLookup<Key, Hash, Eq> view;
         view.slot_data = slot_data_;
@@ -214,11 +221,11 @@ public:
 protected:
     SYCLHashBackendBufferAccessor buffer_accessor_;
 
-    uint64_t* slot_data_ = nullptr;
-    int* occupied_count_ = nullptr;
-    int* non_empty_count_ = nullptr;
+    uint64_t* slot_data_ = nullptr;      ///< USM packed slots.
+    int* occupied_count_ = nullptr;      ///< Device live entry count.
+    int* non_empty_count_ = nullptr;     ///< Device occupied + tombstone count.
     int64_t bucket_count_ = 0;
-    int64_t wg_size_ = kHashWgSize;
+    int64_t wg_size_ = kHashWgSize;      ///< SYCL work-group size for kernels.
 
     sycl::queue queue_;
 };

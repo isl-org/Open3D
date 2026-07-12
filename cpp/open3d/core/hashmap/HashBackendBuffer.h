@@ -26,6 +26,7 @@ void CUDAResetHeap(Tensor &heap);
 #endif
 
 #ifdef BUILD_SYCL_MODULE
+/// Initialize the hash-map buffer index heap on a SYCL device.
 void SYCLResetHeap(Tensor &heap);
 #endif
 

@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file TransformSYCL.cpp
+/// \brief SYCL geometry transform kernels (see TransformImpl.h).
+
 // Skip the CPU/CUDA main function definitions; only use the helper templates.
 #define OPEN3D_SKIP_TRANSFORM_MAIN
 #include "open3d/t/geometry/kernel/TransformImpl.h"

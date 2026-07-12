@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file SYCLHashBackendBufferAccessor.h
+/// \brief Device-side accessor for SYCL hash-map key/value buffers.
+
 #pragma once
 
 #include <cstdint>
@@ -32,6 +35,7 @@ public:
     static constexpr buf_index_t kInvalidBufIndex =
             static_cast<buf_index_t>(-1);
 
+    /// Host: copy buffer layout and USM pointers from \p hashmap_buffer.
     void Setup(HashBackendBuffer &hashmap_buffer) {
         Device device = hashmap_buffer.GetDevice();
         sycl::queue queue =
@@ -80,13 +84,14 @@ public:
         heap_top_ = hashmap_buffer.GetHeapTop().cuda.GetDataPtr<int>();
     }
 
+    /// Host: free USM arrays allocated in Setup().
     void Shutdown(const Device &device) {
         MemoryManager::Free(values_, device);
         MemoryManager::Free(value_dsizes_, device);
         MemoryManager::Free(value_blocks_per_element_, device);
     }
 
-    // Atomically pop a free buffer slot from the top of the heap.
+    /// Device: atomically pop a free buffer slot from the heap.
     buf_index_t DeviceAllocate() const {
         sycl::atomic_ref<int, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
@@ -99,7 +104,7 @@ public:
         return heap_[index];
     }
 
-    // Atomically push a buffer slot back to the top of the heap.
+    /// Device: return a buffer slot to the heap.
     void DeviceFree(buf_index_t buf_index) const {
         sycl::atomic_ref<int, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
@@ -108,27 +113,29 @@ public:
         heap_[index - 1] = buf_index;
     }
 
+    /// Device: USM pointer to the key at \p buf_index.
     void *GetKeyPtr(buf_index_t buf_index) const {
         return keys_ + buf_index * key_dsize_;
     }
+    /// Device: USM pointer to value \p value_idx at \p buf_index.
     void *GetValuePtr(buf_index_t buf_index, int value_idx = 0) const {
         return values_[value_idx] + buf_index * value_dsizes_[value_idx];
     }
 
 public:
-    buf_index_t *heap_;       /* [N] */
-    int *heap_top_ = nullptr; /* [1] */
+    buf_index_t *heap_;       ///< Free-slot index stack, length \p capacity_.
+    int *heap_top_ = nullptr; ///< Device atomic stack pointer (length 1).
 
-    uint8_t *keys_; /* [N] * sizeof(Key) */
+    uint8_t *keys_; ///< SoA key bytes, stride \p key_dsize_.
     int64_t key_dsize_;
 
     size_t n_values_;
-    uint8_t **values_;
+    uint8_t **values_; ///< Per-value SoA buffers on device.
 
-    int64_t common_block_size_;
+    int64_t common_block_size_; ///< Vectorized copy block size (bytes).
 
-    int64_t *value_dsizes_;
-    int64_t *value_blocks_per_element_;
+    int64_t *value_dsizes_;              ///< Device copy of value byte sizes.
+    int64_t *value_blocks_per_element_;  ///< Blocks per value for vector copy.
 
     int64_t capacity_;
 };

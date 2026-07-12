@@ -38,6 +38,7 @@ void Project(core::Tensor& depth,
              float depth_max);
 
 #ifdef BUILD_SYCL_MODULE
+/// SYCL implementation of \ref Project (depth buffer from 3D points).
 void ProjectSYCL(
         core::Tensor& depth,
         std::optional<std::reference_wrapper<core::Tensor>> image_colors,
@@ -235,6 +236,7 @@ void EstimateColorGradientsUsingRadiusSearchCPU(const core::Tensor& points,
                                                 const double& radius);
 
 #ifdef BUILD_SYCL_MODULE
+/// SYCL hybrid-search color gradients (radius + max_nn cap).
 void EstimateColorGradientsUsingHybridSearchSYCL(const core::Tensor& points,
                                                  const core::Tensor& normals,
                                                  const core::Tensor& colors,
@@ -242,12 +244,14 @@ void EstimateColorGradientsUsingHybridSearchSYCL(const core::Tensor& points,
                                                  const double& radius,
                                                  const int64_t& max_nn);
 
+/// SYCL KNN-based color gradients.
 void EstimateColorGradientsUsingKNNSearchSYCL(const core::Tensor& points,
                                               const core::Tensor& normals,
                                               const core::Tensor& colors,
                                               core::Tensor& color_gradient,
                                               const int64_t& max_nn);
 
+/// SYCL fixed-radius color gradients.
 void EstimateColorGradientsUsingRadiusSearchSYCL(const core::Tensor& points,
                                                  const core::Tensor& normals,
                                                  const core::Tensor& colors,
@@ -294,19 +298,23 @@ void EstimateColorGradientsUsingRadiusSearchCUDA(const core::Tensor& points,
 #endif
 
 #ifdef BUILD_SYCL_MODULE
+/// SYCL hybrid-search covariances (radius + max_nn cap).
 void EstimateCovariancesUsingHybridSearchSYCL(const core::Tensor& points,
                                               core::Tensor& covariances,
                                               const double& radius,
                                               const int64_t& max_nn);
 
+/// SYCL KNN-based covariances.
 void EstimateCovariancesUsingKNNSearchSYCL(const core::Tensor& points,
                                            core::Tensor& covariances,
                                            const int64_t& max_nn);
 
+/// SYCL fixed-radius covariances.
 void EstimateCovariancesUsingRadiusSearchSYCL(const core::Tensor& points,
                                               core::Tensor& covariances,
                                               const double& radius);
 
+/// SYCL normal estimation from precomputed covariances.
 void EstimateNormalsFromCovariancesSYCL(const core::Tensor& covariances,
                                         core::Tensor& normals,
                                         const bool has_normals);

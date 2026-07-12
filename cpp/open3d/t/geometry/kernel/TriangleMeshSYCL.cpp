@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file TriangleMeshSYCL.cpp
+/// \brief SYCL triangle-mesh kernels (see TriangleMeshImpl.h).
+
 #include "open3d/core/ParallelFor.h"
 #include "open3d/t/geometry/kernel/TriangleMeshImpl.h"
 

@@ -5,6 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file ReductionSYCL.cpp
+/// \brief SYCL tensor reduction kernels (sum/min/max and arg reductions).
+///
+/// Uses \ref Indexer for strided/broadcast layouts. \c SYCLReductionEngine
+/// picks a work-group-per-output or blocked \c sycl::reduction path;
+/// \c SYCLArgReductionEngine uses a local tree reduction for argmin/argmax.
+
 #include <limits>
 
 #include "open3d/core/Dispatch.h"

@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file FeatureSYCL.cpp
+/// \brief SYCL FPFH / feature kernels (see FeatureImpl.h).
+
 // Skip the CPU/CUDA main function definitions; only use the helper templates.
 #define OPEN3D_SKIP_FPFH_MAIN
 #include "open3d/t/pipelines/kernel/FeatureImpl.h"

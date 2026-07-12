@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file NeighborSearchCommon.h
+/// \brief Shared types and SYCL nearest-neighbor search tuning defaults.
+
 #pragma once
 
 #include <memory>
@@ -54,41 +57,18 @@ struct NanoFlannIndexHolderBase {
     virtual ~NanoFlannIndexHolderBase() {}
 };
 
-// ── SYCL NNS tunable defaults ─────────────────────────────────────────────
-// These constants serve as constructor defaults for KnnIndex and
-// FixedRadiusIndex when the search runs on a SYCL device.  They are defined
-// here so that the public index headers can reference them without pulling in
-// any SYCL headers.
-//
-// Hardware reference – Intel Panther Lake Arc iGPU (2025):
-//   92 KB SLM per EU, 12 EUs per tile, ~2.5 TFLOPS FP32.
-//   A 4 MiB distance tile fits in the combined LLC of 12 EUs (~46 MiB),
-//   keeping memory traffic on-die and maximising AddMM throughput.
-//
-// Tuning guidance:
-//   kSYCLKnnDefaultTileBytes
-//     Integrated GPU (Iris Xe, Arc iGPU, Panther Lake): 4–8 MiB keeps the
-//       distance tile resident in the last-level cache, reducing DRAM traffic.
-//     Discrete GPU (Arc Alchemist / Battlemage, Data-Centre GPUs): 16–32 MiB
-//       improves oneMKL GEMM efficiency; these parts have ~800 GB/s DRAM
-//       bandwidth and benefit from larger tiles.
-//   kSYCLKnnSmallKMax
-//     Maximum k for the register-resident heap path.  For Intel Xe in 128-GRF
-//     mode, ~32 float/int register pairs fit before spilling to scratch memory.
-//     Raise to 64 on parts with 256-GRF support; lower if register pressure
-//     causes kernel occupancy to drop.
-//   kSYCLKnnMidKMax
-//     Maximum k for the template-dispatched scratch-resident heap path.
-//     k > kSYCLKnnMidKMax falls back to a sequential oneDPL partial_sort.
-//     Increase to 1024 if very large k is common and scratch bandwidth allows.
+/// SYCL NNS defaults for \ref KnnIndex and \ref FixedRadiusIndex constructors.
 
-/// Default distance-tile budget in bytes (8 MiB, tuned for iGPU).
+/// Default distance-tile budget in bytes (8 MiB, tuned for iGPU last-level
+/// cache). Discrete GPUs cache is larger and we can increase to 16-32 MiB.
 constexpr int64_t kSYCLKnnDefaultTileBytes = 8LL * 1024 * 1024;
 
-/// Upper bound of k for the GRF-register heap path (eliminates scratch spill).
+/// Upper bound of k for the GRF-register heap path (eliminates scratch spill). 
+// ~32 on 128-GRF Xe, raise to 64 on 256-GRF Xe. Reduce if kernel occupancy drops.
 constexpr int64_t kSYCLKnnSmallKMax = 32;
 
-/// Upper bound of k for the proportional scratch-resident heap path.
+/// Upper bound of k for the proportional scratch-resident heap path. Larger k
+/// uses sequential oneDPL partial_sort.
 constexpr int64_t kSYCLKnnMidKMax = 512;
 
 }  // namespace nns

@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file RegistrationSYCL.cpp
+/// \brief SYCL registration / ICP kernels (see RegistrationImpl.h).
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SYCLUtils.h"

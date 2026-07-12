@@ -138,7 +138,7 @@ cpp_python_linking_uninstall_test() {
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        # SYCL CPU fallback tests run in serial on the CPU and can time out;
+        # SYCL CPU tests can time out due to kernel compilation time;
         # shard across NPROC processes with GNU parallel to speed this up.
         echo "[cpp_python_linking_uninstall_test()] Running sharded gtests with GNU parallel."
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \

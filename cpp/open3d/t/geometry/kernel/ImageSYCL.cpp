@@ -5,5 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file ImageSYCL.cpp
+/// \brief SYCL tensor image kernels (see ImageImpl.h).
+
 #include "open3d/core/ParallelFor.h"
 #include "open3d/t/geometry/kernel/ImageImpl.h"

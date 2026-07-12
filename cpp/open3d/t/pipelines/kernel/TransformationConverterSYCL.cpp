@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file TransformationConverterSYCL.cpp
+/// \brief SYCL pose / transformation conversion helpers.
+
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SYCLContext.h"

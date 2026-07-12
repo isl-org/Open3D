@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file SYCLHashBackendBuffer.cpp
+/// \brief SYCL helpers for \ref HashBackendBuffer heap initialization.
+
 #include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLContext.h"
@@ -13,8 +16,8 @@
 namespace open3d {
 namespace core {
 
-// Initialize the index heap to the identity permutation [0, 1, ..., N-1] so
-// that every buffer slot is initially free. Mirrors CPUResetHeap/CUDAResetHeap.
+/// Initialize the index heap to `[0, 1, …, N−1]` (all slots free).
+/// Mirrors \ref CPUResetHeap and CUDAResetHeap.
 void SYCLResetHeap(Tensor &heap) {
     uint32_t *heap_ptr = heap.GetDataPtr<uint32_t>();
     const int64_t capacity = heap.GetLength();
