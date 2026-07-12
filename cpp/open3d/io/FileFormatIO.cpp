@@ -27,6 +27,7 @@ static std::map<std::string, FileGeometry (*)(const std::string&)> gExt2Func = {
         {"pcd", ReadFileGeometryTypePCD},
         {"ply", ReadFileGeometryTypePLY},
         {"splat", ReadFileGeometryTypeSPLAT},
+        {"spz", ReadFileGeometryTypeSPZ},
         {"pts", ReadFileGeometryTypePTS},
         {"stl", ReadFileGeometryTypeSTL},
         {"xyz", ReadFileGeometryTypeXYZ},
@@ -35,6 +36,10 @@ static std::map<std::string, FileGeometry (*)(const std::string&)> gExt2Func = {
 };
 
 FileGeometry ReadFileGeometryTypeSPLAT(const std::string&) {
+    return FileGeometry(CONTAINS_POINTS | CONTAINS_GAUSSIAN_SPLATS);
+}
+
+FileGeometry ReadFileGeometryTypeSPZ(const std::string&) {
     return FileGeometry(CONTAINS_POINTS | CONTAINS_GAUSSIAN_SPLATS);
 }
 

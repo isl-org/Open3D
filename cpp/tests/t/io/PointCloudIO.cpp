@@ -10,6 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -668,6 +669,67 @@ TEST(TPointCloudIO, ReadWrite3DGSSPLAT) {
     AllCloseOrShow(pcd_base.GetPointAttr("f_dc"), pcd_new.GetPointAttr("f_dc"),
                    0,
                    0.01);  // expect quantization errors
+}
+
+// Test consistency of values after writing and reading SPZ.
+TEST(TPointCloudIO, ReadWrite3DGSSPZ) {
+    const std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_read.spz";
+
+    t::geometry::PointCloud pcd_base, pcd_spz;
+    const std::string filename_ply =
+            utility::filesystem::GetTempDirectoryPath() +
+            "/test_spz_source.ply";
+    {
+        std::ofstream outfile(filename_ply);
+        outfile << test_3dgs_ply_data;
+    }
+
+    ASSERT_TRUE(t::io::ReadPointCloud(filename_ply, pcd_base,
+                                      {"auto", false, false, true}));
+    ASSERT_TRUE(pcd_base.IsGaussianSplat());
+    ASSERT_TRUE(t::io::WritePointCloud(filename, pcd_base,
+                                       {"auto", false, false, true}));
+    ASSERT_TRUE(t::io::ReadPointCloud(filename, pcd_spz,
+                                      {"auto", false, false, true}));
+
+    EXPECT_TRUE(pcd_spz.IsGaussianSplat());
+    EXPECT_EQ(pcd_spz.GaussianSplatGetSHOrder(),
+              pcd_base.GaussianSplatGetSHOrder());
+    EXPECT_EQ(pcd_spz.GetPointPositions().GetLength(),
+              pcd_base.GetPointPositions().GetLength());
+    EXPECT_EQ(pcd_spz.GetPointAttr("f_rest").GetShape(),
+              pcd_base.GetPointAttr("f_rest").GetShape());
+
+    // SPZ quantizes coordinates, scales, rotations, opacity, and SH values.
+    // The test focuses on preserving the complete attribute schema and
+    // approximate values rather than requiring bitwise equality.
+    AllCloseOrShow(pcd_base.GetPointPositions(),
+                   pcd_spz.GetPointPositions(), 0.1, 0.1);
+    AllCloseOrShow(pcd_base.GetPointAttr("scale"),
+                   pcd_spz.GetPointAttr("scale"), 0.1, 0.1);
+    const float* base_rot = pcd_base.GetPointAttr("rot").GetDataPtr<float>();
+    const float* spz_rot = pcd_spz.GetPointAttr("rot").GetDataPtr<float>();
+    const int64_t num_points = pcd_base.GetPointPositions().GetLength();
+    for (int64_t i = 0; i < num_points; ++i) {
+        float dot = 0.0f;
+        float base_norm = 0.0f;
+        float spz_norm = 0.0f;
+        for (int j = 0; j < 4; ++j) {
+            dot += base_rot[4 * i + j] * spz_rot[4 * i + j];
+            base_norm += base_rot[4 * i + j] * base_rot[4 * i + j];
+            spz_norm += spz_rot[4 * i + j] * spz_rot[4 * i + j];
+        }
+        EXPECT_NEAR(std::abs(dot) /
+                            (std::sqrt(base_norm) * std::sqrt(spz_norm)),
+                    1.0f, 0.02f);
+    }
+    AllCloseOrShow(pcd_base.GetPointAttr("opacity"),
+                   pcd_spz.GetPointAttr("opacity"), 0.1, 0.1);
+    AllCloseOrShow(pcd_base.GetPointAttr("f_dc"),
+                   pcd_spz.GetPointAttr("f_dc"), 0.1, 0.1);
+    AllCloseOrShow(pcd_base.GetPointAttr("f_rest"),
+                   pcd_spz.GetPointAttr("f_rest"), 0.1, 0.1);
 }
 
 }  // namespace tests

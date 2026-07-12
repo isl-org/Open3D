@@ -391,6 +391,27 @@ consistency even though the shader does not evaluate them.
 
 ---
 
+## Future Work / TODO
+
+These items are intentionally deferred while profiling indicates that memory loads
+are the dominant rendering cost:
+
+1. **Spatial (Morton/Hilbert) reordering of the packed splat buffer.** Reorder
+   the merged per-splat buffers once at pack time along a space-filling curve.
+   Because depth-sorted neighbors tend to be spatial neighbors, sorted-index
+   gathers may hit cache more often. The one-time CPU work belongs in
+   `GaussianSplatDataPacking`.
+2. **Temporal / amortized sorting.** Camera motion is usually small between
+   frames, so a full re-sort every frame is wasteful. Reuse the previous frame's
+   order with a cheap fix-up, or re-sort every N frames using a coarse bucket
+   sort. This optimization applies to both composite paths and should reduce
+   sort bandwidth.
+3. **User shader callbacks.** Add user-provided shader callbacks to mimic Spark's
+   programmable rendering and shader-graph functionality, allowing user code to
+   modify splats or shading on the GPU.
+
+---
+
 ## File Inventory
 
 ### Core implementation (`cpp/open3d/visualization/rendering/gaussian_splat/`)

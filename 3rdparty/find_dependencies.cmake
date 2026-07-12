@@ -1014,6 +1014,35 @@ else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_png)
 endif()
 
+# SPZ and its compression dependencies.
+if(USE_SYSTEM_PNG)
+    find_package(ZLIB REQUIRED)
+endif()
+include(${Open3D_3RDPARTY_DIR}/zstd/zstd.cmake)
+open3d_import_3rdparty_library(3rdparty_zstd
+    HIDDEN
+    INCLUDE_DIRS ${ZSTD_INCLUDE_DIRS}
+    LIB_DIR      ${ZSTD_LIB_DIR}
+    LIBRARIES    ${ZSTD_LIBRARIES}
+    DEPENDS      ext_zstd
+)
+include(${Open3D_3RDPARTY_DIR}/spz/spz.cmake)
+open3d_import_3rdparty_library(3rdparty_spz
+    HIDDEN
+    INCLUDE_DIRS ${SPZ_INCLUDE_DIRS}
+    LIB_DIR      ${SPZ_LIB_DIR}
+    LIBRARIES    ${SPZ_LIBRARIES}
+    DEPENDS      ext_spz
+)
+target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zstd)
+if(TARGET Open3D::3rdparty_zlib)
+    target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zlib)
+else()
+    target_link_libraries(3rdparty_spz INTERFACE ZLIB::ZLIB)
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+     Open3D::3rdparty_spz Open3D::3rdparty_zstd)
+
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
     SOURCES
