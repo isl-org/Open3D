@@ -61,15 +61,32 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
-        _torch.version.cuda != _build_config["CUDA_VERSION"]):
-    print("Warning: Open3D was built with CUDA {} but"
-          "PyTorch was built with CUDA {}. Falling back to CPU for now."
-          "Otherwise, install PyTorch with CUDA {}.".format(
-              _build_config["CUDA_VERSION"], _torch.version.cuda,
-              _build_config["CUDA_VERSION"]))
-_lib_path.append(
-    _os.path.join(_package_root, 'open3d_torch_ops' + _lib_suffix + _lib_ext))
+# A CUDA-enabled wheel bundles both CPU- and CUDA-linked ops (in the open3d/cpu
+# and open3d/cuda subdirs). Load the CUDA ops only when this PyTorch has a
+# matching CUDA runtime; otherwise (CPU-only torch, or CUDA version mismatch)
+# fall back to the CPU ops. A CPU-only wheel ships just the cpu ops.
+_lib_arch = ('cpu',)
+if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
+    if _torch.version.cuda == _build_config["CUDA_VERSION"]:
+        _lib_arch = ('cuda', 'cpu')
+    else:
+        print("Warning: Open3D was built with CUDA {} but "
+              "PyTorch was built with CUDA {}. Falling back to CPU for now. "
+              "Otherwise, install PyTorch with CUDA {}.".format(
+                  _build_config["CUDA_VERSION"], _torch.version.cuda,
+                  _build_config["CUDA_VERSION"]))
+_lib_path.extend([
+    _os.path.join(_package_root, _la,
+                  'open3d_torch_ops' + _lib_suffix + _lib_ext)
+    for _la in _lib_arch
+])
+
+# The ops live in open3d/{cpu,cuda}, one level below the package root that holds
+# Open3D.dll. On Windows add the package root to the DLL search path so the
+# dependent Open3D.dll is found when torch loads the ops (open3d/__init__.py
+# already closed its own handle by the time this module is imported).
+if _sys.platform == 'win32':
+    _os.add_dll_directory(_os.path.abspath(_package_root))
 
 _load_except = None
 _loaded = False
