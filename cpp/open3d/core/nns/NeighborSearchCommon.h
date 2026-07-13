@@ -63,8 +63,9 @@ struct NanoFlannIndexHolderBase {
 /// cache). Discrete GPUs cache is larger and we can increase to 16-32 MiB.
 constexpr int64_t kSYCLKnnDefaultTileBytes = 8LL * 1024 * 1024;
 
-/// Upper bound of k for the GRF-register heap path (eliminates scratch spill). 
-// ~32 on 128-GRF Xe, raise to 64 on 256-GRF Xe. Reduce if kernel occupancy drops.
+/// Upper bound of k for the GRF-register heap path (eliminates scratch spill).
+// ~32 on 128-GRF Xe, raise to 64 on 256-GRF Xe. Reduce if kernel occupancy
+// drops.
 constexpr int64_t kSYCLKnnSmallKMax = 32;
 
 /// Upper bound of k for the proportional scratch-resident heap path. Larger k

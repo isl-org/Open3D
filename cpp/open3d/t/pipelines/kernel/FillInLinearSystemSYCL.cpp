@@ -6,7 +6,8 @@
 // ----------------------------------------------------------------------------
 
 /// \file FillInLinearSystemSYCL.cpp
-/// \brief SYCL linear-system assembly for registration (FillInLinearSystemImpl.h).
+/// \brief SYCL linear-system assembly for registration
+/// (FillInLinearSystemImpl.h).
 
 // Skip the CPU/CUDA main function definitions; include only helper includes.
 #define OPEN3D_SKIP_FILL_IN_LS_MAIN

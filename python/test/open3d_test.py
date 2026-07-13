@@ -33,7 +33,8 @@ def list_devices(enable_cuda=True, enable_sycl=False, also_sycl_cpu=True):
         devices.append(o3d.core.Device("CUDA:0"))
     num_sycl_devices = len(o3d.core.sycl.get_available_devices())
     use_sycl_cpu = also_sycl_cpu and os.getenv("CI") is not None
-    if enable_sycl and (num_sycl_devices > 1 or num_sycl_devices == 1 and use_sycl_cpu):
+    if enable_sycl and (num_sycl_devices > 1 or
+                        num_sycl_devices == 1 and use_sycl_cpu):
         devices.append(o3d.core.Device("SYCL:0"))
     return devices
 

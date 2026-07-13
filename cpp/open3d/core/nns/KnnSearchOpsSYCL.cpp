@@ -17,9 +17,9 @@
 //
 // There are three SYCL KNN paths inside KnnSearchSYCL, chosen per batch after
 // batch_knn = min(knn, num_points).
-// 
+//
 // Decision tree
-// 
+//
 // force_addmm_path == false
 //   AND 1 ≤ dim ≤ 8
 //   AND batch_knn ≤ 32          →  Direct |p−q|²
@@ -28,53 +28,60 @@
 //   if batch_knn ≤ 512          →  AddMM + fused top-K
 //   else                        →  AddMM + Select/Merge (large-k)
 //
-// | Path           | When                                             | Thresholds                                    |
+// | Path           | When                                             |
+// Thresholds                                    |
 // |----------------|--------------------------------------------------|-----------------------------------------------|
-// | Direct         | !force_addmm_path && UseKnnDirect(dim, batch_knn) | dim ∈ [1,8], k ≤ 32 (kSYCLKnnSmallKMax)      |
-// | AddMM fused    | Not direct, batch_knn ≤ 512                      | k ≤ kSYCLKnnMidKMax                           |
-// | AddMM large-k  | Not direct, batch_knn > 512                      | k > kSYCLKnnMidKMax                           |
-// | Fixed-radius SYCL | Uniform grid: CountNeighbors -> scan -> WriteNeighbors (+ optional device sort) (radius-only) |
-// | Hybrid SYCL       | Uniform grid: single pass, running top-max_knn + count (radius + capped top-k)               |
+// | Direct         | !force_addmm_path && UseKnnDirect(dim, batch_knn) | dim ∈
+// [1,8], k ≤ 32 (kSYCLKnnSmallKMax)      | | AddMM fused    | Not direct,
+// batch_knn ≤ 512                      | k ≤ kSYCLKnnMidKMax | | AddMM large-k
+// | Not direct, batch_knn > 512                      | k > kSYCLKnnMidKMax | |
+// Fixed-radius SYCL | Uniform grid: CountNeighbors -> scan -> WriteNeighbors (+
+// optional device sort) (radius-only) | | Hybrid SYCL       | Uniform grid:
+// single pass, running top-max_knn + count (radius + capped top-k) |
 //
 // (Note)  force_addmm_path=true (tuning benchmarks only) always skips Direct.
-// 
+//
 // 1. Direct path (DispatchKnnDirect)
-// 
-// Idea: Brute-force L2 as sum_d (p_d − q_d)² — no AddMM, no centering, no |q|² deferral.
-// Algorithm:
+//
+// Idea: Brute-force L2 as sum_d (p_d − q_d)² — no AddMM, no centering, no |q|²
+// deferral. Algorithm:
 // - One sub-group handles one query; many queries share a work-group.
 // - Point tiles are staged in SLM (double-buffered).
-// - Each lane keeps a private sorted top-K; lanes shuffle-merge within the sub-group; lane 0 writes the result.
-// - Compile-time NDIM (1…8) and K bucket (1…32); float uses SG=16, double prefers SG=8 when supported.
-// Typical use: 3D point clouds, small k (fastest path on Xe).
-// 
+// - Each lane keeps a private sorted top-K; lanes shuffle-merge within the
+// sub-group; lane 0 writes the result.
+// - Compile-time NDIM (1…8) and K bucket (1…32); float uses SG=16, double
+// prefers SG=8 when supported. Typical use: 3D point clouds, small k (fastest
+// path on Xe).
+//
 // 2. AddMM fused path (k ≤ 512)
-// 
-// Idea: Expand L2 as |q|² − 2q·p + |p|². oneMKL AddMM builds the −2q·p tile; selection fuses the rest.
-// Algorithm:
+//
+// Idea: Expand L2 as |q|² − 2q·p + |p|². oneMKL AddMM builds the −2q·p tile;
+// selection fuses the rest. Algorithm:
 // - Center points/queries (first data row) to reduce float32 cancellation.
 // - Precompute |p|², |q|².
 // - Loop over (query-tile × point-tile):
 //   - AddMM → tile of −2q·p
-//   - UpdateTopKFromTile: add |p|², clamp ≥ 0, update a running max-heap per query (K = KBucket(k))
+//   - UpdateTopKFromTile: add |p|², clamp ≥ 0, update a running max-heap per
+//   query (K = KBucket(k))
 // - FinalizeTopK: heap-sort, add |q|², write first batch_knn neighbors.
 // Heap storage: K ≤ 32 → GRF; K ∈ {64…512} → scratch.
-// 
+//
 // 3. AddMM large-k path (k > 512)
-// 
+//
 // Idea: Same AddMM tiling, but Select + Merge instead of a fused running heap.
 // Algorithm:
 // - Same centering + norms + AddMM tiles.
 // - Per point-tile: SelectTopKQueries → tile top-k.
 // - Merge into running best via MergeTopKQueries.
 // - Once: AddQueryNormsToDistances (|q|² + clamp).
-// P8 caveat: for k > 512, merge/select can fall back to per-query serial partial_sort (correct, slow).
-// 
+// P8 caveat: for k > 512, merge/select can fall back to per-query serial
+// partial_sort (correct, slow).
+//
 // 4. Fixed-radius (FixedRadiusSearchSYCL) — uniform grid (cell list)
 //
 // Idea: Find every point within radius; neighbor list length varies per query.
-// Ported from FixedRadiusSearchImpl.cuh (CUDA); see FixedRadiusSearchSYCLImpl.h.
-// Algorithm:
+// Ported from FixedRadiusSearchImpl.cuh (CUDA); see
+// FixedRadiusSearchSYCLImpl.h. Algorithm:
 // - Dataset is bucketed once into a spatial-hash grid with cell size 2*radius
 //   (BuildSpatialHashTableSYCL, called from FixedRadiusIndex::SetTensorData):
 //   count points per cell -> device inclusive scan (oneDPL) -> scatter into
@@ -88,20 +95,24 @@
 // - Optional sort: SortNeighborsByDistanceSYCL, a device-only segmented sort
 //   (oneDPL sort_by_key) per query segment; ties are not secondarily ordered
 //   by index (matches CUDA's cub::DeviceSegmentedRadixSort::SortPairs).
-// Typical use: radius neighborhood queries when you need the full set, not a fixed-k cap.
+// Typical use: radius neighborhood queries when you need the full set, not a
+// fixed-k cap.
 //
 // 5. Hybrid (HybridSearchSYCL) — uniform grid (cell list)
 //
-// Idea: Count everyone in radius, but only keep the closest max_knn in fixed-size outputs (like KNN capped by radius).
-// Ported from FixedRadiusSearchImpl.cuh (CUDA); see FixedRadiusSearchSYCLImpl.h.
-// Algorithm:
-// - Reuses the grid built by BuildSpatialHashTableSYCL (shared with fixed-radius).
-// - Allocate fixed (num_queries, max_knn) index/distance buffers (sentinel empty slots).
+// Idea: Count everyone in radius, but only keep the closest max_knn in
+// fixed-size outputs (like KNN capped by radius). Ported from
+// FixedRadiusSearchImpl.cuh (CUDA); see FixedRadiusSearchSYCLImpl.h. Algorithm:
+// - Reuses the grid built by BuildSpatialHashTableSYCL (shared with
+// fixed-radius).
+// - Allocate fixed (num_queries, max_knn) index/distance buffers (sentinel
+// empty slots).
 // - WriteNeighborsHybridSYCL: single pass over the 8 corner-adjacent bins per
 //   query, maintaining a running top-max_knn (replace-the-current-max) plus
 //   the full in-radius count, then a small per-query bubble sort (bounded by
 //   max_knn, so cheap) to return results in ascending-distance order.
-// Typical use: features / normals / covariances that want “up to K neighbors inside radius.”
+// Typical use: features / normals / covariances that want “up to K neighbors
+// inside radius.”
 //
 // Shared conventions (AddMM KNN paths)
 // P2: tiles store partial dist −2qp + |p|²; |q|² added at finalize.
@@ -242,11 +253,11 @@ void KnnSearchSYCL(const Tensor& points,
 
         if (!force_addmm_path && UseKnnDirect(dim, batch_knn)) {
             // Direct |p−q|² path: no AddMM and no centering.
-            DispatchKnnDirect<T, TIndex>(
-                    queue, points_raw.GetDataPtr<T>(),
-                    queries_raw.GetDataPtr<T>(), dim, num_points_i,
-                    num_queries_i, batch_knn, out_distances.GetDataPtr<T>(),
-                    out_indices.GetDataPtr<TIndex>());
+            DispatchKnnDirect<T, TIndex>(queue, points_raw.GetDataPtr<T>(),
+                                         queries_raw.GetDataPtr<T>(), dim,
+                                         num_points_i, num_queries_i, batch_knn,
+                                         out_distances.GetDataPtr<T>(),
+                                         out_indices.GetDataPtr<TIndex>());
             queue.wait_and_throw();
             continue;
         }
@@ -521,8 +532,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 hash_table_splits[batch_idx + 1].Item<uint32_t>() -
                 first_cell_idx;
         const uint32_t* cell_splits_i =
-                hash_table_cell_splits.GetDataPtr<uint32_t>() +
-                first_cell_idx;
+                hash_table_cell_splits.GetDataPtr<uint32_t>() + first_cell_idx;
 
         CountNeighborsSYCL<T>(queue, counts_ptr + query_begin, hash_index_ptr,
                               cell_splits_i, hash_table_size,
@@ -549,7 +559,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     int64_t total_neighbors = 0;
     if (num_queries > 0) {
         queue.memcpy(&total_neighbors, row_splits_ptr + num_queries,
-                    sizeof(int64_t))
+                     sizeof(int64_t))
                 .wait_and_throw();
     }
 
@@ -576,8 +586,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 hash_table_splits[batch_idx + 1].Item<uint32_t>() -
                 first_cell_idx;
         const uint32_t* cell_splits_i =
-                hash_table_cell_splits.GetDataPtr<uint32_t>() +
-                first_cell_idx;
+                hash_table_cell_splits.GetDataPtr<uint32_t>() + first_cell_idx;
 
         WriteNeighborsSYCL<T, TIndex>(
                 queue, neighbors_index_ptr, neighbors_distance_ptr,
@@ -643,8 +652,7 @@ void HybridSearchSYCL(const Tensor& points,
                                   TIndex(-1));
     output_allocator.AllocDistances(&neighbors_distance_ptr,
                                     num_queries * max_knn, T(0));
-    output_allocator.AllocCounts(&neighbors_count_ptr, num_queries,
-                                 TIndex(0));
+    output_allocator.AllocCounts(&neighbors_count_ptr, num_queries, TIndex(0));
 
     const int num_batches = static_cast<int>(points_row_splits.GetShape(0)) - 1;
     for (int batch_idx = 0; batch_idx < num_batches; ++batch_idx) {
@@ -658,16 +666,15 @@ void HybridSearchSYCL(const Tensor& points,
                 hash_table_splits[batch_idx + 1].Item<uint32_t>() -
                 first_cell_idx;
         const uint32_t* cell_splits_i =
-                hash_table_cell_splits.GetDataPtr<uint32_t>() +
-                first_cell_idx;
+                hash_table_cell_splits.GetDataPtr<uint32_t>() + first_cell_idx;
 
         WriteNeighborsHybridSYCL<T, TIndex>(
                 queue, neighbors_index_ptr + max_knn * query_begin,
                 neighbors_distance_ptr + max_knn * query_begin,
                 neighbors_count_ptr + query_begin, hash_index_ptr,
-                cell_splits_i, hash_table_size,
-                queries_ptr + 3 * query_begin, query_end - query_begin,
-                points_ptr, inv_voxel_size, radius_t, threshold, max_knn);
+                cell_splits_i, hash_table_size, queries_ptr + 3 * query_begin,
+                query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
+                threshold, max_knn);
     }
     queue.wait_and_throw();
 
@@ -705,20 +712,18 @@ INSTANTIATE(float, int64_t)
 INSTANTIATE(double, int32_t)
 INSTANTIATE(double, int64_t)
 
-template void BuildSpatialHashTableSYCL<float>(
-        const Tensor& points,
-        double radius,
-        const Tensor& points_row_splits,
-        const Tensor& hash_table_splits,
-        Tensor& hash_table_index,
-        Tensor& hash_table_cell_splits);
-template void BuildSpatialHashTableSYCL<double>(
-        const Tensor& points,
-        double radius,
-        const Tensor& points_row_splits,
-        const Tensor& hash_table_splits,
-        Tensor& hash_table_index,
-        Tensor& hash_table_cell_splits);
+template void BuildSpatialHashTableSYCL<float>(const Tensor& points,
+                                               double radius,
+                                               const Tensor& points_row_splits,
+                                               const Tensor& hash_table_splits,
+                                               Tensor& hash_table_index,
+                                               Tensor& hash_table_cell_splits);
+template void BuildSpatialHashTableSYCL<double>(const Tensor& points,
+                                                double radius,
+                                                const Tensor& points_row_splits,
+                                                const Tensor& hash_table_splits,
+                                                Tensor& hash_table_index,
+                                                Tensor& hash_table_cell_splits);
 
 }  // namespace nns
 }  // namespace core

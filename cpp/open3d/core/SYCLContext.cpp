@@ -14,7 +14,8 @@
 #include "open3d/utility/Logging.h"
 
 namespace {
-// Set by SYCLContext ctor; used by static Clear() without calling GetInstance().
+// Set by SYCLContext ctor; used by static Clear() without calling
+// GetInstance().
 open3d::core::sy::SYCLContext* g_sycl_context = nullptr;
 }  // namespace
 

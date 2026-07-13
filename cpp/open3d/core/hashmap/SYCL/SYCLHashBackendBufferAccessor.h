@@ -123,16 +123,16 @@ public:
     }
 
 public:
-    buf_index_t *heap_;       ///< Free-slot index stack, length \p capacity_.
-    int *heap_top_ = nullptr; ///< Device atomic stack pointer (length 1).
+    buf_index_t *heap_;        ///< Free-slot index stack, length \p capacity_.
+    int *heap_top_ = nullptr;  ///< Device atomic stack pointer (length 1).
 
-    uint8_t *keys_; ///< SoA key bytes, stride \p key_dsize_.
+    uint8_t *keys_;  ///< SoA key bytes, stride \p key_dsize_.
     int64_t key_dsize_;
 
     size_t n_values_;
-    uint8_t **values_; ///< Per-value SoA buffers on device.
+    uint8_t **values_;  ///< Per-value SoA buffers on device.
 
-    int64_t common_block_size_; ///< Vectorized copy block size (bytes).
+    int64_t common_block_size_;  ///< Vectorized copy block size (bytes).
 
     int64_t *value_dsizes_;              ///< Device copy of value byte sizes.
     int64_t *value_blocks_per_element_;  ///< Blocks per value for vector copy.

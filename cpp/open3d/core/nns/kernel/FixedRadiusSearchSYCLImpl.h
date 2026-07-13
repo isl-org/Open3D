@@ -82,8 +82,8 @@ inline void CollectBinsToVisit(const utility::MiniVec<T, 3>& pos,
         for (int dy = -1; dy <= 1; dy += 2) {
             for (int dx = -1; dx <= 1; dx += 2) {
                 utility::MiniVec<T, 3> p =
-                        pos + radius * utility::MiniVec<T, 3>(T(dx), T(dy),
-                                                              T(dz));
+                        pos +
+                        radius * utility::MiniVec<T, 3>(T(dx), T(dy), T(dz));
                 auto vidx = ComputeVoxelIndex(p, inv_voxel_size);
                 int h = static_cast<int>(SpatialHash(vidx) % hash_table_size);
                 for (int i = 0; i < 8; ++i) {
@@ -127,12 +127,11 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
     uint32_t* index_ptr = hash_table_index.GetDataPtr<uint32_t>();
 
     queue.memset(cell_splits_ptr, 0,
-                static_cast<size_t>(hash_table_cell_splits.NumElements()) *
-                        sizeof(uint32_t));
+                 static_cast<size_t>(hash_table_cell_splits.NumElements()) *
+                         sizeof(uint32_t));
     queue.wait_and_throw();
 
-    const int batch_size =
-            static_cast<int>(points_row_splits.GetShape(0)) - 1;
+    const int batch_size = static_cast<int>(points_row_splits.GetShape(0)) - 1;
 
     // Pass 1: count points per cell (into cell_splits_i[hash + 1]), so the
     // scan in Pass 2 turns this into CSR start offsets.
@@ -170,8 +169,7 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
                 hash_table_splits[b + 1].Item<uint32_t>() - first_cell_idx;
         uint32_t* cell_splits_i = cell_splits_ptr + first_cell_idx;
         std::inclusive_scan(policy, cell_splits_i,
-                            cell_splits_i + hash_table_size + 1,
-                            cell_splits_i);
+                            cell_splits_i + hash_table_size + 1, cell_splits_i);
     }
     queue.wait_and_throw();
 
@@ -292,10 +290,10 @@ void WriteNeighborsSYCL(sycl::queue& queue,
                     for (uint32_t j = begin; j < end; ++j) {
                         const uint32_t idx = point_index_table[j];
                         utility::MiniVec<T, 3> p(points + 3 * idx);
-                        const T dist = frs_detail::SquaredDistance(p, query_pos);
+                        const T dist =
+                                frs_detail::SquaredDistance(p, query_pos);
                         if (dist <= threshold) {
-                            indices[offset + count] =
-                                    static_cast<TIndex>(idx);
+                            indices[offset + count] = static_cast<TIndex>(idx);
                             if (return_distances) {
                                 distances[offset + count] = dist;
                             }
@@ -350,12 +348,12 @@ void WriteNeighborsHybridSYCL(sycl::queue& queue,
                     for (uint32_t j = begin; j < end; ++j) {
                         const uint32_t idx = point_index_table[j];
                         utility::MiniVec<T, 3> p(points + 3 * idx);
-                        const T dist = frs_detail::SquaredDistance(p, query_pos);
+                        const T dist =
+                                frs_detail::SquaredDistance(p, query_pos);
                         if (dist > threshold) continue;
 
                         if (count < max_knn) {
-                            indices[offset + count] =
-                                    static_cast<TIndex>(idx);
+                            indices[offset + count] = static_cast<TIndex>(idx);
                             distances[offset + count] = dist;
                             if (count == 0 || max_value < dist) {
                                 max_index = count;
@@ -424,22 +422,21 @@ void SortNeighborsByDistanceSYCL(const Device& device,
     // neighbors together (query-major, then distance-ascending).
     Tensor query_id_t = Tensor::Empty({num_indices}, Int64, device);
     int64_t* query_id_ptr = query_id_t.GetDataPtr<int64_t>();
-    queue.parallel_for(
-            sycl::range<1>(num_queries),
-            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                const int64_t q = id[0];
-                for (int64_t i = row_splits_ptr[q]; i < row_splits_ptr[q + 1];
-                     ++i) {
-                    query_id_ptr[i] = q;
-                }
-            });
+    queue.parallel_for(sycl::range<1>(num_queries),
+                       [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                           const int64_t q = id[0];
+                           for (int64_t i = row_splits_ptr[q];
+                                i < row_splits_ptr[q + 1]; ++i) {
+                               query_id_ptr[i] = q;
+                           }
+                       });
 
     Tensor values_t =
             Tensor::Empty({num_indices}, Dtype::FromType<TIndex>(), device);
     TIndex* values_ptr = values_t.GetDataPtr<TIndex>();
     queue.wait_and_throw();
     queue.memcpy(values_ptr, indices_ptr,
-                static_cast<size_t>(num_indices) * sizeof(TIndex));
+                 static_cast<size_t>(num_indices) * sizeof(TIndex));
     queue.wait_and_throw();
 
     if constexpr (std::is_same<T, float>::value) {
@@ -477,29 +474,27 @@ void SortNeighborsByDistanceSYCL(const Device& device,
             T dist;
         };
         SortKey* keys = sycl::malloc_device<SortKey>(num_indices, queue);
-        queue.parallel_for(
-                sycl::range<1>(num_indices),
-                [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                    const int64_t i = id[0];
-                    keys[i] = SortKey{query_id_ptr[i], distances_ptr[i]};
-                });
+        queue.parallel_for(sycl::range<1>(num_indices),
+                           [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                               const int64_t i = id[0];
+                               keys[i] = SortKey{query_id_ptr[i],
+                                                 distances_ptr[i]};
+                           });
         queue.wait_and_throw();
 
-        oneapi::dpl::sort_by_key(
-                policy, keys, keys + num_indices, values_ptr,
-                [](const SortKey& a, const SortKey& b) {
-                    if (a.query_id != b.query_id)
-                        return a.query_id < b.query_id;
-                    return a.dist < b.dist;
-                });
+        oneapi::dpl::sort_by_key(policy, keys, keys + num_indices, values_ptr,
+                                 [](const SortKey& a, const SortKey& b) {
+                                     if (a.query_id != b.query_id)
+                                         return a.query_id < b.query_id;
+                                     return a.dist < b.dist;
+                                 });
 
-        queue.parallel_for(
-                sycl::range<1>(num_indices),
-                [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                    const int64_t i = id[0];
-                    distances_ptr[i] = keys[i].dist;
-                    indices_ptr[i] = values_ptr[i];
-                });
+        queue.parallel_for(sycl::range<1>(num_indices),
+                           [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                               const int64_t i = id[0];
+                               distances_ptr[i] = keys[i].dist;
+                               indices_ptr[i] = values_ptr[i];
+                           });
         queue.wait_and_throw();
         sycl::free(keys, queue);
     }

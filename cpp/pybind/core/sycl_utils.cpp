@@ -35,9 +35,10 @@ void pybind_sycl_utils_definitions(py::module& m) {
     // glibc "corrupted double-linked list". Only Open3D queues are cleared;
     // other SYCL users (e.g. torch-xpu) are unaffected. Clear() is a no-op if
     // SYCLContext was never constructed.
-    m_sycl.def("_clear_context", &sy::SYCLContext::Clear,
-               "Destroy Open3D-owned SYCL queues (also registered with "
-               "atexit). Unsafe to use Open3D SYCL after calling this function.");
+    m_sycl.def(
+            "_clear_context", &sy::SYCLContext::Clear,
+            "Destroy Open3D-owned SYCL queues (also registered with "
+            "atexit). Unsafe to use Open3D SYCL after calling this function.");
     {
         auto atexit = py::module::import("atexit");
         atexit.attr("register")(m_sycl.attr("_clear_context"));

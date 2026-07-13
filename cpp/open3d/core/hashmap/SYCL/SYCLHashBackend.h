@@ -110,7 +110,8 @@ inline int64_t NextPowerOfTwo(int64_t n) {
     return n;
 }
 
-// MurmurHash3 fmix64 finalizer on FNV-1a output before bucket mask and fingerprint extract.
+// MurmurHash3 fmix64 finalizer on FNV-1a output before bucket mask and
+// fingerprint extract.
 inline uint64_t HashMix(uint64_t h) {
     h ^= h >> 33;
     h *= 0xff51afd7ed558ccdULL;
@@ -128,11 +129,11 @@ inline uint64_t HashMix(uint64_t h) {
 /// immutable while this view is used.
 template <typename Key, typename Hash, typename Eq>
 struct SYCLHashDeviceLookup {
-    uint64_t* slot_data = nullptr;  ///< USM packed slot array.
-    int64_t bucket_count = 0;       ///< Power-of-two bucket count.
+    uint64_t* slot_data = nullptr;           ///< USM packed slot array.
+    int64_t bucket_count = 0;                ///< Power-of-two bucket count.
     SYCLHashBackendBufferAccessor accessor;  ///< Key/value buffer accessor.
-    Hash hash_fn{};                 ///< Key hash functor.
-    Eq eq_fn{};                     ///< Key equality functor.
+    Hash hash_fn{};                          ///< Key hash functor.
+    Eq eq_fn{};                              ///< Key equality functor.
 
     /// Linear-probe lookup; returns buffer index or -1 if not found.
     buf_index_t Find(const Key& key) const {
@@ -164,7 +165,8 @@ struct SYCLHashDeviceLookup {
     }
 };
 
-/// SYCL implementation of \ref DeviceHashBackend (see file header for algorithm).
+/// SYCL implementation of \ref DeviceHashBackend (see file header for
+/// algorithm).
 ///
 /// \p bucket_count_ is `NextPowerOfTwo(capacity * kHashBucketCountMultiplier)`.
 template <typename Key, typename Hash, typename Eq>
@@ -221,11 +223,11 @@ public:
 protected:
     SYCLHashBackendBufferAccessor buffer_accessor_;
 
-    uint64_t* slot_data_ = nullptr;      ///< USM packed slots.
-    int* occupied_count_ = nullptr;      ///< Device live entry count.
-    int* non_empty_count_ = nullptr;     ///< Device occupied + tombstone count.
+    uint64_t* slot_data_ = nullptr;   ///< USM packed slots.
+    int* occupied_count_ = nullptr;   ///< Device live entry count.
+    int* non_empty_count_ = nullptr;  ///< Device occupied + tombstone count.
     int64_t bucket_count_ = 0;
-    int64_t wg_size_ = kHashWgSize;      ///< SYCL work-group size for kernels.
+    int64_t wg_size_ = kHashWgSize;  ///< SYCL work-group size for kernels.
 
     sycl::queue queue_;
 };
