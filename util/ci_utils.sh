@@ -721,6 +721,21 @@ build_docs() {
     python -c "from open3d import *; import open3d; print(open3d)"
     set -x # Echo commands on
     cd "${OPEN3D_SOURCE_ROOT}/docs" # Works regardless of caller's cwd.
+    # docs/Doxyfile, getting_started.rst and docker.rst are normally generated
+    # by docs/CMakeLists.txt's configure_file() calls during a full `cmake ..`
+    # configure. Since this build only installs a pre-built wheel (no cmake
+    # configure step), generate them here instead by substituting
+    # @OPEN3D_VERSION_FULL@ (full version incl. dev hash) and @OPEN3D_VERSION@
+    # (release version only), taken from the installed wheel.
+    OPEN3D_VERSION_FULL="$(python -c 'import open3d; print(open3d.__version__)')"
+    OPEN3D_VERSION="${OPEN3D_VERSION_FULL%%+*}"
+    subst_version() { # subst_version <input> <output>
+        sed -e "s|@OPEN3D_VERSION_FULL@|${OPEN3D_VERSION_FULL}|g" \
+            -e "s|@OPEN3D_VERSION@|${OPEN3D_VERSION}|g" "$1" >"$2"
+    }
+    subst_version Doxyfile.in Doxyfile
+    subst_version getting_started.in.rst getting_started.rst
+    subst_version docker.in.rst docker.rst
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
         --py_api_rst=always --py_example_rst=always --sphinx --doxygen
     cd - >/dev/null
