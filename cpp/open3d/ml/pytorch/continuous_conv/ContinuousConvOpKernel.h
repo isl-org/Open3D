@@ -51,3 +51,24 @@ void ContinuousConvCUDA(
         const int64_t max_temp_mem_MB,
         torch::Tensor& out_features);
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class TFeat, class TOut, class TReal, class TIndex>
+void ContinuousConvSYCL(
+        const torch::Tensor& filters,
+        const torch::Tensor& out_positions,
+        const torch::Tensor& extents,
+        const torch::Tensor& offset,
+        const torch::Tensor& inp_positions,
+        const torch::Tensor& inp_features,
+        const torch::Tensor& inp_importance,
+        const torch::Tensor& neighbors_index,
+        const torch::Tensor& neighbors_importance,
+        const torch::Tensor& neighbors_row_splits,
+        const bool align_corners,
+        const open3d::ml::impl::CoordinateMapping coordinate_mapping,
+        const bool normalize,
+        const open3d::ml::impl::InterpolationMode interpolation,
+        const int64_t max_temp_mem_MB,
+        torch::Tensor& out_features);
+#endif

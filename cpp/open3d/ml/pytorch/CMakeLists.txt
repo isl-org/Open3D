@@ -6,6 +6,24 @@ else()
     message(STATUS "Building PyTorch ops")
 endif()
 
+if(BUILD_SYCL_MODULE)
+    # Work around an upstream variable-name collision: oneMKL's MKLConfig.cmake
+    # (pulled in transitively while configuring Open3D's own SYCL core target)
+    # sets a directory-scope (non-cache) variable literally named
+    # `SYCL_COMPILER` to the boolean ON as an internal MKL feature flag. This
+    # shadows the unrelated `SYCL_COMPILER` *cache* variable (the SYCL
+    # compiler executable path) that both Open3D's IntelSYCL detection and
+    # PyTorch's own FindSYCLToolkit.cmake (invoked below via
+    # find_package(Pytorch) -> find_package(Torch) -> Caffe2Config.cmake ->
+    # public/xpu.cmake) rely on. With the shadow in place,
+    # FindSYCLToolkit.cmake's `execute_process(COMMAND ${SYCL_COMPILER}
+    # --version ...)` runs "ON --version" instead of the compiler, producing
+    # an empty version string and a hard CMake error. Unsetting the local
+    # shadow here lets `${SYCL_COMPILER}` fall back to the correct cached
+    # compiler path again.
+    unset(SYCL_COMPILER)
+endif()
+
 find_package(Pytorch REQUIRED)
 
 if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)

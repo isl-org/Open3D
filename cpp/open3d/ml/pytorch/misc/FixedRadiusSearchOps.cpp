@@ -52,19 +52,19 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
 #ifdef BUILD_SYCL_MODULE
 template <class T, class TIndex>
 void FixedRadiusSearchSYCL(const torch::Tensor& points,
-                            const torch::Tensor& queries,
-                            double radius,
-                            const torch::Tensor& points_row_splits,
-                            const torch::Tensor& queries_row_splits,
-                            const torch::Tensor& hash_table_splits,
-                            const torch::Tensor& hash_table_index,
-                            const torch::Tensor& hash_table_cell_splits,
-                            const Metric metric,
-                            const bool ignore_query_point,
-                            const bool return_distances,
-                            torch::Tensor& neighbors_index,
-                            torch::Tensor& neighbors_row_splits,
-                            torch::Tensor& neighbors_distance);
+                           const torch::Tensor& queries,
+                           double radius,
+                           const torch::Tensor& points_row_splits,
+                           const torch::Tensor& queries_row_splits,
+                           const torch::Tensor& hash_table_splits,
+                           const torch::Tensor& hash_table_index,
+                           const torch::Tensor& hash_table_cell_splits,
+                           const Metric metric,
+                           const bool ignore_query_point,
+                           const bool return_distances,
+                           torch::Tensor& neighbors_index,
+                           torch::Tensor& neighbors_row_splits,
+                           torch::Tensor& neighbors_distance);
 #endif
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(

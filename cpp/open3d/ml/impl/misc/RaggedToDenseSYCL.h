@@ -42,9 +42,9 @@ void RaggedToDenseSYCL(sycl::queue& queue,
                     static_cast<int64_t>(out_col_size) + start, end_raw);
 
             // Copy valid values
-            T* out_ptr =
-                    out_values + i * out_col_size * default_value_size;
-            for (int64_t inp_idx = start * static_cast<int64_t>(default_value_size);
+            T* out_ptr = out_values + i * out_col_size * default_value_size;
+            for (int64_t inp_idx =
+                         start * static_cast<int64_t>(default_value_size);
                  inp_idx < end * static_cast<int64_t>(default_value_size);
                  ++inp_idx, ++out_ptr) {
                 *out_ptr = values[inp_idx];
@@ -53,7 +53,8 @@ void RaggedToDenseSYCL(sycl::queue& queue,
             // Pad remaining columns with default_value
             out_ptr = out_values + i * out_col_size * default_value_size +
                       (end - start) * static_cast<int64_t>(default_value_size);
-            for (int64_t j = end - start; j < static_cast<int64_t>(out_col_size);
+            for (int64_t j = end - start;
+                 j < static_cast<int64_t>(out_col_size);
                  ++j, out_ptr += default_value_size) {
                 for (size_t k = 0; k < default_value_size; ++k) {
                     out_ptr[k] = default_value[k];

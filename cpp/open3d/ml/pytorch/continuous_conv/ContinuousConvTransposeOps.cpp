@@ -154,6 +154,14 @@ public:
                         "ContinuousConvTranspose was not compiled with CUDA "
                         "support")
 #endif
+        } else if (inp_features.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+            CALL(float, float, float, int32_t, ::ContinuousConvTransposeSYCL)
+#else
+            TORCH_CHECK(false,
+                        "ContinuousConvTranspose was not compiled with SYCL "
+                        "support")
+#endif
         } else {
             CALL(float, float, float, int32_t, ::ContinuousConvTransposeCPU)
         }
@@ -256,6 +264,14 @@ public:
             TORCH_CHECK(false,
                         "ContinuousConvTranspose backward was not compiled "
                         "with CUDA support")
+#endif
+        } else if (inp_features.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+            CALL(float, float, float, int32_t, SYCL)
+#else
+            TORCH_CHECK(false,
+                        "ContinuousConvTranspose backward was not compiled "
+                        "with SYCL support")
 #endif
         } else {
             CALL(float, float, float, int32_t, CPU)

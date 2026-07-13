@@ -38,6 +38,21 @@ void VoxelizeCUDA(const torch::Tensor& points,
                   torch::Tensor& voxel_batch_splits);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+template <class T>
+void VoxelizeSYCLDispatch(const torch::Tensor& points,
+                          const torch::Tensor& row_splits,
+                          const torch::Tensor& voxel_size,
+                          const torch::Tensor& points_range_min,
+                          const torch::Tensor& points_range_max,
+                          const int64_t max_points_per_voxel,
+                          const int64_t max_voxels,
+                          torch::Tensor& voxel_coords,
+                          torch::Tensor& voxel_point_indices,
+                          torch::Tensor& voxel_point_row_splits,
+                          torch::Tensor& voxel_batch_splits);
+#endif
+
 class VoxelizeOutputAllocator {
 public:
     VoxelizeOutputAllocator(torch::DeviceType device_type, int device_idx)

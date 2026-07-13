@@ -1695,6 +1695,8 @@ if(BUILD_SYCL_MODULE)
             add_library(3rdparty_sycl_tla INTERFACE)
             target_include_directories(3rdparty_sycl_tla INTERFACE
                 ${3rdparty_sycl_tla_INCLUDE_DIR})
+            target_compile_definitions(3rdparty_sycl_tla INTERFACE
+                CUTLASS_ENABLE_SYCL SYCL_INTEL_TARGET)
             add_library(Open3D::3rdparty_sycl_tla ALIAS 3rdparty_sycl_tla)
             if(NOT BUILD_SHARED_LIBS)
                 install(TARGETS 3rdparty_sycl_tla EXPORT ${PROJECT_NAME}Targets)
@@ -1709,6 +1711,25 @@ if(BUILD_SYCL_MODULE)
             INCLUDE_DIRS ${SYCL_TLA_INCLUDE_DIRS}
             DEPENDS      ext_sycl_tla
         )
+        # sycl-tla requires these two defines to enable its SYCL/Intel-GPU code
+        # paths (see cutlass/gpu_generics.h and cute/algorithm/reorder.hpp);
+        # without them the headers either omit the SYCL device-info shims or
+        # fail to compile the Xe DPAS (tensor core) dispatch entirely.
+        target_compile_definitions(3rdparty_sycl_tla INTERFACE
+            CUTLASS_ENABLE_SYCL SYCL_INTEL_TARGET)
+    endif()
+    # sycl-tla's Xe DPAS mainloop/epilogue kernels use SPIR-V features (e.g.
+    # split control-flow barriers) that are not enabled by default when
+    # targeting the generic "spir64" JIT target; the SPIR-V translator's
+    # link step fails ("Feature requires ... SPV_INTEL_split_barrier")
+    # without explicitly opting in. This mirrors the flags sycl-tla's own
+    # CMake (cmake/FindDPCPP.cmake) adds when building its own examples/
+    # tests, and is required for any target that links in sycl-tla-based
+    # GEMM code (e.g. the SYCL PyTorch conv ops).
+    if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+        target_link_options(3rdparty_sycl_tla INTERFACE
+            "-Xspirv-translator"
+            "-spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate")
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_sycl_tla)
 endif()

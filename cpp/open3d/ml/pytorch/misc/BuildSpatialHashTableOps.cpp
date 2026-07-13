@@ -31,11 +31,11 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
 #ifdef BUILD_SYCL_MODULE
 template <class T>
 void BuildSpatialHashTableSYCL(const torch::Tensor& points,
-                                double radius,
-                                const torch::Tensor& points_row_splits,
-                                const std::vector<uint32_t>& hash_table_splits,
-                                torch::Tensor& hash_table_index,
-                                torch::Tensor& hash_table_cell_splits);
+                               double radius,
+                               const torch::Tensor& points_row_splits,
+                               const std::vector<uint32_t>& hash_table_splits,
+                               torch::Tensor& hash_table_index,
+                               torch::Tensor& hash_table_cell_splits);
 #endif
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(

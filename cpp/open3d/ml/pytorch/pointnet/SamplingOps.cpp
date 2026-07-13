@@ -37,7 +37,7 @@
 #include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
 #include "torch/script.h"
 
-#ifdef BUILD_CUDA_MODULE
+#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 
 torch::Tensor furthest_point_sampling(torch::Tensor points,
                                       const int64_t sample_size) {
@@ -56,8 +56,28 @@ torch::Tensor furthest_point_sampling(torch::Tensor points,
     float *temp_data = temp.data_ptr<float>();
     int *out_data = out.data_ptr<int>();
 
-    furthest_point_sampling_launcher(batch_size, pts_size, sample_size,
-                                     points_data, temp_data, out_data);
+    if (points.is_cuda()) {
+#ifdef BUILD_CUDA_MODULE
+        furthest_point_sampling_launcher(batch_size, pts_size, sample_size,
+                                         points_data, temp_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "furthest_point_sampling was not compiled with CUDA "
+                    "support")
+#endif
+    } else if (points.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        furthest_point_sampling_launcher_sycl(batch_size, pts_size, sample_size,
+                                              points_data, temp_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "furthest_point_sampling was not compiled with SYCL "
+                    "support")
+#endif
+    } else {
+        TORCH_CHECK(false, "furthest_point_sampling does not support " +
+                                   points.toString() + " as input")
+    }
 
     return out;
 }

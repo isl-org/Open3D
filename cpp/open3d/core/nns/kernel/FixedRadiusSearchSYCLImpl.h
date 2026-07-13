@@ -170,16 +170,15 @@ struct SortKey {
 /// \p host_points_row_splits and \p host_hash_table_splits are CPU arrays.
 /// \p cell_splits_ptr and \p index_ptr are device (USM or XPU) pointers.
 template <class T>
-void BuildSpatialHashTableSYCLRaw(
-        sycl::queue& queue,
-        const T* points_ptr,
-        T inv_voxel_size,
-        int batch_size,
-        const int64_t* host_points_row_splits,
-        const uint32_t* host_hash_table_splits,
-        uint32_t* cell_splits_ptr,
-        size_t cell_splits_size,
-        uint32_t* index_ptr) {
+void BuildSpatialHashTableSYCLRaw(sycl::queue& queue,
+                                  const T* points_ptr,
+                                  T inv_voxel_size,
+                                  int batch_size,
+                                  const int64_t* host_points_row_splits,
+                                  const uint32_t* host_hash_table_splits,
+                                  uint32_t* cell_splits_ptr,
+                                  size_t cell_splits_size,
+                                  uint32_t* index_ptr) {
     auto policy = oneapi::dpl::execution::make_device_policy(queue);
 
     queue.memset(cell_splits_ptr, 0, cell_splits_size * sizeof(uint32_t))
@@ -302,8 +301,7 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
     }
 
     BuildSpatialHashTableSYCLRaw<T>(
-            queue, points.GetDataPtr<T>(),
-            T(1) / T(2 * radius), batch_size,
+            queue, points.GetDataPtr<T>(), T(1) / T(2 * radius), batch_size,
             host_pts_row_splits.data(), host_ht_splits.data(),
             hash_table_cell_splits.GetDataPtr<uint32_t>(),
             static_cast<size_t>(hash_table_cell_splits.NumElements()),

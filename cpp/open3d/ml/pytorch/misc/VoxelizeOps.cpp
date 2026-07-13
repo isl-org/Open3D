@@ -68,6 +68,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> Voxelize(
 #else
         TORCH_CHECK(false, "Voxelize was not compiled with CUDA support")
 #endif
+    } else if (points.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        // pass to sycl function
+        CALL(float, VoxelizeSYCLDispatch)
+        CALL(double, VoxelizeSYCLDispatch)
+#else
+        TORCH_CHECK(false, "Voxelize was not compiled with SYCL support")
+#endif
     } else {
         CALL(float, VoxelizeCPU)
         CALL(double, VoxelizeCPU)

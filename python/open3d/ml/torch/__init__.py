@@ -73,6 +73,13 @@ if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
               "Otherwise, install PyTorch with CUDA {}.".format(
                   _build_config["CUDA_VERSION"], _torch.version.cuda,
                   _build_config["CUDA_VERSION"]))
+elif (_build_config["BUILD_SYCL_MODULE"] and hasattr(_torch, 'xpu') and
+      _torch.xpu.is_available()):
+    # The SYCL-enabled open3d_torch_ops library contains both the CPU and
+    # XPU (Intel GPU) dispatch paths in a single .so (see
+    # cpp/open3d/ml/pytorch/CMakeLists.txt), so no separate CPU fallback
+    # library is needed here.
+    _lib_arch = ('sycl',)
 _lib_path.extend([
     _os.path.join(_package_root, _la,
                   'open3d_torch_ops' + _lib_suffix + _lib_ext)

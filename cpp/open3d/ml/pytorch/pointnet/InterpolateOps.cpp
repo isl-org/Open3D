@@ -42,7 +42,7 @@
 #include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
 #include "torch/script.h"
 
-#ifdef BUILD_CUDA_MODULE
+#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
                                                   torch::Tensor data_pts) {
     int batch_size = query_pts.size(0);
@@ -63,8 +63,24 @@ std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
     float *dist2 = out_dist2.data_ptr<float>();
     int *idx = out_idx.data_ptr<int>();
 
-    three_nn_launcher(batch_size, pts_num_out, pts_num_in, pts_out, pts_in,
-                      dist2, idx);
+    if (data_pts.is_cuda()) {
+#ifdef BUILD_CUDA_MODULE
+        three_nn_launcher(batch_size, pts_num_out, pts_num_in, pts_out, pts_in,
+                          dist2, idx);
+#else
+        TORCH_CHECK(false, "three_nn was not compiled with CUDA support")
+#endif
+    } else if (data_pts.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        three_nn_launcher_sycl(batch_size, pts_num_out, pts_num_in, pts_out,
+                               pts_in, dist2, idx);
+#else
+        TORCH_CHECK(false, "three_nn was not compiled with SYCL support")
+#endif
+    } else {
+        TORCH_CHECK(false, "three_nn does not support " + data_pts.toString() +
+                                   " as input")
+    }
 
     return std::tuple<torch::Tensor, torch::Tensor>(out_dist2, out_idx);
 }
@@ -87,8 +103,26 @@ torch::Tensor three_interpolate(torch::Tensor points,
     const int *idx_data = idx.data_ptr<int>();
     float *out_data = out.data_ptr<float>();
 
-    three_interpolate_launcher(batch_size, C, M, N, points_data, idx_data,
-                               weights_data, out_data);
+    if (points.is_cuda()) {
+#ifdef BUILD_CUDA_MODULE
+        three_interpolate_launcher(batch_size, C, M, N, points_data, idx_data,
+                                   weights_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "three_interpolate was not compiled with CUDA support")
+#endif
+    } else if (points.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        three_interpolate_launcher_sycl(batch_size, C, M, N, points_data,
+                                        idx_data, weights_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "three_interpolate was not compiled with SYCL support")
+#endif
+    } else {
+        TORCH_CHECK(false, "three_interpolate does not support " +
+                                   points.toString() + " as input")
+    }
 
     return out;
 }
@@ -112,8 +146,28 @@ torch::Tensor three_interpolate_grad(torch::Tensor grad_out,
 
     float *out_data = out.data_ptr<float>();
 
-    three_interpolate_grad_launcher(batch_size, C, N, M, grad_out_data,
-                                    idx_data, weights_data, out_data);
+    if (grad_out.is_cuda()) {
+#ifdef BUILD_CUDA_MODULE
+        three_interpolate_grad_launcher(batch_size, C, N, M, grad_out_data,
+                                        idx_data, weights_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "three_interpolate_grad was not compiled with CUDA "
+                    "support")
+#endif
+    } else if (grad_out.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        three_interpolate_grad_launcher_sycl(batch_size, C, N, M, grad_out_data,
+                                             idx_data, weights_data, out_data);
+#else
+        TORCH_CHECK(false,
+                    "three_interpolate_grad was not compiled with SYCL "
+                    "support")
+#endif
+    } else {
+        TORCH_CHECK(false, "three_interpolate_grad does not support " +
+                                   grad_out.toString() + " as input")
+    }
 
     return out;
 }

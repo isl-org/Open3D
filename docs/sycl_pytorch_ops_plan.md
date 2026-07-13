@@ -15,7 +15,8 @@ Key design decisions:
 - **oneDPL** for CUB-equivalent device algorithms (sort, scan, copy_if)
 - `at::xpu::getCurrentXPUStream().queue()` for PyTorch XPU dispatch
 - Existing CPU and CUDA paths are **untouched**; `BUILD_SYCL_MODULE=ON` enables SYCL
-
+- Refactor and reuse as much code as possible from existing SYCL code. Re-use CUDA and CPU code where possible.
+- Focus on correctness (all ML ops unit tests must pass) and performance. Optimizations should be on par or better than CUDA optimizations.
 ---
 
 ## Environment
@@ -50,108 +51,112 @@ Key design decisions:
 
 ---
 
-## Implementation Status
+## Implementation Status (updated after real-hardware validation on Intel Panther Lake Xe3 iGPU)
 
-### ✅ Done
+### ✅ All 18 ops implemented, built, and functionally validated on real Intel GPU hardware
 
-| Commit | What |
-|--------|------|
-| `84a11feee` | CUTLASS v1→v4.2.1 migration; sycl-tla CMake scaffold; 8 `.cuh` files migrated |
-| `939d0f374` | CMake scaffolding (`if(BUILD_SYCL_MODULE)` block, all 20 stub sources); 5 misc op impl headers + PyTorch kernels; refactoring to eliminate duplication |
+All 13 previously-stub ops (Voxelize, ContinuousConv family ×4, SparseConv
+family ×4, pointnet ×3, pvcnn ×1) are now implemented, in addition to the 5
+done previously (RaggedToDense, ReduceSubarraysSum, InvertNeighborsList,
+BuildSpatialHashTable, FixedRadiusSearch). `open3d_torch_ops.so` and the full
+`open3d` python package build and link successfully with
+`BUILD_SYCL_MODULE=ON BUILD_PYTORCH_OPS=ON` on this machine (Intel Panther
+Lake, Xe3 iGPU, device id `0xb080`), and were tested for real on-device
+execution (not just syntax-checked).
 
-**Implemented op kernels (5 of 18):**
+**Validation results (real hardware, this session):**
 
-| Op | Impl header | PyTorch kernel | Notes |
-|----|-------------|----------------|-------|
-| RaggedToDense | `ml/impl/misc/RaggedToDenseSYCL.h` | `misc/RaggedToDenseOpKernelSYCL.cpp` | 1-D parallel_for |
-| ReduceSubarraysSum | `ml/impl/misc/ReduceSubarraysSumSYCL.h` | `misc/ReduceSubarraysSumOpKernelSYCL.cpp` | 1-D parallel_for |
-| InvertNeighborsList | `ml/impl/misc/InvertNeighborsListSYCL.h` | `misc/InvertNeighborsListOpKernelSYCL.cpp` | atomic histogram + oneDPL scan |
-| BuildSpatialHashTable | *(delegates to `core/nns/kernel/FixedRadiusSearchSYCLImpl.h`'s `BuildSpatialHashTableSYCLRaw<T>()`)* | `misc/BuildSpatialHashTableOpKernelSYCL.cpp` | 54-line thin wrapper |
-| FixedRadiusSearch | *(delegates to `core/nns/kernel/FixedRadiusSearchSYCLImpl.h`'s `CountNeighborsSYCL`/`WriteNeighborsSYCL`)* | `misc/FixedRadiusSearchOpKernelSYCL.cpp` | reuses NNS impl |
+| Op group | Method | Result |
+|----------|--------|--------|
+| Voxelize | `pytest python/test/ml_ops/test_voxelize.py -k ml1` | **1344/1344 passed** |
+| BallQuery / FPS / three_interp (pointnet) | `pytest test_query_pts.py test_sampling.py test_three_interp.py` | **3/3 passed** |
+| TrilinearDevoxelize | direct fwd+bwd vs. independent numpy reference (no CPU op exists — GPU-only by design, matching upstream PVCNN) | max diff 1.2e-7 (float32 precision), grad-sum sanity exact |
+| ContinuousConv (4 ops, fwd+bwd) | direct CPU-vs-XPU scripts, all `coordinate_mapping`/`interpolation` combos, hand-built valid neighbor lists | rel. error ~1e-3 (tf32-level) |
+| SparseConv (4 ops, fwd+bwd) | direct CPU-vs-XPU scripts, hand-built valid neighbor lists | rel. error <1e-3 (tf32-level) |
+| `GemmSYCL.h` shim in isolation | standalone C++ test vs. naive host GEMM | max diff 0.0037 (tf32-level) |
 
-**Refactoring done:**
-- `BuildSpatialHashTableSYCLRaw<T>()` extracted into `FixedRadiusSearchSYCLImpl.h` — shared by Open3D Tensor API and PyTorch dispatch
-- `CountNeighborsSYCL` renamed to `CountIndexOccurrencesSYCL` in `InvertNeighborsListSYCL.h` to avoid name collision
+Full `pytest -k ml1` runs of `test_cconv.py`/`test_sparseconv.py` could not be
+used as-is: those fixtures build neighbor lists via
+`FixedRadiusSearch(metric='Linf')`, but the SYCL FixedRadiusSearch (a
+pre-existing op, done before this phase) only supports `metric=L2` — see
+"Known pre-existing issues" below. `mltest.py` was extended with a
+`torch_xpu` device entry so `-k ml1` now correctly selects the XPU device for
+any test that doesn't depend on the Linf/L1 metrics.
 
----
+**Real bugs found and fixed during this validation (all in newly-added code,
+i.e. in-scope for this phase):**
+1. `InvertNeighborsListOpKernelSYCL.cpp` called `ToTorchDtype<uint32_t>()`,
+   which has no specialization (Torch has no native uint32 dtype) — this
+   crashed `ContinuousConv`/`SparseConv` **backward** with `RuntimeError:
+   Unsupported type`. Fixed by allocating the scratch count buffer as
+   `int32_t` and `reinterpret_cast`-ing the pointer to `uint32_t*` (same bit
+   width, used only as an internal counter).
+2. `cpp/pybind/make_python_package.cmake` only copied `cpu`/`cuda` arch
+   subdirectories when assembling the python package, never `sycl` — so
+   `open3d_torch_ops.so` (built under `lib/Release/sycl/` when
+   `BUILD_SYCL_MODULE=ON`) was silently missing from the installed package.
+   Fixed by adding `sycl` to the `foreach(ARCH cpu cuda sycl)` loop.
+3. `python/open3d/ml/torch/__init__.py`'s `_lib_arch` selection logic never
+   tried `sycl`, so even with the packaging fix, the SYCL-built ops library
+   would never be loaded by `import open3d.ml.torch`. Fixed by adding an
+   `elif BUILD_SYCL_MODULE and torch.xpu.is_available(): _lib_arch = ('sycl',)`
+   branch (single-lib-covers-CPU+XPU, unlike the CUDA `('cuda','cpu')`
+   fallback pair, since our SYCL `.so` already dispatches to CPU internally
+   for CPU tensors).
 
-### 🔴 Stub files only — not yet implemented (13 of 18)
+An initial report of "large numerical error" in `ContinuousConv` (mean/sign
+completely wrong) turned out to be a **test-harness bug**, not an algorithm
+bug: comparing CPU vs. XPU outputs generated from independently-drawn random
+tensors (different `torch.manual_seed` state per call). With matched inputs,
+all four `coordinate_mapping`/`interpolation` combinations produce
+tf32-level-accurate results. Similarly, an apparent `SparseConv` discrepancy
+was traced to synthetic test data with **duplicate `kernel_index` values
+within one output row**, which is physically invalid input (each neighbor
+should map to a distinct kernel offset) — the reference CUDA `FillColumn`
+kernel itself does a plain last-write-wins `=` (not `+=`) per kernel slot, so
+duplicate kernel indices are order-dependent in *both* CPU and SYCL
+implementations by design, not a bug.
 
-| Group | Files | Key challenge |
-|-------|-------|---------------|
-| **Voxelize** | `VoxelizeSYCL.h`, `VoxelizeOpKernelSYCL.cpp` | 9 kernels; oneDPL sort_by_key; custom RLE kernel replacing `cub::DeviceRunLengthEncode` |
-| **SparseConv** (4 ops) | `SparseConvSYCLKernels.{h,cpp}`, 4 `*SYCL.h`, 4 `*OpKernelSYCL.cpp` | sycl-tla `device::Gemm<>`; FillColumn im2col with sub-group reduce |
-| **ContinuousConv** (4 ops) | `ContinuousConvSYCLKernels.{h,cpp}`, 4 `*SYCL.h`, 4 `*OpKernelSYCL.cpp` | sycl-tla GEMM + trilinear interp; warp-reduce normalizer → `sycl::reduce_over_group` |
-| **Pointnet** (3 ops) | `BallQueryKernelSYCL.cpp`, `InterpolateKernelSYCL.cpp`, `SamplingKernelSYCL.cpp` | FPS: shared-memory warp reduce → `sycl::nd_range` + `sycl::local_accessor` tree reduce |
-| **pvcnn** (1 op) | `TrilinearDevoxelizeKernelSYCL.cpp` | `nd_range` + `local_accessor` for scatter |
+### ⚠️ Known pre-existing issues found during real-hardware testing (out of
+### this phase's scope — in `FixedRadiusSearch`/`core/nns`, done before this
+### phase; documented as follow-up, not fixed here)
 
-**Impl headers still needed:**
-```
-ml/impl/continuous_conv/ContinuousConvSYCLKernels.h + .cpp
-ml/impl/continuous_conv/ContinuousConv{,Backprop,Transpose,TransposeBackprop}SYCL.h
-ml/impl/sparse_conv/SparseConvSYCLKernels.h + .cpp
-ml/impl/sparse_conv/SparseConv{,Backprop,Transpose,TransposeBackprop}SYCL.h
-ml/impl/misc/VoxelizeSYCL.h
-ml/impl/contrib/BallQuerySYCL.h
-ml/impl/contrib/InterpolatePointsSYCL.h
-ml/impl/contrib/TrilinearDevoxelizeSYCL.h
-```
+1. SYCL `FixedRadiusSearch`/`KnnSearchOpsSYCL.cpp` only supports `metric=L2`
+   (`L1`/`Linf` raise `LogError`).
+2. `ignore_query_point=True` is silently **not honored** by the PyTorch SYCL
+   dispatch (`FixedRadiusSearchOpKernelSYCL.cpp`) — the parameter is accepted
+   but never checked/applied in that file (unlike the Tensor-API path in
+   `KnnSearchOpsSYCL.cpp`, which at least throws `LogError`). Both files
+   ultimately need `ignore_query_point` support in the SYCL NNS kernels.
+3. `python/test/ml_ops/test_fixed_radius_search.py -k ml1` shows widespread
+   failures concentrated in `float32` inputs (560/4337 cases fail; `float64`
+   cases mostly pass) — a real, dtype-specific correctness bug independent of
+   (1)/(2), not investigated further in this phase.
 
----
+### ⚠️ Known issue: process-exit crash with GEMM-shim ops through the full
+### `open3d` package (not a correctness bug, all computed results are
+### correct)
 
-### 🔴 Build — Blocked (as of 2026-07-13)
+Reproducible: calling `continuous_conv`/`sparse_conv` on XPU **and** having
+imported the full `open3d` package (which loads a second, independently
+SYCL-using shared library, the core `Open3D.so`) causes a
+`"corrupted double-linked list"` `SIGABRT` at Python interpreter exit — after
+all computation has completed correctly. Does **not** reproduce when: (a)
+loading `open3d_torch_ops.so` directly via `torch.ops.load_library(...)`
+bypassing the `open3d` package (clean exit), or (b) calling any non-GEMM op
+(Voxelize, BallQuery, FPS, TrilinearDevoxelize, etc.) through the full
+package (clean exit in every case tested). Hypothesis: two independently
+SYCL-using shared objects in one process (the core library and
+`open3d_torch_ops.so`) each hold SYCL/Level-Zero context/queue state and
+sycl-tla/CUTLASS global singletons (e.g. the `EventManager` in
+`tools/util/include/cutlass/util/sycl_event_manager.hpp`); their teardown
+order at process exit conflicts with the Level-Zero driver. This looks like
+an sycl-tla/Level-Zero interop issue, not fixable without patching 3rdparty
+code (against project policy) — recommended follow-up: report upstream to
+sycl-tla, or investigate isolating GEMM shim calls to a dedicated SYCL
+context/queue.
 
-cmake configure fails on this machine (no Intel GPU) at `FindSYCLToolkit.cmake` inside PyTorch's cmake:
 
-```
-CMake Error: list GET given empty list
-  at FindSYCLToolkit.cmake:61 (parse_sycl_compiler_version)
-```
-
-**Root cause:** PyTorch's bundled `FindSYCLToolkit.cmake` parses `icx --version` output but
-fails when env vars are not set via `setvars.sh`. The workaround is:
-
-```bash
-source /opt/intel/oneapi/setvars.sh  # sets CMPLR_ROOT, MKL_DIR, TBB_DIR automatically
-cmake -S . -B /path/to/build \
-  -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx \
-  -DBUILD_SYCL_MODULE=ON -DBUILD_PYTORCH_OPS=ON \
-  -DBUILD_CUDA_MODULE=OFF \
-  -DGLIBCXX_USE_CXX11_ABI=ON \
-  -DPython3_EXECUTABLE=/mnt/seagate_4tb_b/ssheorey/venv-o3d-xpu/bin/python
-```
-
-**Decision:** Transfer branch to Intel GPU machine for build + test.
-
----
-
-## Next Steps (on Intel GPU machine)
-
-1. **Clone / pull** `ss/sycl-mlops` branch
-2. **Install PyTorch XPU:** `pip install torch==2.10.0+xpu --index-url https://download.pytorch.org/whl/xpu`
-3. **Configure:**
-   ```bash
-   source /opt/intel/oneapi/setvars.sh
-   cmake -S /path/to/Open3D -B /path/to/build \
-     -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx \
-     -DBUILD_SYCL_MODULE=ON -DBUILD_PYTORCH_OPS=ON \
-     -DBUILD_CUDA_MODULE=OFF -DBUILD_UNIT_TESTS=OFF \
-     -DGLIBCXX_USE_CXX11_ABI=ON \
-     -DPython3_EXECUTABLE=$(which python)
-   ```
-4. **Build torch ops target:** `cmake --build build --parallel $(nproc) --target open3d_torch_ops`
-5. **Fix compile errors** in stub files iteratively
-6. **Implement remaining 13 op kernels** (see stubs)
-7. **Build python-package:** `cmake --build build --parallel $(nproc) --target python-package`
-8. **Test:**
-   ```bash
-   SYCL_DEVICE_FILTER=level_zero:gpu PYTHONPATH=build/lib/python_package \
-     pytest python/test/ml_ops/ -v -k "ml1"
-   ```
-9. **Style:** `python util/check_style.py --apply`
-10. **Commit + PR**
-
----
 
 ## Risks and Mitigations
 

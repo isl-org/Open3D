@@ -18,5 +18,11 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_sycl_tla SOURCE_DIR)
-# sycl-tla headers live in include/, mirroring CUTLASS v4 layout.
-set(SYCL_TLA_INCLUDE_DIRS ${SOURCE_DIR}/include/)
+# sycl-tla headers live in include/, mirroring CUTLASS v4 layout. The
+# device::GemmUniversalAdapter path additionally pulls in helper headers
+# (e.g. cutlass/util/packed_stride.hpp, cutlass/util/sycl_event_manager.hpp)
+# that live under tools/util/include/ (CUTLASS's separate "tools" utility
+# headers directory, not bundled into include/), so both must be on the
+# include path.
+set(SYCL_TLA_INCLUDE_DIRS ${SOURCE_DIR}/include/
+                          ${SOURCE_DIR}/tools/util/include/)
