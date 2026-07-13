@@ -134,6 +134,15 @@ jobs:
       - name: Checkout Open3D source code
         uses: actions/checkout@v4
 
+      # Must match PYTHON_VERSION in cpu-shared-ml_export_env()
+      # (docker/docker_build.sh), which built the wheel installed below.
+      # Wheels are ABI-tagged per minor version, so a mismatched
+      # interpreter would fail to install it.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Download wheel artifact
         uses: actions/download-artifact@v4
         with:
