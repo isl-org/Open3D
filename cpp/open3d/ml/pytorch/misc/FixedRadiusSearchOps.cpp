@@ -49,6 +49,24 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
                            torch::Tensor& neighbors_distance);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+template <class T, class TIndex>
+void FixedRadiusSearchSYCL(const torch::Tensor& points,
+                            const torch::Tensor& queries,
+                            double radius,
+                            const torch::Tensor& points_row_splits,
+                            const torch::Tensor& queries_row_splits,
+                            const torch::Tensor& hash_table_splits,
+                            const torch::Tensor& hash_table_index,
+                            const torch::Tensor& hash_table_cell_splits,
+                            const Metric metric,
+                            const bool ignore_query_point,
+                            const bool return_distances,
+                            torch::Tensor& neighbors_index,
+                            torch::Tensor& neighbors_row_splits,
+                            torch::Tensor& neighbors_distance);
+#endif
+
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
         torch::Tensor points,
         torch::Tensor queries,
@@ -140,6 +158,21 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
 #else
         TORCH_CHECK(false,
                     "FixedRadiusSearch was not compiled with CUDA support")
+#endif
+    } else if (points.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        if (CompareTorchDtype<float>(point_type)) {
+            if (index_dtype == torch::kInt32) {
+                FixedRadiusSearchSYCL<float, int32_t>(FN_PARAMETERS);
+            } else {
+                FixedRadiusSearchSYCL<float, int64_t>(FN_PARAMETERS);
+            }
+            return std::make_tuple(neighbors_index, neighbors_row_splits,
+                                   neighbors_distance);
+        }
+#else
+        TORCH_CHECK(false,
+                    "FixedRadiusSearch was not compiled with SYCL support")
 #endif
     } else {
         if (CompareTorchDtype<float>(point_type)) {

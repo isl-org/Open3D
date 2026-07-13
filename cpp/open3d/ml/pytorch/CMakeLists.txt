@@ -1,5 +1,7 @@
 if(BUILD_CUDA_MODULE)
     message(STATUS "Building PyTorch ops with CUDA")
+elseif(BUILD_SYCL_MODULE)
+    message(STATUS "Building PyTorch ops with SYCL")
 else()
     message(STATUS "Building PyTorch ops")
 endif()
@@ -114,6 +116,53 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (BUILD_SYCL_MODULE)
+    # Convolution op SYCL kernels (use sycl-tla for GEMM)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        continuous_conv/ContinuousConvBackpropFilterOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvTransposeBackpropFilterOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvTransposeOpKernelSYCL.cpp
+    )
+
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernelSYCL.cpp
+        sparse_conv/SparseConvOpKernelSYCL.cpp
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernelSYCL.cpp
+        sparse_conv/SparseConvTransposeOpKernelSYCL.cpp
+    )
+
+    # Misc op SYCL kernels (use oneDPL for scan/sort)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        misc/BuildSpatialHashTableOpKernelSYCL.cpp
+        misc/FixedRadiusSearchOpKernelSYCL.cpp
+        misc/InvertNeighborsListOpKernelSYCL.cpp
+        misc/RaggedToDenseOpKernelSYCL.cpp
+        misc/ReduceSubarraysSumOpKernelSYCL.cpp
+        misc/VoxelizeOpKernelSYCL.cpp
+    )
+
+    # PointNet and PVCNN SYCL kernels
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        pointnet/BallQueryKernelSYCL.cpp
+        pointnet/InterpolateKernelSYCL.cpp
+        pointnet/SamplingKernelSYCL.cpp
+        pvcnn/TrilinearDevoxelizeKernelSYCL.cpp
+    )
+
+    # Shared impl SYCL kernel files (im2col, normalizer reductions)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        ../impl/continuous_conv/ContinuousConvSYCLKernels.cpp
+        ../impl/sparse_conv/SparseConvSYCLKernels.cpp
+    )
+
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_sycl_tla
+        Open3D::3rdparty_sycl
+        ${TORCH_LIBRARIES}
+    )
+endif()
+
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 open3d_set_global_properties(open3d_torch_ops)
 
@@ -126,7 +175,7 @@ endif()
 # bundle both the CPU- and CUDA-linked ops (loaded by device at runtime).
 get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TORCH_OPS_ARCH_DIR
-    "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,$<IF:$<BOOL:${BUILD_SYCL_MODULE}>,sycl,cpu>>")
 set_target_properties(open3d_torch_ops PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"
     ARCHIVE_OUTPUT_DIRECTORY "${TORCH_OPS_ARCH_DIR}"

@@ -24,3 +24,12 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
         const torch::Tensor& inp_neighbors_row_splits,
         const torch::Tensor& inp_neighbors_attributes);
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class TIndex, class TAttr>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListSYCL(
+        int64_t num_points,
+        const torch::Tensor& inp_neighbors_index,
+        const torch::Tensor& inp_neighbors_row_splits,
+        const torch::Tensor& inp_neighbors_attributes);
+#endif

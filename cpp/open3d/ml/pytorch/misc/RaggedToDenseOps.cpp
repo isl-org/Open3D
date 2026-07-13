@@ -71,6 +71,18 @@ torch::Tensor RaggedToDense(torch::Tensor values,
 #else
         TORCH_CHECK(false, "RaggedToDense was not compiled with CUDA support")
 #endif
+    } else if (values.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL(uint8_t, RaggedToDenseSYCL)
+        CALL(int8_t, RaggedToDenseSYCL)
+        CALL(int16_t, RaggedToDenseSYCL)
+        CALL(int32_t, RaggedToDenseSYCL)
+        CALL(int64_t, RaggedToDenseSYCL)
+        CALL(float, RaggedToDenseSYCL)
+        CALL(double, RaggedToDenseSYCL)
+#else
+        TORCH_CHECK(false, "RaggedToDense was not compiled with SYCL support")
+#endif
     } else {
         CALL(uint8_t, RaggedToDenseCPU)
         CALL(int8_t, RaggedToDenseCPU)
