@@ -9,7 +9,7 @@ open3d.visualization.Visualizer, used when no display is available."""
 
 import platform
 import os
-from multiprocessing import Process
+import multiprocessing
 import numpy as np
 import pytest
 
@@ -41,7 +41,16 @@ def capture_headless():
 def test_legacy_visualizer_headless_capture():
     """Test that the legacy Visualizer can render offscreen via EGL when no
     windowing system display is available, in the standard Open3D binary."""
-    proc = Process(target=capture_headless)
+    # Use "spawn" (not the default "fork") to start from a clean interpreter.
+    # Other tests in this pytest session may have already imported
+    # TensorFlow, which bundles its own LLVM inside libtensorflow_framework.
+    # A forked child inherits that already-loaded, symbol-versioned LLVM; on
+    # GPU-less machines Mesa's software rasterizer (llvmpipe) resolves its
+    # LLVM JIT calls (e.g. LLVMBuildGEP2) against the wrong LLVM copy,
+    # corrupting memory and segfaulting. "spawn" avoids inheriting any of
+    # the parent's loaded shared libraries.
+    ctx = multiprocessing.get_context("spawn")
+    proc = ctx.Process(target=capture_headless)
     proc.start()
     proc.join(timeout=30)
     if proc.exitcode is None:
