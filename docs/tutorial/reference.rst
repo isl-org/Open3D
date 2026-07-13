@@ -6,11 +6,13 @@ Reference
 .. [ArujoAndOliveira2020] A. Araújo and M. Oliveira, A robust statistics approach for plane detection in unorganized point clouds, Pattern Recognition, 2020
 .. [Bernardini1999] F. Bernardini and J. Mittleman and HRushmeier and C. Silva and G. Taubin: The ball-pivoting algorithm for surface reconstruction, IEEE transactions on visualization and computer graphics, 5(4), 349-359, 1999
 .. [BeslAndMcKay1992] Paul J. Besl and Neil D. McKay, A Method for Registration of 3D Shapes, PAMI, 1992.
+.. [BiberAndStrasser2003] P. Biber and W. Straßer, The Normal Distributions Transform: A New Approach to Laser Scan Matching, Proceedings of the 2003 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS 2003), vol. 3, pp. 2743-2748, IEEE, 2003.
 .. [ChenAndMedioni1992] Y. Chen and G. G. Medioni, Object modelling by registration of multiple range images, Image and Vision Computing, 10(3), 1992.
 .. [Choi2015] S. Choi, Q.-Y. Zhou, and V. Koltun, Robust Reconstruction of Indoor Scenes, CVPR, 2015.
 .. [Curless1996] B. Curless and M. Levoy. A volumetric method for building complex models from range images. In SIGGRAPH, 1996.
 .. [Edelsbrunner1983] H. Edelsbrunner and D. G. Kirkpatrick and R. Seidel: On the shape of a set of points in the plane, IEEE Transactions on Information Theory, 29 (4): 551–559, 1983
 .. [Ester1996] M. Ester and H.-P. Kriegel and J Sander and X. Xu, A density-based algorithm for discovering clusters in large spatial databases with noise, KDD, 1996.
+.. [Gao2023] X. Gao, SLAM Technology in Autonomous Driving and Robotics: From Theory to Practice (in Chinese), Publishing House of Electronics Industry, 2023.
 .. [Katz2007] S. Katz and A. Tal and R. Basri, Direct visibility of point sets, SIGGRAPH, 2007.
 .. [Kazhdan2006] M. Kazhdan and M. Bolitho and H. Hoppe: Poisson surface reconstruction, Eurographics, 2006.
 .. [Knapitsch2017] A. Knapitsch and J. Park and Q. Zhou and V. Koltun: Tanks and Temples: Benchmarking Large-Scale Scene Reconstruction, ACM Transactions on Graphics, vol 36 (4), 2017

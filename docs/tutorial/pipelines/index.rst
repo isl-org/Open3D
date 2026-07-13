@@ -4,6 +4,7 @@ Pipelines
 .. toctree::
 
     icp_registration
+    ndt_registration
     generalized_icp
     robust_kernels
     colored_pointcloud_registration

@@ -17,6 +17,7 @@ target_sources(tests PRIVATE
     registration/Feature.cpp
     registration/GlobalOptimization.cpp
     registration/GlobalOptimizationConvergenceCriteria.cpp
+    registration/NormalDistributionsTransform.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
