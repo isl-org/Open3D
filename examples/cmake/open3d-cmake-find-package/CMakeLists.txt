@@ -16,7 +16,17 @@ endif()
 # Find installed Open3D, which exports Open3D::Open3D
 find_package(Open3D REQUIRED)
 
+# find_package(Open3D) transitively loads dependency configs, some of which call
+# cmake_minimum_required()/cmake_policy() with an old version and can reset
+# CMP0091 away from NEW in this scope. With CMP0091 not NEW, CMAKE_MSVC_RUNTIME_LIBRARY
+# is silently ignored and MSVC defaults the target to the static runtime (/MT),
+# which then fails to link (LNK2038) against a dynamic-runtime (/MD) Open3D.
+# Re-assert the policy and the runtime library right before creating the target so
+# the selection above is always honored, regardless of the runtime Open3D uses.
+cmake_policy(SET CMP0091 NEW)
+
 add_executable(Draw)
+set_target_properties(Draw PROPERTIES MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")
 target_sources(Draw PRIVATE Draw.cpp)
 target_link_libraries(Draw PRIVATE Open3D::Open3D)
 
