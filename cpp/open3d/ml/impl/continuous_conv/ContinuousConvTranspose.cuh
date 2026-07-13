@@ -8,8 +8,7 @@
 #pragma once
 #define EIGEN_USE_GPU
 
-#include <cutlass/gemm/gemm.h>
-#include <cutlass/gemm/sgemm_traits.h>
+#include <cutlass/gemm/device/gemm.h>
 
 #include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
@@ -102,14 +101,12 @@ void CConvTransposeComputeFeaturesCUDA(
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
-    typedef cutlass::gemm::SgemmTraits<
-            cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix
-            cutlass::MatrixLayout::kColumnMajor,  // layout of B matrix
-            cutlass::Shape<8, 64, 64>             // threadblock tile size
-            >
-            GemmTraits;
-
-    typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
+    // SGEMM: C = alpha * A * B + beta * C using CUTLASS v2 device API.
+    using Gemm = cutlass::gemm::device::Gemm<
+            float, cutlass::layout::ColumnMajor,  // A: filter (column-major)
+            float, cutlass::layout::ColumnMajor,  // B: columns (column-major)
+            float, cutlass::layout::ColumnMajor   // C/D: output (column-major)
+            >;
 
     TFeat* columns = (TFeat*)mem_columns.first;
 
@@ -130,7 +127,6 @@ void CConvTransposeComputeFeaturesCUDA(
                 interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize);
 
-        typename Gemm::Params params;
         // C is MxN
         // B is KxN
         // A is MxK
@@ -146,28 +142,17 @@ void CConvTransposeComputeFeaturesCUDA(
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         int ldc = m;
 
-        int result =
-                params.initialize(m,      // GEMM M dimension
-                                  n,      // GEMM N dimension
-                                  k,      // GEMM K dimension
-                                  alpha,  // scalar alpha
-                                  A,      // matrix A operand
-                                  lda,
-                                  B,  // matrix B operand
-                                  ldb,
-                                  beta,  // scalar beta
-                                  C,     // source matrix C
-                                  ldc,
-                                  C,  // destination matrix C (may be different
-                                      // memory than source C matrix)
-                                  ldc);
-
-        if (result) {
-            throw std::runtime_error(
-                    "Failed to initialize CUTLASS Gemm::Params object.");
+        Gemm gemm_op;
+        cutlass::Status status = gemm_op({{m, n, k},
+                                          {A, lda},
+                                          {B, ldb},
+                                          {C, ldc},
+                                          {C, ldc},
+                                          {alpha, beta}},
+                                         nullptr, stream);
+        if (status != cutlass::Status::kSuccess) {
+            throw std::runtime_error("CUTLASS GEMM failed.");
         }
-
-        Gemm::launch(params, stream);
     }
 
     if (out_importance) {

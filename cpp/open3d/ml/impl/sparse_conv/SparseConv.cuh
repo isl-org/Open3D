@@ -9,8 +9,7 @@
 
 #define EIGEN_USE_GPU
 
-#include <cutlass/gemm/gemm.h>
-#include <cutlass/gemm/sgemm_traits.h>
+#include <cutlass/gemm/device/gemm.h>
 
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
@@ -151,15 +150,12 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
-    typedef cutlass::gemm::SgemmTraits<
-            cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix (filter)
-            cutlass::MatrixLayout::kColumnMajor,  // layout of B matrix
-                                                  // (columns)
-            cutlass::Shape<8, 64, 64>             // threadblock tile size
-            >
-            GemmTraits;
-
-    typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
+    // SGEMM: C = alpha * A * B + beta * C using CUTLASS v2 device API.
+    using Gemm = cutlass::gemm::device::Gemm<
+            float, cutlass::layout::ColumnMajor,  // A: filter (column-major)
+            float, cutlass::layout::ColumnMajor,  // B: columns (column-major)
+            float, cutlass::layout::ColumnMajor   // C/D: output (column-major)
+            >;
 
     // this is the pointer to the patch matrix
     TFeat* columns = (TFeat*)mem_columns.first;
@@ -194,27 +190,17 @@ void SparseConvComputeFeaturesCUDA(const cudaStream_t& stream,
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         int ldc = m;
 
-        typename Gemm::Params params;
-        int result = params.initialize(m,      // GEMM M dimension
-                                       n,      // GEMM N dimension
-                                       k,      // GEMM K dimension
-                                       alpha,  // scalar alpha
-                                       A,      // matrix A operand
-                                       lda,
-                                       B,  // matrix B operand
-                                       ldb,
-                                       beta,  // scalar beta
-                                       C,     // source matrix C
-                                       ldc,
-                                       C,  // destination matrix C
-                                       ldc);
-
-        if (result) {
-            throw std::runtime_error(
-                    "Failed to initialize CUTLASS Gemm::Params object.");
+        Gemm gemm_op;
+        cutlass::Status status = gemm_op({{m, n, k},
+                                          {A, lda},
+                                          {B, ldb},
+                                          {C, ldc},
+                                          {C, ldc},
+                                          {alpha, beta}},
+                                         nullptr, stream);
+        if (status != cutlass::Status::kSuccess) {
+            throw std::runtime_error("CUTLASS GEMM failed.");
         }
-
-        Gemm::launch(params, stream);
     }
 }
 

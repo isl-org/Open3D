@@ -1685,6 +1685,34 @@ if(BUILD_SYCL_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_sycl)
 endif()
 
+# sycl-tla: SYCL Templates for Linear Algebra (Intel fork of CUTLASS v4.2.1).
+# Provides CUTLASS-compatible headers for Intel GPU ML ops via SYCL.
+# Actual kernel porting is handled separately; this only sets up the include path.
+if(BUILD_SYCL_MODULE)
+    if(USE_SYSTEM_SYCL_TLA)
+        find_path(3rdparty_sycl_tla_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_sycl_tla_INCLUDE_DIR)
+            add_library(3rdparty_sycl_tla INTERFACE)
+            target_include_directories(3rdparty_sycl_tla INTERFACE
+                ${3rdparty_sycl_tla_INCLUDE_DIR})
+            add_library(Open3D::3rdparty_sycl_tla ALIAS 3rdparty_sycl_tla)
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_sycl_tla EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_SYCL_TLA OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_SYCL_TLA)
+        include(${Open3D_3RDPARTY_DIR}/sycl_tla/sycl_tla.cmake)
+        open3d_import_3rdparty_library(3rdparty_sycl_tla
+            INCLUDE_DIRS ${SYCL_TLA_INCLUDE_DIRS}
+            DEPENDS      ext_sycl_tla
+        )
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_sycl_tla)
+endif()
+
 if(BUILD_SYCL_MODULE)
     set(OPEN3D_USE_ONEAPI_PACKAGES ON CACHE BOOL "Use the oneAPI distribution of MKL/TBB." FORCE)
 else()
