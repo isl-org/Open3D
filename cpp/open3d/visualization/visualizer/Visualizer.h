@@ -237,6 +237,15 @@ protected:
     /// directly, so that the same code path works both windowed and headless.
     void MakeContextCurrent();
 
+    /// \brief Whether the window/context should stay open, mirroring
+    /// `!glfwWindowShouldClose(window_)` but also covering headless mode
+    /// (where should_close_ is used in place of a GLFW window-close flag).
+    bool ShouldRemainOpen() const;
+
+    /// \brief Request that the window/context close, mirroring
+    /// glfwSetWindowShouldClose() but also covering headless mode.
+    void RequestClose();
+
     /// Function to initialize OpenGL
     virtual bool InitOpenGL();
 

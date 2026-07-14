@@ -30,10 +30,9 @@ target_sources(visualization PRIVATE
     utility/SelectionPolygonVolume.cpp
 )
 
-if (NOT APPLE AND NOT WIN32)
+if (UNIX AND NOT APPLE)
     target_sources(visualization PRIVATE
         visualizer/EGLOffscreenContext.cpp
-        visualizer/CrashBacktrace.cpp
     )
 endif()
 

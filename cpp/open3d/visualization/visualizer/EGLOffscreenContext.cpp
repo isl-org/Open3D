@@ -73,8 +73,8 @@ EGLDisplay GetHardwareDisplay() {
 
 std::unique_ptr<EGLOffscreenContext> EGLOffscreenContext::Create(int width,
                                                                  int height) {
-    // Constructor is private; use a raw new/reset via a helper deleter-free
-    // pattern since std::make_unique cannot access it.
+    // std::make_unique can't call the private constructor; construct
+    // directly instead.
     std::unique_ptr<EGLOffscreenContext> ctx(new EGLOffscreenContext());
     if (!ctx->Initialize(width, height)) {
         return nullptr;

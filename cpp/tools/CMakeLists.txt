@@ -13,7 +13,7 @@ macro(open3d_add_tool TOOL_NAME)
 endmacro()
 
 open3d_add_tool(ConvertPointCloud)
-if (NOT APPLE AND NOT WIN32)
+if (UNIX AND NOT APPLE)
     # GLInfo falls back to an offscreen EGL context to report GPU info when
     # no windowing system display is available.
     find_package(OpenGL COMPONENTS EGL)

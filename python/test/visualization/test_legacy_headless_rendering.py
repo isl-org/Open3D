@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Tests GPU-accelerated offscreen rendering fallback (EGL) for the legacy
-open3d.visualization.Visualizer, used when no display is available."""
+open3d.visualization.Visualizer, used when no display is available. See also
+test_cpu_rendering.py, which covers the new Filament-based
+open3d.visualization.rendering.OffscreenRenderer's CPU (software) rendering."""
 
 import platform
 import os
@@ -16,7 +18,7 @@ import pytest
 
 def capture_headless():
     """Runs in a separate process with no DISPLAY/WAYLAND_DISPLAY, forcing
-    Visualizer to fall back to its offscreen EGL context."""
+    the Visualizer to fall back to its offscreen EGL context."""
     os.environ.pop("DISPLAY", None)
     os.environ.pop("WAYLAND_DISPLAY", None)
     import open3d as o3d

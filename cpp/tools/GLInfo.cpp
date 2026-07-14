@@ -8,7 +8,7 @@
 #include "open3d/Open3D.h"
 
 #if defined(__linux__)
-#include <EGL/egl.h>
+#include "open3d/visualization/visualizer/EGLOffscreenContext.h"
 #endif
 
 void GLFWErrorCallback(int error, const char *description) {
@@ -16,61 +16,18 @@ void GLFWErrorCallback(int error, const char *description) {
 }
 
 #if defined(__linux__)
-// Minimal EGL offscreen context used only to report GPU info when no
-// windowing system display is available (mirrors the fallback used by
-// open3d::visualization::Visualizer::CreateVisualizerWindow()).
+// Report GPU info via the same offscreen EGL context that
+// open3d::visualization::Visualizer::CreateVisualizerWindow() falls back to
+// when no windowing system display is available, so this reflects what the
+// Visualizer will actually use.
 void ReportEGLGLInfo() {
     using namespace open3d;
 
-    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    EGLint major = 0, minor = 0;
-    if (display == EGL_NO_DISPLAY || !eglInitialize(display, &major, &minor)) {
+    auto context = visualization::EGLOffscreenContext::Create(640, 480);
+    if (!context) {
         utility::LogWarning(
                 "GLInfo: no display and no EGL device available; cannot "
                 "query GPU info.");
-        return;
-    }
-    utility::LogInfo("GLInfo: using EGL {}.{} offscreen context", major, minor);
-
-    // Single cleanup path: surface/context are destroyed (harmless on
-    // EGL_NO_SURFACE/EGL_NO_CONTEXT) and the display terminated on every
-    // exit, including early returns below.
-    EGLSurface surface = EGL_NO_SURFACE;
-    EGLContext context = EGL_NO_CONTEXT;
-    auto cleanup = [&]() {
-        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-        eglDestroyContext(display, context);
-        eglDestroySurface(display, surface);
-        eglTerminate(display);
-    };
-
-    if (!eglBindAPI(EGL_OPENGL_API)) {
-        utility::LogWarning("GLInfo: eglBindAPI(EGL_OPENGL_API) failed.");
-        cleanup();
-        return;
-    }
-    const EGLint config_attribs[] = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
-                                     EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-                                     EGL_NONE};
-    EGLConfig config;
-    EGLint num_configs = 0;
-    if (!eglChooseConfig(display, config_attribs, &config, 1, &num_configs) ||
-        num_configs == 0) {
-        utility::LogWarning("GLInfo: eglChooseConfig failed.");
-        cleanup();
-        return;
-    }
-    const EGLint pbuffer_attribs[] = {EGL_WIDTH, 640, EGL_HEIGHT, 480,
-                                      EGL_NONE};
-    surface = eglCreatePbufferSurface(display, config, pbuffer_attribs);
-    const EGLint context_attribs[] = {EGL_CONTEXT_MAJOR_VERSION, 3,
-                                      EGL_CONTEXT_MINOR_VERSION, 3, EGL_NONE};
-    context =
-            eglCreateContext(display, config, EGL_NO_CONTEXT, context_attribs);
-    if (surface == EGL_NO_SURFACE || context == EGL_NO_CONTEXT ||
-        !eglMakeCurrent(display, surface, surface, context)) {
-        utility::LogWarning("GLInfo: failed to create/activate EGL context.");
-        cleanup();
         return;
     }
 
@@ -80,8 +37,6 @@ void ReportEGLGLInfo() {
                      reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     utility::LogInfo("GL_VENDOR:\t{}",
                      reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
-
-    cleanup();
 }
 #endif  // defined(__linux__)
 

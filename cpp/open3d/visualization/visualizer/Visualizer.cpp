@@ -301,6 +301,18 @@ void Visualizer::MakeContextCurrent() {
     glfwMakeContextCurrent(window_);
 }
 
+bool Visualizer::ShouldRemainOpen() const {
+    return headless_ ? !should_close_ : !glfwWindowShouldClose(window_);
+}
+
+void Visualizer::RequestClose() {
+    if (headless_) {
+        should_close_ = true;
+    } else {
+        glfwSetWindowShouldClose(window_, GL_TRUE);
+    }
+}
+
 void Visualizer::RegisterAnimationCallback(
         std::function<bool(Visualizer *)> callback_func) {
     animation_callback_func_ = callback_func;
@@ -358,11 +370,7 @@ void Visualizer::Run() {
 }
 
 void Visualizer::Close() {
-    if (headless_) {
-        should_close_ = true;
-    } else {
-        glfwSetWindowShouldClose(window_, GL_TRUE);
-    }
+    RequestClose();
     utility::LogDebug("[Visualizer] Window closing.");
 }
 
@@ -376,16 +384,13 @@ bool Visualizer::WaitEvents() {
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
     if (headless_) {
-        // There are no windowing system events to wait for in headless/EGL
-        // mode. WaitEvents() is documented to block, so without an
-        // animation callback, Run()'s `while (WaitEvents())` loop would
-        // otherwise busy-spin at 100% CPU until Close() is called; sleep
-        // briefly to approximate blocking behavior instead.
+        // No windowing events to wait for headlessly; sleep briefly instead
+        // of busy-spinning until Close() is called.
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        return !should_close_;
+    } else {
+        glfwWaitEvents();
     }
-    glfwWaitEvents();
-    return !glfwWindowShouldClose(window_);
+    return ShouldRemainOpen();
 }
 
 bool Visualizer::PollEvents() {
@@ -397,11 +402,10 @@ bool Visualizer::PollEvents() {
         WindowRefreshCallback(window_);
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
-    if (headless_) {
-        return !should_close_;
+    if (!headless_) {
+        glfwPollEvents();
     }
-    glfwPollEvents();
-    return !glfwWindowShouldClose(window_);
+    return ShouldRemainOpen();
 }
 
 bool Visualizer::AddGeometry(
@@ -552,7 +556,7 @@ void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
-    if (!window_) {  // no-op headless: no window/monitor concept
+    if (headless_) {  // no-op headless: no window/monitor concept
         return;
     }
     if (!fullscreen) {
@@ -590,7 +594,7 @@ void Visualizer::ToggleFullScreen() {
 }
 
 bool Visualizer::IsFullScreen() {
-    return window_ && glfwGetWindowMonitor(window_) != nullptr;
+    return !headless_ && glfwGetWindowMonitor(window_) != nullptr;
 }
 
 void Visualizer::PrintVisualizerHelp() {

@@ -130,11 +130,8 @@ void Visualizer::Render(bool render_screen) {
 
     if (headless_) {
 #if defined(__linux__)
-        // EGL pbuffers formally report EGL_RENDER_BUFFER == EGL_BACK_BUFFER,
-        // so (as with the windowed GLFW path) the just-rendered content must
-        // be swapped to the front buffer before InitOpenGL's
-        // glReadBuffer(GL_FRONT) can see it, e.g. from
-        // CaptureScreenFloatBuffer(do_render=false).
+        // Swap to front buffer so glReadBuffer(GL_FRONT) sees the
+        // just-rendered content (e.g. CaptureScreenFloatBuffer).
         if (egl_context_) {
             egl_context_->SwapBuffers();
         }

@@ -412,8 +412,7 @@ cpu-shared-ml_export_env() {
     export CCACHE_TAR_NAME=open3d-ci-cpu
     # Keep in sync with the "Set up Python" step for the build-docs job in
     # .github/workflows/ubuntu.yml, which installs this wheel and therefore
-    # needs a matching interpreter version (wheels are ABI-tagged per minor
-    # version).
+    # needs a matching interpreter version.
     export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
