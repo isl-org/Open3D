@@ -475,17 +475,24 @@ struct O3DVisualizer::Impl {
         settings.view_panel->AddChild(GiveOwnership(h));
         settings.view_panel->AddFixed(half_em);
 
-        auto *reset = new SmallButton("Reset Camera");
+        auto* reset = new SmallButton("Reset");
         reset->SetOnClicked([this]() { this->ResetCameraToDefault(); });
 
-        auto *copy_view = new SmallButton("Copy View");
+        auto* copy_view = new SmallButton("Copy");
         copy_view->SetOnClicked([this]() { this->CopyViewToClipboard(); });
+
+        auto* paste_view = new SmallButton("Paste");
+        paste_view->SetOnClicked([this]() { this->PasteViewFromClipboard(); });
 
         h = new Horiz(v_spacing);
         h->AddStretch();
+        h->AddChild(std::make_shared<Label>("View:"));
+        h->AddFixed(v_spacing);
         h->AddChild(GiveOwnership(reset));
         h->AddFixed(v_spacing);
         h->AddChild(GiveOwnership(copy_view));
+        h->AddFixed(v_spacing);
+        h->AddChild(GiveOwnership(paste_view));
         h->AddStretch();
         settings.view_panel->AddChild(GiveOwnership(h));
 
@@ -2159,7 +2166,58 @@ Ctrl-alt-click to polygon select)";
         utility::LogInfo("View parameters copied to clipboard.");
     }
 
-    void ExportCurrentImage(const std::string &path) {
+    /// Pastes camera parameters from the clipboard if they are valid.
+    void PasteViewFromClipboard() {
+        std::string clipboard = window_->GetClipboardText();
+        if (clipboard.empty()) {
+            utility::LogWarning("Clipboard is empty or could not be accessed.");
+            return;
+        }
+
+        try {
+            Json::Value root = utility::StringToJson(clipboard);
+            if (!root.isObject()) {
+                utility::LogWarning(
+                        "Invalid clipboard data for view parameters.");
+                return;
+            }
+
+            Eigen::Vector3d lookat, eye, up;
+            if (!utility::IJsonConvertible::EigenVector3dFromJsonArray(
+                        lookat, root["lookat"]) ||
+                !utility::IJsonConvertible::EigenVector3dFromJsonArray(
+                        eye, root["eye"]) ||
+                !utility::IJsonConvertible::EigenVector3dFromJsonArray(
+                        up, root["up"])) {
+                utility::LogWarning(
+                        "Viewport JSON is missing lookat, eye, or up vectors.");
+                return;
+            }
+
+            double fov = root.get("field_of_view", 60.0).asDouble();
+            double near_plane = root.get("near_plane", 0.1).asDouble();
+            double far_plane = root.get("far_plane", 1000.0).asDouble();
+
+            auto* camera = scene_->GetScene()->GetCamera();
+            auto fov_type = camera->GetFieldOfViewType();
+            auto frame = scene_->GetFrame();
+            double aspect =
+                    (frame.height > 0)
+                            ? (double(frame.width) / double(frame.height))
+                            : 1.0;
+
+            camera->SetProjection(fov, aspect, near_plane, far_plane, fov_type);
+            scene_->LookAt(lookat.cast<float>(), eye.cast<float>(),
+                           up.cast<float>());
+            scene_->ForceRedraw();
+            utility::LogInfo("View parameters pasted from clipboard.");
+        } catch (const std::exception& e) {
+            utility::LogWarning("Failed to parse clipboard view parameters: {}",
+                                e.what());
+        }
+    }
+
+    void ExportCurrentImage(const std::string& path) {
         scene_->EnableSceneCaching(false);
         scene_->GetScene()->GetScene()->RenderToImage(
                 [this, path](std::shared_ptr<geometry::Image> image) mutable {
@@ -2689,7 +2747,11 @@ void O3DVisualizer::ExportCurrentImage(const std::string &path) {
 
 void O3DVisualizer::CopyViewToClipboard() { impl_->CopyViewToClipboard(); }
 
-void O3DVisualizer::Layout(const gui::LayoutContext &context) {
+void O3DVisualizer::PasteViewFromClipboard() {
+    impl_->PasteViewFromClipboard();
+}
+
+void O3DVisualizer::Layout(const gui::LayoutContext& context) {
     auto em = context.theme.font_size;
     int settings_width = 16 * context.theme.font_size;
 #if !GROUPS_USE_TREE

@@ -581,6 +581,11 @@ void GLFWWindowSystem::SetClipboardText(OSWindow w, const char* text) {
     glfwSetClipboardString(static_cast<GLFWwindow*>(w), text);
 }
 
+std::string GLFWWindowSystem::GetClipboardText(OSWindow w) {
+    const char* str = glfwGetClipboardString(static_cast<GLFWwindow*>(w));
+    return str ? std::string(str) : "";
+}
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

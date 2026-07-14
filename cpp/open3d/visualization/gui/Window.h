@@ -143,6 +143,9 @@ public:
     /// Copies text to the system clipboard.
     void SetClipboardText(const std::string& text);
 
+    /// Gets text from the system clipboard.
+    std::string GetClipboardText() const;
+
     /// This is for internal use in rare circumstances when the destructor
     /// will not be called in a timely fashion.
     void DestroyWindow();
