@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -56,15 +55,11 @@ bool CheckAttributeSize(const std::vector<float>& attribute,
     return true;
 }
 
-bool SaveSpzCloud(const spz::GaussianCloud& cloud, const std::string& filename) {
-    const spz::PackOptions options{4, spz::CoordinateSystem::UNSPECIFIED,
-                                   spz::DEFAULT_SH1_BITS,
-                                   spz::DEFAULT_SH_REST_BITS};
-    if (!spz::saveSpz(cloud, options, filename)) {
-        utility::LogWarning("Write SPZ failed for {}.", filename);
-        return false;
-    }
-    return true;
+// Number of higher-order (non-DC) SH coefficients per channel-triplet.
+size_t ShRestCoefficientCount(int sh_degree) {
+    return sh_degree > 0
+                   ? static_cast<size_t>((sh_degree + 1) * (sh_degree + 1) - 1)
+                   : 0;
 }
 
 }  // namespace
@@ -92,11 +87,7 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
         return false;
     }
     const size_t num_points = static_cast<size_t>(cloud.numPoints);
-    const size_t sh_coefficients =
-            cloud.shDegree > 0
-                    ? static_cast<size_t>(
-                              (cloud.shDegree + 1) * (cloud.shDegree + 1) - 1)
-                    : 0;
+    const size_t sh_coefficients = ShRestCoefficientCount(cloud.shDegree);
     if (!CheckAttributeSize(cloud.positions, num_points * 3, "positions") ||
         !CheckAttributeSize(cloud.scales, num_points * 3, "scales") ||
         !CheckAttributeSize(cloud.rotations, num_points * 4, "rotations") ||
@@ -104,7 +95,6 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
         !CheckAttributeSize(cloud.colors, num_points * 3, "colors") ||
         !CheckAttributeSize(cloud.sh, num_points * sh_coefficients * 3,
                             "spherical harmonics")) {
-        utility::LogWarning("Read SPZ failed: invalid data in {}.", filename);
         return false;
     }
 
@@ -112,8 +102,7 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
     const core::Device device("CPU:0");
     const int64_t n = static_cast<int64_t>(num_points);
 
-    core::Tensor positions =
-            core::Tensor::Empty({n, 3}, core::Float32, device);
+    core::Tensor positions = core::Tensor::Empty({n, 3}, core::Float32, device);
     std::copy(cloud.positions.begin(), cloud.positions.end(),
               positions.GetDataPtr<float>());
     pointcloud.SetPointPositions(positions);
@@ -125,8 +114,7 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
     }
     pointcloud.SetPointAttr("scale", scales);
 
-    core::Tensor rotations =
-            core::Tensor::Empty({n, 4}, core::Float32, device);
+    core::Tensor rotations = core::Tensor::Empty({n, 4}, core::Float32, device);
     float* rotation_data = rotations.GetDataPtr<float>();
     for (size_t i = 0; i < num_points; ++i) {
         // SPZ xyzw -> Open3D wxyz.
@@ -156,12 +144,11 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
         pointcloud.SetPointAttr("f_rest", f_rest);
     }
 
-    // SPZ header flag; Open3D applies this at render time via MaterialRecord.
     if (cloud.antialiased) {
         utility::LogInfo(
-                "SPZ file {} has antialiased=true. For matching mip-splat "
-                "density compensation when rendering, set "
-                "mat.gaussian_splat_antialias = True on the MaterialRecord.",
+                "SPZ file {} has antialiased=true; set "
+                "MaterialRecord.gaussian_splat_antialias to match at "
+                "render time.",
                 filename);
     }
 
@@ -184,12 +171,10 @@ bool WritePointCloudToSPZ(const std::string& filename,
     }
 
     const geometry::TensorMap& attributes = pointcloud.GetPointAttr();
-    const int64_t num_points = pointcloud.GetPointPositions().GetLength();
+    const size_t num_points =
+            static_cast<size_t>(pointcloud.GetPointPositions().GetLength());
     const int sh_degree = pointcloud.GaussianSplatGetSHOrder();
-    const size_t sh_coefficients =
-            sh_degree > 0
-                    ? static_cast<size_t>((sh_degree + 1) * (sh_degree + 1) - 1)
-                    : 0;
+    const size_t sh_coefficients = ShRestCoefficientCount(sh_degree);
 
     auto to_float32_cpu = [&attributes](const char* name) {
         return attributes.at(name)
@@ -208,19 +193,20 @@ bool WritePointCloudToSPZ(const std::string& filename,
     cloud.shDegree = sh_degree;
     cloud.antialiased = params.gaussian_splat_antialias;
     cloud.positions = positions.ToFlatVector<float>();
-    cloud.scales = scales.ToFlatVector<float>();
-    cloud.rotations.resize(static_cast<size_t>(num_points) * 4);
     cloud.alphas = opacity.ToFlatVector<float>();
     cloud.colors = f_dc.ToFlatVector<float>();
 
-    // Linear -> log scale for SPZ packing.
+    // Linear -> log scale for SPZ packing, in a single pass.
+    cloud.scales.resize(num_points * 3);
+    const float* scale_data = scales.GetDataPtr<float>();
     for (size_t i = 0; i < cloud.scales.size(); ++i) {
-        cloud.scales[i] = std::log(std::max(cloud.scales[i], kMinimumScale));
+        cloud.scales[i] = std::log(std::max(scale_data[i], kMinimumScale));
     }
 
-    // Open3D wxyz -> SPZ xyzw.
+    cloud.rotations.resize(num_points * 4);
     const float* rotation_data = rotations.GetDataPtr<float>();
-    for (size_t i = 0; i < static_cast<size_t>(num_points); ++i) {
+    for (size_t i = 0; i < num_points; ++i) {
+        // Open3D wxyz -> SPZ xyzw.
         cloud.rotations[4 * i + 0] = rotation_data[4 * i + 1];
         cloud.rotations[4 * i + 1] = rotation_data[4 * i + 2];
         cloud.rotations[4 * i + 2] = rotation_data[4 * i + 3];
@@ -232,7 +218,14 @@ bool WritePointCloudToSPZ(const std::string& filename,
         cloud.sh = f_rest.ToFlatVector<float>();
     }
 
-    return SaveSpzCloud(cloud, filename);
+    const spz::PackOptions options{4, spz::CoordinateSystem::UNSPECIFIED,
+                                   spz::DEFAULT_SH1_BITS,
+                                   spz::DEFAULT_SH_REST_BITS};
+    if (!spz::saveSpz(cloud, options, filename)) {
+        utility::LogWarning("Write SPZ failed for {}.", filename);
+        return false;
+    }
+    return true;
 }
 
 }  // namespace io

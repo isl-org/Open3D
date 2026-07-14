@@ -168,9 +168,8 @@ When writing PLY from a Gaussian splat cloud, ``write_point_cloud`` converts
                bool compressed, bool print_progress,
                bool gaussian_splat_antialias) {
                 py::gil_scoped_release release;
-                open3d::io::WritePointCloudOption params{write_ascii,
-                                                         compressed,
-                                                         print_progress};
+                open3d::io::WritePointCloudOption params{
+                        write_ascii, compressed, print_progress};
                 params.gaussian_splat_antialias = gaussian_splat_antialias;
                 return WritePointCloud(filename.string(), pointcloud, params);
             },

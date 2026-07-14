@@ -147,7 +147,8 @@ struct WritePointCloudOption {
     std::function<bool(double)> update_progress;
     /// When writing SPZ Gaussian splat files, sets the packed header
     /// ``antialiased`` flag (mip-splat density compensation). Ignored by other
-    /// formats. Matches MaterialRecord::gaussian_splat_antialias at render time.
+    /// formats. Matches MaterialRecord::gaussian_splat_antialias at render
+    /// time.
     bool gaussian_splat_antialias = false;
 };
 
