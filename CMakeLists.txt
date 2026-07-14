@@ -57,12 +57,12 @@ option(BUILD_GUI                  "Builds new GUI"                           ON 
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPP                "Use Intel Integrated Performance Primitives" ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-if(BUILD_SHARED_LIBS)
+option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SHARED_LIBS OR WIN32 AND BUILD_SYCL_MODULE)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
-option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
     set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING
     "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
@@ -72,6 +72,16 @@ if(BUILD_SYCL_MODULE)
 )
     set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
     set(BUILD_CUDA_MODULE OFF CACHE BOOL "Build the CUDA module" FORCE)
+    # icx -fsycl rejects the static MSVC runtime (/MT, /MTd). Force the dynamic
+    # runtime once here so all targets and 3rdparty deps that read
+    # STATIC_WINDOWS_RUNTIME get /MD without per-file SYCL special cases.
+    if(WIN32 AND STATIC_WINDOWS_RUNTIME)
+        message(WARNING
+            "IntelLLVM does not support STATIC_WINDOWS_RUNTIME=ON with -fsycl."
+            "Forcing STATIC_WINDOWS_RUNTIME=OFF.")
+        set(STATIC_WINDOWS_RUNTIME OFF CACHE BOOL
+            "Use static (MT/MTd) Windows runtime" FORCE)
+    endif()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
@@ -534,15 +544,9 @@ if(WIN32)
         # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
         add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
-    if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
+    if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
-        # The Intel oneAPI DPC++/C++ compiler (icx) hard-errors ("invalid
-        # argument 'MT' not allowed with '-fsycl'") when compiling any
-        # translation unit that has -fsycl enabled together with the static
-        # (/MT, /MTd) MSVC runtime. SYCL compilation therefore always
-        # requires the dynamic runtime on Windows, regardless of
-        # STATIC_WINDOWS_RUNTIME.
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()

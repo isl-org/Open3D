@@ -1382,9 +1382,8 @@ if(BUILD_GUI)
             endif()
         else()  # WIN32
             # Match the prebuilt Filament archive's runtime selection in
-            # filament_download.cmake: SYCL builds always use the dynamic
-            # runtime regardless of STATIC_WINDOWS_RUNTIME.
-            if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
+            # filament_download.cmake.
+            if (STATIC_WINDOWS_RUNTIME)
                 set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
             else()
                 set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")

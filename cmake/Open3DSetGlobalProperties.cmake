@@ -143,25 +143,10 @@ function(open3d_set_global_properties target)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
             if(BUILD_SYCL_MODULE)
-                # The Intel oneAPI DPC++/C++ compiler (icx) fails to parse
-                # recent MSVC STL versions' <execution> header (pulled in
-                # transitively by oneDPL's <oneapi/dpl/execution>, which is
-                # used by SYCL kernels for host-side algorithms), which
-                # implements a work-stealing deque annotated with the
-                # concurrency SAL macro `_Guarded_by_`. icx/clang-cl does not
-                # expand this macro the same way cl.exe does, causing
-                # "error: unknown type name '_Guarded_by_'". Since this macro
-                # is purely a static-analysis annotation (a no-op outside of
-                # /analyze builds), it is safe to force it to expand to
-                # nothing for SYCL translation units.
-                # Note: use target_compile_options (not
-                # target_compile_definitions) because CMake does not reliably
-                # escape parentheses in compile definitions across
-                # generators/shells, which can corrupt the flag. Also avoid
-                # wrapping this in a $<COMPILE_LANGUAGE:CXX> generator
-                # expression: CMake's generator-expression parser mishandles
-                # the literal parentheses in the flag text, splitting it into
-                # multiple separate command-line arguments.
+                # icx mishandles MSVC STL's `_Guarded_by_` SAL annotation (via
+                # oneDPL <execution>); it is a static-analysis no-op, so empty it.
+                # Must be target_compile_options (not definitions) and must not use
+                # $<COMPILE_LANGUAGE:CXX>: CMake mishandles the parentheses in both.
                 target_compile_options(${target} PRIVATE "-D_Guarded_by_(x)=")
             endif()
             # Multi-thread compile, two ways to enable
@@ -204,14 +189,11 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
-    # IEEE-compliant FP for IntelLLVM / icx (Windows SYCL and Linux SYCL).
-    # -fno-fast-math: preserve NaN handling used throughout Open3D.
-    # -no-ftz / -mno-daz-ftz: icx enables flush-to-zero / DAZ by default at
-    #   -O1+, which destroys denormal float bit patterns. PCD packs RGB into
-    #   a float via memcpy; those packed values are typically denormal when
-    #   R<128, so FTZ/DAZ zeroes colors (MaxDistance*255 == 127*sqrt(3)≈220).
-    # Windows icx is clang-cl and ignores GNU-style -f/-no- flags; forward
-    # them with /clang: so they actually take effect on the Windows XPU CI.
+    # IEEE-compliant FP for IntelLLVM / icx (SYCL on Windows and Linux).
+    # -fno-fast-math: preserve NaN handling. -no-ftz / -mno-daz-ftz: icx
+    # enables FTZ/DAZ at -O1+, which zeroes denormals (e.g. RGB packed into a
+    # float in PCD). Windows icx is clang-cl; prefix with /clang: so the
+    # GNU-style flags take effect.
     if(WIN32)
         set(opt-prefix /clang:)
     else()

@@ -1,14 +1,10 @@
 # On Ubuntu 20.04, get the latest CMake from https://apt.kitware.com/.
 cmake_minimum_required(VERSION 3.24)
 
-# find_package(Open3D) transitively loads dependency configs, some of which call
-# cmake_minimum_required()/cmake_policy(VERSION ...) with an old version and reset
-# CMP0091 away from NEW in this scope. With CMP0091 not NEW, CMAKE_MSVC_RUNTIME_LIBRARY
-# is silently ignored and MSVC defaults the target to the static runtime (/MT), which
-# then fails to link (LNK2038) against a dynamic-runtime (/MD) Open3D. Forcing the
-# policy default (before project()) keeps CMP0091 NEW in every nested scope, so the
-# runtime library selection below is always honored. This mirrors how Open3D builds
-# its own dependencies (see 3rdparty/find_dependencies.cmake).
+# find_package(Open3D) can reset CMP0091 via old dependency cmake_policy() calls.
+# With CMP0091 not NEW, CMAKE_MSVC_RUNTIME_LIBRARY is ignored and Draw defaults
+# to /MT, causing LNK2038 against /MD Open3D. Set the policy default before
+# project() (same idea as 3rdparty/find_dependencies.cmake).
 set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
 
 project(Open3DCMakeFindPackage LANGUAGES C CXX)
@@ -30,10 +26,8 @@ add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
 target_link_libraries(Draw PRIVATE Open3D::Open3D)
 
-# Select the MSVC runtime to match Open3D and avoid LNK2038. With CMP0091 NEW
-# (forced above) the property is authoritative; the explicit /M flags are a
-# defensive fallback should a dependency flip CMP0091 to OLD, in which case the
-# property is ignored and MSVC would otherwise silently pick the /MT default.
+# Match Open3D's /MT or /MD (CMP0091 above); explicit /M flags are a fallback if
+# a dependency resets CMP0091 and MSVC_RUNTIME_LIBRARY is ignored.
 if(MSVC)
     set_target_properties(Draw PROPERTIES
         MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")

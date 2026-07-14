@@ -313,8 +313,7 @@ else() #### download prebuilt vtk
         )
         set(VTK_SHA256 28e36654ed18aa9f668a0486a6c3d26a0ca6cf6a593dbd15be4736b40880a82b)
     elseif(WIN32)
-        # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
-        if (STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
+        if (STATIC_WINDOWS_RUNTIME)
             set(VTK_URL
                 https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_staticrt.tar.gz
             )

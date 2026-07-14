@@ -19,13 +19,12 @@ if (APPLE)
     )
     set(WEBRTC_SHA256 3c2592a3bd9efcee591924007857342fec3753e2ae68695baeb2b8774f0e3abc)
 elseif (WIN32)
-    if (BUILD_SHARED_LIBS AND STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
+    if (BUILD_SHARED_LIBS AND STATIC_WINDOWS_RUNTIME)
         message(FATAL_ERROR "Pre-built WebRTC does not support "
             "BUILD_SHARED_LIBS=ON with STATIC_WINDOWS_RUNTIME=ON. Use "
             "STATIC_WINDOWS_RUNTIME=OFF or BUILD_WEBRTC_FROM_SOURCE=ON.")
     endif()
-    # IntelLLVM -fsycl on Windows does not support static windows runtime (/MT, /MTd).
-    if(STATIC_WINDOWS_RUNTIME AND NOT BUILD_SYCL_MODULE)
+    if(STATIC_WINDOWS_RUNTIME)
         set(WEBRTC_DEBUG_TAG Debug_mt)
         set(WEBRTC_DEBUG_SHA256 b537cce72f758fbcd214fbca80ecfb26228d23c728119abc499c4b333e5f0786)
         set(WEBRTC_RELEASE_TAG Release_mt)

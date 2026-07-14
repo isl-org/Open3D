@@ -205,14 +205,10 @@ build_pip_package() {
         "-DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}"
         "-DPython3_EXECUTABLE=$(command -v python3)"
     )
-    # Always rerun cmake and unset Python cache variables to update cache for
-    # the current Python and build options.  This avoids incorrect/inherited
-    # Python config and ensures all paths are correct.  '_Python3_*' clears
-    # FindPython3's internal artifact cache (leading underscore, not matched by
-    # 'Python3*'); when a reused build dir was configured with a different Python
-    # (e.g. macOS build-lib uses 3.12), stale include/lib paths otherwise break
-    # Development.Module detection.  Do not use --fresh: it unnecessarily wipes
-    # build objects and wastes disk/CI time.
+    # Clear Python/Torch CMake cache vars for the current interpreter. Include
+    # '_Python3_*' (FindPython3 internals; not matched by 'Python3*') so a reused
+    # build dir from another Python (e.g. macOS build-lib @ 3.12) does not break
+    # Development.Module detection. Avoid --fresh: it wipes build objects.
     cacheClear=(-U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*')
 
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
@@ -235,8 +231,8 @@ build_pip_package() {
     # Wheel build. Build the CPU wheel first, against the CPU torch/tf in the
     # current environment. For a CUDA build this also produces the cpu/ ops that
     # are bundled into the CUDA wheel below, so a CUDA wheel serves both CPU-only
-    # and CUDA torch users (matches pre-#7516 behavior). A CPU-only build (e.g.
-    # macOS) is already the final wheel and skips the CUDA pass.
+    # and CUDA torch users. A CPU-only build (e.g.  macOS) is already the final
+    # wheel and skips the CUDA pass.
     echo "Packaging Open3D CPU pip wheel..."
     set -x
     cmake "${cacheClear[@]}" "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
@@ -544,11 +540,8 @@ build_pip_package_from_installed() {
         echo "ERROR: 3rdparty ExternalProject dirs present in installed-mode build"
         exit 1
     fi
-    # Bundle the CPU-linked ops (built above with CPU torch) alongside the CUDA
-    # ops so the CUDA wheel serves both CPU-only and CUDA torch users (matches
-    # pre-#7516 behavior). CUDA ops build into lib/Release/cuda; drop the CPU ops
-    # into lib/Release/cpu so make_python_package packages both arch subdirs into
-    # open3d/{cpu,cuda}. The loader picks cuda-then-cpu by torch CUDA at runtime.
+    # Place CPU-linked ops into lib/Release/cpu beside CUDA ops in lib/Release/cuda
+    # so the CUDA wheel packages both (open3d/{cpu,cuda}); loader picks at runtime.
     if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]]; then
         mkdir -p lib/Release/cpu
         cp -a ../build_cpu_wheel/lib/Release/cpu/open3d_*_ops* lib/Release/cpu/
@@ -607,9 +600,6 @@ test_wheel() {
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
         HAVE_PYTORCH_OPS=ON
         python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
-        # A CUDA wheel bundles both CPU- and CUDA-linked ops; with CPU-only torch
-        # the loader falls back to the CPU ops, so this load check works on a
-        # CPU-only runner too.
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi

@@ -248,9 +248,7 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                  std::vector<core::Dtype>{core::Float32, core::UInt16}) {
                 auto vbg = Integrate(backend, dtype, device, block_resolution);
 
-                // Allow numerical precision differences across compilers
-                // (MSVC vs IntelLLVM/icx can differ by a handful of surface
-                // samples after TSDF integrate + extract).
+                // Allow numerical precision differences
                 auto pcd = vbg.ExtractPointCloud();
                 EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
                             kResolutionPoints[block_resolution], 16);
