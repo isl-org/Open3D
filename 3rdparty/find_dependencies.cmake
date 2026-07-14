@@ -1623,7 +1623,7 @@ if(BUILD_SYCL_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." ON)
+    set(OPEN3D_USE_ONEAPI_PACKAGES ON CACHE BOOL "Use the oneAPI distribution of MKL/TBB." FORCE)
 else()
     option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." OFF)
 endif()
@@ -1643,12 +1643,26 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     else()
         set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
     endif()
+
+    set(MKL_SYCL_LIBS)
+    if(BUILD_SYCL_MODULE)
+        if(WIN32)
+            set(MKL_SYCL_LIBS
+                $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
+            )
+        else()
+            set(MKL_SYCL_LIBS mkl_sycl)
+        endif()
+    endif()
+
     open3d_import_3rdparty_library(3rdparty_mkl
         HIDDEN
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_LIB_DIR}
-        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    ${MKL_SYCL_LIBS} mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
     if (BUILD_SYCL_MODULE)
     # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")

@@ -79,9 +79,9 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for CRT mismatch in CUDA code (Windows)
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch <SOURCE_DIR>
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
     # Patch to include the <chrono> header for the system_clock type
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch <SOURCE_DIR>
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
