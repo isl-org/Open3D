@@ -38,6 +38,9 @@ class Image;
 namespace visualization {
 
 class GLFWContext;
+#if defined(__linux__)
+class EGLOffscreenContext;
+#endif
 
 /// \class Visualizer
 ///
@@ -226,6 +229,23 @@ public:
     void SetViewStatus(const std::string &view_status_str);
 
 protected:
+    /// \brief Make the visualizer's OpenGL context (GLFW window, or offscreen
+    /// EGL context in headless mode) current on the calling thread.
+    ///
+    /// Every GL call in Visualizer and its subclasses must be preceded by a
+    /// call to this function instead of calling glfwMakeContextCurrent()
+    /// directly, so that the same code path works both windowed and headless.
+    void MakeContextCurrent();
+
+    /// \brief Whether the window/context should stay open, mirroring
+    /// `!glfwWindowShouldClose(window_)` but also covering headless mode
+    /// (where should_close_ is used in place of a GLFW window-close flag).
+    bool ShouldRemainOpen() const;
+
+    /// \brief Request that the window/context close, mirroring
+    /// glfwSetWindowShouldClose() but also covering headless mode.
+    void RequestClose();
+
     /// Function to initialize OpenGL
     virtual bool InitOpenGL();
 
@@ -267,6 +287,18 @@ protected:
 
     /// \brief Shared GLFW context.
     std::shared_ptr<GLFWContext> glfw_context_ = nullptr;
+
+    /// \brief True if no windowing system display is available and rendering
+    /// is done via an offscreen EGL context on the GPU (Linux only).
+    bool headless_ = false;
+    /// \brief Requested "window closed" state, used in place of GLFW's
+    /// window-close state when running headless (no GLFW window exists).
+    bool should_close_ = false;
+#if defined(__linux__)
+    /// \brief GPU-accelerated offscreen OpenGL context, created instead of a
+    /// GLFW window when headless_ is true.
+    std::unique_ptr<EGLOffscreenContext> egl_context_;
+#endif
 
     Eigen::Vector2i saved_window_size_ = Eigen::Vector2i::Zero();
     Eigen::Vector2i saved_window_pos_ = Eigen::Vector2i::Zero();
