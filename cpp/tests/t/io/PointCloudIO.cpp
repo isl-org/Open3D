@@ -22,6 +22,7 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -730,6 +731,39 @@ TEST(TPointCloudIO, ReadWrite3DGSSPZ) {
                    0.1, 0.1);
     AllCloseOrShow(pcd_base.GetPointAttr("f_rest"),
                    pcd_spz.GetPointAttr("f_rest"), 0.1, 0.1);
+}
+
+// WritePointCloudOption::gaussian_splat_antialias sets the SPZ header bit;
+// ReadPointCloudFromSPZ logs when that bit is set.
+TEST(TPointCloudIO, Write3DGSSPZAntialiasFlag) {
+    const std::string filename_ply =
+            utility::filesystem::GetTempDirectoryPath() +
+            "/test_spz_aa_source.ply";
+    {
+        std::ofstream outfile(filename_ply);
+        outfile << test_3dgs_ply_data;
+    }
+    t::geometry::PointCloud pcd_base;
+    ASSERT_TRUE(t::io::ReadPointCloud(filename_ply, pcd_base,
+                                      {"auto", false, false, true}));
+
+    const std::string filename =
+            utility::filesystem::GetTempDirectoryPath() + "/test_aa.spz";
+    open3d::io::WritePointCloudOption write_opts{"auto", false, false, true};
+    write_opts.gaussian_splat_antialias = true;
+    ASSERT_TRUE(t::io::WritePointCloud(filename, pcd_base, write_opts));
+
+    std::string log;
+    utility::Logger::GetInstance().SetPrintFunction(
+            [&log](const std::string &msg) { log += msg; });
+    t::geometry::PointCloud pcd_spz;
+    ASSERT_TRUE(t::io::ReadPointCloud(filename, pcd_spz,
+                                      {"auto", false, false, true}));
+    utility::Logger::GetInstance().ResetPrintFunction();
+
+    EXPECT_NE(log.find("antialiased=true"), std::string::npos);
+    EXPECT_NE(log.find("gaussian_splat_antialias"), std::string::npos);
+    EXPECT_TRUE(pcd_spz.IsGaussianSplat());
 }
 
 }  // namespace tests

@@ -5,6 +5,23 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// SPZ (Niantic Labs) compressed Gaussian splat I/O.
+///
+/// On-disk SPZ layout (via spz::GaussianCloud / PackedGaussians):
+/// - positions: xyz float (fixed-point when packed)
+/// - scales: log-space xyz (exp to get linear axis lengths)
+/// - rotations: xyzw unit quaternions (Open3D uses wxyz in memory)
+/// - alphas: logit opacity (same as Open3D "opacity")
+/// - colors: SH DC / f_dc (RGB)
+/// - sh: higher-order SH, coefficient-major with RGB innermost
+/// - antialiased: header flag for mip-splat density compensation. Write via
+///   WritePointCloudOption::gaussian_splat_antialias; on read, LogInfo reminds
+///   to set MaterialRecord::gaussian_splat_antialias for matching rendering.
+///   Not stored as a PointCloud attribute.
+///
+/// The packed SPZ format requires numPoints > 0 (loadSpzPacked rejects 0).
+/// Open3D in-memory Gaussian PointCloud keeps linear scales and wxyz quats.
+
 #include <spz/load-spz.h>
 
 #include <algorithm>
@@ -39,19 +56,36 @@ bool CheckAttributeSize(const std::vector<float>& attribute,
     return true;
 }
 
+bool SaveSpzCloud(const spz::GaussianCloud& cloud, const std::string& filename) {
+    const spz::PackOptions options{4, spz::CoordinateSystem::UNSPECIFIED,
+                                   spz::DEFAULT_SH1_BITS,
+                                   spz::DEFAULT_SH_REST_BITS};
+    if (!spz::saveSpz(cloud, options, filename)) {
+        utility::LogWarning("Write SPZ failed for {}.", filename);
+        return false;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool ReadPointCloudFromSPZ(const std::string& filename,
                            geometry::PointCloud& pointcloud,
                            const open3d::io::ReadPointCloudOption&) {
+    // loadSpz returns a default empty cloud (numPoints == 0) on I/O/decode
+    // failure. The packed format also rejects numPoints == 0, so treat <= 0
+    // as failure (covers both corrupt files and impossible empty SPZs).
     const spz::GaussianCloud cloud =
             spz::loadSpz(filename, {spz::CoordinateSystem::UNSPECIFIED});
-    if (cloud.numPoints < 0) {
-        utility::LogWarning("Read SPZ failed: invalid point count in {}.",
-                            filename);
+    if (cloud.numPoints <= 0) {
+        utility::LogWarning(
+                "Read SPZ failed: invalid or empty point count in {}.",
+                filename);
         return false;
     }
 
+    // Reject degrees outside the format; CheckAttributeSize would also fail,
+    // but this yields a clearer warning first.
     if (cloud.shDegree < 0 || cloud.shDegree > spz::SH_MAX_DEGREE) {
         utility::LogWarning("Read SPZ failed: unsupported SH degree {} in {}.",
                             cloud.shDegree, filename);
@@ -76,15 +110,15 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
 
     pointcloud.Clear();
     const core::Device device("CPU:0");
+    const int64_t n = static_cast<int64_t>(num_points);
 
     core::Tensor positions =
-            core::Tensor::Empty({cloud.numPoints, 3}, core::Float32, device);
+            core::Tensor::Empty({n, 3}, core::Float32, device);
     std::copy(cloud.positions.begin(), cloud.positions.end(),
               positions.GetDataPtr<float>());
     pointcloud.SetPointPositions(positions);
 
-    core::Tensor scales =
-            core::Tensor::Empty({cloud.numPoints, 3}, core::Float32, device);
+    core::Tensor scales = core::Tensor::Empty({n, 3}, core::Float32, device);
     float* scale_data = scales.GetDataPtr<float>();
     for (size_t i = 0; i < cloud.scales.size(); ++i) {
         scale_data[i] = std::exp(cloud.scales[i]);
@@ -92,10 +126,10 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
     pointcloud.SetPointAttr("scale", scales);
 
     core::Tensor rotations =
-            core::Tensor::Empty({cloud.numPoints, 4}, core::Float32, device);
+            core::Tensor::Empty({n, 4}, core::Float32, device);
     float* rotation_data = rotations.GetDataPtr<float>();
     for (size_t i = 0; i < num_points; ++i) {
-        // SPZ stores quaternions as xyzw; Open3D uses wxyz.
+        // SPZ xyzw -> Open3D wxyz.
         rotation_data[4 * i + 0] = cloud.rotations[4 * i + 3];
         rotation_data[4 * i + 1] = cloud.rotations[4 * i + 0];
         rotation_data[4 * i + 2] = cloud.rotations[4 * i + 1];
@@ -103,25 +137,32 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
     }
     pointcloud.SetPointAttr("rot", rotations);
 
-    core::Tensor opacity =
-            core::Tensor::Empty({cloud.numPoints, 1}, core::Float32, device);
+    core::Tensor opacity = core::Tensor::Empty({n, 1}, core::Float32, device);
     std::copy(cloud.alphas.begin(), cloud.alphas.end(),
               opacity.GetDataPtr<float>());
     pointcloud.SetPointAttr("opacity", opacity);
 
-    core::Tensor f_dc =
-            core::Tensor::Empty({cloud.numPoints, 3}, core::Float32, device);
+    core::Tensor f_dc = core::Tensor::Empty({n, 3}, core::Float32, device);
     std::copy(cloud.colors.begin(), cloud.colors.end(),
               f_dc.GetDataPtr<float>());
     pointcloud.SetPointAttr("f_dc", f_dc);
 
     if (sh_coefficients > 0) {
         core::Tensor f_rest = core::Tensor::Empty(
-                {cloud.numPoints, static_cast<int64_t>(sh_coefficients), 3},
-                core::Float32, device);
+                {n, static_cast<int64_t>(sh_coefficients), 3}, core::Float32,
+                device);
         // SPZ and Open3D both use coefficient-major, RGB-inner ordering.
         std::copy(cloud.sh.begin(), cloud.sh.end(), f_rest.GetDataPtr<float>());
         pointcloud.SetPointAttr("f_rest", f_rest);
+    }
+
+    // SPZ header flag; Open3D applies this at render time via MaterialRecord.
+    if (cloud.antialiased) {
+        utility::LogInfo(
+                "SPZ file {} has antialiased=true. For matching mip-splat "
+                "density compensation when rendering, set "
+                "mat.gaussian_splat_antialias = True on the MaterialRecord.",
+                filename);
     }
 
     return pointcloud.IsGaussianSplat();
@@ -129,9 +170,11 @@ bool ReadPointCloudFromSPZ(const std::string& filename,
 
 bool WritePointCloudToSPZ(const std::string& filename,
                           const geometry::PointCloud& pointcloud,
-                          const open3d::io::WritePointCloudOption&) {
+                          const open3d::io::WritePointCloudOption& params) {
+    // Packed SPZ requires numPoints > 0 (loadSpzPacked rejects 0).
     if (pointcloud.IsEmpty()) {
-        utility::LogWarning("Write SPZ failed: point cloud has 0 points.");
+        utility::LogWarning(
+                "Write SPZ failed: SPZ format requires at least one splat.");
         return false;
     }
     if (!pointcloud.IsGaussianSplat()) {
@@ -163,24 +206,25 @@ bool WritePointCloudToSPZ(const std::string& filename,
     spz::GaussianCloud cloud;
     cloud.numPoints = static_cast<int32_t>(num_points);
     cloud.shDegree = sh_degree;
+    cloud.antialiased = params.gaussian_splat_antialias;
     cloud.positions = positions.ToFlatVector<float>();
     cloud.scales = scales.ToFlatVector<float>();
     cloud.rotations.resize(static_cast<size_t>(num_points) * 4);
     cloud.alphas = opacity.ToFlatVector<float>();
     cloud.colors = f_dc.ToFlatVector<float>();
 
+    // Linear -> log scale for SPZ packing.
+    for (size_t i = 0; i < cloud.scales.size(); ++i) {
+        cloud.scales[i] = std::log(std::max(cloud.scales[i], kMinimumScale));
+    }
+
+    // Open3D wxyz -> SPZ xyzw.
     const float* rotation_data = rotations.GetDataPtr<float>();
     for (size_t i = 0; i < static_cast<size_t>(num_points); ++i) {
-        // SPZ stores quaternions as xyzw; Open3D uses wxyz.
         cloud.rotations[4 * i + 0] = rotation_data[4 * i + 1];
         cloud.rotations[4 * i + 1] = rotation_data[4 * i + 2];
         cloud.rotations[4 * i + 2] = rotation_data[4 * i + 3];
         cloud.rotations[4 * i + 3] = rotation_data[4 * i + 0];
-        for (int axis = 0; axis < 3; ++axis) {
-            const size_t offset = 3 * i + axis;
-            cloud.scales[offset] =
-                    std::log(std::max(cloud.scales[offset], kMinimumScale));
-        }
     }
 
     if (sh_coefficients > 0) {
@@ -188,14 +232,7 @@ bool WritePointCloudToSPZ(const std::string& filename,
         cloud.sh = f_rest.ToFlatVector<float>();
     }
 
-    const spz::PackOptions options{4, spz::CoordinateSystem::UNSPECIFIED,
-                                   spz::DEFAULT_SH1_BITS,
-                                   spz::DEFAULT_SH_REST_BITS};
-    if (!spz::saveSpz(cloud, options, filename)) {
-        utility::LogWarning("Write SPZ failed for {}.", filename);
-        return false;
-    }
-    return true;
+    return SaveSpzCloud(cloud, filename);
 }
 
 }  // namespace io

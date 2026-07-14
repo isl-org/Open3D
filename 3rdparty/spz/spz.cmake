@@ -1,10 +1,21 @@
 include(ExternalProject)
 
+# Prefer the vendored zlib archive path (same naming as open3d_import_3rdparty_library).
+# Use ZLIB_LIBRARIES, not zlib.cmake's private lib_name: on MSVC, ZLIB_LIBRARIES is
+# zlibstatic$<$<CONFIG:Debug>:d> so Debug links zlibstaticd.lib.
 if(ZLIB_LIB_DIR AND ZLIB_LIBRARIES)
     set(spz_zlib_library
-        ${ZLIB_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+        ${ZLIB_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZLIB_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
+    # System zlib from find_package(ZLIB) when USE_SYSTEM_PNG is ON.
     set(spz_zlib_library ${ZLIB_LIBRARY})
+endif()
+
+# ext_zlib exists only when Open3D builds zlib (NOT USE_SYSTEM_PNG). System zlib
+# has no ExternalProject target, so DEPENDS must not list it.
+set(spz_depends ext_zstd)
+if(TARGET ext_zlib)
+    list(APPEND spz_depends ext_zlib)
 endif()
 
 ExternalProject_Add(
@@ -28,11 +39,12 @@ ExternalProject_Add(
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}
     DEPENDS
-        ext_zlib
-        ext_zstd
+        ${spz_depends}
 )
 
 ExternalProject_Get_Property(ext_spz INSTALL_DIR)
 set(SPZ_INCLUDE_DIRS ${INSTALL_DIR}/include/)
 set(SPZ_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(SPZ_LIBRARIES spz)
+unset(spz_depends)
+unset(spz_zlib_library)
