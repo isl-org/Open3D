@@ -13,7 +13,16 @@ macro(open3d_add_tool TOOL_NAME)
 endmacro()
 
 open3d_add_tool(ConvertPointCloud)
-open3d_add_tool(GLInfo                  Open3D::3rdparty_opengl Open3D::3rdparty_glfw)
+if (UNIX AND NOT APPLE)
+    # GLInfo falls back to an offscreen EGL context to report GPU info when
+    # no windowing system display is available.
+    find_package(OpenGL COMPONENTS EGL)
+endif()
+if (TARGET OpenGL::EGL)
+    open3d_add_tool(GLInfo Open3D::3rdparty_opengl Open3D::3rdparty_glfw OpenGL::EGL)
+else()
+    open3d_add_tool(GLInfo Open3D::3rdparty_opengl Open3D::3rdparty_glfw)
+endif()
 open3d_add_tool(ManuallyCropGeometry)
 open3d_add_tool(MergeMesh)
 open3d_add_tool(ViewGeometry)
