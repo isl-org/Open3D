@@ -20,7 +20,7 @@ endif()
 
 # Check if the patch is already applied (reverse check)
 execute_process(
-    COMMAND ${GIT_EXECUTABLE} apply --reverse --check --ignore-space-change --ignore-whitespace "${PATCH_FILE}"
+    COMMAND ${GIT_EXECUTABLE} apply --reverse --check --ignore-whitespace "${PATCH_FILE}"
     WORKING_DIRECTORY "${SOURCE_DIR}"
     RESULT_VARIABLE res_reverse_check
     OUTPUT_QUIET
@@ -34,7 +34,7 @@ endif()
 
 # Apply the patch
 execute_process(
-    COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace "${PATCH_FILE}"
+    COMMAND ${GIT_EXECUTABLE} apply --ignore-whitespace --whitespace=fix "${PATCH_FILE}"
     WORKING_DIRECTORY "${SOURCE_DIR}"
     RESULT_VARIABLE res_apply
     OUTPUT_VARIABLE out_apply
