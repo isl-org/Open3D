@@ -8,8 +8,7 @@
 #pragma once
 #define EIGEN_USE_GPU
 
-#include <cutlass/gemm/device/gemm.h>
-
+#include "open3d/ml/impl/GemmCUDA.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
 #include "open3d/utility/Helper.h"
@@ -149,14 +148,6 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
-    // SGEMM: C = alpha * A * B + beta * C using CUTLASS v2 device API.
-    using Gemm = cutlass::gemm::device::Gemm<
-            float, cutlass::layout::ColumnMajor,  // A: gradient (column-major)
-            float, cutlass::layout::RowMajor,     // B: columns (row-major)
-            float,
-            cutlass::layout::ColumnMajor  // C/D: filter backprop (column-major)
-            >;
-
     TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs
@@ -189,17 +180,10 @@ void SparseConvBackpropFilterCUDA(const cudaStream_t& stream,
         float* C = filter_backprop;
         int ldc = m;
 
-        Gemm gemm_op;
-        cutlass::Status status = gemm_op({{m, n, k},
-                                          {A, lda},
-                                          {B, ldb},
-                                          {C, ldc},
-                                          {C, ldc},
-                                          {alpha, beta}},
-                                         nullptr, stream);
-        if (status != cutlass::Status::kSuccess) {
-            throw std::runtime_error("CUTLASS GEMM failed.");
-        }
+        GemmColumnMajorCUDA<cutlass::layout::ColumnMajor,
+                            cutlass::layout::RowMajor>(stream, m, n, k, alpha,
+                                                       A, lda, B, ldb, beta, C,
+                                                       ldc);
     }
 }
 
