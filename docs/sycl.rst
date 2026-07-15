@@ -17,14 +17,19 @@ This includes custom kernels for:
 * **TriangleMesh**: normal normalization, triangle normal computation, vertex normal accumulation, and triangle area computation.
 * **VoxelBlockGrid**: block touch (point cloud / depth), voxel indexing, TSDF integration, range estimation, ray casting, point-cloud extraction, and marching-cubes mesh extraction (SYCL device hash lookup for ray cast).
 
-SYCL does **not** implement CUDA NPP/IPP image filters (``Image::Filter*``, ``Resize``, ``PyrDown``, etc.). Use CPU preprocessing or APIs that avoid device-side filter/pyramid steps when running on ``SYCL:0``.
+SYCL does **not** implement CUDA NPP/IPP image filters (``Image::Filter*``,
+``Resize``, ``PyrDown``, etc.). Use CPU preprocessing or APIs that avoid
+device-side filter/pyramid steps when running on ``SYCL:0``.
 
-Element-wise tensor kernels use direct ``sycl::queue::parallel_for`` (there is no separate ``ParallelForSYCL`` helper header).
+Element-wise tensor kernels use direct ``sycl::queue::parallel_for`` (there is
+no separate ``ParallelForSYCL`` helper header).
 
 Tensor backend matrix (experimental)
 -----------------------------------
 
-The table summarizes **tensor** API support when tensors live on ``SYCL:0``. Legacy ``open3d.geometry`` (Eigen) types are CPU-only unless copied to tensor types.
+The table summarizes **tensor** API support when tensors live on ``SYCL:0``.
+Legacy ``open3d.geometry`` (Eigen) types are CPU-only unless copied to tensor
+types.
 
 .. list-table::
    :header-rows: 1
@@ -63,28 +68,9 @@ The table summarizes **tensor** API support when tensors live on ``SYCL:0``. Leg
      - Most
      - Partial (unproject, normals, NNS-based ops; some methods still CPU-only)
 
-Testing SYCL tensor geometry
-----------------------------
 
-After building with ``BUILD_SYCL_MODULE=ON`` and ``BUILD_UNIT_TESTS=ON``:
-
-C++ (from ``build/``):
-
-.. code-block:: shell
-
-    ./bin/tests --gtest_filter='VoxelBlockGrid/*:TriangleMesh/*:HashMap/*:NearestNeighborSearch/*:VoxelBlockGridSYCLBackendParity.*:TriangleMeshSYCLBackendParity.*:NearestNeighborSearchSYCLBackendParity.*'
-
-Python (install pip package first):
-
-.. code-block:: shell
-
-    pytest python/test/core/test_nn.py python/test/core/test_hashmap.py \
-        python/test/t/geometry/test_voxel_block_grid.py \
-        -k 'sycl or SYCL or list_devices'
-
-Parity tests compare ``SYCL:0`` results to ``CPU:0`` where CUDA is unavailable in the same binary. They are skipped automatically when no SYCL GPU is present (only the SYCL CPU fallback device).
-
-In addition, HW accelerated raycasting queries in :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
+In addition, HW accelerated raycasting queries in
+:py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
 will get an error if an operation is not supported. The implementation is tested
 on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
 (`SYCL:0`, if available) and the CPU (`SYCL:1` if a GPU is available, else

@@ -92,11 +92,26 @@ public:
     }
 
     /// Device: atomically pop a free buffer slot from the heap.
+    ///
+    /// Callers must ensure DeviceAllocate() is never invoked concurrently
+    /// with DeviceFree() within the same kernel launch: the fetch_add /
+    /// fetch_sub pair only orders the atomic heap_top_ counter itself, not
+    /// the plain (non-atomic) heap_[] reads/writes tied to it, so a
+    /// concurrent Allocate/Free pair could still observe or overwrite each
+    /// other's heap_[] slot out of order and corrupt the free list.
+    /// SYCLHashBackend::Insert avoids this by bulk-reserving all of a
+    /// batch's slots via plain index arithmetic before launching its kernel
+    /// (so DeviceAllocate() is never called from within a kernel that also
+    /// calls DeviceFree()); Erase() only ever calls DeviceFree(). Concurrent
+    /// calls to DeviceFree() alone (as in Insert's leak-recovery path) are
+    /// safe: each fetch_sub returns a unique index, so writes never collide.
     buf_index_t DeviceAllocate() const {
-        sycl::atomic_ref<int, sycl::memory_order::relaxed,
+        sycl::atomic_ref<int, sycl::memory_order::seq_cst,
                          sycl::memory_scope::device>
                 top(*heap_top_);
         const int index = top.fetch_add(1);
+        sycl::atomic_fence(sycl::memory_order::seq_cst,
+                           sycl::memory_scope::device);
         if (index >= static_cast<int>(capacity_)) {
             top.fetch_sub(1);
             return kInvalidBufIndex;
@@ -104,13 +119,16 @@ public:
         return heap_[index];
     }
 
-    /// Device: return a buffer slot to the heap.
+    /// Device: return a buffer slot to the heap. See DeviceAllocate for the
+    /// concurrency contract this relies on.
     void DeviceFree(buf_index_t buf_index) const {
-        sycl::atomic_ref<int, sycl::memory_order::relaxed,
+        sycl::atomic_ref<int, sycl::memory_order::seq_cst,
                          sycl::memory_scope::device>
                 top(*heap_top_);
         int index = top.fetch_sub(1);
         heap_[index - 1] = buf_index;
+        sycl::atomic_fence(sycl::memory_order::seq_cst,
+                           sycl::memory_scope::device);
     }
 
     /// Device: USM pointer to the key at \p buf_index.

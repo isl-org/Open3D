@@ -317,9 +317,30 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
         values_soa.ptrs[i] = input_values_soa[i];
     }
 
+    // Bulk-reserve `count` heap slots up front, one per thread, via plain
+    // index arithmetic (no atomics) -- mirrors CUDA's SlabHashBackend::Insert
+    // (see InsertKernelPass0). This is what makes the DeviceFree() call below
+    // safe: since this kernel never calls DeviceAllocate() itself, its
+    // DeviceFree() calls cannot race with a concurrent allocation of the same
+    // slot. Interleaving DeviceAllocate() (lazily, inside the probe loop) and
+    // DeviceFree() (on the leak path) within the same kernel invocation was
+    // tried first, but heap_top_ fetch_add/fetch_sub pairs only order the
+    // atomic counter itself, not the plain heap_[] array reads/writes tied to
+    // it, so concurrent Allocate/Free calls could still observe/overwrite
+    // each other's heap_[] slot before the intended visibility order was
+    // established, corrupting the free list (observed as extra/duplicate
+    // buf_indices ending up marked valid).
+    const int prev_heap_top = this->buffer_->GetHeapTopIndex();
+    {
+        const int new_heap_top = prev_heap_top + static_cast<int>(count);
+        queue_.memcpy(buffer_accessor_.heap_top_, &new_heap_top, sizeof(int))
+                .wait();
+    }
+
     SYCLHashBackendBufferAccessor accessor = buffer_accessor_;
     uint64_t* slot_data = slot_data_;
     const int64_t bucket_count = bucket_count_;
+    const int64_t capacity = accessor.capacity_;
     int* occupied_count = occupied_count_;
     int* non_empty_count = non_empty_count_;
     constexpr int kMaxOuterIter = 1 << 20;  // Termination if table is full.
@@ -348,9 +369,52 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
             const uint32_t my_fingerprint =
                     static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
-            bool finished = false;
-            buf_index_t my_bi = SYCLHashBackendBufferAccessor::kInvalidBufIndex;
+            // Slot for this thread was bulk-reserved on the host before
+            // kernel launch (see prev_heap_top above): no atomic is needed
+            // here, and no other thread can read/write this exact heap_[]
+            // entry, since every tid maps to a disjoint reserved_index.
+            const int64_t reserved_index =
+                    static_cast<int64_t>(prev_heap_top) + tid;
+            buf_index_t my_bi =
+                    (reserved_index < capacity)
+                            ? accessor.heap_[reserved_index]
+                            : SYCLHashBackendBufferAccessor::kInvalidBufIndex;
             bool key_published = false;
+            if (my_bi != SYCLHashBackendBufferAccessor::kInvalidBufIndex) {
+                // Publish key/values immediately: whether this slot is
+                // ultimately kept (CAS succeeds) or returned to the heap
+                // (duplicate found / table full) is decided below, but the
+                // write itself never races with anything since this slot is
+                // exclusively owned by this thread until (at most) one
+                // DeviceFree() call at the end.
+                Key* slot_key = static_cast<Key*>(accessor.GetKeyPtr(my_bi));
+                *slot_key = key;
+
+                for (int j = 0; j < n_values; ++j) {
+                    const int64_t blocks =
+                            accessor.value_blocks_per_element_[j];
+                    DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(
+                            common_block_size, [&]() {
+                                using val_block_t = block_t;
+                                val_block_t* dst =
+                                        reinterpret_cast<val_block_t*>(
+                                                accessor.GetValuePtr(my_bi, j));
+                                const val_block_t* src =
+                                        reinterpret_cast<const val_block_t*>(
+                                                values_soa.ptrs[j]) +
+                                        blocks * tid;
+                                for (int64_t b = 0; b < blocks; ++b) {
+                                    dst[b] = src[b];
+                                }
+                            });
+                }
+
+                sycl::atomic_fence(sycl::memory_order::seq_cst,
+                                   sycl::memory_scope::device);
+                key_published = true;
+            }
+
+            bool finished = false;
             int outer_iter = 0;
             while (!finished) {
                 if (++outer_iter > kMaxOuterIter) {
@@ -393,39 +457,9 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                     }
 
                     if (!key_published) {
-                        my_bi = accessor.DeviceAllocate();
-                        if (my_bi ==
-                            SYCLHashBackendBufferAccessor::kInvalidBufIndex) {
-                            break;
-                        }
-                        Key* slot_key =
-                                static_cast<Key*>(accessor.GetKeyPtr(my_bi));
-                        *slot_key = key;
-
-                        for (int j = 0; j < n_values; ++j) {
-                            const int64_t blocks =
-                                    accessor.value_blocks_per_element_[j];
-                            DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(
-                                    common_block_size, [&]() {
-                                        using val_block_t = block_t;
-                                        val_block_t* dst =
-                                                reinterpret_cast<val_block_t*>(
-                                                        accessor.GetValuePtr(
-                                                                my_bi, j));
-                                        const val_block_t* src =
-                                                reinterpret_cast<
-                                                        const val_block_t*>(
-                                                        values_soa.ptrs[j]) +
-                                                blocks * tid;
-                                        for (int64_t b = 0; b < blocks; ++b) {
-                                            dst[b] = src[b];
-                                        }
-                                    });
-                        }
-
-                        sycl::atomic_fence(sycl::memory_order::seq_cst,
-                                           sycl::memory_scope::device);
-                        key_published = true;
+                        // Heap was exhausted before kernel launch (no slot
+                        // reserved for this thread): nothing to insert.
+                        break;
                     }
 
                     const int64_t target =
@@ -463,6 +497,18 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                 if (finished || !restart) {
                     break;
                 }
+            }
+
+            // This thread's reserved slot was published (key/values written)
+            // but never won the CAS that installs it into the table --
+            // either because a concurrent insert of the same key won the
+            // race first (duplicate found on a post-restart probe) or
+            // kMaxOuterIter was exhausted. Return it to the heap so capacity
+            // is not silently reduced. This DeviceFree() cannot race with a
+            // concurrent DeviceAllocate(), since slots are only ever
+            // allocated in bulk on the host before this kernel is launched.
+            if (key_published && !output_masks[tid]) {
+                accessor.DeviceFree(my_bi);
             }
         }  // tid < count
 

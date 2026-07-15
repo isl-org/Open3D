@@ -18,9 +18,12 @@
 ///   own cell or one of the 7 cells toward the corner nearest the query
 ///   position offset by +-radius per axis (8 bins total, deduplicated).
 /// - \ref BuildSpatialHashTableSYCL builds the grid once per dataset: count
-///   points per cell, turn counts into CSR offsets via a device inclusive
-///   scan (oneDPL, replacing CUDA's cub::DeviceScan::InclusiveSum), then
-///   scatter point indices into their cell's slot range.
+///   points per cell (per batch), turn counts into CSR offsets via a single
+///   device inclusive scan over all batches at once (oneDPL, replacing
+///   CUDA's single cub::DeviceScan::InclusiveSum call), then scatter point
+///   indices into their cell's slot range (per batch, reusing one counter
+///   buffer). All kernels are enqueued on one in-order queue with only one
+///   host wait per pass -- no wait_and_throw inside the per-batch loops.
 /// - \ref CountNeighborsSYCL / \ref WriteNeighborsSYCL implement the
 ///   fixed-radius two-pass search (count, then gather) used by
 ///   FixedRadiusSearchSYCL in KnnSearchOpsSYCL.cpp.
@@ -161,21 +164,41 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
     }
     queue.wait_and_throw();
 
-    // Pass 2: turn per-cell counts into CSR start offsets (device inclusive
-    // scan; replaces cub::DeviceScan::InclusiveSum).
-    for (int b = 0; b < batch_size; ++b) {
-        const uint32_t first_cell_idx = hash_table_splits[b].Item<uint32_t>();
-        const uint32_t hash_table_size =
-                hash_table_splits[b + 1].Item<uint32_t>() - first_cell_idx;
-        uint32_t* cell_splits_i = cell_splits_ptr + first_cell_idx;
-        std::inclusive_scan(policy, cell_splits_i,
-                            cell_splits_i + hash_table_size + 1, cell_splits_i);
+    // Pass 2: turn per-cell counts into CSR start offsets with a *single*
+    // scan over the whole (all-batches-concatenated) array -- mirrors CUDA,
+    // which calls cub::DeviceScan::InclusiveSum once over the full
+    // count_tmp/hash_table_cell_splits buffer rather than once per batch.
+    // This is valid (not just faster) because per-batch segments are laid
+    // out back-to-back and each segment's raw count at its own first slot is
+    // always 0 (see the "hash + 1" count in Pass 1): the running sum thus
+    // carries the *previous* batches' total point counts straight into the
+    // next batch's segment, which is exactly the absolute base offset that
+    // batch needs into the shared hash_table_index array. A segmented scan
+    // would compute the same per-batch-relative values and gain nothing.
+    const int64_t total_cells = hash_table_cell_splits.NumElements();
+    if (total_cells > 0) {
+        std::inclusive_scan(policy, cell_splits_ptr,
+                            cell_splits_ptr + total_cells, cell_splits_ptr);
     }
     queue.wait_and_throw();
 
-    // Pass 3: scatter point indices into their cell's slot range. A fresh
-    // per-batch slot counter (reset to 0) plays the role of CUDA's
-    // count_tmp, so concurrent writers to the same cell get distinct slots.
+    // Pass 3: scatter point indices into their cell's slot range. A single
+    // reused slot-counter buffer (memset to 0 and relaunched per batch on
+    // this in-order queue, no wait between batches) plays the role of CUDA's
+    // count_tmp: batches only need mutual exclusion within their own cells,
+    // so reusing one buffer -- rather than allocating+zeroing a fresh one
+    // per batch -- avoids per-batch allocation and host sync overhead.
+    uint32_t max_hash_table_size = 0;
+    for (int b = 0; b < batch_size; ++b) {
+        max_hash_table_size = std::max<uint32_t>(
+                max_hash_table_size,
+                hash_table_splits[b + 1].Item<uint32_t>() -
+                        hash_table_splits[b].Item<uint32_t>());
+    }
+    Tensor slot_counts =
+            Tensor::Empty({int64_t(max_hash_table_size)}, UInt32, device);
+    uint32_t* slot_counts_ptr = slot_counts.GetDataPtr<uint32_t>();
+
     for (int b = 0; b < batch_size; ++b) {
         const int64_t point_begin = points_row_splits[b].Item<int64_t>();
         const int64_t point_end = points_row_splits[b + 1].Item<int64_t>();
@@ -186,9 +209,13 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
                 hash_table_splits[b + 1].Item<uint32_t>() - first_cell_idx;
         const uint32_t* cell_splits_i = cell_splits_ptr + first_cell_idx;
 
-        Tensor slot_counts =
-                Tensor::Zeros({int64_t(hash_table_size)}, UInt32, device);
-        uint32_t* slot_counts_ptr = slot_counts.GetDataPtr<uint32_t>();
+        // Queue is in-order (see SYCLContext), so this memset is guaranteed
+        // to complete before the parallel_for below reads/writes
+        // slot_counts_ptr, and this batch's parallel_for is guaranteed to
+        // complete before the next batch's memset -- without any explicit
+        // host-side wait.
+        queue.memset(slot_counts_ptr, 0,
+                     static_cast<size_t>(hash_table_size) * sizeof(uint32_t));
 
         queue.parallel_for(
                 sycl::range<1>(num_points_i),
@@ -205,8 +232,8 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
                     index_ptr[cell_splits_i[hash] + slot] =
                             static_cast<uint32_t>(i);
                 });
-        queue.wait_and_throw();
     }
+    queue.wait_and_throw();
 }
 
 /// Counts, for every query, how many dataset points lie within \p radius,
