@@ -28,7 +28,7 @@ target_link_libraries(Draw PRIVATE Open3D::Open3D)
 
 # Match Open3D's /MT or /MD (CMP0091 above); explicit /M flags are a fallback if
 # a dependency resets CMP0091 and MSVC_RUNTIME_LIBRARY is ignored.
-if(WIN32 AND (MSVC OR CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM"))
+if(WIN32)
     set_target_properties(Draw PROPERTIES
         MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")
     if(STATIC_WINDOWS_RUNTIME)
