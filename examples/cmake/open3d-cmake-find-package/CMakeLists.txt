@@ -22,6 +22,10 @@ endif()
 # Find installed Open3D, which exports Open3D::Open3D
 find_package(Open3D REQUIRED)
 
+# Dependency config files can reset CMP0091 after project() has initialized it.
+# Re-assert it before creating the consumer target so the runtime selection is honored.
+cmake_policy(SET CMP0091 NEW)
+
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
 target_link_libraries(Draw PRIVATE Open3D::Open3D)
