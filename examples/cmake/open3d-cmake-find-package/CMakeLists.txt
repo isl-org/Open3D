@@ -25,6 +25,11 @@ find_package(Open3D REQUIRED)
 # Dependency config files can reset CMP0091 after project() has initialized it.
 # Re-assert it before creating the consumer target so the runtime selection is honored.
 cmake_policy(SET CMP0091 NEW)
+if(STATIC_WINDOWS_RUNTIME)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)
