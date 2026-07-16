@@ -32,14 +32,14 @@ else()
 endif()
 
 if(WIN32 AND NOT STATIC_WINDOWS_RUNTIME)
-    string(REGEX REPLACE "/MTd?" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
-    string(REGEX REPLACE "/MTd?" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-    string(REGEX REPLACE "/MTd?" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-    string(REGEX REPLACE "/MTd?" "" CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MD")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MD")
+    get_target_property(open3d_compile_options Open3D::Open3D
+                        INTERFACE_COMPILE_OPTIONS)
+    if(open3d_compile_options)
+        string(REGEX REPLACE "/MTd?" "" open3d_compile_options
+               "${open3d_compile_options}")
+        set_property(TARGET Open3D::Open3D PROPERTY INTERFACE_COMPILE_OPTIONS
+                     "${open3d_compile_options}")
+    endif()
 endif()
 
 add_executable(Draw)
