@@ -43,9 +43,11 @@ if sys.platform == "win32":
         _nvidia_dir = os.path.join(_site_dir, "nvidia")
         if os.path.isdir(_nvidia_dir):
             for _nvidia_pkg_dir in os.listdir(_nvidia_dir):
-                _nvidia_bin_dir = os.path.join(_nvidia_dir, _nvidia_pkg_dir, "bin")
+                _nvidia_bin_dir = os.path.join(_nvidia_dir, _nvidia_pkg_dir,
+                                               "bin")
                 if os.path.isdir(_nvidia_bin_dir):
-                    _win32_dll_dirs.append(os.add_dll_directory(_nvidia_bin_dir))
+                    _win32_dll_dirs.append(
+                        os.add_dll_directory(_nvidia_bin_dir))
 
 from open3d.pybind import (
     core,

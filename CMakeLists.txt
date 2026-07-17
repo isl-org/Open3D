@@ -255,23 +255,8 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
-if (WIN32 AND BUILD_CUDA_MODULE AND NOT BUILD_WITH_CUDA_STATIC)
-    message(FATAL_ERROR "BUILD_CUDA_MODULE=ON requires BUILD_WITH_CUDA_STATIC=ON on Windows")
-endif()
-# Check SYCL compatiblility
-if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    message(FATAL_ERROR "BUILD_SYCL_MODULE requires IntelLLVM (DPC++) compiler, "
-                        "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
-                        "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
-endif()
-if (BUILD_SYCL_MODULE AND APPLE)
-    message(FATAL_ERROR "Open3D SYCL support is not available on Apple")
-endif()
-if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
-    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
-endif()
-if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
-    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
+if (WIN32 AND BUILD_CUDA_MODULE AND BUILD_WITH_CUDA_STATIC)
+    message(FATAL_ERROR "BUILD_WITH_CUDA_STATIC=ON is not supported on Windows. CUDA must be dynamically linked.")
 endif()
 
 if(OPEN3D_USE_INSTALLED_LIBRARY AND NOT BUILD_PYTHON_MODULE)
@@ -323,6 +308,22 @@ project(Open3D
     HOMEPAGE_URL "https://www.open3d.org"
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
+
+# Check SYCL compatiblility
+if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "BUILD_SYCL_MODULE requires IntelLLVM (DPC++) compiler, "
+                        "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
+                        "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
+endif()
+if (BUILD_SYCL_MODULE AND APPLE)
+    message(FATAL_ERROR "Open3D SYCL support is not available on Apple")
+endif()
+if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
+endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
