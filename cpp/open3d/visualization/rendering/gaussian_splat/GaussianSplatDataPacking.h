@@ -104,10 +104,16 @@ static constexpr std::size_t kGaussianCounterErrorFlagsIndex = 1;
 static constexpr std::size_t kGaussianCounterTileCountIndex = 2;
 static constexpr std::size_t kGaussianCounterSplatCountIndex = 3;
 
+/// Set when the shared sort-entry buffer overflows (total entries > capacity).
 inline constexpr std::uint32_t kGaussianGpuErrorTileEntryOverflow = 1u << 0;
+/// Set when the radix-sort dispatch count is clamped to the entry capacity.
 inline constexpr std::uint32_t kGaussianGpuErrorSortCountClamped = 1u << 1;
+/// Set when a splat's tile footprint exceeded max_tiles_per_splat and was cropped.
+inline constexpr std::uint32_t kGaussianGpuErrorMaxTilesPerSplatExceeded =
+        1u << 2;
 inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
-        kGaussianGpuErrorTileEntryOverflow | kGaussianGpuErrorSortCountClamped;
+        kGaussianGpuErrorTileEntryOverflow | kGaussianGpuErrorSortCountClamped |
+        kGaussianGpuErrorMaxTilesPerSplatExceeded;
 
 // ----- CPU-side representation -----------------------------------------------
 

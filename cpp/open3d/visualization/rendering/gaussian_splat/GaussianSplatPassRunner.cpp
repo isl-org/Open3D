@@ -43,35 +43,51 @@ inline std::size_t IndirectByteOffset(std::uint32_t slot) {
     return slot * kIndirectStride;
 }
 
-/// Download the GPU error-flag counters and log new error codes once per view.
-/// Keeps a bitfield of already-warned flags to suppress repeated messages.
+/// Download the GPU error-flag counters and log each active error code once
+/// per view (latched in vs.warned_gpu_error_flags so it never re-fires for
+/// the same bit). Must be called after the geometry pass has been submitted
+/// AND waited on (see WaitForGeometryPass())e.
 void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
                               GaussianSplatViewGpuResources& vs) {
-    if ((vs.warned_gpu_error_flags & kGaussianGpuErrorKnownMask) ==
-        kGaussianGpuErrorKnownMask) {
-        return;
-    }
-
     std::array<std::uint32_t, kGaussianCounterCount> counters = {0, 0, 0, 0};
     if (!ctx.DownloadBuffer(vs.counters_buf, counters.data(), sizeof(counters),
                             0)) {
         return;
     }
 
+    const std::uint32_t active_error_flags =
+            counters[kGaussianCounterErrorFlagsIndex] & kGaussianGpuErrorKnownMask;
     const std::uint32_t new_error_flags =
-            counters[kGaussianCounterErrorFlagsIndex] &
-            ~vs.warned_gpu_error_flags;
+            active_error_flags & ~vs.warned_gpu_error_flags;
+    if (new_error_flags == 0u) {
+        return;
+    }
+
     if ((new_error_flags & kGaussianGpuErrorTileEntryOverflow) != 0u) {
         utility::LogWarning(
-                "GaussianSplat: tile entry capacity exceeded; excess tile "
-                "entries were dropped. Increase "
-                "RenderConfig.max_tile_entries_total or max_tiles_per_splat.");
+                "GaussianSplat: too many splats overlap the same screen "
+                "region (camera too close to dense/large splats, or an "
+                "extremely dense scene); some splats were dropped and the "
+                "image may be incomplete or blank. Try moving the camera "
+                "back, increasing the near clip plane, or raising "
+                "MaterialRecord.gaussian_splat_max_tile_entries_total / "
+                "gaussian_splat_max_tiles_per_splat.");
     }
     if ((new_error_flags & kGaussianGpuErrorSortCountClamped) != 0u) {
         utility::LogWarning(
                 "GaussianSplat: radix sort input count exceeded the configured "
-                "tile entry capacity and was clamped. Output may be "
-                "incomplete.");
+                "tile entry capacity and was clamped; the image may be "
+                "incomplete. See the tile entry capacity warning above for "
+                "suggested fixes.");
+    }
+    if ((new_error_flags & kGaussianGpuErrorMaxTilesPerSplatExceeded) != 0u) {
+        utility::LogWarning(
+                "GaussianSplat: one or more splats' screen-space footprint "
+                "exceeded MaterialRecord.gaussian_splat_max_tiles_per_splat "
+                "and were cropped to fit; those splats may render with a "
+                "clipped/blocky edge. Try moving the camera back, increasing "
+                "the near clip plane, or raising "
+                "gaussian_splat_max_tiles_per_splat.");
     }
     vs.warned_gpu_error_flags |= new_error_flags;
 }
@@ -277,9 +293,6 @@ bool RunGaussianGeometryPasses(
     int src = RunClassicalRadixSort(ctx, vs, 0);
     vs.final_sort_src = src;
 
-    // Flush GPU error counters so tile-entry overflow warnings are visible.
-    LogGaussianGpuErrorsOnce(ctx, vs);
-
     return true;
 }
 
@@ -293,6 +306,12 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // no-op if the GPU already completed the work; otherwise it blocks until
     // the fence signals.
     ctx.WaitForGeometryPass();
+
+    // Read back GPU error counters now that the fence above guarantees the
+    // geometry pass (which writes them) has actually executed. Reading them
+    // any earlier would observe a stale/previous-frame value and could miss
+    // real overflow conditions silently.
+    LogGaussianGpuErrorsOnce(ctx, vs);
 
     // Composite splats from the sorted tile-entry buffer onto the GS color
     // texture, then optionally merge GS linear depth with Filament scene depth.

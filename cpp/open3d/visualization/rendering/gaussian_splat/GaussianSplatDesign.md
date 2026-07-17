@@ -250,7 +250,7 @@ can treat `gl_SubgroupSize` as a constant.
 |-------|---------|
 | `scene.z` | Antialias flag (0 = off, 1 = density compensation) |
 | `limits.x` | Tile-entry capacity allocated for the frame |
-| `limits.y` | `RenderConfig::max_tiles_per_splat` |
+| `limits.y` | `RenderConfig::max_tiles_per_splat`; enforced as a hard per-splat cap in `gaussian_project.comp` (see below), not just a sizing hint |
 | `limits.z` | `RenderConfig::max_tile_entries_total` |
 | `limits.w` | $T$ (tile bit count for sort key split) |
 | `depth_range_and_flags.w` | 1.0 = scene depth present, 0.0 = absent |
@@ -298,17 +298,42 @@ $$\text{compensation} = \sqrt{\frac{\det(\Sigma_{\text{orig}})}{\det(\Sigma_{\te
 
 `RenderConfig` exposes two runtime safety knobs:
 
-- `max_tiles_per_splat` — per-splat budget for estimating sort buffer size.
+- `max_tiles_per_splat` — hard per-splat cap on tile-entry count, enforced directly in
+  `gaussian_project.comp` (`ProjectGaussian`): if a splat's screen-space bbox would cover more
+  tiles than this, the tile rectangle is shrunk symmetrically around the splat's center tile
+  before entries are written. This keeps a handful of splats with enormous projected footprint
+  (e.g. a background splat grazing the near plane) from alone exhausting the sort-entry buffer,
+  which is sized as `splat_count * max_tiles_per_splat` (see `PackGaussianViewParams`). A value
+  of 0 disables the cap (no clamping).
 - `max_tile_entries_total` — hard ceiling for sort keys, values, and tile entries.
 
 Both are forwarded to shaders via `GaussianViewParams.limits`.
 
 GPU error bits in `counters_buf.error_flags`:
 
-- Bit 0: tile-entry overflow in the scatter pass; excess entries dropped.
+- Bit 0: tile-entry overflow in the scatter pass; excess entries dropped. With the per-splat
+  cap above this should only occur for truly pathological scenes (e.g. `splat_count *
+  max_tiles_per_splat` itself exceeding `max_tile_entries_total`).
 - Bit 1: dispatch / sort count clamped in `gaussian_compute_dispatch_args.comp`.
+- Bit 2: `max_tiles_per_splat` cap in `ProjectGaussian` actually shrank one or more splats'
+  tile rectangles (i.e. the limit was exceeded and splats were cropped). Set via `atomicOr`
+  right where the clamp is applied, so it fires even when bit 0 never triggers (the whole
+  point of the cap is to avoid bit 0 in normal use).
 
-The pass runner downloads this bitmask once after GPU work and logs each warning once per view.
+The pass runner downloads this bitmask in `RunGaussianCompositePass`, immediately after
+`WaitForGeometryPass()` — the earliest point at which the geometry pass (which writes these
+counters) is guaranteed to have completed on the GPU. Reading any earlier (e.g. right after
+recording/submitting the geometry pass, as this code used to do) would observe a stale or
+previous-frame value on both the Vulkan and Metal backends and silently miss real overflow
+conditions. `GaussianSplatGpuContext::WaitForGeometryPass()` is implemented per backend: Vulkan
+CPU-waits on the geometry fence if still pending; Metal waits on the last committed geometry
+command buffer if not already complete.
+
+Warnings are logged once when a new error bit first appears, and then re-logged at most once
+every 5 seconds while the condition persists (`kGpuErrorRewarnInterval`), so a lingering issue
+(e.g. the camera staying too close to an oversized splat) stays visible instead of only warning
+once ever. Messages lead with the user-facing cause (camera too close / scene too dense) and
+action (move back, raise the near plane) before naming the underlying `MaterialRecord` knobs.
 
 ---
 

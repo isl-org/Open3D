@@ -185,7 +185,8 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,
-        const GaussianSplatRenderer::RenderConfig& config) {
+        const GaussianSplatRenderer::RenderConfig& config,
+        std::uint32_t effective_max_tiles_per_splat) {
     // Build the 288-byte per-frame UBO from camera/viewport/scene state.
     // Called every frame; cost is a single memcpy-sized CPU write to the GPU.
     PackedGaussianScene packed;
@@ -206,11 +207,18 @@ PackedGaussianScene PackGaussianViewParams(
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
 
+    // entry_capacity is the buffer-sizing budget: always derived from the
+    // static config seed, NOT the adaptive per-splat cap below, so it stays
+    // stable frame-to-frame regardless of how the controller adjusts the
+    // per-splat clamp (see the parameter doc comment in the header).
     const auto entry_budget =
             static_cast<std::uint64_t>(n) * config.max_tiles_per_splat;
     const auto entry_capacity = static_cast<std::uint32_t>(std::min(
             entry_budget,
             static_cast<std::uint64_t>(config.max_tile_entries_total)));
+    const std::uint32_t per_splat_cap = effective_max_tiles_per_splat != 0u
+                                                ? effective_max_tiles_per_splat
+                                                : config.max_tiles_per_splat;
 
     // world_from_model: splat positions are in world space → identity.
     // render_data.model_matrix is the camera rig; do not use it here.
@@ -246,7 +254,7 @@ PackedGaussianScene PackGaussianViewParams(
     std::memcpy(vp.tiles, tiles_u.data(), sizeof(tiles_u));
 
     vp.limits[0] = entry_capacity;
-    vp.limits[1] = config.max_tiles_per_splat;
+    vp.limits[1] = per_splat_cap;
     vp.limits[2] = config.max_tile_entries_total;
     // T = bits needed to hold the largest tile index =
     // floor(log2(max_index))+1. For a single tile (tcx*tcy == 1) max_tile_index
