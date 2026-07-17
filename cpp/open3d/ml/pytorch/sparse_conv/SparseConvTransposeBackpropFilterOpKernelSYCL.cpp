@@ -29,6 +29,7 @@ void SparseConvTransposeBackpropFilterSYCL(
         const torch::Tensor& out_features_gradient,
         const bool normalize,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop) {
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
@@ -61,7 +62,7 @@ void SparseConvTransposeBackpropFilterSYCL(
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(),
-            out_features_gradient.data_ptr<TFeat>(), normalize);
+            out_features_gradient.data_ptr<TFeat>(), normalize, allow_tf32);
 
     temp_size = std::max(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
@@ -86,7 +87,7 @@ void SparseConvTransposeBackpropFilterSYCL(
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(),
-            out_features_gradient.data_ptr<TFeat>(), normalize);
+            out_features_gradient.data_ptr<TFeat>(), normalize, allow_tf32);
 }
 #define INSTANTIATE(TFeat, TOut, TIndex, TKernelIndex)                         \
     template void                                                              \
@@ -100,6 +101,7 @@ void SparseConvTransposeBackpropFilterSYCL(
             const torch::Tensor& neighbors_importance,                         \
             const torch::Tensor& neighbors_row_splits,                         \
             const torch::Tensor& out_features_gradient, const bool normalize,  \
-            const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, int32_t, uint8_t)

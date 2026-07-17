@@ -79,5 +79,6 @@ void ContinuousConvTransposeBackpropFilterSYCL(
         const bool normalize,
         const open3d::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop);
 #endif

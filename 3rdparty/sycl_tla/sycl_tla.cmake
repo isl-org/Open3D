@@ -2,16 +2,21 @@ include(ExternalProject)
 
 # SYCL*TLA (SYCL Templates for Linear Algebra) is a fork of NVIDIA CUTLASS
 # that extends the CUTLASS/CuTe API to Intel GPUs via SYCL.
-# Version v0.9.1 is based on CUTLASS v4.2.1, matching Open3D's CUTLASS version.
-# Used by the SYCL ML ops path (BUILD_SYCL_MODULE=ON) for future Intel GPU support.
-# Actual CUDA→SYCL kernel porting is handled separately.
+# Track sycl-tla main while validating the device-agnostic float32 GEMM path.
+# Used by the SYCL ML ops path (BUILD_SYCL_MODULE=ON) for future Intel GPU
+# support. Actual CUDA→SYCL kernel porting is handled separately.
 ExternalProject_Add(
     ext_sycl_tla
     PREFIX sycl_tla
-    URL https://github.com/intel/sycl-tla/archive/refs/tags/v0.9.1.tar.gz
-    URL_HASH SHA256=407d85b4358294ddae19e03d6b99af611660e7c0a24f8cbe5c24546dfe7ac86e
+    GIT_REPOSITORY https://github.com/intel/sycl-tla.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+    UPDATE_DISCONNECTED TRUE
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/sycl_tla"
-    UPDATE_COMMAND ""
+    PATCH_COMMAND
+        /bin/bash ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh
+        ${CMAKE_CURRENT_LIST_DIR}/0001-fix-oneapi-2025.3-ieee-gemm.patch
+        <SOURCE_DIR>
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""

@@ -1,0 +1,59 @@
+diff --git a/include/cutlass/arch/cache_operation.h b/include/cutlass/arch/cache_operation.h
+index 5128ee02..7f607199 100644
+--- a/include/cutlass/arch/cache_operation.h
++++ b/include/cutlass/arch/cache_operation.h
+@@ -42,7 +42,7 @@ namespace arch {
+ 
+ /// Controls PTX cache operations
+ struct CacheOperation {
+-  enum Kind {
++  enum Kind : unsigned char {
+     /// Cache at all levels - accessed again
+     Always,
+     /// Cache at global level
+diff --git a/include/cutlass/arch/mma.h b/include/cutlass/arch/mma.h
+index 40c8200f..0604bf7e 100644
+--- a/include/cutlass/arch/mma.h
++++ b/include/cutlass/arch/mma.h
+@@ -206,7 +206,7 @@ struct Mma<gemm::GemmShape<1, 1, 1>, 1, ElementA, LayoutA, ElementB, LayoutB, El
+ 
+ /// Specifies internal data type for computation
+ struct SPFormatType {
+-  enum Kind {
++  enum Kind : unsigned char {
+     Thread
+   };
+ };
+diff --git a/include/cutlass/epilogue/thread/scale_type.h b/include/cutlass/epilogue/thread/scale_type.h
+index beed8bf7..c0868392 100644
+--- a/include/cutlass/epilogue/thread/scale_type.h
++++ b/include/cutlass/epilogue/thread/scale_type.h
+@@ -49,7 +49,7 @@ namespace thread {
+ ///  1. Scalar means alpha/beta is a single value from host(constant param) or device memory.
+ ///  2. Vector means alpha/beta is a vector always from device memory.
+ struct ScaleType {
+-  enum Kind {
++  enum Kind : unsigned char {
+     Default,                           // D = scalar_alpha x Acc + scalar_beta x C
+     NoBetaScaling,                     // D = scalar_alpha x Acc + C
+     OnlyAlphaScaling,                  // D = scalar_alpha x Acc
+diff --git a/include/cutlass/gemm/device/gemm_universal_adapter.h b/include/cutlass/gemm/device/gemm_universal_adapter.h
+index 90839e5e..781bd0d6 100644
+--- a/include/cutlass/gemm/device/gemm_universal_adapter.h
++++ b/include/cutlass/gemm/device/gemm_universal_adapter.h
+@@ -605,10 +605,13 @@ public:
+           sycl_grid, sycl_block, launch_props, kernel_props
+         };
+ #if defined(CUTLASS_SYCL_PROFILING_ENABLED)
+-        auto event = compat::experimental::launch<device_kernel<GemmKernel>, GemmKernel>(policy, q, params);
++        auto event = compat::experimental::launch<device_kernel<GemmKernel>>(
++            policy, q, params);
+         EventManager::getInstance().addEvent(event);
+ #else
+-        compat::experimental::launch<device_kernel<GemmKernel>, GemmKernel, false>(policy, q, params);
++        compat::experimental::launch<device_kernel<GemmKernel>,
++                                     sycl::detail::auto_name, false>(policy,
++                                                                     q, params);
+ #endif
+ #endif // !defined(SYCL_EXT_ONEAPI_WORK_GROUP_SCRATCH_MEMORY)
+ #else

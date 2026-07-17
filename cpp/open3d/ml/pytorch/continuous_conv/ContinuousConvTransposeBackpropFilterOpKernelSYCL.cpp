@@ -36,6 +36,7 @@ void ContinuousConvTransposeBackpropFilterSYCL(
         const bool normalize,
         const InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop) {
     const bool individual_extents = extents.size(0) > 1;
     const bool isotropic_extents = extents.size(1) == 1;
@@ -72,7 +73,7 @@ void ContinuousConvTransposeBackpropFilterSYCL(
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
             offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TFeat>(),
             interpolation, coordinate_mapping, align_corners,
-            individual_extents, isotropic_extents, normalize);
+            individual_extents, isotropic_extents, normalize, allow_tf32);
 
     temp_size = std::max(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
@@ -99,7 +100,7 @@ void ContinuousConvTransposeBackpropFilterSYCL(
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
             offset.data_ptr<TReal>(), out_features_gradient.data_ptr<TFeat>(),
             interpolation, coordinate_mapping, align_corners,
-            individual_extents, isotropic_extents, normalize);
+            individual_extents, isotropic_extents, normalize, allow_tf32);
 }
 #define INSTANTIATE(TFeat, TOut, TReal, TIndex)                                \
     template void                                                              \
@@ -117,6 +118,7 @@ void ContinuousConvTransposeBackpropFilterSYCL(
             const bool align_corners,                                          \
             const CoordinateMapping coordinate_mapping, const bool normalize,  \
             const InterpolationMode interpolation,                             \
-            const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)

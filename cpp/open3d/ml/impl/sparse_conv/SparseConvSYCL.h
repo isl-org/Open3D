@@ -45,7 +45,8 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
                                    const TKernelIndex* neighbors_kernel_index,
                                    const TFeat* neighbors_importance,
                                    const int64_t* neighbors_row_splits,
-                                   bool normalize) {
+                                   bool normalize,
+                                   bool allow_tf32) {
     const bool get_temp_size = !temp;
 
     if (get_temp_size) {
@@ -124,7 +125,8 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
+                allow_tf32);
     }
 }
 

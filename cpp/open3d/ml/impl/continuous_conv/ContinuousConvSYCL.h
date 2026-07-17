@@ -54,7 +54,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
                               bool align_corners,
                               bool individual_extent,
                               bool isotropic_extent,
-                              bool normalize) {
+                              bool normalize,
+                              bool allow_tf32) {
     const bool get_temp_size = !temp;
 
     if (get_temp_size) {
@@ -142,7 +143,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
+                allow_tf32);
     }
 }
 

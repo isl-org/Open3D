@@ -27,6 +27,7 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
                              const torch::Tensor& neighbors_row_splits,
                              const bool normalize,
                              const int64_t max_temp_mem_MB,
+                             const bool allow_tf32,
                              torch::Tensor& out_features) {
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
@@ -58,7 +59,7 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
             neighbors_importance.size(0)
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), normalize);
+            neighbors_row_splits.data_ptr<int64_t>(), normalize, allow_tf32);
 
     temp_size = std::max(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
@@ -82,7 +83,7 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
             neighbors_importance.size(0)
                     ? neighbors_importance.data_ptr<TFeat>()
                     : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), normalize);
+            neighbors_row_splits.data_ptr<int64_t>(), normalize, allow_tf32);
 }
 #define INSTANTIATE(TFeat, TOut, TIndex, TKernelIndex)                         \
     template void SparseConvTransposeSYCL<TFeat, TOut, TIndex, TKernelIndex>(  \
@@ -94,6 +95,7 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
             const torch::Tensor& neighbors_kernel_index,                       \
             const torch::Tensor& neighbors_importance,                         \
             const torch::Tensor& neighbors_row_splits, const bool normalize,   \
-            const int64_t max_temp_mem_MB, torch::Tensor& out_features);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& out_features);
 
 INSTANTIATE(float, float, int32_t, uint8_t)

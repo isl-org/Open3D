@@ -14,7 +14,7 @@
 // CuTe/`CollectiveBuilder`/`GemmUniversalAdapter`). This is the *only* GEMM
 // backend for SYCL conv ops (no oneMKL/CPU fallback exists or is used).
 //
-// Two design points, both verified against the actual sycl-tla v0.9.1 source
+// Three design points, all verified against the actual sycl-tla v0.9.1 source
 // (downloaded and syntax-checked with `icpx -fsycl -fsyntax-only` against a
 // prototype using this exact API before writing this file):
 //
@@ -31,11 +31,13 @@
 //    hardware and keeps accumulation (`ElementAccumulator`) and the output
 //    (`ElementC`/`ElementD`) as full `float` — i.e. only the A/B multiply
 //    inputs lose precision, not the accumulated result. This is an accepted
-//    speed/precision trade-off for ML conv ops (documented here; if bit-exact
-//    fp32 GEMM parity with the CUDA path is ever required, sycl-tla only
-//    exposes vector ("SIMT"/non-tensor-core) fallbacks in some upstream
-//    versions and would need to be revisited).
-// 2. sycl-tla's Xe epilogue collective builder only supports row-major
+//    speed/precision trade-off for ML conv ops. The default IEEE path below
+//    remains available when bit-exact fp32 semantics are required.
+// 2. The default IEEE path uses sycl-tla's device-agnostic
+//    `OpMultiplyAdd` collective with float32 inputs, accumulation, and output.
+//    This is the non-tensor/SIMT path and preserves IEEE float32 semantics.
+//    Its aliases accept both operand layout combinations used by convolution.
+// 3. sycl-tla's Xe epilogue collective builder only supports row-major
 //    (N-major) output D/C (verified: `xe_builder.inl` static_asserts on this).
 //    To still expose a *column-major* C/D (matching the CUDA calling
 //    convention used throughout Open3D's conv kernels) with zero extra data
@@ -54,6 +56,8 @@
 // portable, safe choice and is not Xe3-specific tuned.
 
 #pragma once
+
+#include <sstream>
 
 #include <cutlass/gemm/device/gemm_universal.h>
 #include <cutlass/gemm/device/gemm_universal_adapter.h>
@@ -121,21 +125,21 @@ auto MakeStrideB(int64_t ld) {
 /// sycl-tla, producing a RowMajor (M x N) output D (D may alias C).
 /// A is (M x K, LayoutA), B is (K x N, LayoutB). GEMM element type is
 /// cutlass::tfloat32_t (see file header); accumulation/output stay `float`.
-template <class LayoutA, class LayoutB>
-void RunGemmXeRowMajorOutput(sycl::queue& queue,
-                             int m,
-                             int n,
-                             int k,
-                             float alpha,
-                             const float* A,
-                             int64_t lda,
-                             const float* B,
-                             int64_t ldb,
-                             float beta,
-                             const float* C,
-                             int64_t ldc,
-                             float* D,
-                             int64_t ldd) {
+template <class TileShape, class LayoutA, class LayoutB>
+cutlass::Status RunGemmXmxTf32RowMajorOutput(sycl::queue& queue,
+                                             int m,
+                                             int n,
+                                             int k,
+                                             float alpha,
+                                             const float* A,
+                                             int64_t lda,
+                                             const float* B,
+                                             int64_t ldb,
+                                             float beta,
+                                             const float* C,
+                                             int64_t ldc,
+                                             float* D,
+                                             int64_t ldd) {
     using ElementA = cutlass::tfloat32_t;
     using ElementB = cutlass::tfloat32_t;
     using ElementAccumulator = float;
@@ -152,10 +156,6 @@ void RunGemmXeRowMajorOutput(sycl::queue& queue,
     constexpr int AlignmentB = 4;
     constexpr int AlignmentC = 4;
     constexpr int AlignmentD = 4;
-
-    // Work-group level tile — a §9 tuning knob; this default is a portable,
-    // untuned choice (not Xe3-specific).
-    using TileShape = cute::Shape<cute::_256, cute::_256, cute::_32>;
 
     using CollectiveMainloop = cutlass::gemm::collective::CollectiveBuilder<
             cutlass::arch::IntelXe, cutlass::arch::OpClassTensorOp, ElementA,
@@ -207,6 +207,109 @@ void RunGemmXeRowMajorOutput(sycl::queue& queue,
             {m, n, k, 1},
             {reinterpret_cast<const ElementA*>(A), stride_A,
              reinterpret_cast<const ElementB*>(B), stride_B},
+             {{alpha, beta}, C, stride_C, D, stride_D},
+            hw_info};
+
+    Gemm gemm_op;
+    size_t workspace_size = Gemm::get_workspace_size(arguments);
+    void* workspace = nullptr;
+    if (workspace_size > 0) {
+        workspace = sycl::malloc_device(workspace_size, queue);
+    }
+
+    auto status = gemm_op.can_implement(arguments);
+    if (status != cutlass::Status::kSuccess) {
+        if (workspace) sycl::free(workspace, queue);
+        return status;
+    }
+    status = gemm_op.initialize(arguments, workspace, &queue);
+    if (status != cutlass::Status::kSuccess) {
+        if (workspace) sycl::free(workspace, queue);
+        return status;
+    }
+    status = gemm_op.run(&queue);
+    queue.wait_and_throw();
+    if (workspace) sycl::free(workspace, queue);
+    return status;
+}
+
+/// Runs IEEE float32 GEMM through sycl-tla's device-agnostic path.
+template <class TileShape, class LayoutA, class LayoutB>
+cutlass::Status RunGemmIeeeFp32RowMajorOutput(
+        sycl::queue& queue,
+        int m,
+        int n,
+        int k,
+        float alpha,
+        const float* A,
+        int64_t lda,
+        const float* B,
+        int64_t ldb,
+        float beta,
+        const float* C,
+        int64_t ldc,
+        float* D,
+        int64_t ldd) {
+    using ElementA = float;
+    using ElementB = float;
+    using ElementAccumulator = float;
+    using ElementC = float;
+    using ElementOutput = float;
+    using ElementComputeEpilogue = float;
+    using LayoutC = cutlass::layout::RowMajor;
+    using LayoutD = cutlass::layout::RowMajor;
+
+    constexpr int AlignmentA = sizeof(ElementA);
+    constexpr int AlignmentB = sizeof(ElementB);
+    constexpr int AlignmentC = sizeof(ElementC);
+    constexpr int AlignmentD = sizeof(ElementOutput);
+
+    using CollectiveMainloop =
+            typename cutlass::gemm::collective::CollectiveBuilder<
+                    cutlass::arch::Agnostic, cutlass::arch::OpMultiplyAdd,
+                    ElementA, LayoutA, AlignmentA, ElementB, LayoutB,
+                    AlignmentB, ElementAccumulator, TileShape,
+                    cute::Shape<cute::_1, cute::_1, cute::_1>,
+                    cutlass::gemm::collective::StageCountAuto,
+                    cutlass::gemm::collective::KernelScheduleAuto>::CollectiveOp;
+
+    using EpilogueOp = cutlass::epilogue::fusion::LinearCombination<
+            ElementOutput, ElementComputeEpilogue, ElementAccumulator,
+            ElementAccumulator>;
+    using CollectiveEpilogue =
+            typename cutlass::epilogue::collective::CollectiveBuilder<
+                    cutlass::arch::Agnostic, cutlass::arch::OpMultiplyAdd,
+                    TileShape, cute::Shape<cute::_1, cute::_1, cute::_1>,
+                    cutlass::epilogue::collective::EpilogueTileAuto,
+                    ElementComputeEpilogue, ElementAccumulator, ElementC,
+                    LayoutC, AlignmentC, ElementOutput, LayoutD, AlignmentD,
+                    cutlass::epilogue::collective::EpilogueScheduleAuto,
+                    EpilogueOp>::CollectiveOp;
+
+    using GemmKernel = cutlass::gemm::kernel::GemmUniversal<
+            cute::Shape<int, int, int, int>, CollectiveMainloop,
+            CollectiveEpilogue>;
+    using Gemm = cutlass::gemm::device::GemmUniversalAdapter<GemmKernel>;
+
+    using StrideA = typename Gemm::GemmKernel::StrideA;
+    using StrideB = typename Gemm::GemmKernel::StrideB;
+    using StrideC = typename Gemm::GemmKernel::StrideC;
+    using StrideD = typename Gemm::GemmKernel::StrideD;
+
+    StrideA stride_A = MakeStrideA<LayoutA>(lda);
+    StrideB stride_B = MakeStrideB<LayoutB>(ldb);
+    StrideC stride_C = cute::make_stride(ldc, cute::Int<1>{}, int64_t(0));
+    StrideD stride_D = cute::make_stride(ldd, cute::Int<1>{}, int64_t(0));
+
+    cutlass::KernelHardwareInfo hw_info;
+    hw_info.sm_count =
+            cutlass::KernelHardwareInfo::query_device_multiprocessor_count(
+                    hw_info.device_id);
+
+    typename Gemm::GemmKernel::Arguments arguments{
+            cutlass::gemm::GemmUniversalMode::kGemm,
+            {m, n, k, 1},
+            {A, stride_A, B, stride_B},
             {{alpha, beta}, C, stride_C, D, stride_D},
             hw_info};
 
@@ -220,21 +323,17 @@ void RunGemmXeRowMajorOutput(sycl::queue& queue,
     auto status = gemm_op.can_implement(arguments);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        throw std::runtime_error(
-                "GemmSYCL: sycl-tla GEMM cannot implement the requested "
-                "problem (unsupported shape/alignment/layout combination).");
+        return status;
     }
     status = gemm_op.initialize(arguments, workspace, &queue);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        throw std::runtime_error("GemmSYCL: sycl-tla GEMM initialize failed.");
+        return status;
     }
     status = gemm_op.run(&queue);
     queue.wait_and_throw();
     if (workspace) sycl::free(workspace, queue);
-    if (status != cutlass::Status::kSuccess) {
-        throw std::runtime_error("GemmSYCL: sycl-tla GEMM run failed.");
-    }
+    return status;
 }
 
 }  // namespace sycl_gemm_detail
@@ -250,11 +349,9 @@ void RunGemmXeRowMajorOutput(sycl::queue& queue,
 /// A,B both ColumnMajor; ContinuousConvBackpropFilter.cuh: A ColumnMajor,
 /// B RowMajor).
 ///
-/// Backend: sycl-tla only (see file header for the tf32-reinterpret and
-/// row-major-output-transpose design notes). Runs on the Intel GPU behind
-/// \p queue; requires a sycl-tla–supported device (Intel Data Center GPU Max
-/// / Arc B-series or newer — see plan §7 R10/R11; Arc A-series/Alchemist is
-/// not supported by sycl-tla and this shim will throw at runtime there).
+/// Backend: sycl-tla only. \p allow_tf32 selects the Intel XMX TF32 path;
+/// false selects the device-agnostic IEEE float32 path. Unsupported shapes
+/// throw instead of falling back to a custom GEMM kernel.
 template <class LayoutA = cutlass::layout::ColumnMajor,
           class LayoutB = cutlass::layout::ColumnMajor>
 void GemmColumnMajorSYCL(sycl::queue& queue,
@@ -268,15 +365,56 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
                          int64_t ldb,
                          float beta,
                          float* C,
-                         int64_t ldc) {
+                         int64_t ldc,
+                         bool allow_tf32 = false) {
     using namespace sycl_gemm_detail;
     // D_colmajor(M,N) = A*B  <=>  D_rowmajor(N,M) = B^T * A^T (same memory,
     // ld=ldc; see file header). Swap operands, swap M/N, transpose layout
     // tags; C aliases D (accumulate in place), matching the CUDA behavior.
     using SwappedLayoutA = typename TransposeLayout<LayoutB>::type;
     using SwappedLayoutB = typename TransposeLayout<LayoutA>::type;
-    RunGemmXeRowMajorOutput<SwappedLayoutA, SwappedLayoutB>(
-            queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C, ldc);
+    using LargeTile = cute::Shape<cute::_256, cute::_256, cute::_32>;
+    using MediumTile = cute::Shape<cute::_64, cute::_64, cute::_16>;
+    using SmallTile = cute::Shape<cute::_16, cute::_16, cute::_8>;
+
+    cutlass::Status status = cutlass::Status::kErrorNotSupported;
+    if (allow_tf32) {
+        status = RunGemmXmxTf32RowMajorOutput<LargeTile, SwappedLayoutA,
+                                              SwappedLayoutB>(
+                queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C, ldc);
+        if (status != cutlass::Status::kSuccess) {
+            status = RunGemmXmxTf32RowMajorOutput<MediumTile, SwappedLayoutA,
+                                                  SwappedLayoutB>(
+                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
+                    ldc);
+        }
+        if (status != cutlass::Status::kSuccess) {
+            status = RunGemmXmxTf32RowMajorOutput<SmallTile, SwappedLayoutA,
+                                                  SwappedLayoutB>(
+                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
+                    ldc);
+        }
+    }
+
+    if (status != cutlass::Status::kSuccess) {
+        status = RunGemmIeeeFp32RowMajorOutput<MediumTile, SwappedLayoutA,
+                                               SwappedLayoutB>(
+                queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C, ldc);
+        if (status != cutlass::Status::kSuccess) {
+            status = RunGemmIeeeFp32RowMajorOutput<SmallTile, SwappedLayoutA,
+                                                   SwappedLayoutB>(
+                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
+                    ldc);
+        }
+    }
+    if (status != cutlass::Status::kSuccess) {
+        std::ostringstream msg;
+        msg << "GemmSYCL: sycl-tla GEMM cannot implement problem m=" << m
+            << ", n=" << n << ", k=" << k << ", lda=" << lda
+            << ", ldb=" << ldb << ", ldc=" << ldc
+            << (allow_tf32 ? " (TF32 XMX)" : " (IEEE fp32)");
+        throw std::runtime_error(msg.str());
+    }
 }
 
 }  // namespace impl

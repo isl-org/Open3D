@@ -54,5 +54,6 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
                              const torch::Tensor& neighbors_row_splits,
                              const bool normalize,
                              const int64_t max_temp_mem_MB,
+                             const bool allow_tf32,
                              torch::Tensor& out_features);
 #endif

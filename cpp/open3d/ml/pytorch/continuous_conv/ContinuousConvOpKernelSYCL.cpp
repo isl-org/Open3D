@@ -32,6 +32,7 @@ void ContinuousConvSYCL(const torch::Tensor& filters,
                         const bool normalize,
                         const InterpolationMode interpolation,
                         const int64_t max_temp_mem_MB,
+                        const bool allow_tf32,
                         torch::Tensor& out_features) {
     const bool individual_extents = extents.size(0) > 1;
     const bool isotropic_extents = extents.size(1) == 1;
@@ -65,7 +66,8 @@ void ContinuousConvSYCL(const torch::Tensor& filters,
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
             offset.data_ptr<TReal>(), interpolation, coordinate_mapping,
-            align_corners, individual_extents, isotropic_extents, normalize);
+            align_corners, individual_extents, isotropic_extents, normalize,
+            allow_tf32);
 
     temp_size = std::max(
             std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
@@ -87,7 +89,8 @@ void ContinuousConvSYCL(const torch::Tensor& filters,
                     : nullptr,
             neighbors_row_splits.data_ptr<int64_t>(), extents.data_ptr<TReal>(),
             offset.data_ptr<TReal>(), interpolation, coordinate_mapping,
-            align_corners, individual_extents, isotropic_extents, normalize);
+            align_corners, individual_extents, isotropic_extents, normalize,
+            allow_tf32);
 }
 #define INSTANTIATE(TFeat, TOut, TReal, TIndex)                               \
     template void ContinuousConvSYCL<TFeat, TOut, TReal, TIndex>(             \
@@ -102,6 +105,7 @@ void ContinuousConvSYCL(const torch::Tensor& filters,
             const bool align_corners,                                         \
             const CoordinateMapping coordinate_mapping, const bool normalize, \
             const InterpolationMode interpolation,                            \
-            const int64_t max_temp_mem_MB, torch::Tensor& out_features);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,             \
+            torch::Tensor& out_features);
 
 INSTANTIATE(float, float, float, int32_t)

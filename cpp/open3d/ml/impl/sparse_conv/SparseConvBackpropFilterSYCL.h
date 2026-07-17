@@ -43,7 +43,8 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
                                   const TFeat* neighbors_importance,
                                   const int64_t* neighbors_row_splits,
                                   const TFeat* out_features_gradient,
-                                  bool normalize) {
+                                  bool normalize,
+                                  bool allow_tf32) {
     const bool get_temp_size = !temp;
 
     if (get_temp_size) {
@@ -125,7 +126,8 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
+                allow_tf32);
     }
 }
 

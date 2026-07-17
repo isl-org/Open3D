@@ -51,6 +51,31 @@ Key design decisions:
 
 ---
 
+## Convolution GEMM precision policy
+
+The eight SYCL sparse- and continuous-convolution operators expose an
+`allow_tf32=False` argument. The default XPU path uses float32 inputs,
+accumulators, and outputs with IEEE float32 multiply/accumulate semantics.
+When `allow_tf32=True`, the same float32 buffers are interpreted as
+`cutlass::tfloat32_t` inputs and dispatched through sycl-tla's Intel Xe XMX
+tensor-operation path; accumulation and output remain float32. CPU and CUDA
+dispatches accept the argument for schema compatibility but ignore it.
+
+Both paths use sycl-tla exclusively. `GemmSYCL.h` tries the ordered tile
+ladder for each path and raises an error when sycl-tla reports that none of
+the candidates can implement the requested layout, leading dimensions, or
+shape. There is no custom `parallel_for` GEMM fallback.
+
+sycl-tla main is used for the IEEE path. Its Agnostic kernel type accepts both
+column-major/column-major and column-major/row-major operand layouts. The
+oneAPI 2025.3 compatibility patch in `3rdparty/sycl_tla` gives the relevant
+unscoped `Kind` enums fixed underlying types and uses automatic SYCL kernel
+naming for the Agnostic launch. `open3d_torch_ops.so` and `python-package`
+build with that patch; XPU runtime validation still requires a host with an
+available Intel GPU.
+
+---
+
 ## Implementation Status (updated after real-hardware validation on Intel Panther Lake Xe3 iGPU)
 
 ### ✅ All 18 ops implemented, built, and functionally validated on real Intel GPU hardware
