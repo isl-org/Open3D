@@ -19,7 +19,7 @@ New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 Push-Location $WorkDir
 try {
     Write-Host "Downloading OneAPI webimage..."
-    curl.exe --output webimage.exe --url $ONEAPI_BASEKIT_URL --retry 5 --retry-delay 5 --fail
+    curl.exe -L --output webimage.exe --url $ONEAPI_BASEKIT_URL --retry 5 --retry-delay 5 --fail
     if ($LASTEXITCODE -ne 0) {
         throw "OneAPI download failed (curl exit $LASTEXITCODE): $ONEAPI_BASEKIT_URL"
     }

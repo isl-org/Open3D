@@ -17,9 +17,9 @@ $CudaVerId = "$($CudaVersionArr[0])_$($CudaVersionArr[1])"
 
 # Installer URL
 if ($CudaVersionArr[0] -ge 11) {
-    $CudaUrl = "http://developer.download.nvidia.com/compute/cuda/$CudaVersion/network_installers/cuda_$($CudaVersion)_windows_network.exe"
+    $CudaUrl = "https://developer.download.nvidia.com/compute/cuda/$CudaVersion/network_installers/cuda_$($CudaVersion)_windows_network.exe"
 } else {
-    $CudaUrl = "http://developer.download.nvidia.com/compute/cuda/$CudaMajorMinor/Prod/network_installers/cuda_$($CudaVersion)_win10_network.exe"
+    $CudaUrl = "https://developer.download.nvidia.com/compute/cuda/$CudaMajorMinor/Prod/network_installers/cuda_$($CudaVersion)_win10_network.exe"
 }
 
 # Required packages
@@ -36,7 +36,7 @@ Push-Location $WorkDir
 
 try {
     Write-Host "Downloading CUDA installer from $CudaUrl..."
-    curl.exe --output cuda.exe --url $CudaUrl --retry 5 --retry-delay 5 --fail
+    curl.exe -L --output cuda.exe --url $CudaUrl --retry 5 --retry-delay 5 --fail
     if ($LASTEXITCODE -ne 0) {
         throw "CUDA download failed (curl exit $LASTEXITCODE): $CudaUrl"
     }
