@@ -1192,7 +1192,7 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 # PoissonRecon
-include(${Open3D_3RDPARTY_DIR}/possionrecon/possionrecon.cmake)
+include(${Open3D_3RDPARTY_DIR}/poissonrecon/poissonrecon.cmake)
 open3d_import_3rdparty_library(3rdparty_poisson
     INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
     DEPENDS      ext_poisson
