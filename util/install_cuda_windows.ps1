@@ -1,10 +1,11 @@
 #Requires -RunAsAdministrator
 # Install NVIDIA CUDA toolkit components for Windows CI builds.
-$ErrorActionPreference = 'Stop'
 
 param(
     [string]$CudaVersion = $env:CUDA_VERSION
 )
+
+$ErrorActionPreference = 'Stop'
 
 if (-not $CudaVersion) {
     throw "CUDA_VERSION parameter or env var must be specified."

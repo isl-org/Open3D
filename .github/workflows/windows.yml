@@ -198,7 +198,10 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DBUILD_GUI=ON `
+            -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
