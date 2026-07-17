@@ -7,9 +7,11 @@
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <random>
+#include <utility>
 #include <vector>
 
 #include "open3d/core/Device.h"
@@ -393,7 +395,9 @@ struct SYCLNNSTest : public ::testing::Test {
 };
 
 // Shared 12-point dataset used by several tests below.
-static core::Tensor MakeSYCLTestDataset(const core::Device& device) {
+namespace {
+
+core::Tensor MakeSYCLTestDataset(const core::Device& device) {
     return core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                       {0.0, 0.0, 0.1},
                                       {0.0, 0.0, 0.2},
@@ -408,6 +412,8 @@ static core::Tensor MakeSYCLTestDataset(const core::Device& device) {
                                       {0.1, 0.1, 0.0}},
                                      device);
 }
+
+}  // namespace
 
 // Parity test (regression): KNN SYCL vs CPU must agree on indices & distances.
 TEST_F(SYCLNNSTest, KnnSearchMatchesCPU) {
@@ -634,6 +640,122 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchMatchesCPU) {
               splits_cpu[1].Item<int32_t>());
     EXPECT_TRUE(idx_sycl.To(cpu).AllClose(idx_cpu));
     EXPECT_TRUE(dist_sycl.To(cpu).AllClose(dist_cpu, 1e-5f, 1e-5f));
+}
+
+// core::nns::FixedRadiusIndex on CPU (impl::_FixedRadiusSearchCPU) ignores
+// its `sort` argument -- unlike CUDA/SYCL, it never sorts by distance, so
+// its output order is hash-table build order. Sort each query's segment by
+// (distance, index) in-place so CPU-vs-SYCL parity checks below can compare
+// with AllClose regardless of tie-break/build-order differences. `splits` is
+// an exclusive prefix sum (row_splits) over num_queries segments.
+namespace {
+
+void SortSegmentsByDistanceCPU(core::Tensor& idx,
+                                      core::Tensor& dist,
+                                      const core::Tensor& splits) {
+    const int64_t num_queries = splits.GetShape(0) - 1;
+    for (int64_t q = 0; q < num_queries; ++q) {
+        const int64_t begin = splits[q].Item<int32_t>();
+        const int64_t end = splits[q + 1].Item<int32_t>();
+        std::vector<std::pair<float, int32_t>> pairs;
+        for (int64_t i = begin; i < end; ++i) {
+            pairs.emplace_back(dist[i].Item<float>(), idx[i].Item<int32_t>());
+        }
+        std::sort(pairs.begin(), pairs.end());
+        for (int64_t i = begin; i < end; ++i) {
+            idx[i] = core::Tensor::Init<int32_t>(pairs[i - begin].second);
+            dist[i] = core::Tensor::Init<float>(pairs[i - begin].first);
+        }
+    }
+}
+
+}  // namespace
+
+// Linf metric parity (SparseConv uses Linf + float32).
+TEST_F(SYCLNNSTest, FixedRadiusSearchLinfMatchesCPU) {
+    core::Tensor dataset = MakeSYCLTestDataset(cpu);
+    core::Tensor query =
+            core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
+    const double radius = 0.1;
+    core::Tensor queries_row_splits =
+            core::Tensor::Init<int64_t>({0, query.GetShape(0)});
+
+    core::nns::FixedRadiusIndex frs_cpu(dataset, radius, core::Int32);
+    core::Tensor idx_cpu, dist_cpu, splits_cpu;
+    std::tie(idx_cpu, dist_cpu, splits_cpu) = frs_cpu.SearchRadius(
+            query, queries_row_splits, radius, true, core::nns::Linf, false);
+
+    core::nns::FixedRadiusIndex frs_sycl(dataset.To(sycl), radius, core::Int32);
+    core::Tensor idx_sycl, dist_sycl, splits_sycl;
+    std::tie(idx_sycl, dist_sycl, splits_sycl) = frs_sycl.SearchRadius(
+            query.To(sycl), queries_row_splits, radius, true, core::nns::Linf,
+            false);
+    idx_sycl = idx_sycl.To(cpu);
+    dist_sycl = dist_sycl.To(cpu);
+    splits_sycl = splits_sycl.To(cpu);
+
+    // Sort both sides identically; CPU's `sort=true` above is a no-op (see
+    // SortSegmentsByDistanceCPU), so compare on (distance, index) order.
+    SortSegmentsByDistanceCPU(idx_cpu, dist_cpu, splits_cpu);
+    SortSegmentsByDistanceCPU(idx_sycl, dist_sycl, splits_sycl);
+
+    EXPECT_EQ(splits_sycl[1].Item<int32_t>(), splits_cpu[1].Item<int32_t>());
+    EXPECT_TRUE(idx_sycl.AllClose(idx_cpu));
+    EXPECT_TRUE(dist_sycl.AllClose(dist_cpu, 1e-5f, 1e-5f));
+}
+
+// ignore_query_point: coincident dataset point must be excluded when enabled.
+TEST_F(SYCLNNSTest, FixedRadiusSearchIgnoreQueryPoint) {
+    core::Tensor dataset = MakeSYCLTestDataset(cpu);
+    core::Tensor query =
+            core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, cpu);  // point 4
+    const double radius = 0.2;
+    core::Tensor queries_row_splits =
+            core::Tensor::Init<int64_t>({0, 1});
+
+    core::nns::FixedRadiusIndex frs_cpu(dataset, radius, core::Int32);
+    core::Tensor idx_ignore_cpu, dist_ignore_cpu, splits_ignore_cpu;
+    std::tie(idx_ignore_cpu, dist_ignore_cpu, splits_ignore_cpu) =
+            frs_cpu.SearchRadius(query, queries_row_splits, radius, true,
+                                 core::nns::L2, true);
+    core::Tensor idx_keep_cpu, dist_keep_cpu, splits_keep_cpu;
+    std::tie(idx_keep_cpu, dist_keep_cpu, splits_keep_cpu) =
+            frs_cpu.SearchRadius(query, queries_row_splits, radius, true,
+                                 core::nns::L2, false);
+
+    core::nns::FixedRadiusIndex frs_sycl(dataset.To(sycl), radius, core::Int32);
+    core::Tensor idx_ignore_sycl, dist_ignore_sycl, splits_ignore_sycl;
+    std::tie(idx_ignore_sycl, dist_ignore_sycl, splits_ignore_sycl) =
+            frs_sycl.SearchRadius(query.To(sycl), queries_row_splits, radius,
+                                  true, core::nns::L2, true);
+    idx_ignore_sycl = idx_ignore_sycl.To(cpu);
+    dist_ignore_sycl = dist_ignore_sycl.To(cpu);
+    splits_ignore_sycl = splits_ignore_sycl.To(cpu);
+
+    core::Tensor idx_keep_sycl, dist_keep_sycl, splits_keep_sycl;
+    std::tie(idx_keep_sycl, dist_keep_sycl, splits_keep_sycl) =
+            frs_sycl.SearchRadius(query.To(sycl), queries_row_splits, radius,
+                                  true, core::nns::L2, false);
+    idx_keep_sycl = idx_keep_sycl.To(cpu);
+    dist_keep_sycl = dist_keep_sycl.To(cpu);
+    splits_keep_sycl = splits_keep_sycl.To(cpu);
+
+    // Sort both sides identically; CPU's `sort=true` above is a no-op (see
+    // SortSegmentsByDistanceCPU), so compare on (distance, index) order.
+    SortSegmentsByDistanceCPU(idx_ignore_cpu, dist_ignore_cpu,
+                              splits_ignore_cpu);
+    SortSegmentsByDistanceCPU(idx_ignore_sycl, dist_ignore_sycl,
+                              splits_ignore_sycl);
+    SortSegmentsByDistanceCPU(idx_keep_cpu, dist_keep_cpu, splits_keep_cpu);
+    SortSegmentsByDistanceCPU(idx_keep_sycl, dist_keep_sycl, splits_keep_sycl);
+
+    EXPECT_EQ(splits_ignore_sycl[1].Item<int32_t>(),
+              splits_ignore_cpu[1].Item<int32_t>());
+    EXPECT_TRUE(idx_ignore_sycl.AllClose(idx_ignore_cpu));
+    EXPECT_TRUE(idx_keep_sycl.AllClose(idx_keep_cpu));
+    // With ignore off, the query point itself is a neighbor at distance 0.
+    EXPECT_EQ(splits_keep_cpu[1].Item<int32_t>(),
+              splits_ignore_cpu[1].Item<int32_t>() + 1);
 }
 
 // Radius search C1: coincident query must have distance exactly 0.

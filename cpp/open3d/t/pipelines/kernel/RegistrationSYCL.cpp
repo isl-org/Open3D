@@ -22,8 +22,12 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-static constexpr int kReduceDim =
+namespace {
+
+constexpr int kReduceDim =
         29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
+
+}  // namespace
 
 void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                  const core::Tensor &target_points,

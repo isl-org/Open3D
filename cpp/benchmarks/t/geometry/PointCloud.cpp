@@ -56,15 +56,19 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
-static data::PLYPointCloud& PointCloudPlyDataset() {
+namespace {
+
+data::PLYPointCloud& PointCloudPlyDataset() {
     static data::PLYPointCloud dataset;
     return dataset;
 }
 
-static const std::string& PointCloudBenchmarkPath() {
+const std::string& PointCloudBenchmarkPath() {
     static const std::string path = PointCloudPlyDataset().GetPath();
     return path;
 }
+
+}  // namespace
 
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
     auto pcd = open3d::io::CreatePointCloudFromFile(PointCloudBenchmarkPath());

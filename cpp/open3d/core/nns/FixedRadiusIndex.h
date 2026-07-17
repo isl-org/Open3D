@@ -499,7 +499,9 @@ public:
             const Tensor& query_points,
             const Tensor& queries_row_splits,
             double radius,
-            bool sort = true) const;
+            bool sort = true,
+            Metric metric = L2,
+            bool ignore_query_point = false) const;
 
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor& query_points,
                                                     double radius,

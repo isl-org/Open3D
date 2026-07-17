@@ -30,7 +30,9 @@ INSTANTIATE_TEST_SUITE_P(
         VoxelBlockGridPermuteDevices,
         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-static core::Tensor GetIntrinsicTensor() {
+namespace {
+
+core::Tensor GetIntrinsicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
@@ -41,7 +43,7 @@ static core::Tensor GetIntrinsicTensor() {
              {0, 0, 1}});
 }
 
-static std::vector<core::Tensor> GetExtrinsicTensors() {
+std::vector<core::Tensor> GetExtrinsicTensors() {
     data::SampleRedwoodRGBDImages redwood_data;
 
     // Extrinsics
@@ -59,7 +61,7 @@ static std::vector<core::Tensor> GetExtrinsicTensors() {
     return extrinsics;
 }
 
-static std::vector<core::HashBackendType> EnumerateBackends(
+std::vector<core::HashBackendType> EnumerateBackends(
         const core::Device &device, bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
     if (device.IsCUDA()) {
@@ -75,7 +77,7 @@ static std::vector<core::HashBackendType> EnumerateBackends(
     return backends;
 }
 
-static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
+VoxelBlockGrid Integrate(const core::HashBackendType &backend,
                                 const core::Dtype &dtype,
                                 const core::Device &device,
                                 const int resolution) {
@@ -110,7 +112,7 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
 
 #ifdef BUILD_SYCL_MODULE
 /// Integrate a subset of Redwood frames (for faster SYCL/CPU parity checks).
-static VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
+VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
                                       const core::Device &device,
                                       size_t num_frames,
                                       int resolution = 8) {
@@ -145,6 +147,8 @@ static VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
     return vbg;
 }
 #endif
+
+}  // namespace
 
 TEST_P(VoxelBlockGridPermuteDevices, Construct) {
     core::Device device = GetParam();

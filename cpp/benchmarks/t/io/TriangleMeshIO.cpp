@@ -17,11 +17,15 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-static const std::string& KnotMeshPath() {
+namespace {
+
+const std::string& KnotMeshPath() {
     static data::KnotMesh knot_data;
     static const std::string path = knot_data.GetPath();
     return path;
 }
+
+}  // namespace
 
 void IOReadLegacyTriangleMesh(benchmark::State& state,
                               const std::string& input_file_path) {

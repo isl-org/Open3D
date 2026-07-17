@@ -26,8 +26,12 @@ namespace odometry {
 using t::geometry::kernel::NDArrayIndexer;
 using t::geometry::kernel::TransformIndexer;
 
-static constexpr int kReduceDimOdometry = 29;
-static constexpr int kJtJDimOdometry = 21;
+namespace {
+
+constexpr int kReduceDimOdometry = 29;
+constexpr int kJtJDimOdometry = 21;
+
+}  // namespace
 
 void ComputeOdometryResultPointToPlaneSYCL(
         const core::Tensor &source_vertex_map,

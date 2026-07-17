@@ -149,6 +149,8 @@ namespace open3d {
 namespace core {
 namespace nns {
 
+namespace {
+
 // Translate points and queries by a shared reference point to avoid float32
 // catastrophic cancellation in the tiled distance formula |q|^2 - 2q*p + |p|^2.
 // Squared L2 distance is translation-invariant, so the shift does not
@@ -159,7 +161,7 @@ namespace nns {
 // wrong nearest neighbors. CPU nanoflann computes sum((q-p)^2) directly and is
 // unaffected, which is why only the SYCL matmul path needed this.
 template <class T>
-static void CenterPointsAndQueries(Tensor& points, Tensor& queries) {
+void CenterPointsAndQueries(Tensor& points, Tensor& queries) {
     if (points.GetShape(0) == 0) return;
     // Use the first point as the shift reference: it is an actual data row (so
     // it always lies in the data range and can never be NaN/uninitialized) and
@@ -169,6 +171,16 @@ static void CenterPointsAndQueries(Tensor& points, Tensor& queries) {
     points = points.Sub(center);
     queries = queries.Sub(center);
 }
+
+template <class T>
+T FixedRadiusThreshold(Metric metric, T radius) {
+    if (metric == L2) {
+        return radius * radius;
+    }
+    return radius;
+}
+
+}  // namespace
 
 // Batched KNN search.
 ///
@@ -494,19 +506,10 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance,
                            int64_t /*tile_bytes*/) {
-    if (metric != Metric::L2) {
-        utility::LogError("SYCL fixed radius search only supports L2 metric.");
-    }
-    if (ignore_query_point) {
-        utility::LogError(
-                "SYCL fixed radius search does not support "
-                "ignore_query_point.");
-    }
-
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const T radius_t = static_cast<T>(radius);
-    const T threshold = radius_t * radius_t;  // L2: compare squared distances.
+    const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
@@ -538,7 +541,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                               cell_splits_i, hash_table_size,
                               queries_ptr + 3 * query_begin,
                               query_end - query_begin, points_ptr,
-                              inv_voxel_size, radius_t, threshold);
+                              inv_voxel_size, radius_t, metric,
+                              ignore_query_point, threshold);
     }
     queue.wait_and_throw();
 
@@ -593,7 +597,8 @@ void FixedRadiusSearchSYCL(const Tensor& points,
                 row_splits_ptr + query_begin, hash_index_ptr, cell_splits_i,
                 hash_table_size, queries_ptr + 3 * query_begin,
                 query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
-                threshold, return_distances || sort);
+                metric, ignore_query_point, threshold,
+                return_distances || sort);
     }
     queue.wait_and_throw();
 

@@ -23,9 +23,13 @@
 namespace open3d {
 namespace core {
 
+namespace {
+
 // CUDA: explicit device sync. CPU/SYCL HashMap ops finish with
 // wait_and_throw().
-static void DeviceSync(const Device& device) { cuda::Synchronize(device); }
+void DeviceSync(const Device& device) { cuda::Synchronize(device); }
+
+}  // namespace
 
 template <typename K, typename V>
 class HashData {

@@ -37,6 +37,8 @@ using BackendT = core::SYCLHashBackend<KeyT, HashT, EqT>;
 
 enum class HashOp { kInsert, kFind, kErase };
 
+namespace {
+
 // Host-side key/value generation, mirrors HashData in
 // benchmarks/core/HashMap.cpp: duplicate_factor controls how many distinct
 // "slots" the capacity-many keys collide into (duplicate_factor=1 -> all
@@ -73,7 +75,7 @@ T* ToDevice(const std::vector<T>& host, const core::Device& device) {
 //   0: wg_size
 // capacity/duplicate_factor/op are fixed per BENCHMARK_CAPTURE call
 // (captured, not swept).
-static void HashMapSYCLTune(benchmark::State& state,
+void HashMapSYCLTune(benchmark::State& state,
                             int64_t capacity,
                             int64_t duplicate_factor,
                             HashOp op) {
@@ -150,19 +152,19 @@ static void HashMapSYCLTune(benchmark::State& state,
     core::MemoryManager::Free(d_masks, device);
 }
 
-static void HashMapSYCLTuneInsert(benchmark::State& state,
+void HashMapSYCLTuneInsert(benchmark::State& state,
                                   int64_t capacity,
                                   int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kInsert);
 }
 
-static void HashMapSYCLTuneFind(benchmark::State& state,
+void HashMapSYCLTuneFind(benchmark::State& state,
                                 int64_t capacity,
                                 int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kFind);
 }
 
-static void HashMapSYCLTuneErase(benchmark::State& state,
+void HashMapSYCLTuneErase(benchmark::State& state,
                                  int64_t capacity,
                                  int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kErase);
@@ -179,6 +181,8 @@ BENCHMARK_CAPTURE(HashMapSYCLTuneFind, 1M_dup1, 1000000, 1)
 BENCHMARK_CAPTURE(HashMapSYCLTuneErase, 1M_dup1, 1000000, 1)
         ->ArgsProduct({{32, 64, 128, 256, 512, 1024}})
         ->Unit(benchmark::kMillisecond);
+
+}  // namespace
 
 }  // namespace core_hashmap
 }  // namespace benchmarks

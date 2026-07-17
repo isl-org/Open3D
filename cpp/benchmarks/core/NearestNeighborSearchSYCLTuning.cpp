@@ -24,12 +24,14 @@ namespace open3d {
 namespace benchmarks {
 namespace nns {
 
+namespace {
+
 // Args (via ->ArgsProduct, read with state.range(i)):
 //   0: subgroups_per_wg
 //   1: tile_points
 //   2: k
 template <typename T>
-static void NNS_KnnDirectTuneT(benchmark::State& state,
+void NNS_KnnDirectTuneT(benchmark::State& state,
                                int64_t num_points,
                                int64_t num_queries) {
     const int64_t subgroups_per_wg = state.range(0);
@@ -76,12 +78,12 @@ static void NNS_KnnDirectTuneT(benchmark::State& state,
 
 // BENCHMARK_CAPTURE cannot take a template-id (e.g. `Func<float>`) directly
 // -- it needs a plain function -- so wrap each instantiation.
-static void NNS_KnnDirectTuneFloat(benchmark::State& state,
+void NNS_KnnDirectTuneFloat(benchmark::State& state,
                                    int64_t num_points,
                                    int64_t num_queries) {
     NNS_KnnDirectTuneT<float>(state, num_points, num_queries);
 }
-static void NNS_KnnDirectTuneDouble(benchmark::State& state,
+void NNS_KnnDirectTuneDouble(benchmark::State& state,
                                     int64_t num_points,
                                     int64_t num_queries) {
     NNS_KnnDirectTuneT<double>(state, num_points, num_queries);
@@ -112,6 +114,8 @@ BENCHMARK_CAPTURE(NNS_KnnDirectTuneDouble,
         ->ArgNames({"sg_per_wg", "tile_pts", "k"})
         ->ArgsProduct({{8, 16, 32}, {512, 1024, 2048}, {1, 8, 32}})
         ->Unit(benchmark::kMillisecond);
+
+}  // namespace
 
 }  // namespace nns
 }  // namespace benchmarks

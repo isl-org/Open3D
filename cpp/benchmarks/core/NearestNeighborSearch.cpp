@@ -20,12 +20,14 @@ namespace open3d {
 namespace benchmarks {
 namespace nns {
 
-static void DeviceSync(const core::Device& device) {
+namespace {
+
+void DeviceSync(const core::Device& device) {
     core::cuda::Synchronize(device);
 }
 
 /// Ball radius in [0,1]^3 with roughly k points expected inside (uniform).
-static double RadiusForExpectedK(int64_t num_points, int k) {
+double RadiusForExpectedK(int64_t num_points, int k) {
     constexpr double kPi = 3.14159265358979323846;
     if (num_points <= 0 || k <= 0) {
         return 0.1;
@@ -34,6 +36,8 @@ static double RadiusForExpectedK(int64_t num_points, int k) {
             static_cast<double>(k) / static_cast<double>(num_points);
     return std::cbrt((3.0 * frac) / (4.0 * kPi));
 }
+
+}  // namespace
 
 void NNS_KnnBuild(benchmark::State& state,
                   int64_t num_points,

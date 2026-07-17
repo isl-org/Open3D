@@ -24,6 +24,8 @@ namespace open3d {
 namespace benchmarks {
 namespace nns {
 
+namespace {
+
 // ── Part 1: AddMM tile-shape tuning ────────────────────────────────────────
 // Args (via ->ArgsProduct, read with state.range(i)):
 //   0: tile_bytes, in MiB
@@ -34,7 +36,7 @@ namespace nns {
 // routed to AddMM in production: dim > kKnnDirectMaxDim, or
 // knn > kSYCLKnnSmallKMax.
 template <typename T>
-static void NNS_KnnAddMMTuneT(benchmark::State& state,
+void NNS_KnnAddMMTuneT(benchmark::State& state,
                               int64_t num_points,
                               int64_t num_queries,
                               int64_t dim,
@@ -80,7 +82,7 @@ static void NNS_KnnAddMMTuneT(benchmark::State& state,
     }
 }
 
-static void NNS_KnnAddMMTuneFloat(benchmark::State& state,
+void NNS_KnnAddMMTuneFloat(benchmark::State& state,
                                   int64_t num_points,
                                   int64_t num_queries,
                                   int64_t dim,
@@ -167,7 +169,7 @@ BENCHMARK_CAPTURE(NNS_KnnAddMMTuneFloat,
 // combo found in Part 1's sweep (see plan.md notes / PR description for the
 // exact chosen values).
 template <typename T>
-static void NNS_KnnPathCompareT(benchmark::State& state,
+void NNS_KnnPathCompareT(benchmark::State& state,
                                 int64_t num_points,
                                 int64_t num_queries,
                                 int64_t tile_bytes,
@@ -211,7 +213,7 @@ static void NNS_KnnPathCompareT(benchmark::State& state,
     }
 }
 
-static void NNS_KnnPathCompareFloat(benchmark::State& state,
+void NNS_KnnPathCompareFloat(benchmark::State& state,
                                     int64_t num_points,
                                     int64_t num_queries,
                                     int64_t tile_bytes,
@@ -255,7 +257,7 @@ BENCHMARK_CAPTURE(NNS_KnnPathCompareFloat,
 //   0: num_points
 //   1: force_addmm (0 = production dispatch, picks Direct; 1 = force AddMM)
 template <typename T>
-static void NNS_KnnPathScaleT(benchmark::State& state,
+void NNS_KnnPathScaleT(benchmark::State& state,
                               int64_t dim,
                               int knn,
                               int64_t tile_bytes,
@@ -299,7 +301,7 @@ static void NNS_KnnPathScaleT(benchmark::State& state,
     }
 }
 
-static void NNS_KnnPathScaleFloat(benchmark::State& state,
+void NNS_KnnPathScaleFloat(benchmark::State& state,
                                   int64_t dim,
                                   int knn,
                                   int64_t tile_bytes,
@@ -334,6 +336,8 @@ BENCHMARK_CAPTURE(NNS_KnnPathScaleFloat,
         ->ArgNames({"num_points", "force_addmm"})
         ->ArgsProduct({{100, 1000, 10000, 100000, 1000000, 5000000}, {0, 1}})
         ->Unit(benchmark::kMillisecond);
+
+}  // namespace
 
 }  // namespace nns
 }  // namespace benchmarks

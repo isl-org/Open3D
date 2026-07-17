@@ -145,7 +145,9 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points,
         const Tensor &queries_row_splits,
         double radius,
-        bool sort) const {
+        bool sort,
+        Metric metric,
+        bool ignore_query_point) const {
     const Dtype dtype = GetDtype();
     const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
@@ -180,8 +182,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 #define RADIUS_PARAMETERS                                               \
     dataset_points_, query_points_, radius, points_row_splits_,         \
             queries_row_splits_, hash_table_splits_, hash_table_index_, \
-            hash_table_cell_splits_, Metric::L2, false, true, sort,     \
-            neighbors_index, neighbors_row_splits, neighbors_distance
+            hash_table_cell_splits_, metric, ignore_query_point, true, \
+            sort, neighbors_index, neighbors_row_splits, neighbors_distance
 
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE

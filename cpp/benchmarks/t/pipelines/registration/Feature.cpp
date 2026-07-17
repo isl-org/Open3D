@@ -21,11 +21,15 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static const std::string& BunnyMeshPath() {
+namespace {
+
+const std::string& BunnyMeshPath() {
     static data::BunnyMesh bunny;
     static const std::string path = bunny.GetPath();
     return path;
 }
+
+}  // namespace
 
 void LegacyComputeFPFHFeature(benchmark::State& state,
                               std::optional<int> max_nn,

@@ -746,7 +746,7 @@ inline bool UseKnnDirect(int64_t dim, int64_t knn) {
 /// @{
 /// Mid/large-k paths apply C1 clamp, C4 tie-break, and P2 (no |q|² in tiles).
 
-namespace detail {
+namespace {
 
 /// Heapify-down for a max-heap of runtime size active_k (≤ compile-time K).
 template <typename T, typename TIndex, int K>
@@ -855,9 +855,9 @@ void SelectTopKQueriesHeap(sycl::queue& queue,
             });
 }
 
-}  // namespace detail
+}  // namespace
 
-/// K-bucket dispatch to \ref detail::SelectTopKQueriesHeap.
+/// K-bucket dispatch to \ref SelectTopKQueriesHeap (file-local, anonymous namespace).
 template <typename T, typename TIndex>
 void DispatchSelectTopKQueries(sycl::queue& queue,
                                const T* distances_ptr,
@@ -875,7 +875,7 @@ void DispatchSelectTopKQueries(sycl::queue& queue,
                                T radius_sq,
                                T scalar_threshold) {
 #define CALL_SELECT(Kval)                                                      \
-    detail::SelectTopKQueriesHeap<T, TIndex, Kval>(                            \
+    SelectTopKQueriesHeap<T, TIndex, Kval>(                                    \
             queue, distances_ptr, distance_query_stride, num_queries,          \
             num_points, knn, index_offset, out_indices_ptr, out_distances_ptr, \
             out_query_stride, use_threshold, query_norms_ptr, radius_sq,       \
