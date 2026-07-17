@@ -370,9 +370,9 @@ jobs:
       artifact-metadata: write
     runs-on: windows-2022
     needs: build-lib
-    # Build wheels even if build-lib failed only due to C++ unit tests: the
-    # compiled library / build artifact is still produced and uploaded (the
-    # unit-test step and the artifact-upload steps do not gate each other).
+    # Build wheels even if build-lib failed (e.g. some architecture or debug
+    # builds failed, but others succeeded, or unit tests failed): we want to build
+    # whichever wheels have available devel package artifacts.
     if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
@@ -430,25 +430,36 @@ jobs:
       # Build pybind (+ ML ops) against the devel package produced by build-lib's
       # "Package" step (find_package(Open3D), OPEN3D_USE_INSTALLED_LIBRARY=ON),
       # instead of recompiling/reconfiguring the whole C++ core per Python version.
+      # Ignore failure if the specific device's devel package is missing, so other devices
+      # in the matrix are not blocked.
       - name: Download devel package
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: open3d-devel-windows-${{ matrix.device }}-Release
           path: ${{ env.SRC_DIR }}/open3d_devel
 
       - name: Extract devel package
+        id: extract_devel
         run: |
           $ErrorActionPreference = 'Stop'
-          $zip = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel/open3d-devel-*.zip" | Select-Object -First 1
+          $zip = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel/open3d-devel-*.zip" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $zip) {
+            Write-Warning "Devel package zip not found for ${{ matrix.device }}! Skipping build."
+            echo "SKIPPED=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+            exit 0
+          }
           Expand-Archive -Path $zip.FullName -DestinationPath "${{ env.SRC_DIR }}/open3d_devel_extracted" -Force
-            $config = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel_extracted" -Recurse -Filter Open3DConfig.cmake | Select-Object -First 1
-            if (-not $config) {
-              throw "Open3DConfig.cmake not found in extracted devel package"
-            }
-            $root = $config.Directory.Parent
-            echo "OPEN3D_INSTALL_ROOT=$($root.FullName)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          $config = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel_extracted" -Recurse -Filter Open3DConfig.cmake | Select-Object -First 1
+          if (-not $config) {
+            throw "Open3DConfig.cmake not found in extracted devel package"
+          }
+          $root = $config.Directory.Parent
+          echo "OPEN3D_INSTALL_ROOT=$($root.FullName)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SKIPPED=false" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install Python dependencies
+        if: ${{ env.SKIPPED != 'true' }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -464,6 +475,7 @@ jobs:
           }
 
       - name: Config
+        if: ${{ env.SKIPPED != 'true' }}
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
@@ -538,6 +550,7 @@ jobs:
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
+        if: ${{ env.SKIPPED != 'true' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -550,11 +563,13 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate wheel attestation
+        if: ${{ env.SKIPPED != 'true' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel
+        if: ${{ env.SKIPPED != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-wheel-${{ matrix.device }}-${{ matrix.python_version }}
@@ -562,7 +577,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with wheel
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ env.SKIPPED != 'true' && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
