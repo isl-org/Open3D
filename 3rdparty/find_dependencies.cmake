@@ -1842,12 +1842,11 @@ endif(OPEN3D_USE_ONEAPI_PACKAGES)
 # cuBLAS
 if(BUILD_CUDA_MODULE)
     if(WIN32)
-        # Nvidia does not provide static libraries for Windows. We don't release
-        # pip wheels for Windows with CUDA support at the moment. For the pip
-        # wheels to support CUDA on Windows out-of-the-box, we need to either
-        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
-        # cudatoolkit conda package), or have a mechanism to locate the CUDA
-        # toolkit from the system.
+        # Nvidia does not provide static libraries for Windows, so CUDA is
+        # linked dynamically. The open3d-cuda pip wheel ships the required
+        # NVIDIA CUDA runtime DLLs via the nvidia-*-cu12 pip packages listed in
+        # python/requirements_win_cuda.txt (installed as a wheel dependency;
+        # see python/open3d/__init__.py for how they are located at runtime).
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
