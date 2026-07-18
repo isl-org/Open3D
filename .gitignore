@@ -30,6 +30,7 @@ cmake-build-release/
 util/pip_package/dist/
 doxygen/
 node_modules/
+.yarn
 
 # Editor files
 *.*~

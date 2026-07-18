@@ -202,59 +202,63 @@ build_pip_package() {
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
         "-DBUILD_SHARED_LIBS=ON"
+        "-DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}"
+        "-DPython3_EXECUTABLE=$(command -v python3)"
     )
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
-        install_python_dependencies with-cuda purge-cache
-        cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
-    else
-        cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
-    fi
-    set -x
-    # Always rerun cmake and unset Python cache variables to update cache for
-    # the current Python and build options.  This avoids incorrect/inherited
-    # Python config and ensures all paths are correct.  Do not use --fresh: it
-    # unnecessarily wipes build objects and wastes disk/CI time.
-    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
-        -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
-        -DPython3_EXECUTABLE="$(command -v python3)" \
-        "${cmakeOptions[@]}" ..
-    set +x
+    # Clear Python/Torch CMake cache vars for the current interpreter. Include
+    # '_Python3_*' (FindPython3 internals; not matched by 'Python3*') so a reused
+    # build dir from another Python (e.g. macOS build-lib @ 3.12) does not break
+    # Development.Module detection. Avoid --fresh: it wipes build objects.
+    cacheClear=(-U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*')
+
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
+        # C++ core only: single configure with the requested device.
+        if [ "$BUILD_CUDA_MODULE" == ON ]; then
+            cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
+        else
+            cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
+        fi
+        set -x
+        cmake "${cacheClear[@]}" "${cmakeOptions[@]}" ..
+        set +x
         echo "Building Open3D C++ Core only..."
         make VERBOSE=1 -j"$NPROC"
-    else
-        echo "Packaging Open3D pip wheel (single configure)..."
+        popd
+        echo
+        return 0
+    fi
+
+    # Wheel build. Build the CPU wheel first, against the CPU torch/tf in the
+    # current environment. For a CUDA build this also produces the cpu/ ops that
+    # are bundled into the CUDA wheel below, so a CUDA wheel serves both CPU-only
+    # and CUDA torch users. A CPU-only build (e.g.  macOS) is already the final
+    # wheel and skips the CUDA pass.
+    echo "Packaging Open3D CPU pip wheel..."
+    set -x
+    cmake "${cacheClear[@]}" "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
+    set +x
+    make VERBOSE=1 -j"$NPROC" pip-package
+
+    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+        echo
+        echo "Packaging Open3D CUDA pip wheel (bundling CPU + CUDA ops)..."
+        # Save the CPU (open3d-cpu) wheel; the CUDA repackage reuses pip_package.
+        mkdir -p ../pip_package_backup
+        cp lib/python_package/pip_package/*.whl ../pip_package_backup/
+        # CUDA ops must link against CUDA torch/tf.
+        install_python_dependencies with-cuda purge-cache
+        # Reconfigure CUDA ON in place. lib/Release/cpu (CPU ops built above) is
+        # preserved and packaged next to the freshly built lib/Release/cuda ops.
+        set -x
+        cmake "${cacheClear[@]}" "${cmakeOptions[@]}" \
+            -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON ..
+        set +x
         make VERBOSE=1 -j"$NPROC" pip-package
+        # Restore the CPU wheel alongside the CUDA wheel.
+        mv ../pip_package_backup/*.whl lib/python_package/pip_package/
+        rm -rf ../pip_package_backup
     fi
     popd
-
-    # A CUDA-enabled build also gets a companion CPU-only "open3d-cpu" wheel
-    # built alongside it (for users without a CUDA GPU); a CPU-only build IS
-    # already the CPU wheel, so there is nothing extra to build in that case.
-    # Prefer build_pip_package_from_installed() in CI (separate devel prefixes).
-    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == ON ]; then
-        echo
-        echo "Building open3d-cpu wheel (reusing single build folder)..."
-        # 1. Back up the CUDA-enabled wheel(s) to a temporary directory outside build/
-        mkdir -p pip_package_backup
-        cp build/lib/python_package/pip_package/*.whl pip_package_backup/
-
-        # 2. Reconfigure the existing build directory with CUDA disabled
-        pushd build
-        # We must make sure BUILD_CUDA_MODULE=OFF overrides any ON from cmakeOptions.
-        # Repeating -D left-to-right makes the last one win, so we place it after cmakeOptions.
-        set -x
-        cmake "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
-        set +x
-
-        # 3. Build the CPU companion wheel
-        make VERBOSE=1 -j"$NPROC" pip-package
-        popd
-
-        # 4. Restore the backed-up CUDA wheel(s) into the pip_package directory
-        mv pip_package_backup/*.whl build/lib/python_package/pip_package/
-        rm -rf pip_package_backup
-    fi
     echo
 }
 
@@ -535,6 +539,12 @@ build_pip_package_from_installed() {
     if [[ -d assimp || -d embree || -d filament || -d vtk ]]; then
         echo "ERROR: 3rdparty ExternalProject dirs present in installed-mode build"
         exit 1
+    fi
+    # Place CPU-linked ops into lib/Release/cpu beside CUDA ops in lib/Release/cuda
+    # so the CUDA wheel packages both (open3d/{cpu,cuda}); loader picks at runtime.
+    if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]]; then
+        mkdir -p lib/Release/cpu
+        cp -a ../build_cpu_wheel/lib/Release/cpu/open3d_*_ops* lib/Release/cpu/
     fi
     make VERBOSE=1 -j"$NPROC" pip-package
     cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
