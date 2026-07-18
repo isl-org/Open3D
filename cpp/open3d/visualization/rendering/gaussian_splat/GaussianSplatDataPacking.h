@@ -110,8 +110,8 @@ inline constexpr std::uint32_t kGaussianGpuErrorTileEntryOverflow = 1u << 0;
 inline constexpr std::uint32_t kGaussianGpuErrorSortCountClamped = 1u << 1;
 /// Set when a splat's tile footprint exceeded max_tiles_per_splat and the
 /// splat was culled (dropped) rather than rendered.
-inline constexpr std::uint32_t kGaussianGpuErrorMaxTilesPerSplatExceeded =
-        1u << 2;
+inline constexpr std::uint32_t kGaussianGpuErrorMaxTilesPerSplatExceeded = 1u
+                                                                           << 2;
 inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
         kGaussianGpuErrorTileEntryOverflow | kGaussianGpuErrorSortCountClamped |
         kGaussianGpuErrorMaxTilesPerSplatExceeded;
@@ -200,11 +200,8 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
 /// Uses the splat count, SH degree, and antialias flag from `attrs`.
 /// Per-frame GPU cost: glBufferSubData / MTLBuffer memcpy of 288 bytes.
 /// Tile-entry buffer capacity (`limits.x`) is sized from
-/// `config.avg_tiles_per_splat` (a statistical estimate); the per-splat hard
-/// cap (`limits.y`) enforced in `gaussian_project.comp` comes from
-/// `config.max_tiles_per_splat` and is intentionally decoupled from the
-/// buffer-sizing estimate — see the doc comments on both fields in
-/// `GaussianSplatRenderer::RenderConfig`.
+/// `config.avg_tiles_per_splat`; the per-splat hard cap (`limits.y`) enforced
+/// in `gaussian_project.comp` comes from `config.max_tiles_per_splat`.
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,

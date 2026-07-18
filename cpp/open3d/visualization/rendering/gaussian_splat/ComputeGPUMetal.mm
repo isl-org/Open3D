@@ -731,7 +731,8 @@ private:
     id<MTLCommandBuffer> geom_cb_ = nil;
     id<MTLCommandBuffer> comp_cb_ = nil;
     // Tracks the most recently committed geometry CB so WaitForGeometryPass()
-    // can wait for GPU-error-counter readback correctness (see EndGeometryPass).
+    // can wait for GPU-error-counter readback correctness (see
+    // EndGeometryPass).
     id<MTLCommandBuffer> last_submitted_geom_cb_ = nil;
     // Tracks the most recently committed composite CB so the destructor can
     // wait for its completion handler to finish before freeing C++ state.

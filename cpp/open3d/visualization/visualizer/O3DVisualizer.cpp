@@ -475,13 +475,13 @@ struct O3DVisualizer::Impl {
         settings.view_panel->AddChild(GiveOwnership(h));
         settings.view_panel->AddFixed(half_em);
 
-        auto* reset = new SmallButton("Reset");
+        auto *reset = new SmallButton("Reset");
         reset->SetOnClicked([this]() { this->ResetCameraToDefault(); });
 
-        auto* copy_view = new SmallButton("Copy");
+        auto *copy_view = new SmallButton("Copy");
         copy_view->SetOnClicked([this]() { this->CopyViewToClipboard(); });
 
-        auto* paste_view = new SmallButton("Paste");
+        auto *paste_view = new SmallButton("Paste");
         paste_view->SetOnClicked([this]() { this->PasteViewFromClipboard(); });
 
         h = new Horiz(v_spacing);
@@ -2198,7 +2198,7 @@ Ctrl-alt-click to polygon select)";
             double near_plane = root.get("near_plane", 0.1).asDouble();
             double far_plane = root.get("far_plane", 1000.0).asDouble();
 
-            auto* camera = scene_->GetScene()->GetCamera();
+            auto *camera = scene_->GetScene()->GetCamera();
             auto fov_type = camera->GetFieldOfViewType();
             auto frame = scene_->GetFrame();
             double aspect =
@@ -2211,13 +2211,13 @@ Ctrl-alt-click to polygon select)";
                            up.cast<float>());
             scene_->ForceRedraw();
             utility::LogInfo("View parameters pasted from clipboard.");
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             utility::LogWarning("Failed to parse clipboard view parameters: {}",
                                 e.what());
         }
     }
 
-    void ExportCurrentImage(const std::string& path) {
+    void ExportCurrentImage(const std::string &path) {
         scene_->EnableSceneCaching(false);
         scene_->GetScene()->GetScene()->RenderToImage(
                 [this, path](std::shared_ptr<geometry::Image> image) mutable {
@@ -2751,7 +2751,7 @@ void O3DVisualizer::PasteViewFromClipboard() {
     impl_->PasteViewFromClipboard();
 }
 
-void O3DVisualizer::Layout(const gui::LayoutContext& context) {
+void O3DVisualizer::Layout(const gui::LayoutContext &context) {
     auto em = context.theme.font_size;
     int settings_width = 16 * context.theme.font_size;
 #if !GROUPS_USE_TREE

@@ -56,7 +56,8 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
     }
 
     const std::uint32_t active_error_flags =
-            counters[kGaussianCounterErrorFlagsIndex] & kGaussianGpuErrorKnownMask;
+            counters[kGaussianCounterErrorFlagsIndex] &
+            kGaussianGpuErrorKnownMask;
     const std::uint32_t new_error_flags =
             active_error_flags & ~vs.warned_gpu_error_flags;
     if (new_error_flags == 0u) {
