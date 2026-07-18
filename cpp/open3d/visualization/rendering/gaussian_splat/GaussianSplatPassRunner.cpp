@@ -67,11 +67,12 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
         utility::LogWarning(
                 "GaussianSplat: too many splats overlap the same screen "
                 "region (camera too close to dense/large splats, or an "
-                "extremely dense scene); some splats were dropped and the "
-                "image may be incomplete or blank. Try moving the camera "
-                "back, increasing the near clip plane, or raising "
-                "MaterialRecord.gaussian_splat_max_tile_entries_total / "
-                "gaussian_splat_max_tiles_per_splat.");
+                "extremely dense scene, or the actual mean tiles-per-splat "
+                "exceeds gaussian_splat_avg_tiles_per_splat); some splats "
+                "were dropped and the image may be incomplete or blank. Try "
+                "moving the camera back, increasing the near clip plane, or "
+                "raising MaterialRecord.gaussian_splat_max_tile_entries_total "
+                "/ gaussian_splat_avg_tiles_per_splat.");
     }
     if ((new_error_flags & kGaussianGpuErrorSortCountClamped) != 0u) {
         utility::LogWarning(
@@ -84,9 +85,9 @@ void LogGaussianGpuErrorsOnce(GaussianSplatGpuContext& ctx,
         utility::LogWarning(
                 "GaussianSplat: one or more splats' screen-space footprint "
                 "exceeded MaterialRecord.gaussian_splat_max_tiles_per_splat "
-                "and were cropped to fit; those splats may render with a "
-                "clipped/blocky edge. Try moving the camera back, increasing "
-                "the near clip plane, or raising "
+                "and were culled (not rendered) rather than shown as an "
+                "incorrect, blocky opaque patch. Try moving the camera "
+                "back, increasing the near clip plane, or raising "
                 "gaussian_splat_max_tiles_per_splat.");
     }
     vs.warned_gpu_error_flags |= new_error_flags;

@@ -120,8 +120,8 @@ const float kMinDeterminant = 1e-8;
 const float kMinEigenValue = 1e-6;
 const float kMinAlpha = 1.0 / 255.0;
 const uint kGsErrorTileEntryOverflow = 1u << 0;
-// Set when the per-splat tile cap below actually shrinks a splat's tile
-// rectangle, i.e. RenderConfig::max_tiles_per_splat was exceeded.
+// Set when a splat's tile footprint exceeds RenderConfig::max_tiles_per_splat
+// and the splat is culled (dropped entirely) rather than rendered cropped.
 const uint kGsErrorMaxTilesPerSplatExceeded = 1u << 2;
 
 uint GetSplatCount() { return view_params.scene.x; }
@@ -420,31 +420,18 @@ SortEntryParams ProjectGaussian(uint splat_index) {
     tile_min = min(tile_min, tile_count - uvec2(1u));
     tile_max = min(tile_max, tile_count - uvec2(1u));
 
-    // Cap the number of tiles a single splat may enqueue so a handful of
-    // splats with enormous screen-space footprint (e.g. a background splat
-    // grazing the near plane) cannot alone exhaust the sort-entry buffer,
-    // which is sized as splat_count * max_tiles_per_splat (see
-    // GaussianSplatDataPacking.cpp PackGaussianViewParams). Shrink the tile
-    // rectangle symmetrically around the splat's center tile; this only
-    // trims the (already near-invisible, alpha-thresholded) periphery of
-    // giant splats. max_tiles_per_splat == 0 disables the cap.
+    // Splats whose tile footprint exceeds max_tiles_per_splat are culled
+    // rather than cropped, since cropping a huge splate would render it as a
+    // hard-edged opaque block. This cap is separate from buffer sizing
+    // (avg_tiles_per_splat/limits.x), which is bounds-checked independently and
+    // can only drop entries, never overflow.
     uint max_tiles_per_splat = view_params.limits.y;
     uint tile_span_x = tile_max.x - tile_min.x + 1u;
     uint tile_span_y = tile_max.y - tile_min.y + 1u;
     if (max_tiles_per_splat > 0u &&
         tile_span_x * tile_span_y > max_tiles_per_splat) {
         atomicOr(gs_counters.error_flags, kGsErrorMaxTilesPerSplatExceeded);
-        ivec2 center_pixel_clamped =
-                ivec2(clamp(center_pixel, vec2(0.0), resolution - vec2(1.0)));
-        ivec2 center_tile = ivec2(uvec2(center_pixel_clamped) / tile_size);
-        // Roughly square footprint around the center tile that fits the cap.
-        int half_side =
-                int(max(1.0, floor(sqrt(float(max_tiles_per_splat)) * 0.5)));
-        ivec2 clamped_tile_min = max(center_tile - half_side, ivec2(0));
-        ivec2 clamped_tile_max =
-                min(center_tile + half_side, ivec2(tile_count) - ivec2(1));
-        tile_min = uvec2(clamped_tile_min);
-        tile_max = uvec2(clamped_tile_max);
+        return CulledEntryParams(splat_index);
     }
 
     float inv_basis_det = 1.0 / basis_det;
