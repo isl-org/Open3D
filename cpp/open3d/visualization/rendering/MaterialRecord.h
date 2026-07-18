@@ -99,9 +99,20 @@ struct MaterialRecord {
     // to counteract the over-brightening caused by the fixed +0.3 blur kernel.
     bool gaussian_splat_antialias = false;
 
-    // Maximum number of screen tiles that a single splat may cover.
-    // Raise this value for very large splats at the cost of higher memory use.
-    uint32_t gaussian_splat_max_tiles_per_splat = 32;
+    // Hard per-splat cap on the number of screen tiles a single splat may
+    // cover; splats whose footprint would exceed this are culled (dropped)
+    // entirely rather than rendered from a smaller tile rectangle, which
+    // would otherwise show up as a hard-edged, wrongly-opaque block. Raise
+    // for very large / close-up splats. Decoupled from GPU memory use: only
+    // `gaussian_splat_avg_tiles_per_splat` below affects buffer sizing.
+    uint32_t gaussian_splat_max_tiles_per_splat = 256;
+
+    // Expected mean tiles-per-splat across the scene, used only to size the
+    // shared tile-entry buffers (a statistical estimate, not an enforced
+    // limit). Raise for scenes with many large/overlapping splats at the
+    // cost of higher GPU memory use; unlike max_tiles_per_splat above, this
+    // does not clip individual splats.
+    uint32_t gaussian_splat_avg_tiles_per_splat = 32;
 
     // Total tile-coverage entry budget for the whole scene.
     // Raise this for dense or high-resolution scenes at the cost of GPU memory.

@@ -301,7 +301,7 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     const bool is_sycl = device.IsSYCL();
     const int point_tol = is_sycl ? 16 : 3;
     const int vertex_tol = is_sycl ? 16 : 3;
-    const int triangle_tol = is_sycl ? 24 : 6;
+    const int triangle_tol = is_sycl ? 16 : 6;
 
     for (auto backend : backends) {
         for (int block_resolution : std::vector<int>{8, 16}) {

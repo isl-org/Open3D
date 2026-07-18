@@ -21,12 +21,12 @@ RUN apt-get update && \
     git \
     gdb \
     libeigen3-dev \
+    libegl1-mesa-dev \
     libgl1-mesa-dev \
     libgl1-mesa-glx \
     libglew-dev \
     libglfw3-dev \
     libglu1-mesa-dev \
-    libosmesa6-dev \
     libpng-dev \
     lxde \
     mesa-utils \

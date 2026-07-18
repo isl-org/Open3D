@@ -50,10 +50,9 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-jammy                   : CUDA CI, 2-jammy, developer mode
-    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
-    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
-    5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    2-noble                   : CUDA CI, 2-noble, developer mode
+    3-ml-shared-noble-release : CUDA CI, 3-ml-shared-noble (cxx11_abi), release mode
+    3-ml-shared-noble         : CUDA CI, 3-ml-shared-noble (cxx11_abi), developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -362,23 +361,18 @@ sycl-static)
     ;;
 
     # ML CIs
-2-jammy)
-    2-jammy_export_env
+2-noble)
+    2-noble_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-jammy-release)
-    3-ml-shared-jammy-release_export_env
+3-ml-shared-noble-release)
+    3-ml-shared-noble-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-jammy)
-    3-ml-shared-jammy_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-5-ml-noble)
-    5-ml-noble_export_env
+3-ml-shared-noble)
+    3-ml-shared-noble_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;

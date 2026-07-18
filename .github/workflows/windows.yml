@@ -4,7 +4,6 @@
 # - PyTorch Ops in debug mode - DLL initialization error while loading open3d_torch_ops.dll
 # - CUDA - Draw.exe does not run due to CUDA DLL path issues
 
-
 name: Windows
 permissions: {}
 
@@ -28,7 +27,7 @@ concurrency:
 
 env:
   PIP_VER: "24.3.1"
-  CUDA_VERSION: "12.6.0"
+  CUDA_VERSION: "12.6.3"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   INSTALL_DIR: "C:\\Program Files\\Open3D"
@@ -36,7 +35,8 @@ env:
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
-  windows:
+  build-lib:
+    name: Build lib
     permissions:
       contents: write  # upload
       id-token: write
@@ -45,56 +45,61 @@ jobs:
     runs-on: windows-2022
     strategy:
       fail-fast: false
+      # Eight matrix legs (S=BUILD_SHARED_LIBS, R=STATIC_RUNTIME) plus build-wheel/test-wheel.
+      # Covers cpu/cuda/xpu once where needed; devel zips, viewer, SYCL, and /MD static smoke.
       matrix:
-        BUILD_SHARED_LIBS: [ON, OFF]
-        STATIC_RUNTIME: [ON, OFF]
-        BUILD_CUDA_MODULE: [ON, OFF]
-        CONFIG: [Release, Debug]
-        exclude:
-          - BUILD_SHARED_LIBS: ON
+        include:
+          # OFF/ON: static lib + /MT -> for viewer
+          - BUILD_SHARED_LIBS: OFF
             STATIC_RUNTIME: ON
-          - BUILD_CUDA_MODULE: ON   # FIXME
+            device: cpu
+            CONFIG: Release
+
+          # Shared Windows CUDA Release
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: cuda
+            CONFIG: Release
+
+          # Shared Windows CPU Release
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: cpu
+            CONFIG: Release
+
+          # Shared Windows SYCL/XPU Release
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: xpu
+            CONFIG: Release 
+
+          # Shared Windows CPU Debug -> Debug only with CPU + shared lib
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: cpu
             CONFIG: Debug
     env:
-      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.BUILD_CUDA_MODULE == 'ON' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
+      BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
+      BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.device == 'xpu' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
 
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
       - name: Install CUDA
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
-        run: |
-          # Define variables
-          $CUDA_VER_FULL = "${{ env.CUDA_VERSION }}"
-          $CUDA_VER_ARR = $CUDA_VER_FULL.Split(".")
-          $CUDA_VER = "$($CUDA_VER_ARR[0]).$($CUDA_VER_ARR[1])"
-          $CUDA_VER_ID = "$($CUDA_VER_ARR[0])_$($CUDA_VER_ARR[1])"
-          # Installer url
-          if ( $CUDA_VER_ARR[0] -ge 11 ) {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER_FULL/network_installers/cuda_$($CUDA_VER_FULL)_windows_network.exe"
-          } else {
-            $CUDA_URL = "http://developer.download.nvidia.com/compute/cuda/$CUDA_VER/Prod/network_installers/cuda_$($CUDA_VER_FULL)_win10_network.exe"
-          }
-          # Installer arguments
-          $CUDA_INSTALL_ARGS = "-s"
-          # Required packages
-          $CUDA_PACKAGES = "nvcc", "visual_studio_integration", "cublas", "cublas_dev", "cudart", "cusolver", "cusolver_dev", "cusparse", "cusparse_dev", "npp", "npp_dev", "nvtx", "thrust"
-          $CUDA_PACKAGES.ForEach({ $CUDA_INSTALL_ARGS += " $($_)_$($CUDA_VER)" })
-          # Download and install CUDA
-          echo "Downloading CUDA installer from $CUDA_URL"
-          Invoke-WebRequest $CUDA_URL -OutFile cuda.exe
-          echo "Installing CUDA..."
-          Start-Process -Wait -FilePath .\cuda.exe -ArgumentList "$CUDA_INSTALL_ARGS"
-          if ( !$? ) {
-            exit 1
-          }
-          # Add CUDA environment variables.
-          $CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v$CUDA_VER"
-          echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$CUDA_PATH\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+        if: ${{ matrix.device == 'cuda' }}
+        shell: pwsh
+        run: ./util/install_cuda_windows.ps1
+
+      - name: Install Intel oneAPI
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        run: ./util/install_oneapi_windows.ps1
 
       - name: Install glslang via vcpkg
         run: |
@@ -103,9 +108,6 @@ jobs:
           $glslangBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\tools\glslang"
           $glslangBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
   
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
@@ -119,10 +121,13 @@ jobs:
           path: open3d_ml
 
       - name: Install PyTorch requirements
+        if: ${{ env.BUILD_PYTORCH_OPS == 'ON' }}
         run: |
-          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'ON' ) {
+          if ( '${{ matrix.device }}' -eq 'cuda' ) {
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+          } elseif ( '${{ matrix.device }}' -eq 'xpu' ) {
+            # No PyTorch requirement for SYCL (xpu) since PyTorch ops are disabled
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -137,17 +142,69 @@ jobs:
             $Env:DEVELOPER_BUILD = "ON"
           }
           cmake --version
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            # Runs setvars.bat via cmd and imports all resulting env vars into
+            # the current PowerShell process AND into $GITHUB_ENV. The latter
+            # is required because each workflow step ("Config", "Build",
+            # "Package", ...) runs in a brand new process: env vars set only
+            # via [System.Environment]::SetEnvironmentVariable (default scope
+            # Process) do NOT survive past this step. Without $GITHUB_ENV,
+            # later steps (e.g. Build) lose LIB/INCLUDE/PATH set by
+            # setvars.bat, so icx fails to find its own runtime libs (e.g.
+            # libircmt.lib) when ExternalProject sub-builds (zlib,
+            # directxheaders, ...) run their own fresh compiler ABI detection
+            # during the Build step.
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                $varName = $Matches[1]
+                $varValue = $Matches[2]
+                [System.Environment]::SetEnvironmentVariable($varName, $varValue)
+                "$varName=$varValue" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+              }
+            }
+            $CMAKE_GENERATOR = "Ninja"
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # icpx.exe identifies as GNU-like in oneAPI 2025.3+ which conflicts with
+            # CMake generating MSVC-style flags when C compiler (icx) is MSVC-like.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
+              "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
+            if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
+              Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
+              $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
+            }
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
+          }
+          $cmakeExtraArgs = @()
+          if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
+            $cmakeExtraArgs += '--debug-find'
+          }
+          # Keep 3rdparty downloads inside BUILD_DIR so the build artifact zip
+          # reused by build-wheel includes headers (e.g. vk_mem_alloc.hpp) that
+          # ExternalProject stamps would otherwise skip re-downloading on a
+          # fresh checkout. build-lib builds the C++ library only
+          # (BUILD_PYTHON_MODULE=OFF); build-wheel reuses it to build the wheel.
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs `
             -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
             -DBUILD_EXAMPLES=OFF `
+            -DBUILD_PYTHON_MODULE=OFF `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DBUILD_GUI=ON `
+            -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
-            -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
+            -DBUILD_WEBRTC=ON `
             -DBUILD_UNIT_TESTS=ON `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
+            -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
+            -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
             ${{ env.SRC_DIR }}
 
@@ -155,18 +212,26 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target build-examples-iteratively
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target INSTALL
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs --target build-examples-iteratively
+          # Use lowercase "install" (works case-insensitively for MSBuild/VS
+          # generator too) since Ninja's generated meta-target is lowercase
+          # only; uppercase "INSTALL" is unknown to Ninja.
+          cmake @buildArgs --target install
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target package
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs --target package
           if ("${{ matrix.CONFIG }}" -eq "Debug") {
               Get-ChildItem package/open3d-devel-*.zip | Rename-Item -NewName `
                   {$_.name -Replace '.zip','-dbg.zip'}
@@ -176,21 +241,21 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate package attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
 
       - name: Upload Package
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.DEVEL_PKG_NAME }}
+          name: open3d-devel-windows-${{ matrix.device }}-${{ matrix.CONFIG }}
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
       - name: Update devel release with package
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -200,7 +265,7 @@ jobs:
 
       - name: Viewer App
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -216,13 +281,13 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate viewer attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
 
       - name: Upload Viewer
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
@@ -230,50 +295,69 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with viewer
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           bash .github/workflows/update_release.sh "${{ env.VIEWER_ZIP_NAME }}"
 
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        if: ${{ matrix.device != 'cuda' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
-          .\bin\${{ matrix.CONFIG }}\tests.exe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
+          $testExe = if ('${{ matrix.device }}' -eq 'xpu') { ".\bin\tests.exe" } else { ".\bin\${{ matrix.CONFIG }}\tests.exe" }
+          & $testExe --gtest_shuffle --gtest_filter=-*ReduceSum64bit2DCase0*:*ReduceSum64bit2DCase3*
       - name: Linking to Open3D
         working-directory: ${{ env.SRC_DIR }}/examples/cmake/open3d-cmake-find-package
         run: |
           $ErrorActionPreference = 'Stop'
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            # Initialize oneAPI environment in the same step as cmake (env vars
+            # don't persist across steps). Runs setvars.bat via cmd and imports
+            # all resulting env vars into the current PowerShell process.
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2])
+              }
+            }
+            $CMAKE_GENERATOR = "Ninja"
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # See Config step for the reason icpx is not used.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
+              "-DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}"
+            # SYCL Open3D is always built with the dynamic runtime (/MD): icx
+            # -fsycl rejects the static runtime (/MT). The downstream example
+            # must match, otherwise linking Open3D.lib (/MD) into Draw (/MT)
+            # fails with LNK2038, so force STATIC_WINDOWS_RUNTIME=OFF here
+            # regardless of matrix.STATIC_RUNTIME.
+            $STATIC_RUNTIME = "OFF"
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
+            $STATIC_RUNTIME = "${{ matrix.STATIC_RUNTIME }}"
+          }
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
-            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            -DSTATIC_WINDOWS_RUNTIME=$STATIC_RUNTIME `
             ..
-          cmake --build . --config ${{ matrix.CONFIG }}
-          if ( '${{ matrix.BUILD_CUDA_MODULE }}' -eq 'OFF' ) {    # FIXME
-            .\${{ matrix.CONFIG }}\Draw.exe --skip-for-unit-test
+          $buildArgs = @("--build", ".")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "${{ matrix.CONFIG }}"
+          }
+          cmake @buildArgs
+          if ( '${{ matrix.device }}' -ne 'cuda' ) {    # FIXME
+            $drawExe = if ('${{ matrix.device }}' -eq 'xpu') { ".\Draw.exe" } else { ".\${{ matrix.CONFIG }}\Draw.exe" }
+            & $drawExe --skip-for-unit-test
           }
           Remove-Item -LiteralPath $env:INSTALL_DIR -Recurse -Force -ErrorAction SilentlyContinue
-      - name: Install Open3D python build requirements
-        working-directory: ${{ env.SRC_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          python -m pip install -U pip==${{ env.PIP_VER }}
-          python -m pip install -U -r python/requirements_build.txt
-      - name: Install Python package
-        working-directory: ${{ env.BUILD_DIR }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
-      - name: Import python package
-        # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}  # FIXME
-        run: |
-          python -c "import open3d; print('Imported:', open3d)"
-          python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+
       - name: Disk space used
         run: Get-PSDrive
 
@@ -285,11 +369,17 @@ jobs:
       attestations: write
       artifact-metadata: write
     runs-on: windows-2022
+    needs: build-lib
+    # Build wheels even if build-lib failed (e.g. some architecture or debug
+    # builds failed, but others succeeded, or unit tests failed): we want to build
+    # whichever wheels have available devel package artifacts.
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        device: [cpu, xpu, cuda]
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -303,19 +393,27 @@ jobs:
             python_version: '3.13'
 
     env:
-      BUILD_PYTORCH_OPS: 'ON'
+      BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
+      BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ (matrix.device == 'cuda' || matrix.device == 'xpu') && 'OFF' || 'ON' }}
 
     steps:
 
-      - name: Install glslang via vcpkg
-        run: |
-          vcpkg install glslang[tools]:x64-windows
-          # Write install path to GITHUB_PATH to persist for future steps
-          $glslangBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\tools\glslang"
-          $glslangBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install CUDA
+        if: ${{ matrix.device == 'cuda' }}
+        shell: pwsh
+        run: ./util/install_cuda_windows.ps1
+
+      - name: Install Intel oneAPI
+        if: ${{ matrix.device == 'xpu' }}
+        shell: pwsh
+        working-directory: ${{ env.SRC_DIR }}
+        env:
+          OPEN3D_ONEAPI_DEBUG: ${{ env.OPEN3D_ONEAPI_DEBUG }}
+        run: ./util/install_oneapi_windows.ps1
 
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4
@@ -329,7 +427,39 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
 
+      # Build pybind (+ ML ops) against the devel package produced by build-lib's
+      # "Package" step (find_package(Open3D), OPEN3D_USE_INSTALLED_LIBRARY=ON),
+      # instead of recompiling/reconfiguring the whole C++ core per Python version.
+      # Ignore failure if the specific device's devel package is missing, so other devices
+      # in the matrix are not blocked.
+      - name: Download devel package
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: open3d-devel-windows-${{ matrix.device }}-Release
+          path: ${{ env.SRC_DIR }}/open3d_devel
+
+      - name: Extract devel package
+        id: extract_devel
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel/open3d-devel-*.zip" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $zip) {
+            Write-Warning "Devel package zip not found for ${{ matrix.device }}! Skipping build."
+            echo "SKIPPED=true" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+            exit 0
+          }
+          Expand-Archive -Path $zip.FullName -DestinationPath "${{ env.SRC_DIR }}/open3d_devel_extracted" -Force
+          $config = Get-ChildItem "${{ env.SRC_DIR }}/open3d_devel_extracted" -Recurse -Filter Open3DConfig.cmake | Select-Object -First 1
+          if (-not $config) {
+            throw "Open3DConfig.cmake not found in extracted devel package"
+          }
+          $root = $config.Directory.Parent
+          echo "OPEN3D_INSTALL_ROOT=$($root.FullName)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SKIPPED=false" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Install Python dependencies
+        if: ${{ env.SKIPPED != 'true' }}
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -344,50 +474,110 @@ jobs:
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
 
-
       - name: Config
+        if: ${{ env.SKIPPED != 'true' }}
+        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
-          cd ${{ env.BUILD_DIR }}
+          New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory -Force
+          cd '${{ env.BUILD_DIR }}'
           if ($Env:DEVELOPER_BUILD -ne "OFF") {
             $Env:DEVELOPER_BUILD = "ON"
           }
-          cmake -G "Visual Studio 17 2022" -A x64 `
+          cmake --version
+          $CMAKE_ARGS = @()
+          if ('${{ matrix.device }}' -eq 'xpu') {
+            # Runs setvars.bat via cmd and imports all resulting env vars into
+            # the current PowerShell process AND into $GITHUB_ENV. The latter
+            # is required because each workflow step ("Config", "Build Python
+            # package", ...) runs in a brand new process: env vars set only
+            # via [System.Environment]::SetEnvironmentVariable (default scope
+            # Process) do NOT survive past this step. Without $GITHUB_ENV,
+            # later steps (e.g. Build) lose LIB/INCLUDE/PATH set by
+            # setvars.bat, so icx fails to find its own runtime libs (e.g.
+            # libircmt.lib).
+            Write-Host "Initializing oneAPI environment via setvars.bat..."
+            $setOutput = cmd /c '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && set 2>&1'
+            if ($LASTEXITCODE -ne 0) { throw "setvars.bat failed (exit $LASTEXITCODE)" }
+            $setOutput | ForEach-Object {
+              if ($_ -match '^([^=]+)=(.*)$') {
+                $varName = $Matches[1]
+                $varValue = $Matches[2]
+                [System.Environment]::SetEnvironmentVariable($varName, $varValue)
+                "$varName=$varValue" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+              }
+            }
+            $CMAKE_GENERATOR = "Ninja"
+            # On Windows, icx.exe (MSVC-compatible) handles C++ and SYCL (-fsycl).
+            # See build-lib's Config step for the reason icpx is not used.
+            $CMAKE_ARGS += "-DCMAKE_C_COMPILER=icx", "-DCMAKE_CXX_COMPILER=icx", `
+              "-DCMAKE_BUILD_TYPE=Release"
+            if ($env:OPEN3D_ONEAPI_DEBUG -eq '1') {
+              Write-Host "OPEN3D_ONEAPI_DEBUG=1: enabling CMAKE_FIND_DEBUG_MODE and cmake --debug-find"
+              $CMAKE_ARGS += '-DCMAKE_FIND_DEBUG_MODE=ON'
+            }
+          } else {
+            $CMAKE_GENERATOR = "Visual Studio 17 2022"
+            $CMAKE_ARGS += "-A", "x64"
+          }
+          $cmakeExtraArgs = @()
+          if ($env:OPEN3D_ONEAPI_DEBUG -eq '1' -and '${{ matrix.device }}' -eq 'xpu') {
+            $cmakeExtraArgs += '--debug-find'
+          }
+          # Build pybind (+ ML ops) only, against the devel package extracted
+          # above (find_package(Open3D)); skips recompiling the C++ core.
+          # STATIC_WINDOWS_RUNTIME=OFF must match the installed Open3D.dll's
+          # runtime linkage (/MD), otherwise pybind fails to link against it.
+          cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs `
+            -DOPEN3D_USE_INSTALLED_LIBRARY=ON `
+            -DOpen3D_ROOT="$env:OPEN3D_INSTALL_ROOT" `
+            -DCMAKE_PREFIX_PATH="$env:OPEN3D_INSTALL_ROOT" `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
             -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
-            -DBUILD_SHARED_LIBS=OFF `
-            -DSTATIC_WINDOWS_RUNTIME=ON `
-            -DBUILD_COMMON_ISPC_ISAS=ON `
+            -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
+            -DBUILD_SHARED_LIBS=ON `
+            -DSTATIC_WINDOWS_RUNTIME=OFF `
+            -DBUILD_GUI=ON `
+            -DBUILD_PYTHON_MODULE=ON `
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
+            -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
+            -DPython3_EXECUTABLE=$((Get-Command python).Source) `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
+        if: ${{ env.SKIPPED != 'true' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
+          $buildArgs = @("--build", ".", "--parallel", "${{ env.NPROC }}", "--target", "pip-package")
+          if ('${{ matrix.device }}' -ne 'xpu') {
+              $buildArgs += "--config", "Release"
+          }
+          cmake @buildArgs
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate wheel attestation
+        if: ${{ env.SKIPPED != 'true' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
 
       - name: Upload wheel
+        if: ${{ env.SKIPPED != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PIP_PKG_NAME }}
+          name: open3d-wheel-${{ matrix.device }}-${{ matrix.python_version }}
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: Update devel release with wheel
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ env.SKIPPED != 'true' && github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -405,6 +595,7 @@ jobs:
       fail-fast: false
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        device: [cpu, xpu, cuda]
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -417,7 +608,7 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      BUILD_PYTORCH_OPS: 'ON'
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cpu' && 'ON' || 'OFF' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -432,8 +623,7 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: open3d-*win*.whl
-          merge-multiple: true
+          name: open3d-wheel-${{ matrix.device }}-${{ matrix.python_version }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -452,19 +642,24 @@ jobs:
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
-          $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          if (Test-Path -Path "pip_package") {
-            $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
-          } else {
-            $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
+          $PIP_PKG_NAME = (Get-ChildItem *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          if (-not $PIP_PKG_NAME) {
+            $PIP_PKG_NAME = (Get-ChildItem -Recurse *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          }
+          if (-not $PIP_PKG_NAME) {
+            Write-Error "Could not find a valid Open3D wheel!"
+            exit 1
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
-          python -m pip install "$PIP_PKG_NAME"
+          python -m pip install $PIP_PKG_NAME
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+          python -c "import open3d; print('SYCL enabled: ', open3d.core.sycl.is_available() if hasattr(open3d.core, 'sycl') else False)"
           deactivate
 
       - name: Run Python unit tests
+        # No CUDA GPUs, so skip CUDA python tests
+        if: ${{ matrix.device != 'cuda' }}
         run: |
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1

@@ -4,6 +4,10 @@
 # Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
+"""Tests CPU (software) offscreen rendering for the new Filament-based
+open3d.visualization.rendering.OffscreenRenderer, used when no GPU is
+available. See also test_legacy_headless_rendering.py, which covers the
+legacy open3d.visualization.Visualizer's EGL offscreen fallback."""
 
 import platform
 import os
@@ -12,6 +16,7 @@ import pytest
 
 
 def draw_box_offscreen():
+    """Runs in a separate process and renders a box with OffscreenRenderer."""
     import open3d as o3d
     import open3d.visualization.rendering as rendering
     render = rendering.OffscreenRenderer(640, 480)
@@ -29,11 +34,12 @@ def draw_box_offscreen():
     os.getenv("OPEN3D_CPU_RENDERING", '') != 'true',
     reason="Offscreen CPU rendering is only supported on x86_64 Linux")
 def test_draw_cpu():
-    """Test CPU rendering in a separate process."""
+    """Test that OffscreenRenderer can render a box in a separate process."""
     proc = Process(target=draw_box_offscreen)
     proc.start()
     proc.join(timeout=5)  # Wait for process to complete
     if proc.exitcode is None:
-        proc.kill()  # Kill on failure
-        assert False, __name__ + " did not complete."
+        proc.kill()
+        proc.join()  # Reap the killed process to avoid leaving a zombie.
+        pytest.fail(__name__ + " did not complete.")
     assert proc.exitcode == 0

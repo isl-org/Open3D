@@ -489,6 +489,13 @@ if(BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
 endif()
 
+# When building only pybind (+ ML ops) against an installed Open3D devel
+# package, skip all heavy ExternalProjects (assimp, embree, vtk, filament, …).
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    include(${CMAKE_CURRENT_LIST_DIR}/find_dependencies_installed.cmake)
+    return()
+endif()
+
 # Threads
 open3d_find_package_3rdparty_library(3rdparty_threads
     REQUIRED
@@ -673,9 +680,6 @@ if(NOT USE_SYSTEM_GLEW)
         INCLUDE_DIRS
             include/
     )
-    if(ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(3rdparty_glew PUBLIC GLEW_OSMESA)
-    endif()
     if(WIN32)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_STATIC)
     endif()
@@ -951,7 +955,25 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+# curl and openssl (BoringSSL) are mutually referential static archives: curl
+# needs OpenSSL symbols and, depending on how the final link line gets
+# flattened by CMake (e.g. when Open3D itself is a shared library and must
+# fully resolve all symbols at build time), they can end up in an order where
+# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
+# in --start-group and --end-group on UNIX (non-Apple) to ensure GNU ld
+# rescans this group of libraries until all symbols resolve, regardless of
+# order. We avoid CMake's modern LINK_GROUP RESCAN generator expression here
+# because it produces developer warnings when applied to INTERFACE library
+# targets (which Open3D::3rdparty_curl/openssl are).
+if(UNIX AND NOT APPLE)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+        "-Wl,-("
+        Open3D::3rdparty_curl
+        Open3D::3rdparty_openssl
+        "-Wl,-)")
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -988,6 +1010,69 @@ if(NOT USE_SYSTEM_PNG)
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_png)
 endif()
+
+# SPZ and its compression dependencies.
+if(USE_SYSTEM_PNG)
+    find_package(ZLIB REQUIRED)
+endif()
+include(${Open3D_3RDPARTY_DIR}/zstd/zstd.cmake)
+open3d_import_3rdparty_library(3rdparty_zstd
+    HIDDEN
+    INCLUDE_DIRS ${ZSTD_INCLUDE_DIRS}
+    LIB_DIR      ${ZSTD_LIB_DIR}
+    LIBRARIES    ${ZSTD_LIBRARIES}
+    DEPENDS      ext_zstd
+)
+include(${Open3D_3RDPARTY_DIR}/spz/spz.cmake)
+open3d_import_3rdparty_library(3rdparty_spz
+    HIDDEN
+    INCLUDE_DIRS ${SPZ_INCLUDE_DIRS}
+    LIB_DIR      ${SPZ_LIB_DIR}
+    LIBRARIES    ${SPZ_LIBRARIES}
+    DEPENDS      ext_spz
+)
+# Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps so libzstd.a
+# precedes libspz.a, leaving unresolved ZSTD_* under one-pass GNU ld. Force
+# absolute archive paths in the correct order on 3rdparty_spz. Do not add
+# -Wl,--start-group/--end-group here: duplicate group markers collide with
+# MKL's GROUPED import and empty its start/end-group (undefined mkl_*).
+# Do not INTERFACE-link Open3D::3rdparty_zstd (avoids reordering).
+set(_spz_archive
+    "${SPZ_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(_zstd_archive
+    "${ZSTD_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZSTD_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(_spz_iface_libs
+    "$<BUILD_INTERFACE:${_spz_archive}>"
+    "$<BUILD_INTERFACE:${_zstd_archive}>")
+# Preserve any INSTALL_INTERFACE entries from open3d_import_3rdparty_library.
+get_target_property(_spz_existing_libs 3rdparty_spz INTERFACE_LINK_LIBRARIES)
+if(_spz_existing_libs)
+    foreach(_item IN LISTS _spz_existing_libs)
+        if(_item MATCHES "INSTALL_INTERFACE")
+            list(APPEND _spz_iface_libs "${_item}")
+        endif()
+    endforeach()
+endif()
+if(NOT BUILD_SHARED_LIBS)
+    list(APPEND _spz_iface_libs
+        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_zstd${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+endif()
+set_property(TARGET 3rdparty_spz PROPERTY INTERFACE_LINK_LIBRARIES "${_spz_iface_libs}")
+get_target_property(_zstd_link_opts 3rdparty_zstd INTERFACE_LINK_OPTIONS)
+if(_zstd_link_opts)
+    target_link_options(3rdparty_spz INTERFACE ${_zstd_link_opts})
+endif()
+if(TARGET Open3D::3rdparty_zlib)
+    target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zlib)
+else()
+    target_link_libraries(3rdparty_spz INTERFACE ZLIB::ZLIB)
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_spz)
+unset(_spz_archive)
+unset(_zstd_archive)
+unset(_spz_iface_libs)
+unset(_spz_existing_libs)
+unset(_zstd_link_opts)
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
@@ -1356,6 +1441,8 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         else()  # WIN32
+            # Match the prebuilt Filament archive's runtime selection in
+            # filament_download.cmake.
             if (STATIC_WINDOWS_RUNTIME)
                 set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
             else()
@@ -1449,21 +1536,14 @@ if(BUILD_GUI)
     endif() # if(NOT USE_SYSTEM_FILAMENT)
 endif()
 
-# Headless rendering
-if (ENABLE_HEADLESS_RENDERING)
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        REQUIRED
-        PACKAGE OSMesa
-        INCLUDE_DIRS OSMESA_INCLUDE_DIR
-        LIBRARIES OSMESA_LIBRARY
-    )
-else()
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        PACKAGE OpenGL
-        TARGETS OpenGL::GL
-    )
-    set(USE_SYSTEM_OPENGL ON)
-endif()
+# OpenGL. Headless rendering on Linux uses a GPU-accelerated offscreen EGL
+# context (see EGLOffscreenContext) instead of a software OSMesa build, so
+# there is no separate headless configuration here.
+open3d_find_package_3rdparty_library(3rdparty_opengl
+    PACKAGE OpenGL
+    TARGETS OpenGL::GL
+)
+set(USE_SYSTEM_OPENGL ON)
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
 
 # RPC interface
@@ -1596,7 +1676,7 @@ if(BUILD_SYCL_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." ON)
+    set(OPEN3D_USE_ONEAPI_PACKAGES ON CACHE BOOL "Use the oneAPI distribution of MKL/TBB." FORCE)
 else()
     option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." OFF)
 endif()
@@ -1608,16 +1688,50 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
     find_package(MKL REQUIRED)
+    # oneAPI MKL's lib layout differs by platform: Linux nests libs under an
+    # "intel64" subdirectory, while Windows (verified with oneAPI 2025.3)
+    # places them directly in "lib".
+    if(WIN32)
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib)
+    else()
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
+    endif()
+
+    set(MKL_SYCL_LIBS)
+    if(BUILD_SYCL_MODULE)
+        if(WIN32)
+            set(MKL_SYCL_LIBS
+                $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
+            )
+        else()
+            set(MKL_SYCL_LIBS mkl_sycl)
+        endif()
+    endif()
+
     open3d_import_3rdparty_library(3rdparty_mkl
         HIDDEN
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
-        LIB_DIR      ${MKL_ROOT}/lib/intel64
-        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIB_DIR      ${MKL_LIB_DIR}
+        LIBRARIES    ${MKL_SYCL_LIBS} mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
     if (BUILD_SYCL_MODULE)
     # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
-        target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+        if (WIN32)
+            find_package(OpenCL REQUIRED)
+            target_link_libraries(3rdparty_mkl INTERFACE OpenCL::OpenCL)
+            if(NOT BUILD_SHARED_LIBS)
+                # Static builds export Open3D::3rdparty_mkl (whose link interface
+                # carries the OpenCL::OpenCL imported target) in Open3DTargets.cmake,
+                # so a downstream find_package(Open3D) must re-find OpenCL to
+                # recreate that target (see CUDAToolkit above for the same pattern).
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenCL")
+            endif()
+        else()
+            target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+        endif()
     endif()
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
@@ -1791,12 +1905,11 @@ endif(OPEN3D_USE_ONEAPI_PACKAGES)
 # cuBLAS
 if(BUILD_CUDA_MODULE)
     if(WIN32)
-        # Nvidia does not provide static libraries for Windows. We don't release
-        # pip wheels for Windows with CUDA support at the moment. For the pip
-        # wheels to support CUDA on Windows out-of-the-box, we need to either
-        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
-        # cudatoolkit conda package), or have a mechanism to locate the CUDA
-        # toolkit from the system.
+        # Nvidia does not provide static libraries for Windows, so CUDA is
+        # linked dynamically. The open3d-cuda pip wheel ships the required
+        # NVIDIA CUDA runtime DLLs via the nvidia-*-cu12 pip packages listed in
+        # python/requirements_win_cuda.txt (installed as a wheel dependency;
+        # see python/open3d/__init__.py for how they are located at runtime).
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
@@ -1988,11 +2101,43 @@ if(BUILD_WEBRTC)
     open3d_import_3rdparty_library(3rdparty_webrtc
         HIDDEN
         INCLUDE_DIRS ${WEBRTC_INCLUDE_DIRS}
-        LIB_DIR      ${WEBRTC_LIB_DIR}
-        LIBRARIES    ${WEBRTC_LIBRARIES}
         DEPENDS      ext_webrtc_all
     )
+    # webrtc/webrtc_extra need custom --whole-archive handling (below), so
+    # they can't use open3d_import_3rdparty_library()'s LIBRARIES option.
+    # Install them manually and reference $<INSTALL_INTERFACE:...> paths, so
+    # examples built against an installed *static* Open3D package (i.e. not
+    # from within this build tree) still link against them; see the
+    # LIBRARIES branch of open3d_import_3rdparty_library() for reference.
+    if(NOT BUILD_SHARED_LIBS)
+        foreach(_o3d_webrtc_lib webrtc webrtc_extra)
+            install(FILES "${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                DESTINATION ${Open3D_INSTALL_LIB_DIR}
+                RENAME "${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc_${_o3d_webrtc_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        endforeach()
+    endif()
+    set(WEBRTC_INSTALLED_LIB
+        "$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_webrtc")
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "-Wl,--whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "-Wl,--no-whole-archive"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    else()
+        target_link_libraries(3rdparty_webrtc INTERFACE
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<BUILD_INTERFACE:${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<INSTALL_INTERFACE:${WEBRTC_INSTALLED_LIB}_webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}>")
+    endif()
     target_link_libraries(3rdparty_webrtc INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+    # libwebrtc.a and libturbojpeg.a both export jpeg_* symbols (WebRTC bundles libjpeg).
+    if(UNIX AND NOT APPLE)
+        target_link_options(3rdparty_webrtc INTERFACE "LINKER:--allow-multiple-definition")
+    endif()
     if (MSVC) # https://github.com/iimachines/webrtc-build/issues/2#issuecomment-503535704
         target_link_libraries(3rdparty_webrtc INTERFACE secur32 winmm dmoguids wmcodecdspuuid msdmo strmiids)
     endif()

@@ -124,7 +124,8 @@ open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
 
-# Set output directory according to architecture (cpu/cuda)
+# Set output directory according to architecture (cpu/cuda) so a CUDA wheel can
+# bundle both the CPU- and CUDA-linked ops (loaded by device at runtime).
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TF_OPS_ARCH_DIR
     "${TF_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")

@@ -172,6 +172,24 @@ if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
     endif()
 endif()
 
+# GLX: All rendering, since GaussianSplatting interop with filament requires it.
+# Vulkan: GS compute.
+# EGL: Legacy offscreen rendering.
+if (NOT APPLE)
+    if (UNIX AND NOT APPLE)
+        find_package(OpenGL COMPONENTS EGL REQUIRED)
+    else()
+        find_package(OpenGL COMPONENTS EGL)
+    endif()
+    if (OpenGL_EGL_FOUND)
+        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
+    endif()
+    find_package(X11 QUIET)
+    if (X11_FOUND)
+        target_link_libraries(Open3D PRIVATE X11::X11)
+    endif()
+endif()
+
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond
 # direct consumers of libOpen3D.a

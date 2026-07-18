@@ -98,12 +98,15 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
+# Install pyenv if it is not already present in BASE_IMAGE.
+RUN if [ ! -d "$PYENV_ROOT" ]; then \
+        wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
+    fi \
         && pyenv update \
-        && pyenv install $PYTHON_VERSION \
+        && pyenv install -s $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+        && ln -sf $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -137,8 +140,11 @@ RUN ccache --version \
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# Install Open3D-ML if it is not already present in BASE_IMAGE.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}; \
+    fi
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR
@@ -158,9 +164,10 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
+# Avoid gpg prompting to overwrite it interactively.
 RUN mkdir -p /etc/apt/keyrings \
  && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
  | tee /etc/apt/sources.list.d/nodesource.list \
  && apt-get update \
@@ -181,9 +188,9 @@ RUN \
         export CMAKE_C_COMPILER=gcc; \
         export BUILD_ISPC_MODULE=ON; \
     fi \
- && mkdir build \
+ && mkdir -p build \
  && cd build \
- && cmake -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
+ && cmake --fresh -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
@@ -220,7 +227,7 @@ RUN ccache -s \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

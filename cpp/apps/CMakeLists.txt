@@ -23,7 +23,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time
     # if we are using Xcode.
-    set(RESOURCE_FILES ${GUI_RESOURCE_FILES} ${RESOURCE_FILES})
+    set(EXTRA_RESOURCE_FILES ${RESOURCE_FILES})
     if (APPLE)
         set(RESOURCE_DIR_NAME "Contents/Resources")
     else ()
@@ -37,7 +37,12 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             POST_BUILD
             # copy the resource files into the bundle
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
-            COMMAND ${CMAKE_COMMAND} -E copy ${RESOURCE_FILES} "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
+            # Copy the full GUI resources directory to preserve subfolders like `gaussian_splat/`.
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}"
+                    "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
+            # Copy macOS-only extra bundle files (e.g. icns / Assets.car).
+            COMMAND ${CMAKE_COMMAND} -E copy ${EXTRA_RESOURCE_FILES}
+                    "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>/${RESOURCE_DIR_NAME}"
             # copy external libraries (e.g. SDL into the bundle and fixup
             # the search paths
             COMMAND ${APPS_DIR}/fixup_macosx_bundle.sh "$<TARGET_BUNDLE_DIR:${TARGET_NAME}>"
@@ -87,10 +92,17 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
 
             # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
             # so we can't just install() the build results, and need to do them piecemeal.
+            get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+            if (IS_MULTI_CONFIG)
+                set(APP_BINARY_DIR "${APP_DIR}/$<CONFIG>")
+            else()
+                set(APP_BINARY_DIR "${APP_DIR}")
+            endif()
+
             install(DIRECTORY   "${APP_DIR}/resources"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     USE_SOURCE_PERMISSIONS)
-            install(FILES   "${APP_DIR}/$<CONFIG>/${TARGET_NAME}.exe"
+            install(FILES   "${APP_BINARY_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
         else()

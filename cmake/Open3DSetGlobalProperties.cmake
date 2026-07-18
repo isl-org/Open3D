@@ -108,9 +108,6 @@ function(open3d_set_global_properties target)
     if (BUILD_GUI)
         target_compile_definitions(${target} PRIVATE BUILD_GUI)
     endif()
-    if (ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
     if (BUILD_AZURE_KINECT)
         target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
     endif()
@@ -144,12 +141,23 @@ function(open3d_set_global_properties target)
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+            if(BUILD_SYCL_MODULE)
+                # icx mishandles MSVC STL's `_Guarded_by_` SAL annotation (via
+                # oneDPL <execution>); it is a static-analysis no-op, so empty it.
+                # Must be target_compile_options (not definitions) and must not use
+                # $<COMPILE_LANGUAGE:CXX>: CMake mishandles the parentheses in both.
+                target_compile_options(${target} PRIVATE "-D_Guarded_by_(x)=")
+            endif()
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            # Note: /MP is not compatible with the Intel oneAPI DPC++/C++
+            # compiler (icx) when SYCL offloading (-fsycl) is enabled
+            if(NOT BUILD_SYCL_MODULE)
+                target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            endif()
             if(BUILD_GUI)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.
@@ -180,12 +188,20 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
-    # Turn off fast math for IntelLLVM DPC++ compiler.
-    # Fast math does not work with some of our NaN handling logics.
+    # IEEE-compliant FP for IntelLLVM / icx (SYCL on Windows and Linux).
+    # -fno-fast-math: preserve NaN handling. -no-ftz / -mno-daz-ftz: icx
+    # enables FTZ/DAZ at -O1+, which zeroes denormals (e.g. RGB packed into a
+    # float in PCD). Windows icx is clang-cl; prefix with /clang: so the
+    # GNU-style flags take effect.
+    if(WIN32)
+        set(opt-prefix /clang:)
+    else()
+        set(opt-prefix "")
+    endif()
     target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
-    target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-fno-fast-math>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-no-ftz>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-mno-daz-ftz>)
 
     # Enable strip
     open3d_enable_strip(${target})

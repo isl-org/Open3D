@@ -97,33 +97,38 @@ using MaterialHandle = open3d::visualization::rendering::MaterialHandle;
 using ResourceManager =
         open3d::visualization::rendering::FilamentResourceManager;
 
-std::unordered_map<std::string, MaterialHandle> shader_mappings = {
-        {"defaultLit", ResourceManager::kDefaultLit},
-        {"defaultLitTransparency",
-         ResourceManager::kDefaultLitWithTransparency},
-        {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
-        {"defaultUnlitTransparency",
-         ResourceManager::kDefaultUnlitWithTransparency},
-        {"defaultUnlit", ResourceManager::kDefaultUnlit},
-        {"normals", ResourceManager::kDefaultNormalShader},
-        {"depth", ResourceManager::kDefaultDepthShader},
-        {"depthValue", ResourceManager::kDefaultDepthValueShader},
-        {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
-        {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
-        {"unlitPolygonOffset",
-         ResourceManager::kDefaultUnlitPolygonOffsetShader},
-        {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
-        {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
-        {"unlitLine", ResourceManager::kDefaultLineShader}};
+const std::unordered_map<std::string, MaterialHandle>& ShaderMappings() {
+    // Built on first use so MaterialHandle::Next() ids in
+    // FilamentResourceManager.cpp are initialized first (avoids SIOF).
+    static const std::unordered_map<std::string, MaterialHandle> mappings = {
+            {"defaultLit", ResourceManager::kDefaultLit},
+            {"defaultLitTransparency",
+             ResourceManager::kDefaultLitWithTransparency},
+            {"defaultLitSSR", ResourceManager::kDefaultLitSSR},
+            {"defaultUnlitTransparency",
+             ResourceManager::kDefaultUnlitWithTransparency},
+            {"defaultUnlit", ResourceManager::kDefaultUnlit},
+            {"normals", ResourceManager::kDefaultNormalShader},
+            {"depth", ResourceManager::kDefaultDepthShader},
+            {"depthValue", ResourceManager::kDefaultDepthValueShader},
+            {"unlitGradient", ResourceManager::kDefaultUnlitGradientShader},
+            {"unlitSolidColor", ResourceManager::kDefaultUnlitSolidColorShader},
+            {"unlitPolygonOffset",
+             ResourceManager::kDefaultUnlitPolygonOffsetShader},
+            {"unlitBackground", ResourceManager::kDefaultUnlitBackgroundShader},
+            {"infiniteGroundPlane", ResourceManager::kInfinitePlaneShader},
+            {"unlitLine", ResourceManager::kDefaultLineShader}};
+    return mappings;
+}
 
-MaterialHandle kColorOnlyMesh = ResourceManager::kDefaultUnlit;
-MaterialHandle kPlainMesh = ResourceManager::kDefaultLit;
-MaterialHandle kMesh = ResourceManager::kDefaultLit;
-
-MaterialHandle kColoredPointcloud = ResourceManager::kDefaultUnlit;
-MaterialHandle kPointcloud = ResourceManager::kDefaultLit;
-
-MaterialHandle kLineset = ResourceManager::kDefaultUnlit;
+MaterialHandle ShaderToMaterial(const std::string& shader_name) {
+    const auto& mappings = ShaderMappings();
+    auto it = mappings.find(shader_name);
+    if (it != mappings.end() && it->second) {
+        return it->second;
+    }
+    return ResourceManager::kDefaultUnlit;
+}
 
 }  // namespace defaults_mapping
 
@@ -566,7 +571,8 @@ void FilamentScene::RebuildMergedGaussianData() {
     merge_geoms.reserve(geometries_.size());
 
     // Aggregate RenderConfig: elementwise max across all objects' materials.
-    std::uint32_t max_tiles_per_splat = 32u;
+    std::uint32_t max_tiles_per_splat = 256u;
+    std::uint32_t avg_tiles_per_splat = 32u;
     std::uint32_t max_tile_entries_total = 32u * 1024u * 1024u;
 
     for (auto& [obj_name, geom] : geometries_) {
@@ -579,6 +585,8 @@ void FilamentScene::RebuildMergedGaussianData() {
         const auto& mat = geom.mat.properties;
         max_tiles_per_splat = std::max(max_tiles_per_splat,
                                        mat.gaussian_splat_max_tiles_per_splat);
+        avg_tiles_per_splat = std::max(avg_tiles_per_splat,
+                                       mat.gaussian_splat_avg_tiles_per_splat);
         max_tile_entries_total =
                 std::max(max_tile_entries_total,
                          mat.gaussian_splat_max_tile_entries_total);
@@ -601,6 +609,7 @@ void FilamentScene::RebuildMergedGaussianData() {
         if (auto* gcr = fr->GetGaussianSplatRenderer()) {
             auto cfg = gcr->GetRenderConfig();
             cfg.max_tiles_per_splat = max_tiles_per_splat;
+            cfg.avg_tiles_per_splat = avg_tiles_per_splat;
             cfg.max_tile_entries_total = max_tile_entries_total;
             gcr->SetRenderConfig(cfg);
         }
@@ -638,8 +647,7 @@ MaterialInstanceHandle FilamentScene::AssignMaterialToFilamentGeometry(
         filament::RenderableManager::Builder& builder,
         const MaterialRecord& material) {
     // TODO: put this in a method
-    auto shader = defaults_mapping::shader_mappings[material.shader];
-    if (!shader) shader = defaults_mapping::kColorOnlyMesh;
+    auto shader = defaults_mapping::ShaderToMaterial(material.shader);
 
     auto material_instance = resource_mgr_.CreateMaterialInstance(shader);
     auto wmat_instance = resource_mgr_.GetMaterialInstance(material_instance);
@@ -1644,8 +1652,7 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
     // Has the shader changed?
     if (geom->mat.properties.shader != material.shader) {
         // TODO: put this in a method
-        auto shader = defaults_mapping::shader_mappings[material.shader];
-        if (!shader) shader = defaults_mapping::kColorOnlyMesh;
+        auto shader = defaults_mapping::ShaderToMaterial(material.shader);
         auto old_mi = geom->mat.mat_instance;
         auto new_mi = resource_mgr_.CreateMaterialInstance(shader);
         auto wmat_instance = resource_mgr_.GetMaterialInstance(new_mi);

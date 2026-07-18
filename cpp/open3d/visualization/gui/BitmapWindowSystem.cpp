@@ -11,6 +11,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <unordered_set>
 
 #include "open3d/geometry/Image.h"
 #include "open3d/utility/Logging.h"
@@ -44,10 +45,19 @@ struct BitmapEvent {
     virtual void Execute() = 0;
 };
 
-struct BitmapDrawEvent : public BitmapEvent {
-    BitmapDrawEvent(BitmapWindow *target) : BitmapEvent(target) {}
+struct BitmapEventQueue;
 
-    void Execute() override { event_target->o3d_window->OnDraw(); }
+struct BitmapDrawEvent : public BitmapEvent {
+    // queue_ is used to clear the pending-draw flag before OnDraw() so that
+    // a PostRedraw() called *inside* OnDraw() is not suppressed.
+    BitmapEventQueue *queue_;
+
+    BitmapDrawEvent(BitmapWindow *target, BitmapEventQueue *queue)
+        : BitmapEvent(target), queue_(queue) {}
+
+    // Execute() is defined after BitmapEventQueue (below) because it calls
+    // clear_pending_draw(), which requires the full BitmapEventQueue type.
+    void Execute() override;
 };
 
 struct BitmapResizeEvent : public BitmapEvent {
@@ -96,6 +106,11 @@ struct BitmapTextInputEvent : public BitmapEvent {
 /// Thread safe event queue (multiple producers and consumers). pop_front() and
 /// push() are protected by a mutex. push() may fail if the mutex cannot be
 /// acquired immediately. empty() is not protected and is not reliable.
+///
+/// Also supports:
+/// - Draw coalescing: at most one pending draw per window (push_draw).
+/// - Input coalescing: MOVE/DRAG replace latest, WHEEL accumulates dx/dy
+/// (replace_or_merge_mouse). Old mouse positions are stale and discarded.
 struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
     using value_t = std::shared_ptr<BitmapEvent>;
     using super = std::queue<value_t>;
@@ -117,9 +132,84 @@ struct BitmapEventQueue : public std::queue<std::shared_ptr<BitmapEvent>> {
         }
     }
 
+    // Push a draw event only if no draw is already pending for this window.
+    // Returns true if pushed. The caller must pass the shared_ptr to the draw
+    // event; this function inserts the window into pending_draw_windows_ so
+    // that BitmapDrawEvent::Execute() can clear it on completion.
+    bool push_draw(BitmapWindow *window, const value_t &event) {
+        if (evt_q_mutex_.try_lock()) {
+            bool pushed = false;
+            if (pending_draw_windows_.find(window) ==
+                pending_draw_windows_.end()) {
+                pending_draw_windows_.insert(window);
+                super::push(event);
+                pushed = true;
+            }
+            evt_q_mutex_.unlock();
+            return pushed;
+        }
+        return false;
+    }
+
+    // Called by BitmapDrawEvent::Execute() just before OnDraw() so that a
+    // redraw posted *during* drawing is not suppressed.
+    void clear_pending_draw(BitmapWindow *window) {
+        std::lock_guard<std::mutex> lock(evt_q_mutex_);
+        pending_draw_windows_.erase(window);
+    }
+
+    // Remove all pending state for a window that is being destroyed.
+    void remove_window(BitmapWindow *window) {
+        std::lock_guard<std::mutex> lock(evt_q_mutex_);
+        pending_draw_windows_.erase(window);
+    }
+
+    // For MOVE/DRAG: replace the last queued event of the same (target, type)
+    // with the new event (latest absolute position wins).
+    // For WHEEL: accumulate wheel.dx/dy into the last queued event of the same
+    // (target, type) so that the total scroll amount is preserved.
+    // Falls back to a normal push when no matching event is at the back.
+    void replace_or_merge_mouse(const value_t &event) {
+        std::lock_guard<std::mutex> lock(evt_q_mutex_);
+        auto *new_evt = static_cast<BitmapMouseEvent *>(event.get());
+        if (!super::c.empty()) {
+            auto *back_mouse =
+                    dynamic_cast<BitmapMouseEvent *>(super::c.back().get());
+            if (back_mouse &&
+                back_mouse->event_target == new_evt->event_target &&
+                back_mouse->event.type == new_evt->event.type) {
+                if (new_evt->event.type == MouseEvent::WHEEL) {
+                    // Accumulate scroll deltas; update cursor position and
+                    // other fields to the latest event values.
+                    back_mouse->event.wheel.dx += new_evt->event.wheel.dx;
+                    back_mouse->event.wheel.dy += new_evt->event.wheel.dy;
+                    back_mouse->event.x = new_evt->event.x;
+                    back_mouse->event.y = new_evt->event.y;
+                    back_mouse->event.modifiers = new_evt->event.modifiers;
+                    back_mouse->event.wheel.isTrackpad =
+                            new_evt->event.wheel.isTrackpad;
+                } else {
+                    // Replace: only the latest absolute position matters.
+                    back_mouse->event = new_evt->event;
+                }
+                return;
+            }
+        }
+        super::push(event);
+    }
+
 private:
     std::mutex evt_q_mutex_;
+    // Windows with a draw event currently in the queue (not yet executed).
+    std::unordered_set<BitmapWindow *> pending_draw_windows_;
 };
+
+// Out-of-class definition: BitmapEventQueue is now fully defined so
+// clear_pending_draw() can be called.
+void BitmapDrawEvent::Execute() {
+    queue_->clear_pending_draw(event_target);
+    event_target->o3d_window->OnDraw();
+}
 
 }  // namespace
 
@@ -187,18 +277,32 @@ void BitmapWindowSystem::DestroyWindow(OSWindow w) {
     while (!filtered_reversed.empty()) {
         impl_->event_queue_.push(filtered_reversed.pop_front());
     }
+    // Clear any pending-draw entry for this window so the coalescing set
+    // does not hold a dangling pointer.
+    impl_->event_queue_.remove_window(the_deceased);
     // Requiem aeternam dona ei. Requiscat in pace.
     delete (BitmapWindow *)w;
 }
 
 void BitmapWindowSystem::PostRedrawEvent(OSWindow w) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(std::make_shared<BitmapDrawEvent>(hw));
+    // push_draw is a no-op when a draw event is already queued for this
+    // window, preventing redundant renders from piling up.
+    impl_->event_queue_.push_draw(
+            hw, std::make_shared<BitmapDrawEvent>(hw, &impl_->event_queue_));
 }
 
 void BitmapWindowSystem::PostMouseEvent(OSWindow w, const MouseEvent &e) {
     auto hw = (BitmapWindow *)w;
-    impl_->event_queue_.push(std::make_shared<BitmapMouseEvent>(hw, e));
+    if (e.type == MouseEvent::MOVE || e.type == MouseEvent::DRAG ||
+        e.type == MouseEvent::WHEEL) {
+        // Coalesce: MOVE/DRAG replace latest (absolute position); WHEEL
+        // accumulates dx/dy. Only the most recent state matters for rendering.
+        impl_->event_queue_.replace_or_merge_mouse(
+                std::make_shared<BitmapMouseEvent>(hw, e));
+    } else {
+        impl_->event_queue_.push(std::make_shared<BitmapMouseEvent>(hw, e));
+    }
 }
 
 void BitmapWindowSystem::PostKeyEvent(OSWindow w, const KeyEvent &e) {

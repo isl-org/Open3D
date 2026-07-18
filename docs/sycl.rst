@@ -6,7 +6,8 @@ Cross-platform GPU support (SYCL)
 From v0.19, Open3D provides an experimental SYCL backend for cross-platform GPU
 support. This backend allows Open3D operations to run on many different GPUs,
 including integrated GPUs and discrete GPUs from Intel, Nvidia and AMD. We
-provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+).
+provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+) and
+Windows 10+.
 
 Enabled features
 -----------------
@@ -72,7 +73,7 @@ types.
 In addition, HW accelerated raycasting queries in
 :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
 will get an error if an operation is not supported. The implementation is tested
-on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
+on Linux and Windows on Intel integrated and discrete GPUs. Currently, a single GPU
 (`SYCL:0`, if available) and the CPU (`SYCL:1` if a GPU is available, else
 `SYCL:0`) are supported.
 
@@ -87,7 +88,9 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
 For Python, the wheels will automatically install the DPC++ runtime package
-(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed
+(`dpcpp-cpp-rt`) into the same environment. On Windows, Open3D registers those
+pip-installed DLL directories at import time (system-wide oneAPI runtimes are
+not used). Make sure to have the `correct drivers installed
 <https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.
@@ -103,7 +106,15 @@ raycasting on Intel GPUs, you will also need the
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-manylinux_2_31_x86_64.whl>`__
       - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-manylinux_2_31_x86_64.whl>`__
-      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+
+    * - Windows SYCL
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-win_amd64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-win_amd64.whl>`__
+      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-win_amd64.whl>`__
+      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-win_amd64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-win_amd64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-win-x86_64-0.19.0.tar.xz>`__
 
 Usage
 ------

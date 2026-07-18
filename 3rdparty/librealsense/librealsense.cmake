@@ -45,7 +45,19 @@ endif()
 set(LIBREALSENSE_CMAKE_C_FLAGS "")
 set(LIBREALSENSE_CMAKE_CXX_FLAGS "")
 set(LIBREALSENSE_EXTRA_CMAKE_ARGS "")
-if(NOT WIN32)
+if(WIN32)
+    # icx (IntelLLVM), used as the CXX/C compiler for Windows SYCL (xpu) builds,
+    # enforces target-feature checks that MSVC's cl.exe does not: librealsense uses 
+    # always_inline intrinsics like _mm_shuffle_epi8 without enabling ssse3 for
+    # the translation unit, which fails to compile under icx with "requires
+    # target feature 'ssse3'". Explicitly enable ssse3 for icx on Windows;
+    if(BUILD_SYCL_MODULE)
+        list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS
+            "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS} -mssse3"
+            "-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS} -mssse3"
+        )
+    endif()
+else()
     if(LIBUSB1_CMAKE_C_FLAGS_EXTRA)
         set(LIBREALSENSE_CMAKE_C_FLAGS "${LIBUSB1_CMAKE_C_FLAGS_EXTRA}")
         list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS "-DCMAKE_C_FLAGS=${LIBUSB1_CMAKE_C_FLAGS_EXTRA}")
@@ -55,6 +67,7 @@ if(NOT WIN32)
     if(LIBUSB1_CMAKE_CXX_FLAGS_EXTRA)
         set(LIBREALSENSE_CMAKE_CXX_FLAGS "${LIBREALSENSE_CMAKE_CXX_FLAGS} ${LIBUSB1_CMAKE_CXX_FLAGS_EXTRA}")
     endif()
+    list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${LIBREALSENSE_CMAKE_CXX_FLAGS}")
 endif()
 
 ExternalProject_Add(
@@ -66,9 +79,9 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for CRT mismatch in CUDA code (Windows)
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh ${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch <SOURCE_DIR>
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
     # Patch to include the <chrono> header for the system_clock type
-    COMMAND ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh ${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch <SOURCE_DIR>
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -82,9 +95,6 @@ ExternalProject_Add(
         -DUSE_EXTERNAL_USB=ON
         -DBUILD_TOOLS=OFF
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        # Syncing GLIBCXX_USE_CXX11_ABI for MSVC causes problems, but directly
-        # checking CXX_COMPILER_ID is not supported.
-        $<IF:$<PLATFORM_ID:Windows>,"",-DCMAKE_CXX_FLAGS=${LIBREALSENSE_CMAKE_CXX_FLAGS}>
         $<$<PLATFORM_ID:Darwin>:-DBUILD_WITH_OPENMP=OFF>
         $<$<PLATFORM_ID:Darwin>:-DHWM_OVER_XU=OFF>
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>

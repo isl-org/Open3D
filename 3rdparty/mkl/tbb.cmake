@@ -30,6 +30,10 @@ set(BUILD_SHARED_LIBS ${_build_shared_libs})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ${_win_exp_all_syms})
 
 # TBB is built and linked as a shared library - this is different from all other Open3D dependencies.
+install(DIRECTORY ${ext_tbb_SOURCE_DIR}/include/
+  DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
+  COMPONENT tbb
+)
 install(TARGETS tbb EXPORT ${PROJECT_NAME}Targets
   ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}     # Windows .lib files
   COMPONENT tbb

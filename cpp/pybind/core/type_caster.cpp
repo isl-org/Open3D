@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/tensor_type_caster.h"
+#include "pybind/core/type_caster.h"
 
 #include "pybind/core/tensor_converter.h"
 
@@ -29,6 +29,19 @@ bool type_caster<open3d::core::Tensor>::load(handle src, bool convert) {
         }
     }
 
+    return false;
+}
+
+bool type_caster<open3d::core::Device>::load(handle src, bool convert) {
+    if (type_caster_base<open3d::core::Device>::load(src, convert)) {
+        return true;
+    }
+    if (convert && py::isinstance<py::str>(src)) {
+        holder_ = std::make_unique<open3d::core::Device>(
+                py::cast<std::string>(src));
+        value = holder_.get();
+        return true;
+    }
     return false;
 }
 
