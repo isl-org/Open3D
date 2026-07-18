@@ -642,9 +642,9 @@ jobs:
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
             python -m pip install -U -r open3d_ml/requirements-torch.txt
           }
-          $PIP_PKG_NAME = (Get-ChildItem *.whl -First 1 -ErrorAction SilentlyContinue).FullName
+          $PIP_PKG_NAME = (Get-ChildItem *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
           if (-not $PIP_PKG_NAME) {
-            $PIP_PKG_NAME = (Get-ChildItem -Recurse *.whl -First 1 -ErrorAction SilentlyContinue).FullName
+            $PIP_PKG_NAME = (Get-ChildItem -Recurse *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
           }
           if (-not $PIP_PKG_NAME) {
             Write-Error "Could not find a valid Open3D wheel!"
