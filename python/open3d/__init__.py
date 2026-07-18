@@ -31,13 +31,23 @@ if sys.platform == "win32":
     # intel-sycl-rt will install in:
     # - <sys.prefix>/Library/bin # (for standard/virtualenv/conda installs)
     # - <site.USER_BASE>/Library/bin # (for user-level --user installs)
-    # CUDA runtime is statically linked.
+    # CUDA runtime is linked dynamically on Windows (unlike Linux, where it is
+    # statically linked) and is installed by the nvidia-*-cu* pip packages
+    # (see requirements_win_cuda.txt) into <site-packages>/nvidia/<component>/bin.
     _win32_dll_dirs = [os.add_dll_directory(str(Path(__file__).parent))]
     _site_dirs = [*site.PREFIXES, *site.getsitepackages(), site.USER_BASE]
     for _site_dir in _site_dirs:
         if os.path.isdir(os.path.join(_site_dir, "Library", "bin")):
             _win32_dll_dirs.append(
                 os.add_dll_directory(os.path.join(_site_dir, "Library", "bin")))
+        _nvidia_dir = os.path.join(_site_dir, "nvidia")
+        if os.path.isdir(_nvidia_dir):
+            for _nvidia_pkg_dir in os.listdir(_nvidia_dir):
+                _nvidia_bin_dir = os.path.join(_nvidia_dir, _nvidia_pkg_dir,
+                                               "bin")
+                if os.path.isdir(_nvidia_bin_dir):
+                    _win32_dll_dirs.append(
+                        os.add_dll_directory(_nvidia_bin_dir))
 
 from open3d.pybind import (
     core,

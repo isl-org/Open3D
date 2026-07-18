@@ -680,9 +680,6 @@ if(NOT USE_SYSTEM_GLEW)
         INCLUDE_DIRS
             include/
     )
-    if(ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(3rdparty_glew PUBLIC GLEW_OSMESA)
-    endif()
     if(WIN32)
         target_compile_definitions(3rdparty_glew PUBLIC GLEW_STATIC)
     endif()
@@ -1444,6 +1441,8 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         else()  # WIN32
+            # Match the prebuilt Filament archive's runtime selection in
+            # filament_download.cmake.
             if (STATIC_WINDOWS_RUNTIME)
                 set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
             else()
@@ -1537,21 +1536,14 @@ if(BUILD_GUI)
     endif() # if(NOT USE_SYSTEM_FILAMENT)
 endif()
 
-# Headless rendering
-if (ENABLE_HEADLESS_RENDERING)
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        REQUIRED
-        PACKAGE OSMesa
-        INCLUDE_DIRS OSMESA_INCLUDE_DIR
-        LIBRARIES OSMESA_LIBRARY
-    )
-else()
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        PACKAGE OpenGL
-        TARGETS OpenGL::GL
-    )
-    set(USE_SYSTEM_OPENGL ON)
-endif()
+# OpenGL. Headless rendering on Linux uses a GPU-accelerated offscreen EGL
+# context (see EGLOffscreenContext) instead of a software OSMesa build, so
+# there is no separate headless configuration here.
+open3d_find_package_3rdparty_library(3rdparty_opengl
+    PACKAGE OpenGL
+    TARGETS OpenGL::GL
+)
+set(USE_SYSTEM_OPENGL ON)
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
 
 # RPC interface
@@ -1684,7 +1676,7 @@ if(BUILD_SYCL_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." ON)
+    set(OPEN3D_USE_ONEAPI_PACKAGES ON CACHE BOOL "Use the oneAPI distribution of MKL/TBB." FORCE)
 else()
     option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB." OFF)
 endif()
@@ -1696,16 +1688,50 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
     find_package(MKL REQUIRED)
+    # oneAPI MKL's lib layout differs by platform: Linux nests libs under an
+    # "intel64" subdirectory, while Windows (verified with oneAPI 2025.3)
+    # places them directly in "lib".
+    if(WIN32)
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib)
+    else()
+        set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
+    endif()
+
+    set(MKL_SYCL_LIBS)
+    if(BUILD_SYCL_MODULE)
+        if(WIN32)
+            set(MKL_SYCL_LIBS
+                $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
+                $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
+            )
+        else()
+            set(MKL_SYCL_LIBS mkl_sycl)
+        endif()
+    endif()
+
     open3d_import_3rdparty_library(3rdparty_mkl
         HIDDEN
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
-        LIB_DIR      ${MKL_ROOT}/lib/intel64
-        LIBRARIES    $<$<BOOL:${BUILD_SYCL_MODULE}>:mkl_sycl> mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIB_DIR      ${MKL_LIB_DIR}
+        LIBRARIES    ${MKL_SYCL_LIBS} mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
     if (BUILD_SYCL_MODULE)
     # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
-        target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+        if (WIN32)
+            find_package(OpenCL REQUIRED)
+            target_link_libraries(3rdparty_mkl INTERFACE OpenCL::OpenCL)
+            if(NOT BUILD_SHARED_LIBS)
+                # Static builds export Open3D::3rdparty_mkl (whose link interface
+                # carries the OpenCL::OpenCL imported target) in Open3DTargets.cmake,
+                # so a downstream find_package(Open3D) must re-find OpenCL to
+                # recreate that target (see CUDAToolkit above for the same pattern).
+                list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenCL")
+            endif()
+        else()
+            target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+        endif()
     endif()
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
@@ -1879,12 +1905,11 @@ endif(OPEN3D_USE_ONEAPI_PACKAGES)
 # cuBLAS
 if(BUILD_CUDA_MODULE)
     if(WIN32)
-        # Nvidia does not provide static libraries for Windows. We don't release
-        # pip wheels for Windows with CUDA support at the moment. For the pip
-        # wheels to support CUDA on Windows out-of-the-box, we need to either
-        # ship the CUDA toolkit with the wheel (e.g. PyTorch can make use of the
-        # cudatoolkit conda package), or have a mechanism to locate the CUDA
-        # toolkit from the system.
+        # Nvidia does not provide static libraries for Windows, so CUDA is
+        # linked dynamically. The open3d-cuda pip wheel ships the required
+        # NVIDIA CUDA runtime DLLs via the nvidia-*-cu12 pip packages listed in
+        # python/requirements_win_cuda.txt (installed as a wheel dependency;
+        # see python/open3d/__init__.py for how they are located at runtime).
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
         # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html

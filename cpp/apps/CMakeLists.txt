@@ -87,10 +87,17 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
 
             # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
             # so we can't just install() the build results, and need to do them piecemeal.
+            get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+            if (IS_MULTI_CONFIG)
+                set(APP_BINARY_DIR "${APP_DIR}/$<CONFIG>")
+            else()
+                set(APP_BINARY_DIR "${APP_DIR}")
+            endif()
+
             install(DIRECTORY   "${APP_DIR}/resources"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     USE_SOURCE_PERMISSIONS)
-            install(FILES   "${APP_DIR}/$<CONFIG>/${TARGET_NAME}.exe"
+            install(FILES   "${APP_BINARY_DIR}/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
         else()

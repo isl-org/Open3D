@@ -39,7 +39,7 @@ bool VisualizerWithEditing::AddGeometry(
                 "None was passed in.");
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     original_geometry_ptr_ = geometry_ptr;
     if (geometry_ptr->GetGeometryType() ==
         geometry::Geometry::GeometryType::Unspecified) {
@@ -381,7 +381,7 @@ void VisualizerWithEditing::KeyPressCallback(
                 if (editing_geometry_ptr_ &&
                     editing_geometry_ptr_->GetGeometryType() ==
                             geometry::Geometry::GeometryType::PointCloud) {
-                    glfwMakeContextCurrent(window_);
+                    MakeContextCurrent();
                     geometry::PointCloud &pcd =
                             (geometry::PointCloud &)*editing_geometry_ptr_;
                     if (std::shared_ptr<geometry::PointCloud> pcd_ptr =
@@ -401,7 +401,7 @@ void VisualizerWithEditing::KeyPressCallback(
                            editing_geometry_ptr_->GetGeometryType() ==
                                    geometry::Geometry::GeometryType::
                                            TriangleMesh) {
-                    glfwMakeContextCurrent(window_);
+                    MakeContextCurrent();
                     geometry::TriangleMesh &mesh =
                             (geometry::TriangleMesh &)*editing_geometry_ptr_;
                     if (std::shared_ptr<geometry::TriangleMesh> mesh_ptr =

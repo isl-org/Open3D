@@ -1,9 +1,12 @@
+# Open3D CMake build system
+# - Must FATAL_ERROR on incompatible build options. No attempts to auto-fix /
+# guess user intent.
 cmake_minimum_required(VERSION 3.24)
-# If you're using Ubuntu 20.04, we suggest you install the latest CMake from the
+# If you're using Ubuntu 22.04, please install the latest CMake from the
 # official repository https://apt.kitware.com/.
 # CMake 3.24+ is required for CUDA native arch selection
 # CMake 3.22+ is required by Assimp v5.4.2
-# CMake 3.20+ is required to detect IntelLLVM compiler for SYCL
+# CMake 3.24+ is required to detect IntelLLVM compiler for SYCL
 
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
@@ -40,11 +43,14 @@ option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
-option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
+if (WIN32)  
+# NVIDIA does not ship static cuBlas/cuSolver libraries for Windows. 
+    option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"     OFF )
+# Causes CUDA runtime error on Windows (See issue #6555)
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
 else()
+    option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"     ON )
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    ON )
 endif()
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
@@ -56,13 +62,12 @@ option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPP                "Use Intel Integrated Performance Primitives" ON )
-option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-if(BUILD_SHARED_LIBS)
+option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SHARED_LIBS OR WIN32 AND BUILD_SYCL_MODULE)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
-option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
     set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING
     "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
@@ -72,6 +77,11 @@ if(BUILD_SYCL_MODULE)
 )
     set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
     set(BUILD_CUDA_MODULE OFF CACHE BOOL "Build the CUDA module" FORCE)
+    # icx -fsycl rejects the static MSVC runtime (/MT, /MTd). 
+    if(WIN32 AND STATIC_WINDOWS_RUNTIME)
+        message(FATAL_ERROR
+            "IntelLLVM does not support STATIC_WINDOWS_RUNTIME=ON with -fsycl.")
+    endif()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
@@ -222,25 +232,12 @@ endif()
 if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT USE_BLAS)
     message(FATAL_ERROR "ARM CPU detected, you must set USE_BLAS=ON.")
 endif()
-if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(WARNING "Headless rendering is not supported on Mac OS")
-    set(ENABLE_HEADLESS_RENDERING OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
-    message(WARNING "Headless rendering disables the Open3D GUI")
-    set(BUILD_GUI OFF)
-endif()
 if(APPLE)
     find_program(XCRUN_EXECUTABLE xcrun)
     if(NOT XCRUN_EXECUTABLE)
-        message(WARNING
-                "xcrun was not found. Metal shader compilation for Gaussian splatting will require Xcode command line tools.")
+        message(WARNING "xcrun was not found. Metal shader compilation for "
+        "Gaussian splatting will require Xcode command line tools.")
     endif()
-endif()
-if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
-    message(WARNING "Headless rendering requires customized GLEW and GLFW builds")
-    set(USE_SYSTEM_GLEW OFF)
-    set(USE_SYSTEM_GLFW OFF)
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
@@ -258,6 +255,10 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
+if (WIN32 AND BUILD_CUDA_MODULE AND BUILD_WITH_CUDA_STATIC)
+    message(FATAL_ERROR "BUILD_WITH_CUDA_STATIC=ON is not supported on Windows. CUDA must be dynamically linked.")
+endif()
+
 if(OPEN3D_USE_INSTALLED_LIBRARY AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "OPEN3D_USE_INSTALLED_LIBRARY=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
@@ -314,8 +315,8 @@ if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
                         "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
                         "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
 endif()
-if (BUILD_SYCL_MODULE AND (NOT UNIX OR APPLE))
-    message(FATAL_ERROR "Open3D SYCL support is only available on Linux")
+if (BUILD_SYCL_MODULE AND APPLE)
+    message(FATAL_ERROR "Open3D SYCL support is not available on Apple")
 endif()
 if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
