@@ -44,34 +44,6 @@ namespace contrib {
 #define THREADS_PER_BLOCK 256
 #define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
 
-__device__ inline int pt_in_box3d(float x,
-                                  float y,
-                                  float z,
-                                  float cx,
-                                  float bottom_y,
-                                  float cz,
-                                  float h,
-                                  float w,
-                                  float l,
-                                  float angle,
-                                  float max_dis) {
-    float x_rot, z_rot, cosa, sina, cy;
-    int in_flag;
-    cy = bottom_y - h / 2.0;
-    if ((fabsf(x - cx) > max_dis) || (fabsf(y - cy) > h / 2.0) ||
-        (fabsf(z - cz) > max_dis)) {
-        return 0;
-    }
-    cosa = cos(angle);
-    sina = sin(angle);
-    x_rot = (x - cx) * cosa + (z - cz) * (-sina);
-    z_rot = (x - cx) * sina + (z - cz) * cosa;
-
-    in_flag = (x_rot >= -l / 2.0) & (x_rot <= l / 2.0) & (z_rot >= -w / 2.0) &
-              (z_rot <= w / 2.0);
-    return in_flag;
-}
-
 __global__ void roipool3d_forward(int batch_size,
                                   int pts_num,
                                   int boxes_num,

@@ -116,12 +116,27 @@ __global__ void NmsKernel(const float *boxes,
     }
 }
 
-std::vector<int64_t> NmsCUDAKernel(const float *boxes,
-                                   const float *scores,
-                                   int n,
-                                   double nms_overlap_thresh) {
+// Single-thread device wrapper around the shared NmsGreedyKeepCore()
+// reduction (see Nms.h). Launched with <<<1, 1>>> so the inherently
+// sequential greedy keep-loop runs entirely on-device: only the small
+// `keep_indices[0:*count_out)` result is copied back to the host (mirrors
+// NmsSYCL.cpp's single_task).
+__global__ void NmsGreedyKeepKernel(const uint64_t *mask,
+                                    const int64_t *sort_indices,
+                                    int n,
+                                    uint64_t *remv,
+                                    int64_t *keep_indices,
+                                    int *count_out) {
+    *count_out = NmsGreedyKeepCore(mask, sort_indices, n, remv, keep_indices);
+}
+
+int NmsCUDAKernel(const float *boxes,
+                  const float *scores,
+                  int n,
+                  double nms_overlap_thresh,
+                  int64_t *keep_indices_out) {
     if (n == 0) {
-        return {};
+        return 0;
     }
 
     // Cololum-wise number of blocks.
@@ -149,46 +164,30 @@ std::vector<int64_t> NmsCUDAKernel(const float *boxes,
     NmsKernel<<<blocks, threads>>>(boxes, sort_indices, mask_ptr, n,
                                    nms_overlap_thresh, num_block_cols);
 
-    // Copy cuda masks to cpu.
-    std::vector<uint64_t> mask_vec(n * num_block_cols);
-    uint64_t *mask = mask_vec.data();
-    OPEN3D_CUDA_CHECK(cudaMemcpy(mask_vec.data(), mask_ptr,
-                                 n * num_block_cols * sizeof(uint64_t),
+    // Greedy keep-loop: run on-device as a single-thread kernel (see its
+    // comment above), writing straight into the caller-owned
+    // `keep_indices_out` (no separate device allocation/free for the result,
+    // and no device->host copy of the result data -- only the final count,
+    // a single int, needs to reach the host).
+    uint64_t *remv = nullptr;
+    OPEN3D_CUDA_CHECK(
+            cudaMalloc((void **)&remv, num_block_cols * sizeof(uint64_t)));
+    int *count_dev = nullptr;
+    OPEN3D_CUDA_CHECK(cudaMalloc((void **)&count_dev, sizeof(int)));
+
+    NmsGreedyKeepKernel<<<1, 1>>>(mask_ptr, sort_indices, n, remv,
+                                 keep_indices_out, count_dev);
+
+    int count = 0;
+    OPEN3D_CUDA_CHECK(cudaMemcpy(&count, count_dev, sizeof(int),
                                  cudaMemcpyDeviceToHost));
+
     OPEN3D_CUDA_CHECK(cudaFree(mask_ptr));
-
-    // Copy sort_indices to cpu.
-    std::vector<int64_t> sort_indices_cpu(n);
-    OPEN3D_CUDA_CHECK(cudaMemcpy(sort_indices_cpu.data(), sort_indices,
-                                 n * sizeof(int64_t), cudaMemcpyDeviceToHost));
-
-    // Write to keep_indices in CPU.
-    // remv_cpu has n bits in total. If the bit is 1, the corresponding
-    // box will be removed.
-    // TODO: This part can be implemented in CUDA. We use the original author's
-    // implementation here.
-    std::vector<uint64_t> remv_cpu(num_block_cols, 0);
-    std::vector<int64_t> keep_indices;
-    for (int i = 0; i < n; i++) {
-        int block_col_idx = i / NMS_BLOCK_SIZE;
-        int inner_block_col_idx = i % NMS_BLOCK_SIZE;  // threadIdx.x
-
-        // Querying the i-th bit in remv_cpu, counted from the right.
-        // - remv_cpu[block_col_idx]: the block bitmap containing the query
-        // - 1ULL << inner_block_col_idx: the one-hot bitmap to extract i
-        if (!(remv_cpu[block_col_idx] & (1ULL << inner_block_col_idx))) {
-            // Keep the i-th box.
-            keep_indices.push_back(sort_indices_cpu[i]);
-
-            // Any box that overlaps with the i-th box will be removed.
-            uint64_t *p = mask + i * num_block_cols;
-            for (int j = block_col_idx; j < num_block_cols; j++) {
-                remv_cpu[j] |= p[j];
-            }
-        }
-    }
     OPEN3D_CUDA_CHECK(cudaFree(sort_indices));
-    return keep_indices;
+    OPEN3D_CUDA_CHECK(cudaFree(remv));
+    OPEN3D_CUDA_CHECK(cudaFree(count_dev));
+
+    return count;
 }
 
 }  // namespace contrib

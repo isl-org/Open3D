@@ -39,6 +39,16 @@ target_include_directories(pybind SYSTEM PRIVATE
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
+if(BUILD_SYCL_MODULE)
+    # ml/contrib/iou.cpp instantiates a real sycl::queue to call the SYCL IoU
+    # kernels, so it must be compiled with -fsycl. Source file COMPILE_OPTIONS
+    # are directory-scoped in CMake, so this must be set here (the directory
+    # `pybind` was created in via pybind11_add_module above), not in
+    # ml/CMakeLists.txt where the source is added via target_sources().
+    set_source_files_properties(ml/contrib/iou.cpp PROPERTIES
+        COMPILE_OPTIONS "-fsycl;-fsycl-targets=${OPEN3D_SYCL_TARGETS}")
+endif()
+
 open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
 target_link_libraries(pybind PRIVATE Open3D::Open3D)

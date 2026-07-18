@@ -33,9 +33,53 @@
 
 #pragma once
 
+#include <math.h>
+
+#include "open3d/Macro.h"
+#include "open3d/core/CUDAUtils.h"
+
+#ifdef BUILD_SYCL_MODULE
+// roipool3dLauncherSYCL takes a real sycl::queue&, so any TU that sees this
+// declaration needs the full SYCL runtime; RoiPoolKernelSYCL.cpp (built with
+// -fsycl) and any *.cpp including this header are all compiled SYCL-aware
+// when BUILD_SYCL_MODULE=ON (see pytorch/CMakeLists.txt).
+#include <sycl/sycl.hpp>
+#endif
+
 namespace open3d {
 namespace ml {
 namespace contrib {
+
+/// Checks whether point (x, y, z) lies inside the rotated 3D box centered
+/// at (cx, cy=bottom_y-h/2, cz) with size (h, w, l) and heading \p angle.
+/// Shared by the CPU/CUDA/SYCL roi_pool launchers.
+OPEN3D_HOST_DEVICE inline int pt_in_box3d(float x,
+                                          float y,
+                                          float z,
+                                          float cx,
+                                          float bottom_y,
+                                          float cz,
+                                          float h,
+                                          float w,
+                                          float l,
+                                          float angle,
+                                          float max_dis) {
+    float x_rot, z_rot, cosa, sina, cy;
+    int in_flag;
+    cy = bottom_y - h / 2.0;
+    if ((fabsf(x - cx) > max_dis) || (fabsf(y - cy) > h / 2.0) ||
+        (fabsf(z - cz) > max_dis)) {
+        return 0;
+    }
+    cosa = cos(angle);
+    sina = sin(angle);
+    x_rot = (x - cx) * cosa + (z - cz) * (-sina);
+    z_rot = (x - cx) * sina + (z - cz) * cosa;
+
+    in_flag = (x_rot >= -l / 2.0) & (x_rot <= l / 2.0) & (z_rot >= -w / 2.0) &
+              (z_rot <= w / 2.0);
+    return in_flag;
+}
 
 #ifdef BUILD_CUDA_MODULE
 
@@ -50,6 +94,32 @@ void roipool3dLauncher(int batch_size,
                        float *pooled_features,
                        int *pooled_empty_flag);
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+
+void roipool3dLauncherSYCL(sycl::queue &queue,
+                           int batch_size,
+                           int pts_num,
+                           int boxes_num,
+                           int feature_in_len,
+                           int sampled_pts_num,
+                           const float *xyz,
+                           const float *boxes3d,
+                           const float *pts_feature,
+                           float *pooled_features,
+                           int *pooled_empty_flag);
+#endif
+
+void roipool3dLauncherCPU(int batch_size,
+                          int pts_num,
+                          int boxes_num,
+                          int feature_in_len,
+                          int sampled_pts_num,
+                          const float *xyz,
+                          const float *boxes3d,
+                          const float *pts_feature,
+                          float *pooled_features,
+                          int *pooled_empty_flag);
 
 }  // namespace contrib
 }  // namespace ml

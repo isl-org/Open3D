@@ -10,7 +10,7 @@
 
 #include <c10/xpu/XPUStream.h>
 
-#include "open3d/ml/impl/contrib/BallQuerySYCL.h"
+#include "open3d/ml/contrib/BallQuerySYCL.h"
 #include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
 
 void ball_query_launcher_sycl(int b,

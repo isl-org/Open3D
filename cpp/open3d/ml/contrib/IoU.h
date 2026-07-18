@@ -7,6 +7,15 @@
 
 #pragma once
 
+#ifdef BUILD_SYCL_MODULE
+// IoU{Bev,3d}SYCLKernel take a real sycl::queue&, so any TU that sees this
+// declaration needs the full SYCL runtime; IoUSYCL.cpp and any *.cpp
+// including this header (IoU.cpp, pybind/ml/contrib/iou.cpp) are all
+// compiled SYCL-aware when BUILD_SYCL_MODULE=ON (see contrib/CMakeLists.txt
+// / pybind/ml/CMakeLists.txt).
+#include <sycl/sycl.hpp>
+#endif
+
 namespace open3d {
 namespace ml {
 namespace contrib {
@@ -30,6 +39,35 @@ void IoUBevCUDAKernel(const float *boxes_a,
 /// \param num_a Number of boxes in boxes_a.
 /// \param num_b Number of boxes in boxes_b.
 void IoU3dCUDAKernel(const float *boxes_a,
+                     const float *boxes_b,
+                     float *iou,
+                     int num_a,
+                     int num_b);
+
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+/// \param queue SYCL queue to run the kernel on.
+/// \param boxes_a (num_a, 5) float32.
+/// \param boxes_b (num_b, 5) float32.
+/// \param iou (num_a, num_b) float32, output iou values.
+/// \param num_a Number of boxes in boxes_a.
+/// \param num_b Number of boxes in boxes_b.
+void IoUBevSYCLKernel(sycl::queue &queue,
+                      const float *boxes_a,
+                      const float *boxes_b,
+                      float *iou,
+                      int num_a,
+                      int num_b);
+
+/// \param queue SYCL queue to run the kernel on.
+/// \param boxes_a (num_a, 7) float32.
+/// \param boxes_b (num_b, 7) float32.
+/// \param iou (num_a, num_b) float32, output iou values.
+/// \param num_a Number of boxes in boxes_a.
+/// \param num_b Number of boxes in boxes_b.
+void IoU3dSYCLKernel(sycl::queue &queue,
+                     const float *boxes_a,
                      const float *boxes_b,
                      float *iou,
                      int num_a,

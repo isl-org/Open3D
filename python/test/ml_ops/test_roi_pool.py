@@ -14,7 +14,7 @@ import mltest
 pytestmark = mltest.default_marks
 
 
-@mltest.parametrize.ml_gpu_only
+@mltest.parametrize.ml
 def test_roi_pool(ml):
 
     values0 = mltest.fetch_numpy(

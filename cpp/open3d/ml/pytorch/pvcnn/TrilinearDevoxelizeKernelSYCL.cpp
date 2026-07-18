@@ -11,7 +11,7 @@
 
 #include <c10/xpu/XPUStream.h>
 
-#include "open3d/ml/impl/contrib/TrilinearDevoxelizeSYCL.h"
+#include "open3d/ml/contrib/TrilinearDevoxelizeSYCL.h"
 #include "open3d/ml/pytorch/pvcnn/TrilinearDevoxelizeKernel.h"
 
 void TrilinearDevoxelizeSYCLLauncher(int b,

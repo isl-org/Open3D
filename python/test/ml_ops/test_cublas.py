@@ -17,6 +17,10 @@ pytestmark = mltest.default_marks
 @mltest.parametrize.ml_gpu_only
 def test_cublas_matmul(ml):
     # This test checks if calling cublas functionality from open3d and the ml framework works.
+    # CUDA-only: cublas has no SYCL/oneMKL equivalent exercised here, and the
+    # test hardcodes .cuda() tensors.
+    if ml.device == 'xpu':
+        pytest.skip("test_cublas_matmul is CUDA-only")
 
     rng = np.random.RandomState(123)
 

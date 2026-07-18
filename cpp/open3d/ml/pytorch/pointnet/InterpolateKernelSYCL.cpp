@@ -11,7 +11,7 @@
 
 #include <c10/xpu/XPUStream.h>
 
-#include "open3d/ml/impl/contrib/InterpolatePointsSYCL.h"
+#include "open3d/ml/contrib/InterpolatePointsSYCL.h"
 #include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
 
 void three_nn_launcher_sycl(int b,

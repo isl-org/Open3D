@@ -34,7 +34,10 @@
 #include "open3d/ml/contrib/RoiPoolKernel.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 
-#ifdef BUILD_CUDA_MODULE
+#ifdef BUILD_SYCL_MODULE
+#include <c10/xpu/XPUStream.h>
+#endif
+
 std::tuple<torch::Tensor, torch::Tensor> roi_pool(
         torch::Tensor xyz,
         torch::Tensor boxes3d,
@@ -60,10 +63,31 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
     float *pooled_features_data = features.data_ptr<float>();
     int *pooled_empty_flag_data = empty_flag.data_ptr<int>();
 
-    open3d::ml::contrib::roipool3dLauncher(
-            batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,
-            xyz_data, boxes3d_data, pts_feature_data, pooled_features_data,
-            pooled_empty_flag_data);
+    if (xyz.is_cuda()) {
+#ifdef BUILD_CUDA_MODULE
+        open3d::ml::contrib::roipool3dLauncher(
+                batch_size, pts_num, boxes_num, feature_in_len,
+                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
+                pooled_features_data, pooled_empty_flag_data);
+#else
+        TORCH_CHECK(false, "roi_pool was not compiled with CUDA support")
+#endif
+    } else if (xyz.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        sycl::queue &queue = c10::xpu::getCurrentXPUStream().queue();
+        open3d::ml::contrib::roipool3dLauncherSYCL(
+                queue, batch_size, pts_num, boxes_num, feature_in_len,
+                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
+                pooled_features_data, pooled_empty_flag_data);
+#else
+        TORCH_CHECK(false, "roi_pool was not compiled with SYCL support")
+#endif
+    } else {
+        open3d::ml::contrib::roipool3dLauncherCPU(
+                batch_size, pts_num, boxes_num, feature_in_len,
+                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
+                pooled_features_data, pooled_empty_flag_data);
+    }
 
     return std::tuple<torch::Tensor, torch::Tensor>(features, empty_flag);
 }
@@ -73,4 +97,3 @@ static auto registry = torch::RegisterOperators(
         "Tensor pts_feature, int sampled_pts_num)"
         " -> (Tensor features, Tensor flags)",
         &roi_pool);
-#endif

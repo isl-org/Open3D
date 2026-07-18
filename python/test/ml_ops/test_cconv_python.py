@@ -112,6 +112,112 @@ def test_compare_to_conv3d(dtype, filter_size, out_channels, in_channels,
 
 
 # yapf: disable
+@pytest.mark.parametrize("filter_size, out_channels, in_channels, with_inp_importance, with_normalization",[
+                             ([3,5,1],            2,           7,                True,              False),
+                             ([3,3,3],            1,           1,               False,              False),
+                             ([5,5,5],            5,           3,               False,               True),
+                        ])
+# yapf: enable
+@pytest.mark.parametrize('dtype', [np.float32, np.float64])
+def test_compare_to_conv3d_torch(dtype, filter_size, out_channels,
+                                 in_channels, with_inp_importance,
+                                 with_normalization):
+    """Compares the reference cconv implementation to torch.nn.functional.conv3d.
+
+    This is a PyTorch-only mirror of test_compare_to_conv3d, so the reference
+    check does not depend on TensorFlow being installed.
+    """
+    torch = pytest.importorskip('torch')
+    ml3d = pytest.importorskip('open3d.ml.torch')
+    np.random.seed(0)
+
+    conv_attrs = {
+        'align_corners': False,
+        'coordinate_mapping': IDENTITY,
+        'normalize': with_normalization,
+        'interpolation': NEAREST_NEIGHBOR,
+    }
+
+    filters = np.random.random(size=(*filter_size, in_channels,
+                                     out_channels)).astype(dtype)
+
+    max_grid_extent = 10
+    inp_positions = np.unique(np.random.randint(0, max_grid_extent,
+                                                (256, 3)).astype(dtype),
+                              axis=0)
+    inp_positions_int = inp_positions.astype(np.int32)
+    if (with_inp_importance):
+        inp_importance = np.random.rand(
+            inp_positions.shape[0]).astype(dtype) - 0.5
+    else:
+        inp_importance = np.empty((0,))
+    out_positions = np.unique(np.random.randint(
+        np.max(filter_size) // 2, max_grid_extent - np.max(filter_size) // 2,
+        (5, 3)).astype(dtype),
+                              axis=0)
+    out_positions_int = out_positions.astype(np.int32)
+
+    voxel_size = np.array([1, 1, 1], dtype=dtype)
+    voxel_offset = np.array([0, 0, 0], dtype=dtype)
+    extent = voxel_size[np.newaxis, :] * np.array(filter_size[::-1])
+    offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
+
+    inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
+                                     (in_channels,)).astype(dtype)
+    torch_dtype = torch.float32 if dtype == np.float32 else torch.float64
+    fixed_radius_search = ml3d.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = fixed_radius_search(
+        torch.from_numpy(inp_positions / extent).to(torch_dtype),
+        torch.from_numpy(out_positions / extent).to(torch_dtype),
+        voxel_size[0] / 2 + 0.01,
+    )
+    neighbors_index = neighbors_index.numpy()
+    neighbors_row_splits = neighbors_row_splits.numpy()
+
+    neighbors_importance = np.empty((0,))
+
+    y = cconv(filters, out_positions, extent, offset, inp_positions,
+              inp_features, inp_importance, neighbors_index,
+              neighbors_importance, neighbors_row_splits, **conv_attrs)
+
+    # Compare the output to a standard 3d conv
+    # store features in a volume to use standard 3d convs
+    inp_volume = np.zeros(
+        (1, max_grid_extent, max_grid_extent, max_grid_extent, in_channels))
+
+    if with_inp_importance:
+        inp_features *= inp_importance[:, np.newaxis]
+    inp_volume[0, inp_positions_int[:, 2], inp_positions_int[:, 1],
+               inp_positions_int[:, 0], :] = inp_features
+
+    # torch.nn.functional.conv3d (like tf.nn.conv3d) performs a
+    # cross-correlation (no kernel flip), so only a layout change is needed:
+    # channels-first NCDHW input and (out_channels, in_channels, kD, kH, kW)
+    # filters, transposed from the TF/tf.nn.conv3d
+    # (kD, kH, kW, in_channels, out_channels) convention.
+    inp_volume_t = torch.from_numpy(inp_volume).to(torch_dtype).permute(
+        0, 4, 1, 2, 3)
+    filters_t = torch.from_numpy(filters).to(torch_dtype).permute(
+        4, 3, 0, 1, 2)
+    pad = [s // 2 for s in filter_size]
+    y_conv3d = torch.nn.functional.conv3d(
+        inp_volume_t, filters_t, padding=pad).permute(0, 2, 3, 4, 1).numpy()
+
+    # extract result at output positions
+    y_conv3d = np.ascontiguousarray(y_conv3d[0, out_positions_int[:, 2],
+                                             out_positions_int[:, 1],
+                                             out_positions_int[:, 0], :])
+
+    if with_normalization:
+        for i, v in enumerate(y_conv3d):
+            num_neighbors = neighbors_row_splits[i +
+                                                 1] - neighbors_row_splits[i]
+            v /= dtype(num_neighbors)
+
+    np.testing.assert_allclose(y, y_conv3d, rtol=1e-5, atol=1e-8)
+
+
+# yapf: disable
 @pytest.mark.parametrize("filter_size, out_channels, in_channels, with_inp_importance, with_neighbors_importance, with_individual_extent, with_normalization, align_corners, coordinate_mapping, interpolation",[
                              ([3,5,1],            2,           7,                True,                     False,                  False,              False,          True,        IDENTITY, NEAREST_NEIGHBOR),
                              ([3,3,3],            1,           1,               False,                     False,                   True,              False,         False, BALL_TO_CUBE_RADIAL,       LINEAR),

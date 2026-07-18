@@ -87,6 +87,7 @@ target_sources(open3d_torch_ops PRIVATE
 
 target_sources(open3d_torch_ops PRIVATE
     ../contrib/Nms.cpp
+    ../contrib/RoiPool.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -166,6 +167,12 @@ if (BUILD_SYCL_MODULE)
         pointnet/InterpolateKernelSYCL.cpp
         pointnet/SamplingKernelSYCL.cpp
         pvcnn/TrilinearDevoxelizeKernelSYCL.cpp
+    )
+
+    # Contrib SYCL kernels (nms, roi_pool)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        ../contrib/NmsSYCL.cpp
+        ../contrib/RoiPoolKernelSYCL.cpp
     )
 
     # Shared impl SYCL kernel files (im2col, normalizer reductions)
