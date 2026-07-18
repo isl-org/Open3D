@@ -537,12 +537,11 @@ void FixedRadiusSearchSYCL(const Tensor& points,
         const uint32_t* cell_splits_i =
                 hash_table_cell_splits.GetDataPtr<uint32_t>() + first_cell_idx;
 
-        CountNeighborsSYCL<T>(queue, counts_ptr + query_begin, hash_index_ptr,
-                              cell_splits_i, hash_table_size,
-                              queries_ptr + 3 * query_begin,
-                              query_end - query_begin, points_ptr,
-                              inv_voxel_size, radius_t, metric,
-                              ignore_query_point, threshold);
+        CountNeighborsSYCL<T>(
+                queue, counts_ptr + query_begin, hash_index_ptr, cell_splits_i,
+                hash_table_size, queries_ptr + 3 * query_begin,
+                query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
+                metric, ignore_query_point, threshold);
     }
     queue.wait_and_throw();
 

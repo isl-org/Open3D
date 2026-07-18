@@ -135,7 +135,11 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #elif defined(SYCL_LANGUAGE_VERSION)
-    ParallelForSYCL_(device, n, func);
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
 #else
     ParallelForCPU_(device, n, func);
 #endif

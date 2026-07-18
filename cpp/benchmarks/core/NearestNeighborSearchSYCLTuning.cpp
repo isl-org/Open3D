@@ -32,8 +32,8 @@ namespace {
 //   2: k
 template <typename T>
 void NNS_KnnDirectTuneT(benchmark::State& state,
-                               int64_t num_points,
-                               int64_t num_queries) {
+                        int64_t num_points,
+                        int64_t num_queries) {
     const int64_t subgroups_per_wg = state.range(0);
     const int64_t tile_points = state.range(1);
     const int knn = static_cast<int>(state.range(2));
@@ -79,13 +79,13 @@ void NNS_KnnDirectTuneT(benchmark::State& state,
 // BENCHMARK_CAPTURE cannot take a template-id (e.g. `Func<float>`) directly
 // -- it needs a plain function -- so wrap each instantiation.
 void NNS_KnnDirectTuneFloat(benchmark::State& state,
-                                   int64_t num_points,
-                                   int64_t num_queries) {
+                            int64_t num_points,
+                            int64_t num_queries) {
     NNS_KnnDirectTuneT<float>(state, num_points, num_queries);
 }
 void NNS_KnnDirectTuneDouble(benchmark::State& state,
-                                    int64_t num_points,
-                                    int64_t num_queries) {
+                             int64_t num_points,
+                             int64_t num_queries) {
     NNS_KnnDirectTuneT<double>(state, num_points, num_queries);
 }
 

@@ -17,7 +17,7 @@ def torch_available():
     return True
 
 
-def list_devices(enable_cuda=True, enable_sycl=False, also_sycl_cpu=True):
+def list_devices(enable_cuda=True, enable_sycl=True, also_sycl_cpu=True):
     """
     Returns a list of devices that are available for Open3D to use:
     - Device("CPU:0")

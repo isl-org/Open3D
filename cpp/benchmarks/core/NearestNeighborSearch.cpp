@@ -22,9 +22,7 @@ namespace nns {
 
 namespace {
 
-void DeviceSync(const core::Device& device) {
-    core::cuda::Synchronize(device);
-}
+void DeviceSync(const core::Device& device) { core::cuda::Synchronize(device); }
 
 /// Ball radius in [0,1]^3 with roughly k points expected inside (uniform).
 double RadiusForExpectedK(int64_t num_points, int k) {

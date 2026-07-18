@@ -24,8 +24,7 @@ namespace kernel {
 
 namespace {
 
-constexpr int kReduceDim =
-        29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
+constexpr int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (r) + 1 (inlier)
 
 }  // namespace
 

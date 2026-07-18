@@ -50,6 +50,13 @@ namespace {
 // tree reduction on (index, value) pairs because sycl::reduction does not
 // support arg reductions directly.
 
+/// Initial in-work-group tree-reduction stride: half of the next power-of-two
+/// \c >= \p sz, from \c sycl::clz(\p sz - 1) (equals \c sz >> 1 when \p sz is POT).
+inline size_t ReduceTreeInitialStride(size_t sz) {
+    if (sz <= 1) return 0;
+    return size_t{1} << (sizeof(size_t) * 8 - sycl::clz(sz - 1) - 1);
+}
+
 template <typename scalar_t>
 struct ArgMinReduction {
     using basic_reduction = sycl::minimum<scalar_t>;
@@ -185,7 +192,15 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         // Multi-output path: parallelize across outputs (e.g. sum along one
         // dimension). Favors one launch over per-output submits; inner loop is
         // a simple strided scan with per-element GetInputPtrDevice.
+        //
+        // The group is reduced with a manual local-memory tree (matching
+        // SYCLArgReductionEngine below) rather than sycl::reduce_over_group: on
+        // Arc A770, reduce_over_group with a sycl::multiplies<int64_t> for
+        // Prod) was observed to silently return 0 instead of the correct
+        // product, even though each work-item's partial result was correct.
         queue.submit([&](sycl::handler& cgh) {
+                 sycl::local_accessor<scalar_t, 1> local_vals(
+                         sycl::range<1>(work_group_size), cgh);
                  cgh.parallel_for(
                          sycl::nd_range<1>{num_outputs * work_group_size,
                                            work_group_size},
@@ -205,9 +220,27 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                      item_out = red_op(item_out, *val_ptr);
                                  }
                              }
+                             //  scalar_t grp_val = sycl::reduce_over_group(
+                             //     item.get_group(), item_out, red_op);
+                             local_vals[local_id] = item_out;
+                             item.barrier(
+                                     sycl::access::fence_space::local_space);
 
-                             scalar_t grp_val = sycl::reduce_over_group(
-                                     item.get_group(), item_out, red_op);
+                             const size_t local_sz = item.get_local_range(0);
+                             for (size_t stride =
+                                          ReduceTreeInitialStride(local_sz);
+                                  stride > 0; stride >>= 1) {
+                                 if (local_id < stride &&
+                                     local_id + stride <
+                                             item.get_local_range(0)) {
+                                     local_vals[local_id] = red_op(
+                                             local_vals[local_id],
+                                             local_vals[local_id + stride]);
+                                 }
+                                 item.barrier(sycl::access::fence_space::
+                                                      local_space);
+                             }
+                             scalar_t grp_val = local_vals[0];
 
                              if (local_id == 0) {
                                  scalar_t* out_ptr =
@@ -333,11 +366,9 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                          local_val[local_id] = it_val;
                          item.barrier(sycl::access::fence_space::local_space);
 
-                         int stride = 1;
-                         while (stride < item.get_local_range(0)) {
-                             stride *= 2;
-                         }
-                         for (stride /= 2; stride > 0; stride /= 2) {
+                         const size_t local_sz = item.get_local_range(0);
+                         for (size_t stride = ReduceTreeInitialStride(local_sz);
+                              stride > 0; stride >>= 1) {
                              if (local_id < stride &&
                                  local_id + stride < item.get_local_range(0)) {
                                  auto other_idx = local_idx[local_id + stride];

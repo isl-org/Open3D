@@ -37,10 +37,10 @@ namespace {
 // knn > kSYCLKnnSmallKMax.
 template <typename T>
 void NNS_KnnAddMMTuneT(benchmark::State& state,
-                              int64_t num_points,
-                              int64_t num_queries,
-                              int64_t dim,
-                              int knn) {
+                       int64_t num_points,
+                       int64_t num_queries,
+                       int64_t dim,
+                       int knn) {
     const int64_t tile_bytes = state.range(0) * 1024 * 1024;
     const int64_t max_tile_queries = state.range(1);
     const int64_t tile_points_alignment = state.range(2);
@@ -83,10 +83,10 @@ void NNS_KnnAddMMTuneT(benchmark::State& state,
 }
 
 void NNS_KnnAddMMTuneFloat(benchmark::State& state,
-                                  int64_t num_points,
-                                  int64_t num_queries,
-                                  int64_t dim,
-                                  int knn) {
+                           int64_t num_points,
+                           int64_t num_queries,
+                           int64_t dim,
+                           int knn) {
     NNS_KnnAddMMTuneT<float>(state, num_points, num_queries, dim, knn);
 }
 
@@ -170,11 +170,11 @@ BENCHMARK_CAPTURE(NNS_KnnAddMMTuneFloat,
 // exact chosen values).
 template <typename T>
 void NNS_KnnPathCompareT(benchmark::State& state,
-                                int64_t num_points,
-                                int64_t num_queries,
-                                int64_t tile_bytes,
-                                int64_t max_tile_queries,
-                                int64_t tile_points_alignment) {
+                         int64_t num_points,
+                         int64_t num_queries,
+                         int64_t tile_bytes,
+                         int64_t max_tile_queries,
+                         int64_t tile_points_alignment) {
     const int64_t dim = state.range(0);
     const int knn = static_cast<int>(state.range(1));
     const bool force_addmm = state.range(2) != 0;
@@ -214,11 +214,11 @@ void NNS_KnnPathCompareT(benchmark::State& state,
 }
 
 void NNS_KnnPathCompareFloat(benchmark::State& state,
-                                    int64_t num_points,
-                                    int64_t num_queries,
-                                    int64_t tile_bytes,
-                                    int64_t max_tile_queries,
-                                    int64_t tile_points_alignment) {
+                             int64_t num_points,
+                             int64_t num_queries,
+                             int64_t tile_bytes,
+                             int64_t max_tile_queries,
+                             int64_t tile_points_alignment) {
     NNS_KnnPathCompareT<float>(state, num_points, num_queries, tile_bytes,
                                max_tile_queries, tile_points_alignment);
 }
@@ -258,11 +258,11 @@ BENCHMARK_CAPTURE(NNS_KnnPathCompareFloat,
 //   1: force_addmm (0 = production dispatch, picks Direct; 1 = force AddMM)
 template <typename T>
 void NNS_KnnPathScaleT(benchmark::State& state,
-                              int64_t dim,
-                              int knn,
-                              int64_t tile_bytes,
-                              int64_t max_tile_queries,
-                              int64_t tile_points_alignment) {
+                       int64_t dim,
+                       int knn,
+                       int64_t tile_bytes,
+                       int64_t max_tile_queries,
+                       int64_t tile_points_alignment) {
     const int64_t num_points = state.range(0);
     const bool force_addmm = state.range(1) != 0;
     const int64_t num_queries = std::min<int64_t>(num_points, 1000);
@@ -302,11 +302,11 @@ void NNS_KnnPathScaleT(benchmark::State& state,
 }
 
 void NNS_KnnPathScaleFloat(benchmark::State& state,
-                                  int64_t dim,
-                                  int knn,
-                                  int64_t tile_bytes,
-                                  int64_t max_tile_queries,
-                                  int64_t tile_points_alignment) {
+                           int64_t dim,
+                           int knn,
+                           int64_t tile_bytes,
+                           int64_t max_tile_queries,
+                           int64_t tile_points_alignment) {
     NNS_KnnPathScaleT<float>(state, dim, knn, tile_bytes, max_tile_queries,
                              tile_points_alignment);
 }

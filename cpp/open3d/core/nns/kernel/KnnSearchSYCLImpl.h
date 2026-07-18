@@ -857,7 +857,8 @@ void SelectTopKQueriesHeap(sycl::queue& queue,
 
 }  // namespace
 
-/// K-bucket dispatch to \ref SelectTopKQueriesHeap (file-local, anonymous namespace).
+/// K-bucket dispatch to \ref SelectTopKQueriesHeap (file-local, anonymous
+/// namespace).
 template <typename T, typename TIndex>
 void DispatchSelectTopKQueries(sycl::queue& queue,
                                const T* distances_ptr,
@@ -955,11 +956,20 @@ void SelectTopKQueries(const Device& device,
         for (int64_t qi = 0; qi < num_queries; ++qi) {
             TIndex* q_scratch = scratch_indices_ptr + qi * scratch_query_stride;
             const T* q_dist = distances_ptr + qi * distance_query_stride;
+            // C1's clamp is for the *reported* distance only (applied below,
+            // when writing qout_d). Clamping here in the comparator would
+            // tie together every point whose true partial distance is
+            // slightly negative from P2 cancellation (common for
+            // widely-spread float32 data), corrupting the selected/sorted
+            // *set* of neighbors -- not just their reported distance value.
+            // Comparing the raw (unclamped) values preserves the true
+            // relative order even when cancellation makes some values
+            // slightly negative.
             std::partial_sort(policy, q_scratch, q_scratch + actual_knn,
                               q_scratch + num_points,
                               [q_dist](TIndex lhs, TIndex rhs) {
-                                  const T ld = sycl::fmax(T(0), q_dist[lhs]);
-                                  const T rd = sycl::fmax(T(0), q_dist[rhs]);
+                                  const T ld = q_dist[lhs];
+                                  const T rd = q_dist[rhs];
                                   if (ld < rd) return true;
                                   if (rd < ld) return false;
                                   return lhs < rhs;  // C4
@@ -979,9 +989,17 @@ void SelectTopKQueries(const Device& device,
                     }
                     const TIndex li =
                             scratch_indices_ptr[qi * scratch_query_stride + k];
-                    const T dist = sycl::fmax(
-                            T(0),
-                            distances_ptr[qi * distance_query_stride + li]);
+                    // P2/C1: this is the *partial* distance (−2qp+|p|², |q|²
+                    // not yet added by the caller). Do not clamp ≥ 0 here --
+                    // the partial value can be legitimately very negative
+                    // (missing +|q|²), especially for widely-spread float32
+                    // data; clamping it here (before |q|² is added) ties
+                    // together every such point at exactly 0, corrupting the
+                    // reported distance for many neighbors at once. The
+                    // final clamp is applied once |q|² has been added (see
+                    // AddQueryNormsToDistances / FinalizeTopK's C1).
+                    const T dist =
+                            distances_ptr[qi * distance_query_stride + li];
                     const T thr = (use_threshold && query_norms_ptr)
                                           ? (radius_sq - query_norms_ptr[qi])
                                           : scalar_threshold;

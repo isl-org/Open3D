@@ -179,11 +179,11 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     Tensor neighbors_index, neighbors_distance;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64, device);
 
-#define RADIUS_PARAMETERS                                               \
-    dataset_points_, query_points_, radius, points_row_splits_,         \
-            queries_row_splits_, hash_table_splits_, hash_table_index_, \
-            hash_table_cell_splits_, metric, ignore_query_point, true, \
-            sort, neighbors_index, neighbors_row_splits, neighbors_distance
+#define RADIUS_PARAMETERS                                                    \
+    dataset_points_, query_points_, radius, points_row_splits_,              \
+            queries_row_splits_, hash_table_splits_, hash_table_index_,      \
+            hash_table_cell_splits_, metric, ignore_query_point, true, sort, \
+            neighbors_index, neighbors_row_splits, neighbors_distance
 
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE

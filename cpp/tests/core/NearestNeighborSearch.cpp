@@ -651,8 +651,8 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchMatchesCPU) {
 namespace {
 
 void SortSegmentsByDistanceCPU(core::Tensor& idx,
-                                      core::Tensor& dist,
-                                      const core::Tensor& splits) {
+                               core::Tensor& dist,
+                               const core::Tensor& splits) {
     const int64_t num_queries = splits.GetShape(0) - 1;
     for (int64_t q = 0; q < num_queries; ++q) {
         const int64_t begin = splits[q].Item<int32_t>();
@@ -687,9 +687,9 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchLinfMatchesCPU) {
 
     core::nns::FixedRadiusIndex frs_sycl(dataset.To(sycl), radius, core::Int32);
     core::Tensor idx_sycl, dist_sycl, splits_sycl;
-    std::tie(idx_sycl, dist_sycl, splits_sycl) = frs_sycl.SearchRadius(
-            query.To(sycl), queries_row_splits, radius, true, core::nns::Linf,
-            false);
+    std::tie(idx_sycl, dist_sycl, splits_sycl) =
+            frs_sycl.SearchRadius(query.To(sycl), queries_row_splits, radius,
+                                  true, core::nns::Linf, false);
     idx_sycl = idx_sycl.To(cpu);
     dist_sycl = dist_sycl.To(cpu);
     splits_sycl = splits_sycl.To(cpu);
@@ -710,8 +710,7 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchIgnoreQueryPoint) {
     core::Tensor query =
             core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, cpu);  // point 4
     const double radius = 0.2;
-    core::Tensor queries_row_splits =
-            core::Tensor::Init<int64_t>({0, 1});
+    core::Tensor queries_row_splits = core::Tensor::Init<int64_t>({0, 1});
 
     core::nns::FixedRadiusIndex frs_cpu(dataset, radius, core::Int32);
     core::Tensor idx_ignore_cpu, dist_ignore_cpu, splits_ignore_cpu;

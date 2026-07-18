@@ -85,18 +85,18 @@ inline T DistanceForMetric(Metric metric,
 /// True if \p p is a neighbor of \p q under \p metric and \p threshold.
 template <class T>
 inline bool IsNeighbor(Metric metric,
-                        const utility::MiniVec<T, 3>& p,
-                        const utility::MiniVec<T, 3>& q,
-                        T threshold) {
+                       const utility::MiniVec<T, 3>& p,
+                       const utility::MiniVec<T, 3>& q,
+                       T threshold) {
     return DistanceForMetric(metric, p, q) <= threshold;
 }
 
 template <class T>
 inline bool IsNeighbor(Metric metric,
-                        const utility::MiniVec<T, 3>& p,
-                        const utility::MiniVec<T, 3>& q,
-                        T threshold,
-                        T* out_dist) {
+                       const utility::MiniVec<T, 3>& p,
+                       const utility::MiniVec<T, 3>& q,
+                       T threshold,
+                       T* out_dist) {
     const T dist = DistanceForMetric(metric, p, q);
     if (out_dist) {
         *out_dist = dist;
@@ -554,7 +554,8 @@ void SortNeighborsByDistanceSYCL(const Device& device,
         queue.parallel_for(sycl::range<1>(num_indices),
                            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
                                const int64_t i = id[0];
-                               keys[i] = KeyT{query_id_ptr[i], distances_ptr[i]};
+                               keys[i] =
+                                       KeyT{query_id_ptr[i], distances_ptr[i]};
                            });
         queue.wait_and_throw();
 

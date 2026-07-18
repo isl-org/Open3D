@@ -61,8 +61,8 @@ std::vector<core::Tensor> GetExtrinsicTensors() {
     return extrinsics;
 }
 
-std::vector<core::HashBackendType> EnumerateBackends(
-        const core::Device &device, bool include_slab = true) {
+std::vector<core::HashBackendType> EnumerateBackends(const core::Device &device,
+                                                     bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
     if (device.IsCUDA()) {
         if (include_slab) {
@@ -78,9 +78,9 @@ std::vector<core::HashBackendType> EnumerateBackends(
 }
 
 VoxelBlockGrid Integrate(const core::HashBackendType &backend,
-                                const core::Dtype &dtype,
-                                const core::Device &device,
-                                const int resolution) {
+                         const core::Dtype &dtype,
+                         const core::Device &device,
+                         const int resolution) {
     core::Tensor intrinsic = GetIntrinsicTensor();
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
@@ -113,9 +113,9 @@ VoxelBlockGrid Integrate(const core::HashBackendType &backend,
 #ifdef BUILD_SYCL_MODULE
 /// Integrate a subset of Redwood frames (for faster SYCL/CPU parity checks).
 VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
-                                      const core::Device &device,
-                                      size_t num_frames,
-                                      int resolution = 8) {
+                               const core::Device &device,
+                               size_t num_frames,
+                               int resolution = 8) {
     core::Tensor intrinsic = GetIntrinsicTensor();
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;

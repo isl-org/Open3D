@@ -78,12 +78,23 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
         unsigned int ray_id = ray.id;
         GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
         auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
+
+        // A new intersection is counted whenever the ray reaches a
+        // different surface location than the previous accepted hit.
+        // We intentionally do not compare primID here: Embree's SYCL/GPU
+        // ray-query path does not reliably refresh primID for successive
+        // candidate hits seen by the filter callback within one ray
+        // traversal, while ray.tfar is refreshed correctly. Comparing tfar
+        // (plus geomID, to always count hits on a different geometry) also
+        // correctly deduplicates the common case of a ray grazing the
+        // shared edge of two adjacent triangles, which is reported as two
+        // hits with an identical tfar.
         if (prev_gpIDtfar.geomID != hit.geomID ||
-            (prev_gpIDtfar.primID != hit.primID &&
-             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            prev_gpIDtfar.ray_tfar != ray.tfar) {
             ++(intersections[ray_id]);
             previous_geom_prim_ID_tfar[ray_id] = gpID;
         }
+
         // Always ignore hit
         valid[ui] = 0;
     }
@@ -144,8 +155,7 @@ void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
         GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
         auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
         if (prev_gpIDtfar.geomID != hit.geomID ||
-            (prev_gpIDtfar.primID != hit.primID &&
-             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            prev_gpIDtfar.ray_tfar != ray.tfar) {
             size_t idx = cumsum[ray_id] + track_intersections[ray_id];
             ray_ids[idx] = ray_id;
             geometry_ids[idx] = hit.geomID;

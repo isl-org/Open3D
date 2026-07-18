@@ -76,9 +76,9 @@ T* ToDevice(const std::vector<T>& host, const core::Device& device) {
 // capacity/duplicate_factor/op are fixed per BENCHMARK_CAPTURE call
 // (captured, not swept).
 void HashMapSYCLTune(benchmark::State& state,
-                            int64_t capacity,
-                            int64_t duplicate_factor,
-                            HashOp op) {
+                     int64_t capacity,
+                     int64_t duplicate_factor,
+                     HashOp op) {
     const int64_t wg_size = state.range(0);
 
     const core::Device device("SYCL:0");
@@ -153,20 +153,20 @@ void HashMapSYCLTune(benchmark::State& state,
 }
 
 void HashMapSYCLTuneInsert(benchmark::State& state,
-                                  int64_t capacity,
-                                  int64_t duplicate_factor) {
+                           int64_t capacity,
+                           int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kInsert);
 }
 
 void HashMapSYCLTuneFind(benchmark::State& state,
-                                int64_t capacity,
-                                int64_t duplicate_factor) {
+                         int64_t capacity,
+                         int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kFind);
 }
 
 void HashMapSYCLTuneErase(benchmark::State& state,
-                                 int64_t capacity,
-                                 int64_t duplicate_factor) {
+                          int64_t capacity,
+                          int64_t duplicate_factor) {
     HashMapSYCLTune(state, capacity, duplicate_factor, HashOp::kErase);
 }
 
