@@ -8,7 +8,9 @@
 #include <tiny_obj_loader.h>
 
 #include <fstream>
+#include <map>
 #include <numeric>
+#include <sstream>
 #include <vector>
 
 #include "open3d/io/FileFormatIO.h"
@@ -20,6 +22,51 @@
 
 namespace open3d {
 namespace io {
+namespace {
+
+// tinyobj::MaterialFileReader / LoadObj(filename) open paths with narrow
+// fopen/ifstream, which breaks UTF-8 paths on Windows (issue #7336). Route file
+// IO through utility::filesystem::FReadToBuffer, which uses UTF-8-aware FOpen.
+class UTF8MaterialFileReader : public tinyobj::MaterialReader {
+public:
+    explicit UTF8MaterialFileReader(const std::string& mtl_basedir)
+        : mtl_basedir_(mtl_basedir) {}
+
+    bool operator()(const std::string& matId,
+                    std::vector<tinyobj::material_t>* materials,
+                    std::map<std::string, int>* matMap,
+                    std::string* warn,
+                    std::string* err) override {
+        std::string filepath = matId;
+        if (!mtl_basedir_.empty()) {
+            filepath = mtl_basedir_ + matId;
+        }
+        std::vector<char> buffer;
+        std::string io_err;
+        if (!utility::filesystem::FReadToBuffer(filepath, buffer, &io_err)) {
+            // Fall back to matId alone (tinyobj MaterialFileReader behavior).
+            if (!mtl_basedir_.empty() &&
+                utility::filesystem::FReadToBuffer(matId, buffer, &io_err)) {
+                // ok
+            } else {
+                if (err) {
+                    (*err) += "WARN: Material file [ " + filepath +
+                              " ] not found: " + io_err + "\n";
+                }
+                return false;
+            }
+        }
+        std::string content(buffer.begin(), buffer.end());
+        std::istringstream iss(content);
+        tinyobj::MaterialStreamReader stream_reader(iss);
+        return stream_reader(matId, materials, matMap, warn, err);
+    }
+
+private:
+    std::string mtl_basedir_;
+};
+
+}  // namespace
 
 FileGeometry ReadFileGeometryTypeOBJ(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
@@ -36,8 +83,19 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
 
     std::string mtl_base_path =
             utility::filesystem::GetFileParentDirectory(filename);
+
+    std::vector<char> obj_buffer;
+    std::string io_err;
+    if (!utility::filesystem::FReadToBuffer(filename, obj_buffer, &io_err)) {
+        utility::LogWarning("Read OBJ failed: cannot open {}: {}", filename,
+                            io_err);
+        return false;
+    }
+    std::string obj_content(obj_buffer.begin(), obj_buffer.end());
+    std::istringstream obj_stream(obj_content);
+    UTF8MaterialFileReader mat_reader(mtl_base_path);
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
-                                filename.c_str(), mtl_base_path.c_str());
+                                &obj_stream, &mat_reader);
     if (!warn.empty()) {
         utility::LogWarning("Read OBJ failed: {}", warn);
     }
