@@ -210,9 +210,8 @@ void SparseConvTransposeBackpropFilterCUDA(
         int ldc = m;
 
         GemmColumnMajorCUDA<cutlass::layout::ColumnMajor,
-                            cutlass::layout::RowMajor>(stream, m, n, k, alpha,
-                                                       A, lda, B, ldb, beta, C,
-                                                       ldc);
+                            cutlass::layout::RowMajor>(
+                stream, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
     }
 }
 

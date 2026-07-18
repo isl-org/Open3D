@@ -15,18 +15,19 @@
 // - OperatorClass: OpClassSimt (SIMT FP32; no Tensor Cores, no alignment req).
 // - ArchTag: Sm86 (Ampere GA10x — sm_86 — minimum). CUTLASS uses this tag for
 //   algorithm selection; the PTX target arch is set separately via -arch nvcc.
-//   Sm86 is the conservative Ampere target that covers all RTX 30xx and A-series
-//   consumer GPUs. Tile defaults for OpClassSimt are ArchTag-independent.
+//   Sm86 is the conservative Ampere target that covers all RTX 30xx and
+//   A-series consumer GPUs. Tile defaults for OpClassSimt are
+//   ArchTag-independent.
 // The calling .cuh files previously instantiated this Gemm type inline; this
 // shim moves it here so the call sites mirror the GemmColumnMajorSYCL pattern.
 
 #pragma once
 
+#include <cuda_runtime_api.h>
 #include <cutlass/arch/arch.h>
 #include <cutlass/gemm/device/gemm.h>
 #include <cutlass/layout/matrix.h>
 
-#include <cuda_runtime_api.h>
 #include <stdexcept>
 
 namespace open3d {
@@ -53,20 +54,14 @@ void GemmColumnMajorCUDA(const cudaStream_t& stream,
     // OpClassSimt: SIMT FP32 — no alignment requirement (lda/ldb need not be
     // multiples of 4), so it works with arbitrary channel/kernel counts.
     // Sm86 selects Ampere-era algorithm defaults (tile 128×128×8, 2 stages).
-    using Gemm = cutlass::gemm::device::Gemm<float,
-                                             LayoutA,
-                                             float,
-                                             LayoutB,
-                                             float,
-                                             cutlass::layout::ColumnMajor,
-                                             float,  // accumulator
-                                             cutlass::arch::OpClassSimt,
-                                             cutlass::arch::Sm86>;
+    using Gemm = cutlass::gemm::device::Gemm<
+            float, LayoutA, float, LayoutB, float, cutlass::layout::ColumnMajor,
+            float,  // accumulator
+            cutlass::arch::OpClassSimt, cutlass::arch::Sm86>;
     Gemm gemm_op;
-    cutlass::Status status =
-            gemm_op({{m, n, k}, {A, lda}, {B, ldb}, {C, ldc}, {C, ldc},
-                     {alpha, beta}},
-                    nullptr, stream);
+    cutlass::Status status = gemm_op(
+            {{m, n, k}, {A, lda}, {B, ldb}, {C, ldc}, {C, ldc}, {alpha, beta}},
+            nullptr, stream);
     if (status != cutlass::Status::kSuccess) {
         throw std::runtime_error("CUTLASS GEMM failed.");
     }
