@@ -43,10 +43,15 @@ public:
         int projection_group_size = 64;
         Eigen::Vector2i composite_group_size = Eigen::Vector2i(16, 16);
         int max_sh_degree = 2;
-        /// Per-scene tile-entry budget used to size the shared tile entry
-        /// buffers as `splat_count * max_tiles_per_splat` before clamping to
-        /// `max_tile_entries_total`.
-        std::uint32_t max_tiles_per_splat = 32u;
+        // Hard cap on tiles per splat; splats exceeding it are culled rather
+        // than cropped. Cropping huge splats can create hard-edged opaque
+        // blocks. The cap is independent of buffer sizing, so raising it does
+        // not increase GPU memory use. Default is 256.
+        std::uint32_t max_tiles_per_splat = 256u;
+        // Estimates average tiles per splat for buffer sizing; it is not an
+        // enforcement limit. Actual writes are bounds-checked, so excess
+        // entries are dropped with a warning rather than overflowing.
+        std::uint32_t avg_tiles_per_splat = 32u;
         /// Hard ceiling for total tile entries stored in tile_entries / sort
         /// buffers. When exceeded, compute passes clamp work to this capacity
         /// and surface a one-time warning to the user.

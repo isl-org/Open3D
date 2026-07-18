@@ -708,6 +708,11 @@ void Window::SetClipboardText(const std::string& text) {
             impl_->window_, text.c_str());
 }
 
+std::string Window::GetClipboardText() const {
+    return Application::GetInstance().GetWindowSystem().GetClipboardText(
+            impl_->window_);
+}
+
 void Window::ShowMenu(bool show) {
     impl_->draw_menu_ = show;
     SetNeedsLayout();
