@@ -960,17 +960,27 @@ endif()
 # flattened by CMake (e.g. when Open3D itself is a shared library and must
 # fully resolve all symbols at build time), they can end up in an order where
 # ld's single left-to-right archive scan fails to resolve symbols. Wrap them
-# in --start-group and --end-group on UNIX (non-Apple) to ensure GNU ld
-# rescans this group of libraries until all symbols resolve, regardless of
-# order. We avoid CMake's modern LINK_GROUP RESCAN generator expression here
-# because it produces developer warnings when applied to INTERFACE library
-# targets (which Open3D::3rdparty_curl/openssl are).
+# in a GNU ld archive group on UNIX (non-Apple) to ensure GNU ld rescans this
+# group of libraries until all symbols resolve, regardless of order. Use the
+# short "-Wl,-(" / "-Wl,-)" alias rather than "-Wl,--start-group" /
+# "-Wl,--end-group": the latter are also used verbatim by MKL's GROUPED
+# import (see open3d_import_3rdparty_library's GROUPED option below), and
+# CMake's link-line deduplication collapses repeated identical literal flag
+# strings across the whole dependency graph, emptying both groups and
+# stranding MKL's libraries outside their own grouping (undefined mkl_*
+# symbols at link time). We avoid CMake's modern LINK_GROUP RESCAN generator
+# expression here because it produces developer warnings when applied to
+# INTERFACE library targets (which Open3D::3rdparty_curl/openssl are).
+# The parentheses are backslash-escaped because CMake/Ninja invokes the link
+# command via "/bin/sh -c" without shell-quoting raw linker flag strings, and
+# bare "(" / ")" are shell metacharacters that would otherwise cause a shell
+# syntax error at link time.
 if(UNIX AND NOT APPLE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-        "-Wl,-("
+        "-Wl,-\\("
         Open3D::3rdparty_curl
         Open3D::3rdparty_openssl
-        "-Wl,-)")
+        "-Wl,-\\)")
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
 endif()

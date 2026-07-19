@@ -50,6 +50,14 @@ namespace {
 // tree reduction on (index, value) pairs because sycl::reduction does not
 // support arg reductions directly.
 
+/// Upper bound on total work-items (num_work_groups * work_group_size) for a
+/// single nd_range launch. The SYCL runtime assumes ids/linear ids fit in a
+/// 32-bit int by default and throws if the total launch size exceeds INT_MAX;
+/// staying well under that (2^30 vs. INT_MAX ~ 2^31) leaves headroom without
+/// needing to disable that compiler assumption. num_outputs can exceed this,
+/// so kernels grid-stride over outputs across a bounded number of work-groups.
+constexpr int64_t kMaxSafeLaunchSize = int64_t(1) << 30;
+
 /// Initial in-work-group tree-reduction stride: half of the next power-of-two
 /// \c >= \p sz, from \c sycl::clz(\p sz - 1) (equals \c sz >> 1 when \p sz is POT).
 inline size_t ReduceTreeInitialStride(size_t sz) {
@@ -198,57 +206,70 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         // Arc A770, reduce_over_group with a sycl::multiplies<int64_t> for
         // Prod) was observed to silently return 0 instead of the correct
         // product, even though each work-item's partial result was correct.
+        //
+        // num_outputs can exceed 2^31 / work_group_size, so the launch is
+        // capped at kMaxSafeLaunchSize total work-items (comfortably under the
+        // int32 range the SYCL runtime assumes ids/linear ids fit in) and each
+        // work-group grid-strides over multiple outputs.
+        int64_t num_work_groups = std::min<int64_t>(
+                num_outputs, kMaxSafeLaunchSize / int64_t(work_group_size));
         queue.submit([&](sycl::handler& cgh) {
                  sycl::local_accessor<scalar_t, 1> local_vals(
                          sycl::range<1>(work_group_size), cgh);
                  cgh.parallel_for(
-                         sycl::nd_range<1>{num_outputs * work_group_size,
+                         sycl::nd_range<1>{num_work_groups * work_group_size,
                                            work_group_size},
                          [=](sycl::nd_item<1> item) {
-                             int64_t output_idx = item.get_group(0);
-                             if (output_idx >= num_outputs) return;
-
                              auto local_id = item.get_local_linear_id();
 
-                             scalar_t item_out = identity;
-                             for (int64_t idx = local_id; idx < num_elements;
-                                  idx += work_group_size) {
-                                 const scalar_t* val_ptr =
-                                         GetInputPtrDevice<scalar_t>(
-                                                 indexer, output_idx, idx);
-                                 if (val_ptr) {
-                                     item_out = red_op(item_out, *val_ptr);
+                             for (int64_t output_idx = item.get_group(0);
+                                  output_idx < num_outputs;
+                                  output_idx += num_work_groups) {
+                                 scalar_t item_out = identity;
+                                 for (int64_t idx = local_id;
+                                      idx < num_elements;
+                                      idx += work_group_size) {
+                                     const scalar_t* val_ptr =
+                                             GetInputPtrDevice<scalar_t>(
+                                                     indexer, output_idx, idx);
+                                     if (val_ptr) {
+                                         item_out = red_op(item_out, *val_ptr);
+                                     }
                                  }
-                             }
-                             //  scalar_t grp_val = sycl::reduce_over_group(
-                             //     item.get_group(), item_out, red_op);
-                             local_vals[local_id] = item_out;
-                             item.barrier(
-                                     sycl::access::fence_space::local_space);
+                                 //  scalar_t grp_val = sycl::reduce_over_group(
+                                 //     item.get_group(), item_out, red_op);
+                                 local_vals[local_id] = item_out;
+                                 item.barrier(sycl::access::fence_space::
+                                                      local_space);
 
-                             const size_t local_sz = item.get_local_range(0);
-                             for (size_t stride =
-                                          ReduceTreeInitialStride(local_sz);
-                                  stride > 0; stride >>= 1) {
-                                 if (local_id < stride &&
-                                     local_id + stride <
-                                             item.get_local_range(0)) {
-                                     local_vals[local_id] = red_op(
-                                             local_vals[local_id],
-                                             local_vals[local_id + stride]);
+                                 const size_t local_sz =
+                                         item.get_local_range(0);
+                                 for (size_t stride =
+                                              ReduceTreeInitialStride(
+                                                      local_sz);
+                                      stride > 0; stride >>= 1) {
+                                     if (local_id < stride &&
+                                         local_id + stride <
+                                                 item.get_local_range(0)) {
+                                         local_vals[local_id] = red_op(
+                                                 local_vals[local_id],
+                                                 local_vals[local_id + stride]);
+                                     }
+                                     item.barrier(sycl::access::fence_space::
+                                                          local_space);
+                                 }
+                                 scalar_t grp_val = local_vals[0];
+
+                                 if (local_id == 0) {
+                                     scalar_t* out_ptr =
+                                             indexer.GetOutputPtr<scalar_t>(
+                                                     0, output_idx);
+                                     if (out_ptr) {
+                                         *out_ptr = grp_val;
+                                     }
                                  }
                                  item.barrier(sycl::access::fence_space::
                                                       local_space);
-                             }
-                             scalar_t grp_val = local_vals[0];
-
-                             if (local_id == 0) {
-                                 scalar_t* out_ptr =
-                                         indexer.GetOutputPtr<scalar_t>(
-                                                 0, output_idx);
-                                 if (out_ptr) {
-                                     *out_ptr = grp_val;
-                                 }
                              }
                          });
              }).wait_and_throw();
@@ -335,63 +356,76 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     Indexer first_out_indexer = indexer.GetPerOutputIndexer(0);
     int64_t num_elements = first_out_indexer.NumWorkloads();
 
+    // See SYCLReductionEngine above: cap the launch and grid-stride over
+    // outputs so num_work_groups * work_group_size stays within kMaxSafeLaunchSize.
+    int64_t num_work_groups = std::min<int64_t>(
+            num_outputs, kMaxSafeLaunchSize / int64_t(work_group_size));
     queue.submit([&](sycl::handler& cgh) {
              sycl::local_accessor<int64_t, 1> local_idx(
                      sycl::range<1>(work_group_size), cgh);
              sycl::local_accessor<scalar_t, 1> local_val(
                      sycl::range<1>(work_group_size), cgh);
              cgh.parallel_for(
-                     sycl::nd_range<1>{num_outputs * work_group_size,
+                     sycl::nd_range<1>{num_work_groups * work_group_size,
                                        work_group_size},
                      [=](sycl::nd_item<1> item) {
-                         int64_t output_idx = item.get_group(0);
-                         if (output_idx >= num_outputs) return;
-
                          auto local_id = item.get_local_linear_id();
 
-                         int64_t it_idx = 0;
-                         scalar_t it_val = identity;
-                         for (size_t idx = local_id; idx < num_elements;
-                              idx += work_group_size) {
-                             const scalar_t* val_ptr =
-                                     GetInputPtrDevice<scalar_t>(
-                                             indexer, output_idx, idx);
-                             if (val_ptr) {
-                                 std::tie(it_idx, it_val) =
-                                         red_op(it_idx, it_val, idx, *val_ptr);
+                         for (int64_t output_idx = item.get_group(0);
+                              output_idx < num_outputs;
+                              output_idx += num_work_groups) {
+                             int64_t it_idx = 0;
+                             scalar_t it_val = identity;
+                             for (size_t idx = local_id; idx < num_elements;
+                                  idx += work_group_size) {
+                                 const scalar_t* val_ptr =
+                                         GetInputPtrDevice<scalar_t>(
+                                                 indexer, output_idx, idx);
+                                 if (val_ptr) {
+                                     std::tie(it_idx, it_val) =
+                                             red_op(it_idx, it_val, idx,
+                                                    *val_ptr);
+                                 }
                              }
-                         }
 
-                         local_idx[local_id] = it_idx;
-                         local_val[local_id] = it_val;
-                         item.barrier(sycl::access::fence_space::local_space);
-
-                         const size_t local_sz = item.get_local_range(0);
-                         for (size_t stride = ReduceTreeInitialStride(local_sz);
-                              stride > 0; stride >>= 1) {
-                             if (local_id < stride &&
-                                 local_id + stride < item.get_local_range(0)) {
-                                 auto other_idx = local_idx[local_id + stride];
-                                 auto other_val = local_val[local_id + stride];
-                                 std::tie(local_idx[local_id],
-                                          local_val[local_id]) =
-                                         red_op(local_idx[local_id],
-                                                local_val[local_id], other_idx,
-                                                other_val);
-                             }
+                             local_idx[local_id] = it_idx;
+                             local_val[local_id] = it_val;
                              item.barrier(
                                      sycl::access::fence_space::local_space);
-                         }
 
-                         if (local_id == 0) {
-                             int64_t* out_idx_ptr =
-                                     indexer.GetOutputPtr<int64_t>(0,
-                                                                   output_idx);
-                             scalar_t* out_val_ptr =
-                                     indexer.GetOutputPtr<scalar_t>(1,
-                                                                    output_idx);
-                             if (out_idx_ptr) *out_idx_ptr = local_idx[0];
-                             if (out_val_ptr) *out_val_ptr = local_val[0];
+                             const size_t local_sz = item.get_local_range(0);
+                             for (size_t stride =
+                                          ReduceTreeInitialStride(local_sz);
+                                  stride > 0; stride >>= 1) {
+                                 if (local_id < stride &&
+                                     local_id + stride <
+                                             item.get_local_range(0)) {
+                                     auto other_idx =
+                                             local_idx[local_id + stride];
+                                     auto other_val =
+                                             local_val[local_id + stride];
+                                     std::tie(local_idx[local_id],
+                                              local_val[local_id]) =
+                                             red_op(local_idx[local_id],
+                                                    local_val[local_id],
+                                                    other_idx, other_val);
+                                 }
+                                 item.barrier(sycl::access::fence_space::
+                                                      local_space);
+                             }
+
+                             if (local_id == 0) {
+                                 int64_t* out_idx_ptr =
+                                         indexer.GetOutputPtr<int64_t>(
+                                                 0, output_idx);
+                                 scalar_t* out_val_ptr =
+                                         indexer.GetOutputPtr<scalar_t>(
+                                                 1, output_idx);
+                                 if (out_idx_ptr) *out_idx_ptr = local_idx[0];
+                                 if (out_val_ptr) *out_val_ptr = local_val[0];
+                             }
+                             item.barrier(sycl::access::fence_space::
+                                                  local_space);
                          }
                      });
          }).wait_and_throw();

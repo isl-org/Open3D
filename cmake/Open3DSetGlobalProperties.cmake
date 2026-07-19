@@ -189,7 +189,7 @@ function(open3d_set_global_properties target)
     endif()
 
     # IEEE-compliant FP for IntelLLVM / icx (SYCL on Windows and Linux).
-    # -fno-fast-math: preserve NaN handling. -no-ftz / -mno-daz-ftz: icx
+    # -fno-fast-math: preserve NaN handling. -no-ftz : icx
     # enables FTZ/DAZ at -O1+, which zeroes denormals (e.g. RGB packed into a
     # float in PCD). Windows icx is clang-cl; prefix with /clang: so the
     # GNU-style flags take effect.
@@ -201,7 +201,8 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-fno-fast-math>
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-no-ftz>
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-mno-daz-ftz>)
+    )
+    # should be /Qftz- for WIN32?
 
     # Enable strip
     open3d_enable_strip(${target})

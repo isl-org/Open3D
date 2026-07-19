@@ -24,13 +24,13 @@ target_sources(tests PRIVATE
 
 if (BUILD_CUDA_MODULE OR BUILD_SYCL_MODULE)
     target_sources(tests PRIVATE
+        FixedRadiusIndex.cpp
         KnnIndex.cpp
     )
 endif()
 
 if (BUILD_CUDA_MODULE)
     target_sources(tests PRIVATE
-        FixedRadiusIndex.cpp
         ParallelFor.cu
     )
 endif()
