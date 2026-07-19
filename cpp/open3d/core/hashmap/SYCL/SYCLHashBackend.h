@@ -72,9 +72,8 @@ enum HashSlotState : uint32_t {
 namespace {
 
 // Insert/Find/Erase throughput improves monotonically with wg_size up to the
-// device max (see benchmarks/core/HashMapSYCLTuning.cpp); clamped at
-// construction time to the actual device max, see SYCLHashBackend's
-// constructor.
+// device max; clamped at construction time to the actual device max, see
+// SYCLHashBackend's constructor.
 constexpr int64_t kHashWgSize = 1024;
 
 // bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier),

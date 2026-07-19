@@ -58,9 +58,7 @@ namespace nns {
 
 /// Compute tile dimensions that bound the −2*q*p tile to \p tile_bytes.
 /// tile_queries is capped at \p max_tile_queries (a good oneMKL GEMM row-tile
-/// width; 128 by default, see
-/// benchmarks/core/NearestNeighborSearchSYCLAddMMTuning.cpp for the sweep that
-/// validated this value). tile_points is rounded down to a multiple of \p
+/// width; 128 by default). tile_points is rounded down to a multiple of \p
 /// tile_points_alignment (128 by default) once it exceeds that alignment,
 /// keeping the column tile GEMM/cache-line friendly.
 inline void ChooseTileSize(int64_t num_queries,
@@ -388,7 +386,7 @@ void DispatchFinalizeTopK(sycl::queue& queue,
 /// sub-group shuffle (\c select_from_group); lane 0 writes the result.
 ///
 /// Tuned defaults for dim=3 on Intel Xe: \ref kKnnDirectSubgroupsPerWG and
-/// \ref kKnnDirectTilePoints (see NearestNeighborSearchSYCLTuning.cpp).
+/// \ref kKnnDirectTilePoints.
 
 /// Default sub-group width for the direct KNN kernel (float path).
 constexpr int64_t kKnnDirectSubgroupSize = 16;
@@ -681,8 +679,7 @@ void DispatchKnnDirect(sycl::queue& queue,
                        TIndex* out_idx_ptr,
                        int64_t subgroups_per_wg = kKnnDirectSubgroupsPerWG,
                        int64_t tile_points = kKnnDirectTilePoints) {
-    // kKnnDirectTilePoints is tuned for the common case (dim ≤ 3, see
-    // benchmarks/core/NearestNeighborSearchSYCLTuning.cpp), where the
+    // kKnnDirectTilePoints is tuned for the common case (dim ≤ 3), where the
     // resulting per-work-group SLM usage (2 * tile_points * dim * sizeof(T))
     // is well inside typical device budgets. For larger `dim` (up to
     // kKnnDirectMaxDim) or double precision, that same tile_points could

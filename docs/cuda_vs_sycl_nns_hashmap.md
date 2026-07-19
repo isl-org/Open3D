@@ -3,9 +3,8 @@
 This is a design note comparing Open3D's CUDA and SYCL backends for the
 `core::nns` (KNN / fixed-radius / hybrid) search algorithms and the
 `core::HashMap` device backends. It reflects the code after the SYCL
-uniform-grid port for fixed-radius/hybrid search (see
-`docs/sycl_fr_hybrid_grid_results.md`), which brought the SYCL fixed-radius
-and hybrid algorithms to structural parity with CUDA.
+uniform-grid port for fixed-radius/hybrid search, which brought the SYCL
+fixed-radius and hybrid algorithms to structural parity with CUDA.
 
 ## 1. K-Nearest-Neighbor (KNN) search
 
