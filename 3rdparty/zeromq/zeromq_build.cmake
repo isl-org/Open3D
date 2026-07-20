@@ -35,9 +35,8 @@ ExternalProject_Add(
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        # Does not seem to work. We have to directly set the flags on Windows.
-        #-DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
-        #-DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
+        # CMAKE_MSVC_RUNTIME_LIBRARY via ExternalProject_CMAKE_ARGS_hidden is not
+        # honored by ZeroMQ's older CMake; keep explicit /M flags in WIN_CMAKE_ARGS.
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DBUILD_STATIC=ON
         -DBUILD_SHARED=OFF

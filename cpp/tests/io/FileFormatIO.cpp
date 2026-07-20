@@ -127,6 +127,19 @@ TEST(FileFormatIO, ReadFileGeometryTypeSPLAT) {
     EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_GAUSSIAN_SPLATS));
 }
 
+TEST(FileFormatIO, ReadFileGeometryTypeSPZ) {
+    const std::string path =
+            utility::filesystem::GetTempDirectoryPath() + "/file_type.spz";
+    std::ofstream output(path, std::ios::binary);
+    ASSERT_TRUE(output.is_open());
+    output.write("", 0);
+    output.close();
+
+    const auto geometry = io::ReadFileGeometryType(path);
+    EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_POINTS));
+    EXPECT_TRUE(HasGeometry(geometry, io::CONTAINS_GAUSSIAN_SPLATS));
+}
+
 // Minimal USDA: one triangle, UsdPreviewSurface material (no textures), UV
 // primvar, material binding under a scoped Materials branch and defaultPrim
 // Xform.

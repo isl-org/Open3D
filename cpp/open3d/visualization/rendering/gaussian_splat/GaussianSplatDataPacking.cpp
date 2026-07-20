@@ -206,11 +206,16 @@ PackedGaussianScene PackGaussianViewParams(
     auto& vp = packed.view_params;
     std::memset(&vp, 0, sizeof(vp));
 
+    // entry_capacity sizes shared tile-entry buffers from avg_tiles_per_splat
+    // (statistical estimate), decoupled from max_tiles_per_splat (hard cap
+    // enforced in gaussian_project.comp). Writes are still bounds-checked
+    // against entry_capacity in WriteSortEntries, so it won't overflow.
     const auto entry_budget =
-            static_cast<std::uint64_t>(n) * config.max_tiles_per_splat;
+            static_cast<std::uint64_t>(n) * config.avg_tiles_per_splat;
     const auto entry_capacity = static_cast<std::uint32_t>(std::min(
             entry_budget,
             static_cast<std::uint64_t>(config.max_tile_entries_total)));
+    const std::uint32_t per_splat_cap = config.max_tiles_per_splat;
 
     // world_from_model: splat positions are in world space → identity.
     // render_data.model_matrix is the camera rig; do not use it here.
@@ -246,7 +251,7 @@ PackedGaussianScene PackGaussianViewParams(
     std::memcpy(vp.tiles, tiles_u.data(), sizeof(tiles_u));
 
     vp.limits[0] = entry_capacity;
-    vp.limits[1] = config.max_tiles_per_splat;
+    vp.limits[1] = per_splat_cap;
     vp.limits[2] = config.max_tile_entries_total;
     // T = bits needed to hold the largest tile index =
     // floor(log2(max_index))+1. For a single tile (tcx*tcy == 1) max_tile_index

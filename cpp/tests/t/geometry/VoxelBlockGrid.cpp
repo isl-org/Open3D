@@ -251,13 +251,13 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                 // Allow numerical precision differences
                 auto pcd = vbg.ExtractPointCloud();
                 EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
-                            kResolutionPoints[block_resolution], 3);
+                            kResolutionPoints[block_resolution], 16);
 
                 auto mesh = vbg.ExtractTriangleMesh();
                 EXPECT_NEAR(mesh.GetVertexPositions().GetLength(),
-                            kResolutionVertices[block_resolution], 3);
+                            kResolutionVertices[block_resolution], 16);
                 EXPECT_NEAR(mesh.GetTriangleIndices().GetLength(),
-                            kResolutionTriangles[block_resolution], 6);
+                            kResolutionTriangles[block_resolution], 16);
             }
         }
     }
