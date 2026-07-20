@@ -254,6 +254,35 @@ ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 50 | 1.0] Hybrid Indices, 50, 0.02, 1.0, "CUDA:0")
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.01 | 100] Hybrid, 100, 0.01, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50] Hybrid, 50, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 100] Hybrid, 100, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(SYCL[50] KNN, 50, std::nullopt, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[100] KNN, 100, std::nullopt, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.01] Radius, std::nullopt, 0.01, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02] Radius, std::nullopt, 0.02, std::nullopt, "SYCL:0")
+
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | null] Hybrid Indices, 50, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.0001] Hybrid Indices, 50, 0.02, 0.0001, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.001] Hybrid Indices, 50, 0.02, 0.001, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.01] Hybrid Indices, 50, 0.02, 0.01, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.1] Hybrid Indices, 50, 0.02, 0.1, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 1.0] Hybrid Indices, 50, 0.02, 1.0, "SYCL:0")
+#endif
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

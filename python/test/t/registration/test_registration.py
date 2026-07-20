@@ -74,7 +74,7 @@ def get_pcds(dtype, device):
     return source, target
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_icp_convergence_criteria_constructor(device):
 
     # Constructor.
@@ -86,7 +86,7 @@ def test_icp_convergence_criteria_constructor(device):
     assert convergence_criteria.relative_rmse == 1e-06
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_registration_result_constructor(device):
     dtype = o3c.float64
 
@@ -101,7 +101,7 @@ def test_registration_result_constructor(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+                         list_devices(also_sycl_cpu=False))
 def test_evaluate_registration(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -128,7 +128,7 @@ def test_evaluate_registration(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+                         list_devices(also_sycl_cpu=False))
 def test_icp_point_to_point(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -167,7 +167,7 @@ def test_icp_point_to_point(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+                         list_devices(also_sycl_cpu=False))
 def test_icp_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -206,7 +206,7 @@ def test_icp_point_to_plane(device):
 
 
 @pytest.mark.parametrize("device",
-                         list_devices(enable_sycl=True, also_sycl_cpu=False))
+                         list_devices(also_sycl_cpu=False))
 def test_get_information_matrix(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]

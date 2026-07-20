@@ -517,14 +517,7 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     int64_t num_points = voxeli.GetLength();
     int64_t num_voxels = voxeli_hashset.Size();
 
-    // The hash backend only guarantees that buf_indices are valid gather
-    // indices into the key/value buffers (GetKeyTensor().IndexGet(...)); it
-    // does NOT guarantee they form the dense set [0, num_voxels). The CPU/CUDA
-    // backends happen to be dense for pure inserts, but the SYCL backend leaves
-    // gaps (its wait-free insert drops a pre-allocated slot on each
-    // duplicate-key race). We use buf_indices below as row indices into
-    // per-voxel reduction tensors, so relabel them to dense [0, num_voxels). On
-    // dense backends this remap is the identity.
+    // buf_indices are not guaranteed dense on SYCL; relabel to [0, num_voxels).
     core::Tensor remap = core::Tensor::Zeros({voxeli_hashset.GetCapacity()},
                                              core::Int64, device_);
     core::Tensor unique_slots =

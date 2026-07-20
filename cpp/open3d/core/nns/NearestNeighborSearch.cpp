@@ -44,7 +44,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(std::optional<double> radius) {
                                                   radius.value(), index_dtype_);
 #else
         utility::LogError(
-                "FixedRadiusIndex with GPU tensor is disabled since "
+                "FixedRadiusIndex with CUDA tensor is disabled since "
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif

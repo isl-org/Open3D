@@ -6,40 +6,72 @@
 // ----------------------------------------------------------------------------
 
 /// \file SYCLHashBackend.h
-/// \brief SYCL device-side open-addressing hash table (linear probing).
+/// \brief SYCL implementation of \ref DeviceHashBackend (open addressing, in-tree).
 ///
-/// \ref SYCLHashBackend implements \ref DeviceHashBackend on SYCL using USM
-/// slots and an external \ref HashBackendBuffer for keys and values.
+/// Open3D's tensor \ref HashMap and \ref HashSet share one backend API on CPU
+/// (TBB), CUDA (stdgpu default, slab optional), and SYCL (this file). See also
+/// `hashmap/SYCL_DESIGN.md` for a short overview; **this file header is the
+/// maintainer reference.**
 ///
-/// Design notes:
-/// - Slot transitions publish in a single CAS (Xe subgroup lanes run in
-///   lockstep; a spinning/waiting lane can hang the device).
-/// - Each slot is one packed uint64 (state, buf_index, fingerprint) — a
-///   single load per probe.
-/// - A device seq_cst fence separates writing a slot's key/value from the
-///   CAS that publishes it, so probers never see stale or uninitialized data.
-/// - GetActiveIndices uses one work-group exclusive scan + one fetch_add per
-///   group, not one atomic per occupied slot.
-/// - Rehash triggers on non_empty_count (occupied + deleted), not live size
-///   alone, so tombstones cannot silently fill the table.
+/// \section SYCLHashRole Role in the stack
 ///
-/// Algorithm:
-/// - Table: USM array of packed slots (see PackSlot in the implementation).
-///   Keys/values live in HashBackendBuffer; each OCCUPIED slot stores a
-///   buf_index. Probe index is `(home + i) & (bucket_count - 1)` with
-///   bucket_count a power of two.
-/// - HashMix (MurmurHash3 fmix64) is applied to FNV-1a before masking so local
-///   keys do not cluster in low bits. A 28-bit fingerprint from the same mixed
-///   hash filters most false key-buffer gathers on probe (full equality still
-///   uses \p eq_fn).
-/// - Insert (wait-free): linear probe; on EMPTY claim the first DELETED seen
-///   for reuse. Allocate one buffer element, copy key/values, device seq_cst
-///   fence, then CAS slot EMPTY/DELETED → OCCUPIED.
-/// - Find / Erase: same probe; EMPTY ends the chain. Erase CAS OCCUPIED →
-///   DELETED, frees buffer slot, decrements occupied_count only.
-/// - \ref SYCLHashDeviceLookup: immutable table view for kernels; plain loads,
-///   no atomics. Callers must not mutate the table while a lookup view is in
-///   use.
+/// - Keys are `MiniVec<int, dim>` with dim 1–6; keys and values live in
+///   \ref HashBackendBuffer, not inside the probe table.
+/// - Each occupied hash slot stores a **buf_index** into those buffers (unique-key
+///   map, not a multimap).
+/// - **Capacity growth** is owned by \ref HashMap::Reserve / \ref HashSet::Reserve
+///   (export active entries → free backend → allocate → re-insert). This backend's
+///   \ref SYCLHashBackend::Reserve() override is a no-op.
+///
+/// \section SYCLHashData Data structure
+///
+/// | Component | Description |
+/// |-----------|-------------|
+/// | Probing | Open addressing, **linear** probing, power-of-two bucket count |
+/// | Index | `(home + i) & (bucket_count - 1)` |
+/// | Slot (64-bit) | 28-bit **fingerprint** \| 4-bit **state** \| 32-bit **buf_index** (see PackSlot) |
+/// | States | `EMPTY` (0), `OCCUPIED`, `DELETED` (tombstone); EMPTY=0 ⇒ zero USM is empty |
+/// | HashMix | MurmurHash3 fmix64 on FNV-1a before mask; fingerprint skips most false key gathers |
+///
+/// \section SYCLHashConcurrency Concurrency and operations
+///
+/// **Insert (wait-free)**
+/// - Linear probe; reuse first `DELETED` slot seen when claiming `EMPTY`.
+/// - Allocate one buffer element, write key/values, **device seq_cst fence**, then a
+///   **single CAS** `EMPTY`/`DELETED` → `OCCUPIED` (no lock spin — on Intel Xe,
+///   a waiting subgroup lane can hang the device).
+/// - Duplicate-key races: loser gets `masks=false` and **DeviceFree**'s its unused
+///   buffer slot ⇒ returned **buf_indices are valid gather indices but not necessarily
+///   dense in `[0, Size())`** (see \ref HashMap user docs).
+///
+/// **Find / Erase**
+/// - Same probe; `EMPTY` ends the chain.
+/// - Erase: CAS `OCCUPIED` → `DELETED`, free buffer slot; `occupied_count_` decremented.
+/// - `non_empty_count_` tracks occupied + deleted (tombstone pressure).
+///
+/// **GetActiveIndices**
+/// - Work-group exclusive scan + one global `fetch_add` per group (not one atomic per slot).
+///
+/// **SYCLHashDeviceLookup**
+/// - Immutable snapshot for device kernels (`Find` uses plain loads, no atomics).
+/// - Do **not** mutate the table while a lookup view is in use.
+///
+/// \section SYCLHashVsCuda Compared to CUDA backends
+///
+/// | Aspect | CUDA default (stdgpu) | SYCL (this file) |
+/// |--------|----------------------|------------------|
+/// | Dependency | Third-party stdgpu | None (in-tree) |
+/// | Probing | Library-defined | Linear + stored fingerprint |
+/// | In-kernel find | `map.find(key)` | `SYCLHashDeviceLookup::Find(key)` |
+///
+/// Callers that treat **buf_indices as dense row ids** (e.g. voxel aggregation) must
+/// remap via unique insert slots (`masks==true`) or \ref HashMap::GetActiveIndices().
+/// Uses that only need masks or active-index lists are unchanged.
+///
+/// \section SYCLHashFiles Related files
+///
+/// - `SYCL/SYCLHashBackendBufferAccessor.h` — USM key/value buffer access
+/// - `SYCL/CreateSYCLHashBackend.cpp` — factory / dtype dispatch
 
 #pragma once
 
@@ -61,8 +93,7 @@ namespace open3d {
 namespace core {
 
 /// Slot occupancy for packed hash table entries (see PackSlot layout in this
-/// file's implementation).
-/// kSlotEmpty must be 0 so memset-initialized slot_data_ is an empty table.
+/// file's implementation). kSlotEmpty must be 0 (memset-initialized table).
 enum HashSlotState : uint32_t {
     kSlotEmpty = 0,
     kSlotOccupied = 1,
@@ -71,13 +102,8 @@ enum HashSlotState : uint32_t {
 
 namespace {
 
-// Insert/Find/Erase throughput improves monotonically with wg_size up to the
-// device max; clamped at construction time to the actual device max, see
-// SYCLHashBackend's constructor.
 constexpr int64_t kHashWgSize = 1024;
-
-// bucket_count_ = NextPowerOfTwo(capacity * kHashBucketCountMultiplier),
-// i.e. the inverse of the target max load factor.
+/// The inverse of the target max load factor.
 constexpr int64_t kHashBucketCountMultiplier = 2;
 
 // Packed slot: [63:36] fingerprint (28 bits), [35:32] state, [31:0] buf_index.
@@ -122,10 +148,7 @@ inline uint64_t HashMix(uint64_t h) {
 
 }  // namespace
 
-/// Read-only hash table view for SYCL kernels.
-///
-/// Find() uses plain loads; the backing \ref SYCLHashBackend must stay
-/// immutable while this view is used.
+/// Read-only table view for device kernels (see file header).
 template <typename Key, typename Hash, typename Eq>
 struct SYCLHashDeviceLookup {
     uint64_t* slot_data = nullptr;           ///< USM packed slot array.
@@ -164,10 +187,7 @@ struct SYCLHashDeviceLookup {
     }
 };
 
-/// SYCL implementation of \ref DeviceHashBackend (see file header for
-/// algorithm).
-///
-/// \p bucket_count_ is `NextPowerOfTwo(capacity * kHashBucketCountMultiplier)`.
+/// \ref DeviceHashBackend for SYCL devices (algorithm in file header).
 template <typename Key, typename Hash, typename Eq>
 class SYCLHashBackend : public DeviceHashBackend {
 public:
@@ -178,7 +198,7 @@ public:
                     int64_t wg_size = kHashWgSize);
     ~SYCLHashBackend();
 
-    /// Not implemented; SYCL backend grows via rehash in Insert.
+    /// No-op; use \ref HashMap::Reserve for capacity growth.
     void Reserve(int64_t capacity) override {}
 
     void Insert(const void* input_keys,

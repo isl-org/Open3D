@@ -208,8 +208,10 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
 
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    size_t wg = core::sy::SYCLPreferredWorkGroupSize(device);
-    auto nd_range = core::sy::SYCLNdRange1D(total_block_count, wg);
+    size_t wg = core::sy::PreferredWorkGroupSize(device);
+    const size_t global_size =
+            ((static_cast<size_t>(total_block_count) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
 
     queue.parallel_for(
                  nd_range,

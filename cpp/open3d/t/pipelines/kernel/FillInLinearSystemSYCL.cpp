@@ -24,6 +24,27 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
+namespace {
+
+// Relaxed atomic add helpers for SLM (work-group) and global USM accumulators.
+#define O3D_SYCL_ATOMIC_ADD_F32_WG(ref, delta)                               \
+    do {                                                                       \
+        sycl::atomic_ref<float, sycl::memory_order::relaxed,                   \
+                         sycl::memory_scope::work_group,                       \
+                         sycl::access::address_space::local_space>((ref)) +=   \
+                (delta);                                                       \
+    } while (0)
+
+#define O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(ref, delta)                             \
+    do {                                                                       \
+        sycl::atomic_ref<float, sycl::memory_order::relaxed,                   \
+                         sycl::memory_scope::device,                           \
+                         sycl::access::address_space::global_space>((ref)) +=  \
+                (delta);                                                       \
+    } while (0)
+
+}  // namespace
+
 void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
                                   core::Tensor &Atb,
                                   core::Tensor &residual,
@@ -46,89 +67,53 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
     static constexpr int kLocalDimAtb = 12;
     static constexpr int kLocalDimTotal = kLocalDim12 + kLocalDimAtb + 1;
 
-    core::Tensor AtA_local =
-            core::Tensor::Zeros({12, 12}, core::Float32, device);
-    core::Tensor Atb_local = core::Tensor::Zeros({12}, core::Float32, device);
-
-    float *AtA_local_ptr = static_cast<float *>(AtA_local.GetDataPtr());
-    float *Atb_local_ptr = static_cast<float *>(Atb_local.GetDataPtr());
-    float *residual_ptr = static_cast<float *>(residual.GetDataPtr());
+    // Single contiguous buffer for the reduction:
+    // [AtA_local(144) | Atb_local(12) | residual(1)].
+    core::Tensor local_sum_all =
+            core::Tensor::Zeros({kLocalDimTotal}, core::Float32, device);
+    float *local_sum_all_ptr = local_sum_all.GetDataPtr<float>();
 
     const float *Ti_ps_ptr = static_cast<const float *>(Ti_ps.GetDataPtr());
     const float *Tj_qs_ptr = static_cast<const float *>(Tj_qs.GetDataPtr());
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
-    auto device_props =
-            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
-    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
 
-    core::Tensor partial_sum = core::Tensor::Zeros(
-            {static_cast<int64_t>(num_groups), kLocalDimTotal}, core::Float32,
-            device);
-    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
+    core::sy::PersistentReduce<kLocalDimTotal, float>(
+            queue, n, wgs, local_sum_all_ptr,
+            [=](int64_t gid, float(&local_sum)[kLocalDimTotal]) {
+                const float *p_prime = Ti_ps_ptr + 3 * gid;
+                const float *q_prime = Tj_qs_ptr + 3 * gid;
+                const float *normal_p_prime = Ri_normal_ps_ptr + 3 * gid;
 
-    queue.submit([&](sycl::handler &cgh) {
-             auto rigid_alignment_kernel = [=](sycl::nd_item<1> item) {
-                 const int gid = item.get_global_id(0);
-                 // Private accumulation buffer: [AtA_local(144) |
-                 // Atb_local(12) | residual(1)]
-                 float local_sum[kLocalDimTotal] = {};
+                float r = (p_prime[0] - q_prime[0]) * normal_p_prime[0] +
+                          (p_prime[1] - q_prime[1]) * normal_p_prime[1] +
+                          (p_prime[2] - q_prime[2]) * normal_p_prime[2];
 
-                 if (gid < n) {
-                     const float *p_prime = Ti_ps_ptr + 3 * gid;
-                     const float *q_prime = Tj_qs_ptr + 3 * gid;
-                     const float *normal_p_prime = Ri_normal_ps_ptr + 3 * gid;
+                if (sycl::fabs(r) <= threshold) {
+                    float J_ij[12];
+                    ComputeRigidAlignmentJacobian(q_prime, normal_p_prime,
+                                                  J_ij);
 
-                     float r = (p_prime[0] - q_prime[0]) * normal_p_prime[0] +
-                               (p_prime[1] - q_prime[1]) * normal_p_prime[1] +
-                               (p_prime[2] - q_prime[2]) * normal_p_prime[2];
+                    for (int i_local = 0; i_local < 12; ++i_local) {
+                        for (int j_local = 0; j_local < 12; ++j_local) {
+                            local_sum[i_local * 12 + j_local] +=
+                                    J_ij[i_local] * J_ij[j_local];
+                        }
+                        local_sum[kLocalDim12 + i_local] += J_ij[i_local] * r;
+                    }
+                    local_sum[kLocalDim12 + kLocalDimAtb] += r * r;
+                }
+            });
 
-                     if (sycl::fabs(r) <= threshold) {
-                         float J_ij[12];
-                         J_ij[0] = -q_prime[2] * normal_p_prime[1] +
-                                   q_prime[1] * normal_p_prime[2];
-                         J_ij[1] = q_prime[2] * normal_p_prime[0] -
-                                   q_prime[0] * normal_p_prime[2];
-                         J_ij[2] = -q_prime[1] * normal_p_prime[0] +
-                                   q_prime[0] * normal_p_prime[1];
-                         J_ij[3] = normal_p_prime[0];
-                         J_ij[4] = normal_p_prime[1];
-                         J_ij[5] = normal_p_prime[2];
-                         for (int k = 0; k < 6; ++k) {
-                             J_ij[k + 6] = -J_ij[k];
-                         }
-
-                         for (int i_local = 0; i_local < 12; ++i_local) {
-                             for (int j_local = 0; j_local < 12; ++j_local) {
-                                 local_sum[i_local * 12 + j_local] +=
-                                         J_ij[i_local] * J_ij[j_local];
-                             }
-                             local_sum[kLocalDim12 + i_local] +=
-                                     J_ij[i_local] * r;
-                         }
-                         local_sum[kLocalDim12 + kLocalDimAtb] += r * r;
-                     }
-                 }
-
-                 core::sy::SYCLGroupReduceToPartial<kLocalDimTotal, float>(
-                         item, local_sum, partial_sum_ptr);
-             };
-
-             cgh.parallel_for(sycl::nd_range<1>{num_groups * wgs, wgs},
-                              rigid_alignment_kernel);
-         }).wait_and_throw();
-
-    core::sy::SYCLReducePartialBuffer<kLocalDim12, float>(
-            queue, partial_sum_ptr, AtA_local_ptr, num_groups);
-    core::sy::SYCLReducePartialBuffer<kLocalDimAtb, float>(
-            queue, partial_sum_ptr + kLocalDim12, Atb_local_ptr, num_groups);
-    core::sy::SYCLReducePartialBuffer<1, float>(
-            queue, partial_sum_ptr + kLocalDim12 + kLocalDimAtb, residual_ptr,
-            num_groups);
+    core::Tensor AtA_local =
+            local_sum_all.Slice(0, 0, kLocalDim12).View({12, 12});
+    core::Tensor Atb_local =
+            local_sum_all.Slice(0, kLocalDim12, kLocalDim12 + kLocalDimAtb);
+    residual = local_sum_all.Slice(0, kLocalDimTotal - 1, kLocalDimTotal);
 
     // Then fill-in the large linear system.
     std::vector<int64_t> indices_vec(12);
@@ -213,7 +198,7 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     queue.submit([&](sycl::handler &cgh) {
@@ -323,30 +308,13 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                  // elements of Atb in SLM
                                  for (int ki = 0; ki < 12; ++ki) {
                                      for (int kj = 0; kj < 12; ++kj) {
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::work_group,
-                                                 sycl::access::address_space::
-                                                         local_space>(
-                                                 local_AtA[ki * 12 + kj]) +=
-                                                 J[ki] * J[kj];
+                                         O3D_SYCL_ATOMIC_ADD_F32_WG(local_AtA[ki * 12 + kj], J[ki] * J[kj]);
                                      }
-                                     sycl::atomic_ref<
-                                             float, sycl::memory_order::relaxed,
-                                             sycl::memory_scope::work_group,
-                                             sycl::access::address_space::
-                                                     local_space>(
-                                             local_Atb[ki]) += J[ki] * r;
+                                     O3D_SYCL_ATOMIC_ADD_F32_WG(local_Atb[ki], J[ki] * r);
                                  }
 
                                  // Accumulate residual in SLM
-                                 sycl::atomic_ref<
-                                         float, sycl::memory_order::relaxed,
-                                         sycl::memory_scope::work_group,
-                                         sycl::access::address_space::
-                                                 local_space>(
-                                         local_residual[0]) += r * r;
+                                 O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0], r * r);
 
                                  // Write sparse parts of AtA and Atb directly
                                  // to global memory Sparse-Sparse and
@@ -359,22 +327,10 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
 
                                          float AtA_ij = J[ki] * J[kj];
                                          int ij = idx[ki] * n_vars + idx[kj];
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
-                                                 AtA_ptr[ij]) += AtA_ij;
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(AtA_ptr[ij], AtA_ij);
                                      }
                                      if (ki >= 12) {
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
-                                                 Atb_ptr[idx[ki]]) += J[ki] * r;
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(Atb_ptr[idx[ki]], J[ki] * r);
                                      }
                                  }
                              }
@@ -397,12 +353,7 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                          (kj < 6) ? (6 * i + kj)
                                                   : (6 * j + (kj - 6));
                                  int ij = global_idx_i * n_vars + global_idx_j;
-                                 sycl::atomic_ref<float,
-                                                  sycl::memory_order::relaxed,
-                                                  sycl::memory_scope::device,
-                                                  sycl::access::address_space::
-                                                          global_space>(
-                                         AtA_ptr[ij]) += val;
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(AtA_ptr[ij], val);
                              }
                          }
 
@@ -415,12 +366,7 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                          (idx_local < 6)
                                                  ? (6 * i + idx_local)
                                                  : (6 * j + (idx_local - 6));
-                                 sycl::atomic_ref<float,
-                                                  sycl::memory_order::relaxed,
-                                                  sycl::memory_scope::device,
-                                                  sycl::access::address_space::
-                                                          global_space>(
-                                         Atb_ptr[global_idx]) += val;
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(Atb_ptr[global_idx], val);
                              }
                          }
 
@@ -428,12 +374,7 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                          if (lid == 0) {
                              float val = local_residual[0];
                              if (val != 0.0f) {
-                                 sycl::atomic_ref<float,
-                                                  sycl::memory_order::relaxed,
-                                                  sycl::memory_scope::device,
-                                                  sycl::access::address_space::
-                                                          global_space>(
-                                         *residual_ptr) += val;
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr, val);
                              }
                          }
                      };
@@ -478,7 +419,7 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
 
     queue.submit([&](sycl::handler &cgh) {
@@ -610,65 +551,33 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
                                                        local_r[2] * local_r[2]);
 
                                      for (int axis = 0; axis < 3; ++axis) {
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
                                                  AtA_ptr[(offset_idx_i + axis) *
                                                                  n_vars +
-                                                         offset_idx_i +
-                                                         axis]) += weight;
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
+                                                         offset_idx_i + axis],
+                                                 weight);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
                                                  AtA_ptr[(offset_idx_k + axis) *
                                                                  n_vars +
-                                                         offset_idx_k +
-                                                         axis]) += weight;
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
+                                                         offset_idx_k + axis],
+                                                 weight);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
                                                  AtA_ptr[(offset_idx_i + axis) *
                                                                  n_vars +
-                                                         offset_idx_k +
-                                                         axis]) -= weight;
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
+                                                         offset_idx_k + axis],
+                                                 -weight);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
                                                  AtA_ptr[(offset_idx_k + axis) *
                                                                  n_vars +
-                                                         offset_idx_i +
-                                                         axis]) -= weight;
+                                                         offset_idx_i + axis],
+                                                 -weight);
 
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
-                                                 Atb_ptr[offset_idx_i +
-                                                         axis]) +=
-                                                 weight * local_r[axis];
-                                         sycl::atomic_ref<
-                                                 float,
-                                                 sycl::memory_order::relaxed,
-                                                 sycl::memory_scope::device,
-                                                 sycl::access::address_space::
-                                                         global_space>(
-                                                 Atb_ptr[offset_idx_k +
-                                                         axis]) -=
-                                                 weight * local_r[axis];
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
+                                                 Atb_ptr[offset_idx_i + axis],
+                                                 weight * local_r[axis]);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
+                                                 Atb_ptr[offset_idx_k + axis],
+                                                 -weight * local_r[axis]);
                                      }
                                  }
                              }
@@ -677,11 +586,7 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
                          // Accumulate thread_residual to local_residual using
                          // atomic addition
                          if (thread_residual != 0.0f) {
-                             sycl::atomic_ref<
-                                     float, sycl::memory_order::relaxed,
-                                     sycl::memory_scope::work_group,
-                                     sycl::access::address_space::local_space>(
-                                     local_residual[0]) += thread_residual;
+                             O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0], thread_residual);
                          }
 
                          item.barrier(sycl::access::fence_space::local_space);
@@ -689,12 +594,7 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
                          if (lid == 0) {
                              float val = local_residual[0];
                              if (val != 0.0f) {
-                                 sycl::atomic_ref<float,
-                                                  sycl::memory_order::relaxed,
-                                                  sycl::memory_scope::device,
-                                                  sycl::access::address_space::
-                                                          global_space>(
-                                         *residual_ptr) += val;
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr, val);
                              }
                          }
                      };

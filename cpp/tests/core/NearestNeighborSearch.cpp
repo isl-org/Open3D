@@ -383,9 +383,6 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
 }
 
 #ifdef BUILD_SYCL_MODULE
-// ── SYCL-specific correctness and regression tests ────────────────────────
-
-// Fixture helper: skip if no SYCL device is available.
 struct SYCLNNSTest : public ::testing::Test {
     void SetUp() override {
         if (!core::sy::IsAvailable()) GTEST_SKIP() << "No SYCL device.";
@@ -393,6 +390,23 @@ struct SYCLNNSTest : public ::testing::Test {
     const core::Device cpu{"CPU:0"};
     const core::Device sycl{"SYCL:0"};
 };
+#endif
+
+struct NNSParityTest : public testing::TestWithParam<core::Device> {
+    void SetUp() override {
+        if (GetParam().IsCPU()) {
+            GTEST_SKIP() << "CPU is the oracle for this parity check.";
+        }
+                sycl = GetParam();
+    }
+    const core::Device cpu{"CPU:0"};
+        core::Device sycl{"CPU:0"};
+};
+
+INSTANTIATE_TEST_SUITE_P(
+        NearestNeighborSearchParity,
+        NNSParityTest,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 // Shared 12-point dataset used by several tests below.
 namespace {
@@ -415,8 +429,8 @@ core::Tensor MakeSYCLTestDataset(const core::Device& device) {
 
 }  // namespace
 
-// Parity test (regression): KNN SYCL vs CPU must agree on indices & distances.
-TEST_F(SYCLNNSTest, KnnSearchMatchesCPU) {
+// Parity test (regression): every accelerator backend must agree with CPU.
+TEST_P(NNSParityTest, KnnSearchMatchesCPU) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -440,7 +454,7 @@ TEST_F(SYCLNNSTest, KnnSearchMatchesCPU) {
 // 33-dim, thousands of points, k=1). This exercises the multi-tile path and
 // the −2qp+|p|² partial-distance selection with large feature norms, which the
 // small 3D datasets above do not cover.
-TEST_F(SYCLNNSTest, KnnSearchHighDimParityCPU) {
+TEST_P(NNSParityTest, KnnSearchHighDimParityCPU) {
     const int64_t num_points = 5000;
     const int64_t num_queries = 1000;
     const int64_t dim = 33;
@@ -478,7 +492,7 @@ TEST_F(SYCLNNSTest, KnnSearchHighDimParityCPU) {
 
 // C1: Query on a coincident point (distance = 0) must not produce a negative
 // distance due to floating-point cancellation in −2qp + |p|².
-TEST_F(SYCLNNSTest, KnnSearchCoincidentPoint_C1) {
+TEST_P(NNSParityTest, KnnSearchCoincidentPoint_C1) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     // Query exactly at dataset point 4 = (0.0, 0.1, 0.1).
     core::Tensor query = core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, sycl);
@@ -494,7 +508,7 @@ TEST_F(SYCLNNSTest, KnnSearchCoincidentPoint_C1) {
 
 // C4: Equidistant neighbors must be returned with a consistent tie-break
 // (smaller global index wins).
-TEST_F(SYCLNNSTest, KnnSearchEquidistantTieBreak_C4) {
+TEST_P(NNSParityTest, KnnSearchEquidistantTieBreak_C4) {
     // Three points equidistant from the origin: (1,0,0), (0,1,0), (0,0,1).
     core::Tensor dataset = core::Tensor::Init<float>(
             {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, sycl);
@@ -515,7 +529,7 @@ TEST_F(SYCLNNSTest, KnnSearchEquidistantTieBreak_C4) {
 }
 
 // C5: knn > num_points must be clamped (not crash, not return garbage).
-TEST_F(SYCLNNSTest, KnnSearchMoreThanNumPoints_C5) {
+TEST_P(NNSParityTest, KnnSearchMoreThanNumPoints_C5) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, sycl);
@@ -538,7 +552,7 @@ TEST_F(SYCLNNSTest, KnnSearchMoreThanNumPoints_C5) {
 // dispatch bucket (1, 2, 4, 8, 16, 32 GRF path, 64 scratch path).
 // Both queries are chosen to avoid equidistant neighbors so tie-breaking
 // does not cause spurious CPU vs. SYCL index mismatches.
-TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPU) {
+TEST_P(NNSParityTest, KnnSearchKBucketParityCPU) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     // Two off-lattice queries to avoid equidistant tie situations.
     core::Tensor query = core::Tensor::Init<float>(
@@ -569,7 +583,7 @@ TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPU) {
 // the direct-distance path's double-only sub-group-width selection (SG=8 on
 // devices that support it, SG=16 fallback otherwise) is exercised end to end
 // on whatever the current device actually supports.
-TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPUDouble) {
+TEST_P(NNSParityTest, KnnSearchKBucketParityCPUDouble) {
     core::Tensor dataset_f = MakeSYCLTestDataset(cpu);
     core::Tensor dataset = dataset_f.To(core::Float64);
     core::Tensor query = core::Tensor::Init<double>(
@@ -594,6 +608,7 @@ TEST_F(SYCLNNSTest, KnnSearchKBucketParityCPUDouble) {
     }
 }
 
+#ifdef BUILD_SYCL_MODULE
 // tile_bytes override: a smaller tile should produce the same result as the
 // default (correctness across tile boundaries).
 TEST_F(SYCLNNSTest, KnnSearchNonDefaultTileBytes) {
@@ -615,9 +630,10 @@ TEST_F(SYCLNNSTest, KnnSearchNonDefaultTileBytes) {
     EXPECT_TRUE(idx_tiny.To(cpu).AllClose(idx_default.To(cpu)));
     EXPECT_TRUE(dist_tiny.To(cpu).AllClose(dist_default.To(cpu), 1e-5f, 1e-5f));
 }
+#endif
 
 // Radius search parity: SYCL vs CPU.
-TEST_F(SYCLNNSTest, FixedRadiusSearchMatchesCPU) {
+TEST_P(NNSParityTest, FixedRadiusSearchMatchesCPU) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -672,7 +688,7 @@ void SortSegmentsByDistanceCPU(core::Tensor& idx,
 }  // namespace
 
 // Linf metric parity (SparseConv uses Linf + float32).
-TEST_F(SYCLNNSTest, FixedRadiusSearchLinfMatchesCPU) {
+TEST_P(NNSParityTest, FixedRadiusSearchLinfMatchesCPU) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -705,7 +721,7 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchLinfMatchesCPU) {
 }
 
 // ignore_query_point: coincident dataset point must be excluded when enabled.
-TEST_F(SYCLNNSTest, FixedRadiusSearchIgnoreQueryPoint) {
+TEST_P(NNSParityTest, FixedRadiusSearchIgnoreQueryPoint) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, cpu);  // point 4
@@ -758,7 +774,7 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchIgnoreQueryPoint) {
 }
 
 // Radius search C1: coincident query must have distance exactly 0.
-TEST_F(SYCLNNSTest, FixedRadiusSearchCoincidentPoint_C1) {
+TEST_P(NNSParityTest, FixedRadiusSearchCoincidentPoint_C1) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     // Query at point 4 = (0.0, 0.1, 0.1).
     core::Tensor query = core::Tensor::Init<float>({{0.0, 0.1, 0.1}}, sycl);
@@ -774,7 +790,7 @@ TEST_F(SYCLNNSTest, FixedRadiusSearchCoincidentPoint_C1) {
 }
 
 // Hybrid search parity: SYCL vs CPU.
-TEST_F(SYCLNNSTest, HybridSearchMatchesCPU) {
+TEST_P(NNSParityTest, HybridSearchMatchesCPU) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu);
     core::Tensor query =
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, cpu);
@@ -809,7 +825,7 @@ TEST_F(SYCLNNSTest, HybridSearchMatchesCPU) {
 // Regression for hybrid search on large-offset 3D coordinates with a small
 // radius (mirrors registration: room-scale scans, max_correspondence_distance).
 // Exercises float32 cancellation in the radius count/threshold path.
-TEST_F(SYCLNNSTest, HybridSearchLargeOffsetParityCPU) {
+TEST_P(NNSParityTest, HybridSearchLargeOffsetParityCPU) {
     const int64_t n = 4000;
     const float kOffset = 1000.f;  // non-origin-centered scan coordinates
     const double radius = 0.05;
@@ -848,6 +864,7 @@ TEST_F(SYCLNNSTest, HybridSearchLargeOffsetParityCPU) {
 }
 
 // tile_bytes override for FixedRadiusIndex (exercises P2 across tile bounds).
+#ifdef BUILD_SYCL_MODULE
 TEST_F(SYCLNNSTest, FixedRadiusSearchNonDefaultTileBytes) {
     core::Tensor dataset = MakeSYCLTestDataset(cpu).To(sycl);
     core::Tensor query =

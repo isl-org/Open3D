@@ -26,12 +26,11 @@
 namespace open3d {
 namespace tests {
 
-class TensorPermuteDevices : public PermuteDevices {};
+class TensorPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorPermuteDevices,
                          testing::ValuesIn(TensorPermuteDevices::TestCases()));
 
-class TensorPermuteDevicesWithSYCL : public PermuteDevicesWithSYCL {};
 class TensorPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
         Tensor,

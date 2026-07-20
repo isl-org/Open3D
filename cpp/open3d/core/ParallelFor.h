@@ -104,8 +104,9 @@ void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
         return;
     }
     auto queue = core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    size_t wg = core::sy::SYCLPreferredWorkGroupSize(device);
-    auto nd_range = core::sy::SYCLNdRange1D(n, wg);
+    size_t wg = core::sy::PreferredWorkGroupSize(device);
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
     queue.parallel_for(nd_range, [=](sycl::nd_item<1> item) {
              int64_t i = item.get_global_id(0);
              if (i < n) {

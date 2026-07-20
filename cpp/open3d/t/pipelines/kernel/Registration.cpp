@@ -239,6 +239,66 @@ core::Tensor ComputePoseDopplerICP(
     return output_pose;
 }
 
+namespace {
+
+// Horn point-to-point alignment from correspondences using tensor ops on \p
+// device, then SVD on CPU Float64 (same path as legacy CUDA/SYCL code).
+std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPointTensor(
+        const core::Tensor& source_points,
+        const core::Tensor& target_points,
+        const core::Tensor& correspondence_indices,
+        const core::Device& device,
+        int& inlier_count) {
+    core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
+    // correpondence_set : (i, corres[i]).
+    if (valid.GetLength() == 0) {
+        utility::LogError("No valid correspondence present.");
+    }
+
+    // source[i] and target[corres[i]] is a correspondence.
+    core::Tensor source_indices =
+            core::Tensor::Arange(0, source_points.GetShape()[0], 1, core::Int64,
+                                 device)
+                    .IndexGet({valid});
+    // Only take valid indices.
+    core::Tensor target_indices =
+            correspondence_indices.IndexGet({valid}).Reshape({-1});
+
+    // Number of good correspondences (C).
+    inlier_count = source_indices.GetLength();
+
+    core::Tensor source_select = source_points.IndexGet({source_indices});
+    core::Tensor target_select = target_points.IndexGet({target_indices});
+
+    // https://ieeexplore.ieee.org/document/88573
+    core::Tensor mean_s = source_select.Mean({0}, true);
+    core::Tensor mean_t = target_select.Mean({0}, true);
+
+    // Compute linear system on CPU as Float64.
+    core::Device host("CPU:0");
+    core::Tensor Sxy = (target_select - mean_t)
+                               .T()
+                               .Matmul(source_select - mean_s)
+                               .Div_(static_cast<float>(inlier_count))
+                               .To(host, core::Float64);
+
+    mean_s = mean_s.To(host, core::Float64);
+    mean_t = mean_t.To(host, core::Float64);
+
+    core::Tensor U, D, VT;
+    std::tie(U, D, VT) = Sxy.SVD();
+    core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
+    core::Tensor R, t;
+    if (U.Det() * (VT.T()).Det() < 0) {
+        S[-1][-1] = -1;
+    }
+    R = U.Matmul(S.Matmul(VT));
+    t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+    return std::make_tuple(R, t);
+}
+
+}  // namespace
+
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
@@ -260,96 +320,17 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 #ifdef BUILD_CUDA_MODULE
         core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
-        core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
-        // correpondence_set : (i, corres[i]).
-
-        if (valid.GetLength() == 0) {
-            utility::LogError("No valid correspondence present.");
-        }
-
-        // source[i] and target[corres[i]] is a correspondence.
-        core::Tensor source_indices =
-                core::Tensor::Arange(0, source_points.GetShape()[0], 1,
-                                     core::Int64, device)
-                        .IndexGet({valid});
-        // Only take valid indices.
-        core::Tensor target_indices =
-                correspondence_indices.IndexGet({valid}).Reshape({-1});
-
-        // Number of good correspondences (C).
-        inlier_count = source_indices.GetLength();
-
-        core::Tensor source_select = source_points.IndexGet({source_indices});
-        core::Tensor target_select = target_points.IndexGet({target_indices});
-
-        // https://ieeexplore.ieee.org/document/88573
-        core::Tensor mean_s = source_select.Mean({0}, true);
-        core::Tensor mean_t = target_select.Mean({0}, true);
-
-        // Compute linear system on CPU as Float64.
-        core::Device host("CPU:0");
-        core::Tensor Sxy = (target_select - mean_t)
-                                   .T()
-                                   .Matmul(source_select - mean_s)
-                                   .Div_(static_cast<float>(inlier_count))
-                                   .To(host, core::Float64);
-
-        mean_s = mean_s.To(host, core::Float64);
-        mean_t = mean_t.To(host, core::Float64);
-
-        core::Tensor U, D, VT;
-        std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
-        if (U.Det() * (VT.T()).Det() < 0) {
-            S[-1][-1] = -1;
-        }
-        R = U.Matmul(S.Matmul(VT));
-        t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+        std::tie(R, t) = ComputeRtPointToPointTensor(
+                source_points, target_points, correspondence_indices, device,
+                inlier_count);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
     } else if (source_points.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
-        // Use tensor operations which work on SYCL devices.
-        core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
-
-        if (valid.GetLength() == 0) {
-            utility::LogError("No valid correspondence present.");
-        }
-
-        core::Tensor source_indices =
-                core::Tensor::Arange(0, source_points.GetShape()[0], 1,
-                                     core::Int64, device)
-                        .IndexGet({valid});
-        core::Tensor target_indices =
-                correspondence_indices.IndexGet({valid}).Reshape({-1});
-
-        inlier_count = source_indices.GetLength();
-
-        core::Tensor source_select = source_points.IndexGet({source_indices});
-        core::Tensor target_select = target_points.IndexGet({target_indices});
-
-        core::Tensor mean_s = source_select.Mean({0}, true);
-        core::Tensor mean_t = target_select.Mean({0}, true);
-
-        core::Device host("CPU:0");
-        core::Tensor Sxy = (target_select - mean_t)
-                                   .T()
-                                   .Matmul(source_select - mean_s)
-                                   .Div_(static_cast<float>(inlier_count))
-                                   .To(host, core::Float64);
-
-        mean_s = mean_s.To(host, core::Float64);
-        mean_t = mean_t.To(host, core::Float64);
-
-        core::Tensor U, D, VT;
-        std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
-        if (U.Det() * (VT.T()).Det() < 0) {
-            S[-1][-1] = -1;
-        }
-        R = U.Matmul(S.Matmul(VT));
-        t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+        std::tie(R, t) = ComputeRtPointToPointTensor(
+                source_points, target_points, correspondence_indices, device,
+                inlier_count);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif

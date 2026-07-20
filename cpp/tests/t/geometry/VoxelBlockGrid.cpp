@@ -9,7 +9,6 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
-#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
@@ -110,8 +109,8 @@ VoxelBlockGrid Integrate(const core::HashBackendType &backend,
     return vbg;
 }
 
-#ifdef BUILD_SYCL_MODULE
-/// Integrate a subset of Redwood frames (for faster SYCL/CPU parity checks).
+/// Integrate a subset of Redwood frames (for faster cross-device parity
+/// checks against the CPU oracle).
 VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
                                const core::Device &device,
                                size_t num_frames,
@@ -146,7 +145,6 @@ VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
 
     return vbg;
 }
-#endif
 
 }  // namespace
 
@@ -288,16 +286,9 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     std::unordered_map<int, int> kResolutionTriangles = {{8, 409271},
                                                          {16, 490301}};
 
-    // Cross-backend numerical-precision allowance for the extracted surface
-    // size. The reference counts above are frozen from the CPU/CUDA backends.
-    // SYCL produces a handful of additional/fewer surface voxels (~6 of
-    // ~225k, < 0.003%) because the per-voxel projection in the TSDF integrate
-    // kernel is evaluated in float32 and the IntelLLVM SYCL device codegen
-    // contracts a different set of multiply-adds into FMAs than the CPU/CUDA
-    // codegen does. The active block set, neighbor lookups and hash-map state
-    // are bit-identical across backends; only a few voxels near a zero
-    // crossing flip. A larger discrepancy (e.g. a dropped block contributes
-    // tens of points) is still caught.
+    // Cross-backend numerical-precision allowance for extracted surface size.
+    // Reference counts are frozen from CPU/CUDA; SYCL may differ slightly.
+    // Larger discrepancies (e.g., missing blocks) are still caught.
     const bool is_sycl = device.IsSYCL();
     const int point_tol = is_sycl ? 16 : 3;
     const int vertex_tol = is_sycl ? 16 : 3;
@@ -520,40 +511,41 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
     }
 }
 
-#ifdef BUILD_SYCL_MODULE
-// SYCL VoxelBlockGrid: short Redwood integration should match CPU extraction.
-TEST(VoxelBlockGridSYCLBackendParity, IntegrateExtractMatchesCPU) {
-    if (!core::sy::IsAvailable()) {
-        GTEST_SKIP() << "No SYCL device.";
+// Device-agnostic parity check: a short Redwood integration on any
+// non-CPU device (CUDA/SYCL) should match CPU extraction closely.
+TEST_P(VoxelBlockGridPermuteDevices, IntegrateExtractMatchesCPU) {
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "CPU is the oracle for this parity check.";
     }
     const core::Device cpu("CPU:0");
-    const core::Device sycl("SYCL:0");
 
     const size_t k_frames = 2;
     const int k_resolution = 8;
+    core::HashBackendType backend =
+            EnumerateBackends(device, /*include_slab=*/false)[0];
     auto vbg_cpu = IntegrateFrames(core::HashBackendType::TBB, cpu, k_frames,
                                    k_resolution);
-    auto vbg_sycl = IntegrateFrames(core::HashBackendType::Default, sycl,
-                                    k_frames, k_resolution);
+    auto vbg_other =
+            IntegrateFrames(backend, device, k_frames, k_resolution);
 
     auto pcd_cpu = vbg_cpu.ExtractPointCloud();
-    auto pcd_sycl = vbg_sycl.ExtractPointCloud();
+    auto pcd_other = vbg_other.ExtractPointCloud();
 
     EXPECT_EQ(pcd_cpu.GetPointPositions().GetLength(),
-              pcd_sycl.GetPointPositions().GetLength());
-    EXPECT_TRUE(pcd_sycl.GetPointPositions().To(cpu).AllClose(
+              pcd_other.GetPointPositions().GetLength());
+    EXPECT_TRUE(pcd_other.GetPointPositions().To(cpu).AllClose(
             pcd_cpu.GetPointPositions(), 1e-3, 1e-3));
-    EXPECT_TRUE(pcd_sycl.GetPointNormals().To(cpu).AllClose(
+    EXPECT_TRUE(pcd_other.GetPointNormals().To(cpu).AllClose(
             pcd_cpu.GetPointNormals(), 1e-2, 1e-2));
 
     auto mesh_cpu = vbg_cpu.ExtractTriangleMesh();
-    auto mesh_sycl = vbg_sycl.ExtractTriangleMesh();
+    auto mesh_other = vbg_other.ExtractTriangleMesh();
     EXPECT_EQ(mesh_cpu.GetVertexPositions().GetLength(),
-              mesh_sycl.GetVertexPositions().GetLength());
+              mesh_other.GetVertexPositions().GetLength());
     EXPECT_EQ(mesh_cpu.GetTriangleIndices().GetLength(),
-              mesh_sycl.GetTriangleIndices().GetLength());
+              mesh_other.GetTriangleIndices().GetLength());
 }
-#endif
 
 }  // namespace tests
 }  // namespace open3d

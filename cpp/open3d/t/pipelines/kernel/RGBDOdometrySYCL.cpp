@@ -60,62 +60,36 @@ void ComputeOdometryResultPointToPlaneSYCL(
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    auto device_props =
-            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
-    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
 
-    core::Tensor partial_sum = core::Tensor::Zeros(
-            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
-            core::Float32, device);
-    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
 
-    queue.submit([&](sycl::handler &cgh) {
-             cgh.parallel_for(
-                     sycl::nd_range<1>{num_groups * wgs, wgs},
-                     [=](sycl::nd_item<1> item) {
-                         const int gid = item.get_global_id(0);
-                         float local_sum[kReduceDimOdometry] = {};
+                float J[6] = {0};
+                float r = 0;
+                const bool valid = GetJacobianPointToPlane(
+                        x, y, depth_outlier_trunc, source_vertex_indexer,
+                        target_vertex_indexer, target_normal_indexer, ti, J, r);
 
-                         if (gid < n) {
-                             const int y = gid / cols;
-                             const int x = gid % cols;
-
-                             float J[6] = {0};
-                             float r = 0;
-                             const bool valid = GetJacobianPointToPlane(
-                                     x, y, depth_outlier_trunc,
-                                     source_vertex_indexer,
-                                     target_vertex_indexer,
-                                     target_normal_indexer, ti, J, r);
-
-                             if (valid) {
-                                 const float d_huber =
-                                         HuberDeriv(r, depth_huber_delta);
-                                 const float r_huber =
-                                         HuberLoss(r, depth_huber_delta);
-                                 int offset = 0;
-                                 for (int i = 0; i < 6; ++i) {
-                                     for (int j = 0; j <= i; ++j) {
-                                         local_sum[offset++] += J[i] * J[j];
-                                     }
-                                     local_sum[21 + i] += J[i] * d_huber;
-                                 }
-                                 local_sum[27] += r_huber;
-                                 local_sum[28] += 1.0f;
-                             }
-                         }
-
-                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
-                                                            float>(
-                                 item, local_sum, partial_sum_ptr);
-                     });
-         }).wait_and_throw();
-
-    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
-            queue, partial_sum_ptr, global_sum_ptr, num_groups);
+                if (valid) {
+                    const float d_huber = HuberDeriv(r, depth_huber_delta);
+                    const float r_huber = HuberLoss(r, depth_huber_delta);
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J[i] * J[j];
+                        }
+                        local_sum[21 + i] += J[i] * d_huber;
+                    }
+                    local_sum[27] += r_huber;
+                    local_sum[28] += 1.0f;
+                }
+            });
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -155,65 +129,40 @@ void ComputeOdometryResultIntensitySYCL(
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    auto device_props =
-            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
-    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
 
-    core::Tensor partial_sum = core::Tensor::Zeros(
-            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
-            core::Float32, device);
-    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
 
-    queue.submit([&](sycl::handler &cgh) {
-             cgh.parallel_for(
-                     sycl::nd_range<1>{num_groups * wgs, wgs},
-                     [=](sycl::nd_item<1> item) {
-                         const int gid = item.get_global_id(0);
-                         float local_sum[kReduceDimOdometry] = {};
+                float J_I[6] = {0};
+                float r_I = 0;
+                const bool valid = GetJacobianIntensity(
+                        x, y, depth_outlier_trunc, source_depth_indexer,
+                        target_depth_indexer, source_intensity_indexer,
+                        target_intensity_indexer, target_intensity_dx_indexer,
+                        target_intensity_dy_indexer, source_vertex_indexer, ti,
+                        J_I, r_I);
 
-                         if (gid < n) {
-                             const int y = gid / cols;
-                             const int x = gid % cols;
-
-                             float J_I[6] = {0};
-                             float r_I = 0;
-                             const bool valid = GetJacobianIntensity(
-                                     x, y, depth_outlier_trunc,
-                                     source_depth_indexer, target_depth_indexer,
-                                     source_intensity_indexer,
-                                     target_intensity_indexer,
-                                     target_intensity_dx_indexer,
-                                     target_intensity_dy_indexer,
-                                     source_vertex_indexer, ti, J_I, r_I);
-
-                             if (valid) {
-                                 const float d_huber =
-                                         HuberDeriv(r_I, intensity_huber_delta);
-                                 const float r_huber =
-                                         HuberLoss(r_I, intensity_huber_delta);
-                                 int offset = 0;
-                                 for (int i = 0; i < 6; ++i) {
-                                     for (int j = 0; j <= i; ++j) {
-                                         local_sum[offset++] += J_I[i] * J_I[j];
-                                     }
-                                     local_sum[21 + i] += J_I[i] * d_huber;
-                                 }
-                                 local_sum[27] += r_huber;
-                                 local_sum[28] += 1.0f;
-                             }
-                         }
-
-                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
-                                                            float>(
-                                 item, local_sum, partial_sum_ptr);
-                     });
-         }).wait_and_throw();
-
-    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
-            queue, partial_sum_ptr, global_sum_ptr, num_groups);
+                if (valid) {
+                    const float d_huber =
+                            HuberDeriv(r_I, intensity_huber_delta);
+                    const float r_huber = HuberLoss(r_I, intensity_huber_delta);
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J_I[i] * J_I[j];
+                        }
+                        local_sum[21 + i] += J_I[i] * d_huber;
+                    }
+                    local_sum[27] += r_huber;
+                    local_sum[28] += 1.0f;
+                }
+            });
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -257,76 +206,43 @@ void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    auto device_props =
-            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
-    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
 
-    core::Tensor partial_sum = core::Tensor::Zeros(
-            {static_cast<int64_t>(num_groups), kReduceDimOdometry},
-            core::Float32, device);
-    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
 
-    queue.submit([&](sycl::handler &cgh) {
-             cgh.parallel_for(
-                     sycl::nd_range<1>{num_groups * wgs, wgs},
-                     [=](sycl::nd_item<1> item) {
-                         const int gid = item.get_global_id(0);
-                         float local_sum[kReduceDimOdometry] = {};
+                float J_I[6] = {0}, J_D[6] = {0};
+                float r_I = 0, r_D = 0;
+                const bool valid = GetJacobianHybrid(
+                        x, y, depth_outlier_trunc, source_depth_indexer,
+                        target_depth_indexer, source_intensity_indexer,
+                        target_intensity_indexer, target_depth_dx_indexer,
+                        target_depth_dy_indexer, target_intensity_dx_indexer,
+                        target_intensity_dy_indexer, source_vertex_indexer, ti,
+                        J_I, J_D, r_I, r_D);
 
-                         if (gid < n) {
-                             const int y = gid / cols;
-                             const int x = gid % cols;
-
-                             float J_I[6] = {0}, J_D[6] = {0};
-                             float r_I = 0, r_D = 0;
-                             const bool valid = GetJacobianHybrid(
-                                     x, y, depth_outlier_trunc,
-                                     source_depth_indexer, target_depth_indexer,
-                                     source_intensity_indexer,
-                                     target_intensity_indexer,
-                                     target_depth_dx_indexer,
-                                     target_depth_dy_indexer,
-                                     target_intensity_dx_indexer,
-                                     target_intensity_dy_indexer,
-                                     source_vertex_indexer, ti, J_I, J_D, r_I,
-                                     r_D);
-
-                             if (valid) {
-                                 int offset = 0;
-                                 for (int i = 0; i < 6; ++i) {
-                                     for (int j = 0; j <= i; ++j) {
-                                         local_sum[offset++] +=
-                                                 J_I[i] * J_I[j] +
-                                                 J_D[i] * J_D[j];
-                                     }
-                                     local_sum[21 + i] +=
-                                             J_I[i] *
-                                                     HuberDeriv(
-                                                             r_I,
-                                                             intensity_huber_delta) +
-                                             J_D[i] *
-                                                     HuberDeriv(
-                                                             r_D,
-                                                             depth_huber_delta);
-                                 }
-                                 local_sum[27] +=
-                                         HuberLoss(r_I, intensity_huber_delta) +
-                                         HuberLoss(r_D, depth_huber_delta);
-                                 local_sum[28] += 1.0f;
-                             }
-                         }
-
-                         core::sy::SYCLGroupReduceToPartial<kReduceDimOdometry,
-                                                            float>(
-                                 item, local_sum, partial_sum_ptr);
-                     });
-         }).wait_and_throw();
-
-    core::sy::SYCLReducePartialBuffer<kReduceDimOdometry, float>(
-            queue, partial_sum_ptr, global_sum_ptr, num_groups);
+                if (valid) {
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] +=
+                                    J_I[i] * J_I[j] + J_D[i] * J_D[j];
+                        }
+                        local_sum[21 + i] +=
+                                J_I[i] *
+                                        HuberDeriv(r_I, intensity_huber_delta) +
+                                J_D[i] * HuberDeriv(r_D, depth_huber_delta);
+                    }
+                    local_sum[27] += HuberLoss(r_I, intensity_huber_delta) +
+                                     HuberLoss(r_D, depth_huber_delta);
+                    local_sum[28] += 1.0f;
+                }
+            });
 
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
@@ -352,58 +268,33 @@ void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
             core::Tensor::Zeros({kJtJDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    auto device_props =
-            core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
     sycl::queue queue =
             core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::SYCLPreferredWorkGroupSize(device);
-    const size_t num_groups = ((size_t)n + wgs - 1) / wgs;
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
 
-    core::Tensor partial_sum = core::Tensor::Zeros(
-            {static_cast<int64_t>(num_groups), kJtJDimOdometry}, core::Float32,
-            device);
-    float *partial_sum_ptr = partial_sum.GetDataPtr<float>();
+    core::sy::PersistentReduce<kJtJDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kJtJDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
 
-    queue.submit([&](sycl::handler &cgh) {
-             cgh.parallel_for(
-                     sycl::nd_range<1>{num_groups * wgs, wgs},
-                     [=](sycl::nd_item<1> item) {
-                         const int gid = item.get_global_id(0);
-                         float local_sum[kJtJDimOdometry] = {};
+                float J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+                float rx = 0, ry = 0, rz = 0;
+                const bool valid = GetJacobianPointToPoint(
+                        x, y, square_dist_thr, source_vertex_indexer,
+                        target_vertex_indexer, ti, J_x, J_y, J_z, rx, ry, rz);
 
-                         if (gid < n) {
-                             const int y = gid / cols;
-                             const int x = gid % cols;
-
-                             float J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
-                             float rx = 0, ry = 0, rz = 0;
-                             const bool valid = GetJacobianPointToPoint(
-                                     x, y, square_dist_thr,
-                                     source_vertex_indexer,
-                                     target_vertex_indexer, ti, J_x, J_y, J_z,
-                                     rx, ry, rz);
-
-                             if (valid) {
-                                 int offset = 0;
-                                 for (int i = 0; i < 6; ++i) {
-                                     for (int j = 0; j <= i; ++j) {
-                                         local_sum[offset++] +=
-                                                 J_x[i] * J_x[j] +
-                                                 J_y[i] * J_y[j] +
-                                                 J_z[i] * J_z[j];
-                                     }
-                                 }
-                             }
-                         }
-
-                         core::sy::SYCLGroupReduceToPartial<kJtJDimOdometry,
-                                                            float>(
-                                 item, local_sum, partial_sum_ptr);
-                     });
-         }).wait_and_throw();
-
-    core::sy::SYCLReducePartialBuffer<kJtJDimOdometry, float>(
-            queue, partial_sum_ptr, global_sum_ptr, num_groups);
+                if (valid) {
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J_x[i] * J_x[j] +
+                                                   J_y[i] * J_y[j] +
+                                                   J_z[i] * J_z[j];
+                        }
+                    }
+                }
+            });
 
     const core::Device host(core::Device("CPU:0"));
     information = core::Tensor::Empty({6, 6}, core::Float64, host);

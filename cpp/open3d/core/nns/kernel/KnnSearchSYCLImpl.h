@@ -6,35 +6,39 @@
 // ----------------------------------------------------------------------------
 
 /// \file KnnSearchSYCLImpl.h
-/// \brief Device-side SYCL kernels for KNN, fixed-radius, and hybrid search.
+/// \brief SYCL **device** kernels for KNN (Direct and AddMM top-k).
 ///
-/// Included only by KnnSearchOpsSYCL.cpp; not part of the public API.
+/// Included only by \ref KnnSearchOpsSYCL.cpp. Path selection, CUDA comparison, and
+/// fixed-radius / hybrid summaries live in the **driver** file header
+/// (`KnnSearchOpsSYCL.cpp`). Grid search kernels: \ref FixedRadiusSearchSYCLImpl.h.
 ///
-/// The driver uses oneMKL AddMM to compute the −2*q*p distance tile for each
-/// (query-tile × point-tile) pair.
+/// \section KnnImplPaths Kernel groups (called from \ref KnnSearchSYCL)
 ///
-/// Fused per-tile path (small k ≤ kSYCLKnnMidKMax):
-/// - \ref UpdateTopKFromTile maintains a running max-heap per query from AddMM
-///   tiles; \ref FinalizeTopK heap-sorts and adds |q|² (P2, C1).
-/// - For K ≤ kSYCLKnnSmallKMax (32), heap arrays are GRF-resident; larger
-///   buckets spill to per-work-item scratch.
+/// | Path | Key symbols | When (driver) |
+/// |------|-------------|---------------|
+/// | **Direct** | `DispatchKnnDirect`, `KnnDirect` | dim∈[1,8], k≤32, not `force_addmm_path` |
+/// | **AddMM fused** | `UpdateTopKFromTile`, `FinalizeTopK`, `KBucket` | else, k≤512 after `CenterPointsAndQueries` |
+/// | **AddMM large-k** | `SelectTopKQueries`, `MergeTopKQueries`, `AddQueryNormsToDistances` | else, k>512 |
 ///
-/// Legacy path (mid/large k):
-/// - \ref SelectTopKQueries, \ref MergeTopKQueries (used by the KNN
-///   large-k AddMM path only; fixed-radius/hybrid now use the uniform-grid
-///   kernels in FixedRadiusSearchSYCLImpl.h instead).
+/// **Direct:** sub-group SLM point tiles, per-lane sorted top-K, shuffle-merge;
+/// compile-time `NDIM` and K; no `AddMM`, no centering.
 ///
-/// Direct-distance path (low D, low k):
-/// - \ref KnnDirect / \ref DispatchKnnDirect bypass AddMM; see section below.
+/// **AddMM fused:** oneMKL produces **−2qp** tiles; `UpdateTopKFromTile` adds ‖p‖²,
+/// clamps, updates register or scratch **max-heap** (`FinalizeTopK` adds ‖q‖²).
 ///
-/// Conventions:
-/// - **P2**: partial_dist = −2qp + |p|²; |q|² added once in finalize.
-/// - **C1**: clamp partial_dist ≥ 0.
-/// - **C4**: tie-break by smaller global point index.
-/// - **C5**: actual_k = min(knn, num_points) handled by caller.
+/// **AddMM large-k:** per tile `SelectTopKQueries` then `MergeTopKQueries`; P8 fallback
+/// uses oneDPL `partial_sort` per query when merge width exceeds mid-k limits.
 ///
-/// **P8**: For k > kSYCLKnnMidKMax, merge uses per-query serial partial_sort
-/// (oneDPL has no segmented top-k).
+/// \section KnnImplConv Distance / top-k conventions (AddMM paths)
+///
+/// | Id | Rule |
+/// |----|------|
+/// | P2 | Tile stores `−2qp + ‖p‖²`; add `‖q‖²` once in finalize |
+/// | C1 | Clamp partial distance ≥ 0 |
+/// | C4 | Equal distance → smaller global point index wins |
+/// | C5 | Caller passes `batch_knn = min(knn, num_points)` |
+///
+/// **Threshold constants:** `kSYCLKnnSmallKMax` (32), `kSYCLKnnMidKMax` (512).
 
 #pragma once
 

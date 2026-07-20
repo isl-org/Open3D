@@ -14,7 +14,6 @@
 #include "gmock/gmock.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
-#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
@@ -1738,39 +1737,38 @@ TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
     //                    "Mesh with AO texture");
 }
 
-#ifdef BUILD_SYCL_MODULE
-TEST(TriangleMeshSYCLBackendParity, NormalsAndAreasMatchCPU) {
-    if (!core::sy::IsAvailable()) {
-        GTEST_SKIP() << "No SYCL device.";
+// Device-agnostic parity check: normal/area kernels on any non-CPU device
+// (CUDA/SYCL) should match the CPU oracle on the same mesh.
+TEST_P(TriangleMeshPermuteDevices, BackendParityNormalsAndAreasMatchCPU) {
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "CPU is the oracle for this parity check.";
     }
     const core::Device cpu("CPU:0");
-    const core::Device sycl("SYCL:0");
 
-    t::geometry::TriangleMesh mesh_cpu =
+    t::geometry::TriangleMesh mesh_cpu = t::geometry::TriangleMesh::CreateSphere(
+            1.0, 4, core::Float32, core::Int64, cpu);
+    t::geometry::TriangleMesh mesh_other =
             t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
-                                                    core::Int64, cpu);
-    t::geometry::TriangleMesh mesh_sycl =
-            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
-                                                    core::Int64, sycl);
+                                                    core::Int64, device);
 
     mesh_cpu.ComputeTriangleNormals();
     mesh_cpu.ComputeVertexNormals();
     mesh_cpu.NormalizeNormals();
     mesh_cpu.ComputeTriangleAreas();
 
-    mesh_sycl.ComputeTriangleNormals();
-    mesh_sycl.ComputeVertexNormals();
-    mesh_sycl.NormalizeNormals();
-    mesh_sycl.ComputeTriangleAreas();
+    mesh_other.ComputeTriangleNormals();
+    mesh_other.ComputeVertexNormals();
+    mesh_other.NormalizeNormals();
+    mesh_other.ComputeTriangleAreas();
 
-    EXPECT_TRUE(mesh_sycl.GetTriangleNormals().To(cpu).AllClose(
+    EXPECT_TRUE(mesh_other.GetTriangleNormals().To(cpu).AllClose(
             mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
-    EXPECT_TRUE(mesh_sycl.GetVertexNormals().To(cpu).AllClose(
+    EXPECT_TRUE(mesh_other.GetVertexNormals().To(cpu).AllClose(
             mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
-    EXPECT_TRUE(mesh_sycl.GetTriangleAttr("areas").To(cpu).AllClose(
+    EXPECT_TRUE(mesh_other.GetTriangleAttr("areas").To(cpu).AllClose(
             mesh_cpu.GetTriangleAttr("areas"), 1e-4, 1e-4));
 }
-#endif
 
 }  // namespace tests
 }  // namespace open3d
