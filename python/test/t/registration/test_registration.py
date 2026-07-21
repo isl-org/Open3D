@@ -100,8 +100,7 @@ def test_registration_result_constructor(device):
         o3c.Tensor.eye(4, dtype, o3c.Device("CPU:0")))
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_evaluate_registration(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -127,8 +126,7 @@ def test_evaluate_registration(device):
                                    evaluation_legacy.fitness, 0.001)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_icp_point_to_point(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -166,8 +164,7 @@ def test_icp_point_to_point(device):
                                    0.001)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_icp_point_to_plane(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]
@@ -205,8 +202,7 @@ def test_icp_point_to_plane(device):
                                    reg_p2plane_legacy.fitness, 0.001)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_get_information_matrix(device):
 
     supported_dtypes = [o3c.float32, o3c.float64]

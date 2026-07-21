@@ -59,7 +59,8 @@ namespace {
 constexpr int64_t kMaxSafeLaunchSize = int64_t(1) << 30;
 
 /// Initial in-work-group tree-reduction stride: half of the next power-of-two
-/// \c >= \p sz, from \c sycl::clz(\p sz - 1) (equals \c sz >> 1 when \p sz is POT).
+/// \c >= \p sz, from \c sycl::clz(\p sz - 1) (equals \c sz >> 1 when \p sz is
+/// POT).
 inline size_t ReduceTreeInitialStride(size_t sz) {
     if (sz <= 1) return 0;
     return size_t{1} << (sizeof(size_t) * 8 - sycl::clz(sz - 1) - 1);
@@ -245,8 +246,7 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                  const size_t local_sz =
                                          item.get_local_range(0);
                                  for (size_t stride =
-                                              ReduceTreeInitialStride(
-                                                      local_sz);
+                                              ReduceTreeInitialStride(local_sz);
                                       stride > 0; stride >>= 1) {
                                      if (local_id < stride &&
                                          local_id + stride <
@@ -357,7 +357,8 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     int64_t num_elements = first_out_indexer.NumWorkloads();
 
     // See SYCLReductionEngine above: cap the launch and grid-stride over
-    // outputs so num_work_groups * work_group_size stays within kMaxSafeLaunchSize.
+    // outputs so num_work_groups * work_group_size stays within
+    // kMaxSafeLaunchSize.
     int64_t num_work_groups = std::min<int64_t>(
             num_outputs, kMaxSafeLaunchSize / int64_t(work_group_size));
     queue.submit([&](sycl::handler& cgh) {
@@ -382,9 +383,8 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                          GetInputPtrDevice<scalar_t>(
                                                  indexer, output_idx, idx);
                                  if (val_ptr) {
-                                     std::tie(it_idx, it_val) =
-                                             red_op(it_idx, it_val, idx,
-                                                    *val_ptr);
+                                     std::tie(it_idx, it_val) = red_op(
+                                             it_idx, it_val, idx, *val_ptr);
                                  }
                              }
 
@@ -424,8 +424,8 @@ void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                  if (out_idx_ptr) *out_idx_ptr = local_idx[0];
                                  if (out_val_ptr) *out_val_ptr = local_val[0];
                              }
-                             item.barrier(sycl::access::fence_space::
-                                                  local_space);
+                             item.barrier(
+                                     sycl::access::fence_space::local_space);
                          }
                      });
          }).wait_and_throw();

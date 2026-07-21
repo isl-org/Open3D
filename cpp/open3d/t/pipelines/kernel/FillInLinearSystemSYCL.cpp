@@ -28,19 +28,19 @@ namespace {
 
 // Relaxed atomic add helpers for SLM (work-group) and global USM accumulators.
 #define O3D_SYCL_ATOMIC_ADD_F32_WG(ref, delta)                               \
-    do {                                                                       \
-        sycl::atomic_ref<float, sycl::memory_order::relaxed,                   \
-                         sycl::memory_scope::work_group,                       \
-                         sycl::access::address_space::local_space>((ref)) +=   \
-                (delta);                                                       \
+    do {                                                                     \
+        sycl::atomic_ref<float, sycl::memory_order::relaxed,                 \
+                         sycl::memory_scope::work_group,                     \
+                         sycl::access::address_space::local_space>((ref)) += \
+                (delta);                                                     \
     } while (0)
 
-#define O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(ref, delta)                             \
-    do {                                                                       \
-        sycl::atomic_ref<float, sycl::memory_order::relaxed,                   \
-                         sycl::memory_scope::device,                           \
-                         sycl::access::address_space::global_space>((ref)) +=  \
-                (delta);                                                       \
+#define O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(ref, delta)                            \
+    do {                                                                      \
+        sycl::atomic_ref<float, sycl::memory_order::relaxed,                  \
+                         sycl::memory_scope::device,                          \
+                         sycl::access::address_space::global_space>((ref)) += \
+                (delta);                                                      \
     } while (0)
 
 }  // namespace
@@ -308,13 +308,17 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                  // elements of Atb in SLM
                                  for (int ki = 0; ki < 12; ++ki) {
                                      for (int kj = 0; kj < 12; ++kj) {
-                                         O3D_SYCL_ATOMIC_ADD_F32_WG(local_AtA[ki * 12 + kj], J[ki] * J[kj]);
+                                         O3D_SYCL_ATOMIC_ADD_F32_WG(
+                                                 local_AtA[ki * 12 + kj],
+                                                 J[ki] * J[kj]);
                                      }
-                                     O3D_SYCL_ATOMIC_ADD_F32_WG(local_Atb[ki], J[ki] * r);
+                                     O3D_SYCL_ATOMIC_ADD_F32_WG(local_Atb[ki],
+                                                                J[ki] * r);
                                  }
 
                                  // Accumulate residual in SLM
-                                 O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0], r * r);
+                                 O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0],
+                                                            r * r);
 
                                  // Write sparse parts of AtA and Atb directly
                                  // to global memory Sparse-Sparse and
@@ -327,10 +331,12 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
 
                                          float AtA_ij = J[ki] * J[kj];
                                          int ij = idx[ki] * n_vars + idx[kj];
-                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(AtA_ptr[ij], AtA_ij);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
+                                                 AtA_ptr[ij], AtA_ij);
                                      }
                                      if (ki >= 12) {
-                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(Atb_ptr[idx[ki]], J[ki] * r);
+                                         O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
+                                                 Atb_ptr[idx[ki]], J[ki] * r);
                                      }
                                  }
                              }
@@ -353,7 +359,8 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                          (kj < 6) ? (6 * i + kj)
                                                   : (6 * j + (kj - 6));
                                  int ij = global_idx_i * n_vars + global_idx_j;
-                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(AtA_ptr[ij], val);
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(AtA_ptr[ij],
+                                                                val);
                              }
                          }
 
@@ -366,7 +373,8 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                                          (idx_local < 6)
                                                  ? (6 * i + idx_local)
                                                  : (6 * j + (idx_local - 6));
-                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(Atb_ptr[global_idx], val);
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(
+                                         Atb_ptr[global_idx], val);
                              }
                          }
 
@@ -374,7 +382,8 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
                          if (lid == 0) {
                              float val = local_residual[0];
                              if (val != 0.0f) {
-                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr, val);
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr,
+                                                                val);
                              }
                          }
                      };
@@ -586,7 +595,8 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
                          // Accumulate thread_residual to local_residual using
                          // atomic addition
                          if (thread_residual != 0.0f) {
-                             O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0], thread_residual);
+                             O3D_SYCL_ATOMIC_ADD_F32_WG(local_residual[0],
+                                                        thread_residual);
                          }
 
                          item.barrier(sycl::access::fence_space::local_space);
@@ -594,7 +604,8 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
                          if (lid == 0) {
                              float val = local_residual[0];
                              if (val != 0.0f) {
-                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr, val);
+                                 O3D_SYCL_ATOMIC_ADD_F32_GLOBAL(*residual_ptr,
+                                                                val);
                              }
                          }
                      };

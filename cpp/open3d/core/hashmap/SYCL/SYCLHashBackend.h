@@ -6,7 +6,8 @@
 // ----------------------------------------------------------------------------
 
 /// \file SYCLHashBackend.h
-/// \brief SYCL implementation of \ref DeviceHashBackend (open addressing, in-tree).
+/// \brief SYCL implementation of \ref DeviceHashBackend (open addressing,
+/// in-tree).
 ///
 /// Open3D's tensor \ref HashMap and \ref HashSet share one backend API on CPU
 /// (TBB), CUDA (stdgpu default, slab optional), and SYCL (this file). See also
@@ -17,11 +18,13 @@
 ///
 /// - Keys are `MiniVec<int, dim>` with dim 1–6; keys and values live in
 ///   \ref HashBackendBuffer, not inside the probe table.
-/// - Each occupied hash slot stores a **buf_index** into those buffers (unique-key
+/// - Each occupied hash slot stores a **buf_index** into those buffers
+/// (unique-key
 ///   map, not a multimap).
-/// - **Capacity growth** is owned by \ref HashMap::Reserve / \ref HashSet::Reserve
-///   (export active entries → free backend → allocate → re-insert). This backend's
-///   \ref SYCLHashBackend::Reserve() override is a no-op.
+/// - **Capacity growth** is owned by \ref HashMap::Reserve / \ref
+/// HashSet::Reserve
+///   (export active entries → free backend → allocate → re-insert). This
+///   backend's \ref SYCLHashBackend::Reserve() override is a no-op.
 ///
 /// \section SYCLHashData Data structure
 ///
@@ -29,31 +32,37 @@
 /// |-----------|-------------|
 /// | Probing | Open addressing, **linear** probing, power-of-two bucket count |
 /// | Index | `(home + i) & (bucket_count - 1)` |
-/// | Slot (64-bit) | 28-bit **fingerprint** \| 4-bit **state** \| 32-bit **buf_index** (see PackSlot) |
-/// | States | `EMPTY` (0), `OCCUPIED`, `DELETED` (tombstone); EMPTY=0 ⇒ zero USM is empty |
-/// | HashMix | MurmurHash3 fmix64 on FNV-1a before mask; fingerprint skips most false key gathers |
+/// | Slot (64-bit) | 28-bit **fingerprint** \| 4-bit **state** \| 32-bit
+/// **buf_index** (see PackSlot) | | States | `EMPTY` (0), `OCCUPIED`, `DELETED`
+/// (tombstone); EMPTY=0 ⇒ zero USM is empty | | HashMix | MurmurHash3 fmix64 on
+/// FNV-1a before mask; fingerprint skips most false key gathers |
 ///
 /// \section SYCLHashConcurrency Concurrency and operations
 ///
 /// **Insert (wait-free)**
 /// - Linear probe; reuse first `DELETED` slot seen when claiming `EMPTY`.
-/// - Allocate one buffer element, write key/values, **device seq_cst fence**, then a
+/// - Allocate one buffer element, write key/values, **device seq_cst fence**,
+/// then a
 ///   **single CAS** `EMPTY`/`DELETED` → `OCCUPIED` (no lock spin — on Intel Xe,
 ///   a waiting subgroup lane can hang the device).
-/// - Duplicate-key races: loser gets `masks=false` and **DeviceFree**'s its unused
-///   buffer slot ⇒ returned **buf_indices are valid gather indices but not necessarily
-///   dense in `[0, Size())`** (see \ref HashMap user docs).
+/// - Duplicate-key races: loser gets `masks=false` and **DeviceFree**'s its
+/// unused
+///   buffer slot ⇒ returned **buf_indices are valid gather indices but not
+///   necessarily dense in `[0, Size())`** (see \ref HashMap user docs).
 ///
 /// **Find / Erase**
 /// - Same probe; `EMPTY` ends the chain.
-/// - Erase: CAS `OCCUPIED` → `DELETED`, free buffer slot; `occupied_count_` decremented.
+/// - Erase: CAS `OCCUPIED` → `DELETED`, free buffer slot; `occupied_count_`
+/// decremented.
 /// - `non_empty_count_` tracks occupied + deleted (tombstone pressure).
 ///
 /// **GetActiveIndices**
-/// - Work-group exclusive scan + one global `fetch_add` per group (not one atomic per slot).
+/// - Work-group exclusive scan + one global `fetch_add` per group (not one
+/// atomic per slot).
 ///
 /// **SYCLHashDeviceLookup**
-/// - Immutable snapshot for device kernels (`Find` uses plain loads, no atomics).
+/// - Immutable snapshot for device kernels (`Find` uses plain loads, no
+/// atomics).
 /// - Do **not** mutate the table while a lookup view is in use.
 ///
 /// \section SYCLHashVsCuda Compared to CUDA backends
@@ -64,9 +73,10 @@
 /// | Probing | Library-defined | Linear + stored fingerprint |
 /// | In-kernel find | `map.find(key)` | `SYCLHashDeviceLookup::Find(key)` |
 ///
-/// Callers that treat **buf_indices as dense row ids** (e.g. voxel aggregation) must
-/// remap via unique insert slots (`masks==true`) or \ref HashMap::GetActiveIndices().
-/// Uses that only need masks or active-index lists are unchanged.
+/// Callers that treat **buf_indices as dense row ids** (e.g. voxel aggregation)
+/// must remap via unique insert slots (`masks==true`) or \ref
+/// HashMap::GetActiveIndices(). Uses that only need masks or active-index lists
+/// are unchanged.
 ///
 /// \section SYCLHashFiles Related files
 ///

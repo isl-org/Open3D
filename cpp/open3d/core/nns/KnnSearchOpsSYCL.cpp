@@ -6,27 +6,35 @@
 // ----------------------------------------------------------------------------
 
 /// \file KnnSearchOpsSYCL.cpp
-/// \brief Host driver for SYCL nearest-neighbor search (KNN, fixed-radius, hybrid).
+/// \brief Host driver for SYCL nearest-neighbor search (KNN, fixed-radius,
+/// hybrid).
 ///
 /// **What lives here**
-/// - \ref KnnSearchSYCL — batched **k**-NN (L2); three internal paths (Direct / AddMM).
-/// - \ref FixedRadiusSearchSYCL — variable-length neighbors within `radius` (grid).
-/// - \ref HybridSearchSYCL — capped top-`max_knn` within `radius` + counts (grid).
+/// - \ref KnnSearchSYCL — batched **k**-NN (L2); three internal paths (Direct /
+/// AddMM).
+/// - \ref FixedRadiusSearchSYCL — variable-length neighbors within `radius`
+/// (grid).
+/// - \ref HybridSearchSYCL — capped top-`max_knn` within `radius` + counts
+/// (grid).
 ///
-/// **Callers:** \ref NearestNeighborSearch / \ref KnnIndex / \ref FixedRadiusIndex
-/// when dataset and query tensors are on a SYCL device. CPU tensors use NanoFlann.
+/// **Callers:** \ref NearestNeighborSearch / \ref KnnIndex / \ref
+/// FixedRadiusIndex when dataset and query tensors are on a SYCL device. CPU
+/// tensors use NanoFlann.
 ///
 /// **Includes:** KNN device code in `kernel/KnnSearchSYCLImpl.h`; uniform-grid
-/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Short index: `nns/SYCL_DESIGN.md`.
-/// **This file header** is the maintainer reference for path selection and end-to-end flow.
+/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Short index:
+/// `nns/SYCL_DESIGN.md`.
+/// **This file header** is the maintainer reference for path selection and
+/// end-to-end flow.
 ///
 /// \section KnnSyclOverview Three search modes in this file
 ///
 /// | Function | Purpose |
 /// |----------|---------|
-/// | \ref KnnSearchSYCL | Fixed **k** nearest neighbors (L2), batched queries × dataset |
-/// | \ref FixedRadiusSearchSYCL | **All** neighbors within `radius` (variable output size per query) |
-/// | \ref HybridSearchSYCL | Up to **max_knn** closest neighbors within `radius` + in-radius count |
+/// | \ref KnnSearchSYCL | Fixed **k** nearest neighbors (L2), batched queries ×
+/// dataset | | \ref FixedRadiusSearchSYCL | **All** neighbors within `radius`
+/// (variable output size per query) | | \ref HybridSearchSYCL | Up to
+/// **max_knn** closest neighbors within `radius` + in-radius count |
 ///
 /// Fixed-radius and hybrid share the same spatial-hash **grid index** built in
 /// \ref FixedRadiusIndex::SetTensorData (see \ref FixedRadiusSearchSYCLImpl.h).
@@ -39,37 +47,43 @@
 /// SYCL uses **three** paths:
 ///
 /// **Decision tree**
-/// - If `force_addmm_path == false` **and** `1 ≤ dim ≤ 8` **and** `batch_knn ≤ 32`
+/// - If `force_addmm_path == false` **and** `1 ≤ dim ≤ 8` **and** `batch_knn ≤
+/// 32`
 ///   → **Direct** brute-force L2 (`UseKnnDirect` / `DispatchKnnDirect`).
 /// - Else center points and queries once (AddMM paths only; see below).
 ///   - If `batch_knn ≤ 512` → **AddMM fused** (running heap per query tile).
-///   - Else → **AddMM large-k** (select + merge; may use oneDPL `partial_sort`).
+///   - Else → **AddMM large-k** (select + merge; may use oneDPL
+///   `partial_sort`).
 ///
 /// `force_addmm_path=true` is for benchmarks only — always skips Direct.
 ///
 /// | Path | When | CUDA analogue | SYCL implementation |
 /// |------|------|---------------|---------------------|
-/// | **Direct** | `!force_addmm` ∧ dim∈[1,8] ∧ k≤32 | Small dim/k brute kernel | Sub-group SLM tiles + shuffle-merge top-k |
-/// | **AddMM fused** | else, k≤512 | GEMM + FAISS `BlockSelect` / heap | oneMKL AddMM + fused `UpdateTopKFromTile` |
-/// | **AddMM large-k** | else, k>512 | Multi-pass FAISS select | Tile select/merge + serial `partial_sort` (P8) |
+/// | **Direct** | `!force_addmm` ∧ dim∈[1,8] ∧ k≤32 | Small dim/k brute kernel
+/// | Sub-group SLM tiles + shuffle-merge top-k | | **AddMM fused** | else,
+/// k≤512 | GEMM + FAISS `BlockSelect` / heap | oneMKL AddMM + fused
+/// `UpdateTopKFromTile` | | **AddMM large-k** | else, k>512 | Multi-pass FAISS
+/// select | Tile select/merge + serial `partial_sort` (P8) |
 ///
 /// Constants: `kSYCLKnnSmallKMax = 32`, `kSYCLKnnMidKMax = 512` (see
 /// `KnnSearchSYCLImpl.h`).
 ///
 /// \subsection KnnSyclDirect Direct path (`DispatchKnnDirect`)
 ///
-/// **Idea:** Compute L2 as Σ_d (p_d − q_d)² directly — **no** AddMM, **no** data
-/// centering, **no** deferred ‖q‖² term.
+/// **Idea:** Compute L2 as Σ_d (p_d − q_d)² directly — **no** AddMM, **no**
+/// data centering, **no** deferred ‖q‖² term.
 ///
 /// **Algorithm**
 /// - One **sub-group** owns one query; several queries share a work-group.
-/// - Dataset points are loaded in **SLM tiles** (double-buffered where applicable).
+/// - Dataset points are loaded in **SLM tiles** (double-buffered where
+/// applicable).
 /// - Each lane maintains a private sorted top-K; sub-group **shuffle-merge**;
 ///   lane 0 writes indices and distances.
 /// - **Template params:** compile-time `NDIM` (1…8) and K bucket (1…32).
 ///   Float typically uses sub-group size 16; double prefers 8 when supported.
 ///
-/// **Typical use:** 3D point clouds, small k — often the fastest path on Intel Xe.
+/// **Typical use:** 3D point clouds, small k — often the fastest path on Intel
+/// Xe.
 ///
 /// \subsection KnnSyclAddMMFused AddMM fused path (k ≤ 512)
 ///
@@ -78,87 +92,101 @@
 /// fuses ‖p‖² and running heap updates (`UpdateTopKFromTile`, `FinalizeTopK`).
 ///
 /// **Algorithm**
-/// 1. **Center** points and queries (subtract first dataset row) — reduces float32
-///    cancellation in ‖p‖² and ‖q‖² when coordinates or features have large norm
-///    (CUDA GEMM KNN does not center; Direct SYCL path does not need it).
+/// 1. **Center** points and queries (subtract first dataset row) — reduces
+/// float32
+///    cancellation in ‖p‖² and ‖q‖² when coordinates or features have large
+///    norm (CUDA GEMM KNN does not center; Direct SYCL path does not need it).
 /// 2. Precompute ‖p‖² per point and ‖q‖² per query (or equivalent norms).
 /// 3. For each tile pair: AddMM → partial tile **−2qp**; add ‖p‖², clamp ≥ 0,
 ///    update per-query **max-heap** (size = `KBucket(batch_knn)`).
 /// 4. `FinalizeTopK`: heap-sort, add ‖q‖², write `batch_knn` neighbors.
 ///
-/// **Heap storage:** k ≤ 32 → GRF-resident; k ∈ {64…512} → per-work-item scratch.
+/// **Heap storage:** k ≤ 32 → GRF-resident; k ∈ {64…512} → per-work-item
+/// scratch.
 ///
 /// \subsection KnnSyclAddMMLarge AddMM large-k path (k > 512)
 ///
-/// **Idea:** Same tiled AddMM and centering as fused path, but **SelectTopKQueries**
+/// **Idea:** Same tiled AddMM and centering as fused path, but
+/// **SelectTopKQueries**
 /// + **MergeTopKQueries** instead of one fused running heap across all tiles.
 ///
 /// **Algorithm**
 /// - Same centering, norms, and AddMM tile loop.
-/// - Per point-tile: select tile top-k per query; merge into global best-so-far.
+/// - Per point-tile: select tile top-k per query; merge into global
+/// best-so-far.
 /// - Once: `AddQueryNormsToDistances` (add ‖q‖², clamp).
 ///
-/// **P8 caveat:** For very large k, merge/select may fall back to **per-query serial
-/// `partial_sort`** (oneDPL has no cheap segmented top-k) — correct but slow.
+/// **P8 caveat:** For very large k, merge/select may fall back to **per-query
+/// serial `partial_sort`** (oneDPL has no cheap segmented top-k) — correct but
+/// slow.
 ///
 /// \section KnnSyclVsCuda KNN: SYCL vs CUDA (design differences)
 ///
 /// | Topic | CUDA | SYCL (this file) |
 /// |-------|------|------------------|
-/// | Small k, low dim | Brute + GEMM paths | **+ Direct** sub-group path (no GEMM) |
-/// | GEMM | cuBLAS | oneMKL via \ref AddMM |
-/// | Top-k on GEMM tiles | FAISS warp/block select | Custom heap / select-merge / oneDPL |
-/// | Float32 stability | Uses norms as-is on GEMM path | **Centers** data before AddMM |
-/// | Large k | Multi-pass masking (1024/2048) | Select/merge + `partial_sort` per query |
+/// | Small k, low dim | Brute + GEMM paths | **+ Direct** sub-group path (no
+/// GEMM) | | GEMM | cuBLAS | oneMKL via \ref AddMM | | Top-k on GEMM tiles |
+/// FAISS warp/block select | Custom heap / select-merge / oneDPL | | Float32
+/// stability | Uses norms as-is on GEMM path | **Centers** data before AddMM |
+/// | Large k | Multi-pass masking (1024/2048) | Select/merge + `partial_sort`
+/// per query |
 ///
 /// \section KnnSyclConv AddMM KNN conventions (all non-Direct paths)
 ///
 /// | Id | Rule |
 /// |----|------|
-/// | P2 | Tile stores partial distance **−2qp + ‖p‖²**; **‖q‖²** added once in finalize |
-/// | C1 | Clamp partial / final distance **≥ 0** |
-/// | C4 | Equal distance → **smaller point index** wins |
-/// | C5 | `batch_knn = min(knn, num_points)` (caller / driver) |
+/// | P2 | Tile stores partial distance **−2qp + ‖p‖²**; **‖q‖²** added once in
+/// finalize | | C1 | Clamp partial / final distance **≥ 0** | | C4 | Equal
+/// distance → **smaller point index** wins | | C5 | `batch_knn = min(knn,
+/// num_points)` (caller / driver) |
 ///
 /// \section KnnSyclFrs Fixed-radius (\ref FixedRadiusSearchSYCL) — summary
 ///
-/// **Idea:** Return **every** dataset point within `radius` of each query; output
-/// length varies per query (CSR layout). Ported from CUDA `FixedRadiusSearchImpl.cuh`;
-/// device detail in \ref FixedRadiusSearchSYCLImpl.h.
+/// **Idea:** Return **every** dataset point within `radius` of each query;
+/// output length varies per query (CSR layout). Ported from CUDA
+/// `FixedRadiusSearchImpl.cuh`; device detail in \ref
+/// FixedRadiusSearchSYCLImpl.h.
 ///
 /// **Grid build** (once per index, `FixedRadiusIndex::SetTensorData`):
 /// - Uniform spatial hash with **cell size `2×radius`**.
-/// - `BuildSpatialHashTableSYCL`: count points per cell → oneDPL inclusive scan →
+/// - `BuildSpatialHashTableSYCL`: count points per cell → oneDPL inclusive scan
+/// →
 ///   scatter into CSR (`hash_table_cell_splits`, `hash_table_index`).
 ///
 /// **Query algorithm**
-/// 1. **Count:** `CountNeighborsSYCL` — for each query, visit **8 corner-adjacent**
+/// 1. **Count:** `CountNeighborsSYCL` — for each query, visit **8
+/// corner-adjacent**
 ///    bins; count points with squared L2 ≤ radius².
-/// 2. Inclusive scan of counts → `neighbors_row_splits`; allocate index (and optional
+/// 2. Inclusive scan of counts → `neighbors_row_splits`; allocate index (and
+/// optional
 ///    distance) buffers for the total neighbor count.
-/// 3. **Gather:** `WriteNeighborsSYCL` — same 8 bins; write indices and squared distances.
-/// 4. Optional **`sort=true`:** `SortNeighborsByDistanceSYCL` — segmented oneDPL
-///    `sort_by_key` per query (ties not secondarily ordered by index; matches CUDA
-///    `cub::DeviceSegmentedRadixSort::SortPairs`).
+/// 3. **Gather:** `WriteNeighborsSYCL` — same 8 bins; write indices and squared
+/// distances.
+/// 4. Optional **`sort=true`:** `SortNeighborsByDistanceSYCL` — segmented
+/// oneDPL
+///    `sort_by_key` per query (ties not secondarily ordered by index; matches
+///    CUDA `cub::DeviceSegmentedRadixSort::SortPairs`).
 ///
 /// Typical use: full neighborhood inside a ball, not a fixed-k cap.
 ///
 /// \section KnnSyclHybrid Hybrid (\ref HybridSearchSYCL) — summary
 ///
-/// **Idea:** Count all in-radius neighbors, but store only the **closest `max_knn`**
-/// in fixed `(num_queries, max_knn)` tensors plus per-query in-radius **counts**.
-/// Same grid as fixed-radius (`BuildSpatialHashTableSYCL`).
+/// **Idea:** Count all in-radius neighbors, but store only the **closest
+/// `max_knn`** in fixed `(num_queries, max_knn)` tensors plus per-query
+/// in-radius **counts**. Same grid as fixed-radius
+/// (`BuildSpatialHashTableSYCL`).
 ///
 /// **Algorithm**
 /// - Allocate fixed-size index/distance outputs (empty slots use sentinels).
-/// - `WriteNeighborsHybridSYCL`: one pass over 8 bins per query — running top-`max_knn`
-///   (replace-current-max), full in-radius count, then bounded **bubble sort** (≤
-///   `max_knn`) for ascending distance order.
+/// - `WriteNeighborsHybridSYCL`: one pass over 8 bins per query — running
+/// top-`max_knn`
+///   (replace-current-max), full in-radius count, then bounded **bubble sort**
+///   (≤ `max_knn`) for ascending distance order.
 ///
 /// Typical use: FPFH, normals, covariances — “up to K neighbors inside radius.”
 ///
-/// **Note:** Could be expressed as KNN-then-filter; deferred because the grid port
-/// already avoids O(queries × points) brute force.
+/// **Note:** Could be expressed as KNN-then-filter; deferred because the grid
+/// port already avoids O(queries × points) brute force.
 ///
 /// \section KnnSyclPrimitives Shared primitive map (CUDA → SYCL)
 ///
@@ -171,18 +199,21 @@
 ///
 /// \section KnnSyclTodo Maintenance notes
 ///
-/// - **Direct KNN** is the most tuned path; **AddMM KNN** paths may need further optimization.
-/// - `force_addmm_path` forces GEMM paths for regression / benchmark parity testing.
-/// - Hybrid could theoretically be “KNN then filter by radius”; deferred — grid port
+/// - **Direct KNN** is the most tuned path; **AddMM KNN** paths may need
+/// further optimization.
+/// - `force_addmm_path` forces GEMM paths for regression / benchmark parity
+/// testing.
+/// - Hybrid could theoretically be “KNN then filter by radius”; deferred — grid
+/// port
 ///   already avoids O(queries × points) brute force for radius-limited search.
 ///
 /// \section KnnSyclRelated Related source files
 ///
 /// | File | Role |
 /// |------|------|
-/// | `KnnSearchSYCLImpl.h` | Direct / AddMM SYCL kernels, `KBucket`, thresholds |
-/// | `FixedRadiusSearchSYCLImpl.h` | Grid build, count/write/sort/hybrid kernels |
-/// | `NearestNeighborSearch.cpp` | Device dispatch to this driver |
+/// | `KnnSearchSYCLImpl.h` | Direct / AddMM SYCL kernels, `KBucket`, thresholds
+/// | | `FixedRadiusSearchSYCLImpl.h` | Grid build, count/write/sort/hybrid
+/// kernels | | `NearestNeighborSearch.cpp` | Device dispatch to this driver |
 /// | `AddMM.h` | oneMKL batched GEMM for KNN tiles |
 
 #include <algorithm>

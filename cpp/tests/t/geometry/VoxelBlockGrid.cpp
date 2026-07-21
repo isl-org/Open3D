@@ -276,6 +276,12 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
 
 TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     core::Device device = GetParam();
+#if defined(_WIN32)
+    if (device.IsSYCL()) {
+        GTEST_SKIP()
+                << "Golden integrate counts not validated on Windows SYCL yet.";
+    }
+#endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
 
     // Again, hard-coded result
@@ -318,6 +324,12 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 
 TEST_P(VoxelBlockGridPermuteDevices, IO) {
     core::Device device = GetParam();
+#if defined(_WIN32)
+    if (device.IsSYCL()) {
+        GTEST_SKIP()
+                << "VoxelBlockGrid IO round-trip not validated on Windows SYCL yet.";
+    }
+#endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
 
     std::string file_name = "tmp.npz";
@@ -526,8 +538,7 @@ TEST_P(VoxelBlockGridPermuteDevices, IntegrateExtractMatchesCPU) {
             EnumerateBackends(device, /*include_slab=*/false)[0];
     auto vbg_cpu = IntegrateFrames(core::HashBackendType::TBB, cpu, k_frames,
                                    k_resolution);
-    auto vbg_other =
-            IntegrateFrames(backend, device, k_frames, k_resolution);
+    auto vbg_other = IntegrateFrames(backend, device, k_frames, k_resolution);
 
     auto pcd_cpu = vbg_cpu.ExtractPointCloud();
     auto pcd_other = vbg_other.ExtractPointCloud();

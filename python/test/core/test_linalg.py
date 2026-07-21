@@ -369,8 +369,7 @@ def test_solve(device, dtype):
         assert 'singular' in str(excinfo.value)
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 @pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
 def test_lstsq(device, dtype):
     # Test square

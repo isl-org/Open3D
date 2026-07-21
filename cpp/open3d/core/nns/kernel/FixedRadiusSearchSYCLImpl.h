@@ -6,15 +6,18 @@
 // ----------------------------------------------------------------------------
 
 /// \file FixedRadiusSearchSYCLImpl.h
-/// \brief SYCL device kernels: uniform-grid fixed-radius and hybrid neighbor search.
+/// \brief SYCL device kernels: uniform-grid fixed-radius and hybrid neighbor
+/// search.
 ///
-/// Included only from \ref KnnSearchOpsSYCL.cpp (not public API). Algorithm matches
-/// CUDA `FixedRadiusSearchImpl.cuh`; shared geometry in \ref NeighborSearchCommon.h
+/// Included only from \ref KnnSearchOpsSYCL.cpp (not public API). Algorithm
+/// matches CUDA `FixedRadiusSearchImpl.cuh`; shared geometry in \ref
+/// NeighborSearchCommon.h
 /// (`SpatialHash`, `ComputeVoxelIndex`). See `nns/SYCL_DESIGN.md` for overview.
 ///
 /// \section FrsSyclGrid Grid build (\ref BuildSpatialHashTableSYCL)
 ///
-/// 1. Bucket dataset into a uniform spatial-hash grid with **cell size `2 * radius`**
+/// 1. Bucket dataset into a uniform spatial-hash grid with **cell size `2 *
+/// radius`**
 ///    (any neighbor within `radius` lies in the query cell or one of seven
 ///    corner-adjacent cells — **8 bins** visited per query, deduplicated).
 /// 2. **Count** points per cell (per batch).
@@ -22,22 +25,25 @@
 ///    oneDPL; CUDA uses CUB `DeviceScan::InclusiveSum`).
 /// 4. **Scatter** point indices into cell ranges (`hash_table_index`).
 ///
-/// Runs on **SYCL CPU and GPU**. Host driver uses one in-order queue with minimal
-/// sync between batch loops.
+/// Runs on **SYCL CPU and GPU**. Host driver uses one in-order queue with
+/// minimal sync between batch loops.
 ///
 /// \section FrsSyclQuery Query kernels
 ///
 /// | Mode | Kernels | Passes |
 /// |------|---------|--------|
-/// | Fixed-radius | \ref CountNeighborsSYCL, \ref WriteNeighborsSYCL | Count → scan on host → allocate → gather |
-/// | Hybrid | \ref WriteNeighborsHybridSYCL | Single pass: running top-`max_knn` + in-radius count, then bubble sort |
-/// | Optional sort | \ref SortNeighborsByDistanceSYCL (`sort=true`) | Segmented sort per query segment |
+/// | Fixed-radius | \ref CountNeighborsSYCL, \ref WriteNeighborsSYCL | Count →
+/// scan on host → allocate → gather | | Hybrid | \ref WriteNeighborsHybridSYCL
+/// | Single pass: running top-`max_knn` + in-radius count, then bubble sort |
+/// | Optional sort | \ref SortNeighborsByDistanceSYCL (`sort=true`) | Segmented
+/// sort per query segment |
 ///
-/// **Metrics:** L1, L2, Linf (same as CUDA). L2 compares **squared** distance to
-/// `radius²`; L1/Linf compare metric distance to `radius`.
+/// **Metrics:** L1, L2, Linf (same as CUDA). L2 compares **squared** distance
+/// to `radius²`; L1/Linf compare metric distance to `radius`.
 ///
-/// **Sort (`sort=true`):** oneDPL `sort_by_key` — `float` uses packed radix key;
-/// `double` uses struct key + comparator (needs full 64-bit distance). Ties are
+/// **Sort (`sort=true`):** oneDPL `sort_by_key` — `float` uses packed radix
+/// key; `double` uses struct key + comparator (needs full 64-bit distance).
+/// Ties are
 /// **not** secondarily ordered by neighbor index (CUDA parity).
 ///
 /// \section FrsSyclVsCuda Primitives (CUDA → SYCL)
@@ -46,7 +52,8 @@
 /// |------|------|------------------|
 /// | Prefix sum | CUB inclusive scan | oneDPL inclusive scan |
 /// | Segmented sort | CUB segmented radix sort | oneDPL `sort_by_key` |
-/// | Query parallelism | 1 thread / query | 1 work-item / query (`parallel_for`) |
+/// | Query parallelism | 1 thread / query | 1 work-item / query
+/// (`parallel_for`) |
 
 #pragma once
 

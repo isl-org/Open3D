@@ -239,16 +239,17 @@ core::Tensor ComputePoseDopplerICP(
     return output_pose;
 }
 
+#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 namespace {
 
 // Horn point-to-point alignment from correspondences using tensor ops on \p
 // device, then SVD on CPU Float64 (same path as legacy CUDA/SYCL code).
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPointTensor(
-        const core::Tensor& source_points,
-        const core::Tensor& target_points,
-        const core::Tensor& correspondence_indices,
-        const core::Device& device,
-        int& inlier_count) {
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices,
+        const core::Device &device,
+        int &inlier_count) {
     core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
     // correpondence_set : (i, corres[i]).
     if (valid.GetLength() == 0) {
@@ -298,6 +299,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPointTensor(
 }
 
 }  // namespace
+#endif  // BUILD_CUDA_MODULE || BUILD_SYCL_MODULE
 
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,

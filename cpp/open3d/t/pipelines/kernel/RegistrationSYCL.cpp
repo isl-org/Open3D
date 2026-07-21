@@ -357,7 +357,8 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
                     }
                 });
 
-        // Match RegistrationCUDA.cu: reduce on device, symmetrize on CPU Float64.
+        // Match RegistrationCUDA.cu: reduce on device, symmetrize on CPU
+        // Float64.
         const core::Device host(core::Device("CPU:0"));
         core::Tensor global_sum_cpu = global_sum.To(host, core::Float64);
         double *sum_ptr = global_sum_cpu.GetDataPtr<double>();

@@ -34,8 +34,7 @@ def test_knn_index(device):
         assert nns.multi_radius_index()
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_knn_search(device):
     dtype = o3c.float32
 
@@ -301,5 +300,3 @@ def test_fixed_radius_search_random(dtype):
                                        rtol=1e-5,
                                        atol=0)
             np.testing.assert_equal(indices.numpy(), indices_sycl.cpu().numpy())
-
-

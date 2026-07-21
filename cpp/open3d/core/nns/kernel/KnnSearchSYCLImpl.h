@@ -8,26 +8,31 @@
 /// \file KnnSearchSYCLImpl.h
 /// \brief SYCL **device** kernels for KNN (Direct and AddMM top-k).
 ///
-/// Included only by \ref KnnSearchOpsSYCL.cpp. Path selection, CUDA comparison, and
-/// fixed-radius / hybrid summaries live in the **driver** file header
-/// (`KnnSearchOpsSYCL.cpp`). Grid search kernels: \ref FixedRadiusSearchSYCLImpl.h.
+/// Included only by \ref KnnSearchOpsSYCL.cpp. Path selection, CUDA comparison,
+/// and fixed-radius / hybrid summaries live in the **driver** file header
+/// (`KnnSearchOpsSYCL.cpp`). Grid search kernels: \ref
+/// FixedRadiusSearchSYCLImpl.h.
 ///
 /// \section KnnImplPaths Kernel groups (called from \ref KnnSearchSYCL)
 ///
 /// | Path | Key symbols | When (driver) |
 /// |------|-------------|---------------|
-/// | **Direct** | `DispatchKnnDirect`, `KnnDirect` | dim∈[1,8], k≤32, not `force_addmm_path` |
-/// | **AddMM fused** | `UpdateTopKFromTile`, `FinalizeTopK`, `KBucket` | else, k≤512 after `CenterPointsAndQueries` |
-/// | **AddMM large-k** | `SelectTopKQueries`, `MergeTopKQueries`, `AddQueryNormsToDistances` | else, k>512 |
+/// | **Direct** | `DispatchKnnDirect`, `KnnDirect` | dim∈[1,8], k≤32, not
+/// `force_addmm_path` | | **AddMM fused** | `UpdateTopKFromTile`,
+/// `FinalizeTopK`, `KBucket` | else, k≤512 after `CenterPointsAndQueries` | |
+/// **AddMM large-k** | `SelectTopKQueries`, `MergeTopKQueries`,
+/// `AddQueryNormsToDistances` | else, k>512 |
 ///
 /// **Direct:** sub-group SLM point tiles, per-lane sorted top-K, shuffle-merge;
 /// compile-time `NDIM` and K; no `AddMM`, no centering.
 ///
-/// **AddMM fused:** oneMKL produces **−2qp** tiles; `UpdateTopKFromTile` adds ‖p‖²,
-/// clamps, updates register or scratch **max-heap** (`FinalizeTopK` adds ‖q‖²).
+/// **AddMM fused:** oneMKL produces **−2qp** tiles; `UpdateTopKFromTile` adds
+/// ‖p‖², clamps, updates register or scratch **max-heap** (`FinalizeTopK` adds
+/// ‖q‖²).
 ///
-/// **AddMM large-k:** per tile `SelectTopKQueries` then `MergeTopKQueries`; P8 fallback
-/// uses oneDPL `partial_sort` per query when merge width exceeds mid-k limits.
+/// **AddMM large-k:** per tile `SelectTopKQueries` then `MergeTopKQueries`; P8
+/// fallback uses oneDPL `partial_sort` per query when merge width exceeds mid-k
+/// limits.
 ///
 /// \section KnnImplConv Distance / top-k conventions (AddMM paths)
 ///

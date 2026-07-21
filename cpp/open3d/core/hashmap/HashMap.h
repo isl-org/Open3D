@@ -23,20 +23,21 @@ enum class HashBackendType { Slab, StdGPU, TBB, Default };
 ///
 /// \section HashMapOverview Overview
 ///
-/// Keys and values are stored in internal **buffers**. \ref Insert and \ref Find
-/// return per-input-row **buf_indices** and **masks**. Use buf_indices with
-/// \ref GetKeyTensor() and \ref GetValueTensors() (advanced indexing). Backend
-/// implementations differ; behavior below is the portable contract.
+/// Keys and values are stored in internal **buffers**. \ref Insert and \ref
+/// Find return per-input-row **buf_indices** and **masks**. Use buf_indices
+/// with \ref GetKeyTensor() and \ref GetValueTensors() (advanced indexing).
+/// Backend implementations differ; behavior below is the portable contract.
 ///
 /// \section HashMapBufIndices Buffer indices (important for correct use)
 ///
 /// | Property | Detail |
 /// |----------|--------|
-/// | Type | `Int32` in return tensors — cast to `Int64` before \ref Tensor::IndexGet |
-/// | Meaning | Valid **gather index** into key/value buffers for that input row |
-/// | Not guaranteed | Contiguous range `[0, Size())` across all returned indices |
-/// | SYCL caveat | Duplicate-key insert races can leave **holes** in the buffer (unused slots freed by the backend) |
-/// | CPU/CUDA | Often dense after pure inserts, but **do not rely** on density |
+/// | Type | `Int32` in return tensors — cast to `Int64` before \ref
+/// Tensor::IndexGet | | Meaning | Valid **gather index** into key/value buffers
+/// for that input row | | Not guaranteed | Contiguous range `[0, Size())`
+/// across all returned indices | | SYCL caveat | Duplicate-key insert races can
+/// leave **holes** in the buffer (unused slots freed by the backend) | |
+/// CPU/CUDA | Often dense after pure inserts, but **do not rely** on density |
 ///
 /// **Recommended patterns**
 /// - List all live entries: \ref GetActiveIndices() (length = \ref Size()).
