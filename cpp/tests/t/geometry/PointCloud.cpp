@@ -14,6 +14,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -172,7 +173,6 @@ TEST_P(PointCloudPermuteDevices, Copy) {
 
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
@@ -229,7 +229,6 @@ TEST_P(PointCloudPermuteDevices, Scale) {
 
 TEST_P(PointCloudPermuteDevices, Rotate) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
     core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
     core::Tensor rotation(std::vector<float>{1, 1, 0, 0, 1, 1, 0, 1, 0}, {3, 3},
@@ -416,7 +415,6 @@ TEST(GaussianSplatTransform, ScaleNegativeUsesAbsValueAndNegatesOddSHDegrees) {
 
 TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -450,7 +448,6 @@ TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
 
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -491,7 +488,6 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
 
 TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
                                                       {0, 0, 1},
@@ -531,7 +527,6 @@ TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
 
 TEST_P(PointCloudPermuteDevices, OrientNormalsTowardsCameraLocation) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor points = core::Tensor::Init<double>(
             {{0, 0, 0}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}}, device);
@@ -819,7 +814,6 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
     using ::testing::UnorderedElementsAreArray;
 
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
     float depth_scale = 1000.f, depth_max = 3.f;
     int stride = 1;
     core::Tensor im_depth =
@@ -1068,7 +1062,7 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     // Value test
     t::geometry::PointCloud pcd_small(
@@ -1147,7 +1141,6 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
@@ -1173,7 +1166,6 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     data::PCDPointCloud sample_pcd_data;
     geometry::PointCloud pcd_legacy;
@@ -1192,7 +1184,7 @@ TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},

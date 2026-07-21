@@ -56,11 +56,22 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
-data::PLYPointCloud pointcloud_ply;
-static const std::string path = pointcloud_ply.GetPath();
+namespace {
+
+data::PLYPointCloud& PointCloudPlyDataset() {
+    static data::PLYPointCloud dataset;
+    return dataset;
+}
+
+const std::string& PointCloudBenchmarkPath() {
+    static const std::string path = PointCloudPlyDataset().GetPath();
+    return path;
+}
+
+}  // namespace
 
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
-    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    auto pcd = open3d::io::CreatePointCloudFromFile(PointCloudBenchmarkPath());
     for (auto _ : state) {
         pcd->VoxelDownSample(voxel_size);
     }
@@ -73,7 +84,8 @@ void VoxelDownSample(benchmark::State& state,
     t::geometry::PointCloud pcd;
     // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
     // remove_nan_points
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
     pcd = pcd.To(device);
 
     // Warm up.
@@ -86,7 +98,7 @@ void VoxelDownSample(benchmark::State& state,
 }
 
 void LegacyUniformDownSample(benchmark::State& state, size_t k) {
-    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    auto pcd = open3d::io::CreatePointCloudFromFile(PointCloudBenchmarkPath());
     for (auto _ : state) {
         pcd->UniformDownSample(k);
     }
@@ -98,7 +110,8 @@ void UniformDownSample(benchmark::State& state,
     t::geometry::PointCloud pcd;
     // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
     // remove_nan_points
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
     pcd = pcd.To(device);
 
     // Warm up.
@@ -112,7 +125,8 @@ void UniformDownSample(benchmark::State& state,
 
 void LegacyTransform(benchmark::State& state, const int no_use) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
     transformation.block<3, 1>(0, 3) = Eigen::Vector3d(1, 2, 3);
@@ -128,7 +142,8 @@ void LegacyTransform(benchmark::State& state, const int no_use) {
 
 void Transform(benchmark::State& state, const core::Device& device) {
     PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
     pcd = pcd.To(device);
 
     core::Dtype dtype = pcd.GetPointPositions().GetDtype();
@@ -152,7 +167,8 @@ void SelectByIndex(benchmark::State& state,
                    bool remove_duplicates,
                    const core::Device& device) {
     PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
     pcd = pcd.To(device);
 
     const int64_t num_points = pcd.GetPointPositions().GetLength();
@@ -171,7 +187,8 @@ void SelectByIndex(benchmark::State& state,
 
 void LegacySelectByIndex(benchmark::State& state, const int no_use) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     const size_t num_points = pcd.points_.size();
     std::vector<size_t> indices(num_points);
@@ -192,7 +209,8 @@ void EstimateNormals(benchmark::State& state,
                      const std::optional<int> max_nn,
                      const std::optional<double> radius) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(voxel_size);
     pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
@@ -212,7 +230,8 @@ void LegacyEstimateNormals(
         const double voxel_size,
         const open3d::geometry::KDTreeSearchParam& search_param) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
@@ -229,7 +248,8 @@ void RemoveRadiusOutliers(benchmark::State& state,
                           const int nb_points,
                           const double search_radius) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(0.01);
 
@@ -244,7 +264,8 @@ void RemoveStatisticalOutliers(benchmark::State& state,
                                const core::Device& device,
                                const int nb_neighbors) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(0.01);
 
@@ -260,8 +281,8 @@ void ComputeBoundaryPoints(benchmark::State& state,
                            const core::Dtype& dtype,
                            const int max_nn,
                            const double radius) {
-    data::DemoCropPointCloud pointcloud_ply;
-    const std::string path = pointcloud_ply.GetPointCloudPath();
+    static data::DemoCropPointCloud demo_crop;
+    const std::string path = demo_crop.GetPointCloudPath();
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
@@ -279,7 +300,8 @@ void ComputeBoundaryPoints(benchmark::State& state,
 void LegacyRemoveStatisticalOutliers(benchmark::State& state,
                                      const int nb_neighbors) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(0.01);
 
@@ -295,7 +317,8 @@ void LegacyRemoveRadiusOutliers(benchmark::State& state,
                                 const int nb_points,
                                 const double search_radius) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(0.01);
 
@@ -309,7 +332,8 @@ void LegacyRemoveRadiusOutliers(benchmark::State& state,
 
 void CropByAxisAlignedBox(benchmark::State& state, const core::Device& device) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
 
     pcd = pcd.To(device);
     t::geometry::AxisAlignedBoundingBox box(
@@ -326,7 +350,8 @@ void CropByAxisAlignedBox(benchmark::State& state, const core::Device& device) {
 
 void CropByOrientedBox(benchmark::State& state, const core::Device& device) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                          {"auto", false, false, false});
 
     pcd = pcd.To(device);
     t::geometry::OrientedBoundingBox box(
@@ -344,7 +369,8 @@ void CropByOrientedBox(benchmark::State& state, const core::Device& device) {
 
 void LegacyCropByAxisAlignedBox(benchmark::State& state, const int no_use) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     open3d::geometry::AxisAlignedBoundingBox box(Eigen::Vector3d(0, 0, 0),
                                                  Eigen::Vector3d(1, 1, 1));
@@ -359,7 +385,8 @@ void LegacyCropByAxisAlignedBox(benchmark::State& state, const int no_use) {
 
 void LegacyCropByOrientedBox(benchmark::State& state, const int no_use) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(PointCloudBenchmarkPath(), pcd,
+                               {"auto", false, false, false});
 
     open3d::geometry::OrientedBoundingBox box(Eigen::Vector3d(0, 0, 0),
                                               Eigen::Matrix3d::Identity(),

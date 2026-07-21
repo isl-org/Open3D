@@ -10,6 +10,7 @@
 #include "core/CoreTest.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
@@ -26,10 +27,11 @@ namespace l_reg = open3d::pipelines::registration;
 namespace open3d {
 namespace tests {
 
-class RegistrationPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Registration,
-                         RegistrationPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class RegistrationPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Registration,
+        RegistrationPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(RegistrationPermuteDevices, ICPConvergenceCriteriaConstructor) {
     // Constructor.
@@ -100,6 +102,8 @@ GetRegistrationTestData(core::Dtype& dtype, core::Device& device) {
 
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
+    // HybridSearch (used for correspondence search) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.
@@ -137,6 +141,8 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
 
 TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
     core::Device device = GetParam();
+    // HybridSearch (used for correspondence search) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.
@@ -184,6 +190,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
 
 TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     core::Device device = GetParam();
+    // HybridSearch segfaults on SYCL CPU for large datasets.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.
@@ -237,6 +245,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
 
 TEST_P(RegistrationPermuteDevices, ICPColored) {
     core::Device device = GetParam();
+    // HybridSearch (used for correspondence search) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.
@@ -350,6 +360,8 @@ GetDopplerICPRegistrationTestData(core::Dtype& dtype, core::Device& device) {
 
 TEST_P(RegistrationPermuteDevices, ICPDoppler) {
     core::Device device = GetParam();
+    // HybridSearch (used for correspondence search) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // Get data and parameters.
@@ -479,6 +491,8 @@ TEST_P(RegistrationPermuteDevices, RobustKernel) {
 
 TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
     core::Device device = GetParam();
+    // HybridSearch (used for correspondence search) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.

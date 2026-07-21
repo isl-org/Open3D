@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "open3d/core/BlockCopyDispatch.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/MiniVec.h"
@@ -58,34 +60,6 @@
                     DTYPE.ToString());                                        \
         }                                                                     \
     }()
-
-#ifdef __CUDACC__
-// Reinterpret hash maps' void* value arrays as CUDA primitive types arrays, to
-// avoid slow memcpy or byte-by-byte copy in kernels.
-// Not used in the CPU version since memcpy is relatively fast on CPU.
-#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
-    [&] {                                              \
-        if (DIVISOR == 16) {                           \
-            using block_t = int4;                      \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 12) {                    \
-            using block_t = int3;                      \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 8) {                     \
-            using block_t = int2;                      \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 4) {                     \
-            using block_t = int;                       \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 2) {                     \
-            using block_t = int16_t;                   \
-            return __VA_ARGS__();                      \
-        } else {                                       \
-            using block_t = uint8_t;                   \
-            return __VA_ARGS__();                      \
-        }                                              \
-    }()
-#endif
 
 namespace open3d {
 namespace utility {

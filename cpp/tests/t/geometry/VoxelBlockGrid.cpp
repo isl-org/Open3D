@@ -23,12 +23,15 @@ namespace tests {
 
 using namespace t::geometry;
 
-class VoxelBlockGridPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(VoxelBlockGrid,
-                         VoxelBlockGridPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class VoxelBlockGridPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        VoxelBlockGrid,
+        VoxelBlockGridPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-static core::Tensor GetIntrinsicTensor() {
+namespace {
+
+core::Tensor GetIntrinsicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     auto focal_length = intrinsic.GetFocalLength();
@@ -39,7 +42,7 @@ static core::Tensor GetIntrinsicTensor() {
              {0, 0, 1}});
 }
 
-static std::vector<core::Tensor> GetExtrinsicTensors() {
+std::vector<core::Tensor> GetExtrinsicTensors() {
     data::SampleRedwoodRGBDImages redwood_data;
 
     // Extrinsics
@@ -57,24 +60,26 @@ static std::vector<core::Tensor> GetExtrinsicTensors() {
     return extrinsics;
 }
 
-static std::vector<core::HashBackendType> EnumerateBackends(
-        const core::Device &device, bool include_slab = true) {
+std::vector<core::HashBackendType> EnumerateBackends(const core::Device &device,
+                                                     bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
     if (device.IsCUDA()) {
         if (include_slab) {
             backends.push_back(core::HashBackendType::Slab);
         }
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
     return backends;
 }
 
-static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
-                                const core::Dtype &dtype,
-                                const core::Device &device,
-                                const int resolution) {
+VoxelBlockGrid Integrate(const core::HashBackendType &backend,
+                         const core::Dtype &dtype,
+                         const core::Device &device,
+                         const int resolution) {
     core::Tensor intrinsic = GetIntrinsicTensor();
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
@@ -103,6 +108,45 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
 
     return vbg;
 }
+
+/// Integrate a subset of Redwood frames (for faster cross-device parity
+/// checks against the CPU oracle).
+VoxelBlockGrid IntegrateFrames(const core::HashBackendType &backend,
+                               const core::Device &device,
+                               size_t num_frames,
+                               int resolution = 8) {
+    core::Tensor intrinsic = GetIntrinsicTensor();
+    std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
+    const float depth_scale = 1000.0;
+    const float depth_max = 3.0;
+
+    auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
+                              {core::Float32, core::Float32, core::Float32},
+                              {{1}, {1}, {3}}, 3.0 / 512, resolution, 10000,
+                              device, backend);
+
+    data::SampleRedwoodRGBDImages redwood_data;
+    const size_t n = std::min(num_frames, extrinsics.size());
+    for (size_t i = 0; i < n; ++i) {
+        Image depth =
+                t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                        ->To(device);
+        Image color =
+                t::io::CreateImageFromFile(redwood_data.GetColorPaths()[i])
+                        ->To(device);
+
+        core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                /*trunc_multiplier=*/4.0);
+        vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
+                      extrinsics[i], depth_scale, depth_max,
+                      /*trunc multiplier*/ resolution * 0.5);
+    }
+
+    return vbg;
+}
+
+}  // namespace
 
 TEST_P(VoxelBlockGridPermuteDevices, Construct) {
     core::Device device = GetParam();
@@ -232,6 +276,12 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
 
 TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     core::Device device = GetParam();
+#if defined(_WIN32)
+    if (device.IsSYCL()) {
+        GTEST_SKIP()
+                << "Golden integrate counts not validated on Windows SYCL yet.";
+    }
+#endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
 
     // Again, hard-coded result
@@ -242,6 +292,14 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     std::unordered_map<int, int> kResolutionTriangles = {{8, 409271},
                                                          {16, 490301}};
 
+    // Cross-backend numerical-precision allowance for extracted surface size.
+    // Reference counts are frozen from CPU/CUDA; SYCL may differ slightly.
+    // Larger discrepancies (e.g., missing blocks) are still caught.
+    const bool is_sycl = device.IsSYCL();
+    const int point_tol = is_sycl ? 16 : 3;
+    const int vertex_tol = is_sycl ? 16 : 3;
+    const int triangle_tol = is_sycl ? 16 : 6;
+
     for (auto backend : backends) {
         for (int block_resolution : std::vector<int>{8, 16}) {
             for (auto &dtype :
@@ -251,13 +309,14 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
                 // Allow numerical precision differences
                 auto pcd = vbg.ExtractPointCloud();
                 EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
-                            kResolutionPoints[block_resolution], 16);
+                            kResolutionPoints[block_resolution], point_tol);
 
                 auto mesh = vbg.ExtractTriangleMesh();
                 EXPECT_NEAR(mesh.GetVertexPositions().GetLength(),
-                            kResolutionVertices[block_resolution], 16);
+                            kResolutionVertices[block_resolution], vertex_tol);
                 EXPECT_NEAR(mesh.GetTriangleIndices().GetLength(),
-                            kResolutionTriangles[block_resolution], 16);
+                            kResolutionTriangles[block_resolution],
+                            triangle_tol);
             }
         }
     }
@@ -265,6 +324,12 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 
 TEST_P(VoxelBlockGridPermuteDevices, IO) {
     core::Device device = GetParam();
+#if defined(_WIN32)
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "VoxelBlockGrid IO round-trip not validated on Windows "
+                        "SYCL yet.";
+    }
+#endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
 
     std::string file_name = "tmp.npz";
@@ -456,6 +521,41 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
             visualization::DrawGeometries({to_legacy_ptr(normals)});
         }
     }
+}
+
+// Device-agnostic parity check: a short Redwood integration on any
+// non-CPU device (CUDA/SYCL) should match CPU extraction closely.
+TEST_P(VoxelBlockGridPermuteDevices, IntegrateExtractMatchesCPU) {
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "CPU is the oracle for this parity check.";
+    }
+    const core::Device cpu("CPU:0");
+
+    const size_t k_frames = 2;
+    const int k_resolution = 8;
+    core::HashBackendType backend =
+            EnumerateBackends(device, /*include_slab=*/false)[0];
+    auto vbg_cpu = IntegrateFrames(core::HashBackendType::TBB, cpu, k_frames,
+                                   k_resolution);
+    auto vbg_other = IntegrateFrames(backend, device, k_frames, k_resolution);
+
+    auto pcd_cpu = vbg_cpu.ExtractPointCloud();
+    auto pcd_other = vbg_other.ExtractPointCloud();
+
+    EXPECT_EQ(pcd_cpu.GetPointPositions().GetLength(),
+              pcd_other.GetPointPositions().GetLength());
+    EXPECT_TRUE(pcd_other.GetPointPositions().To(cpu).AllClose(
+            pcd_cpu.GetPointPositions(), 1e-3, 1e-3));
+    EXPECT_TRUE(pcd_other.GetPointNormals().To(cpu).AllClose(
+            pcd_cpu.GetPointNormals(), 1e-2, 1e-2));
+
+    auto mesh_cpu = vbg_cpu.ExtractTriangleMesh();
+    auto mesh_other = vbg_other.ExtractTriangleMesh();
+    EXPECT_EQ(mesh_cpu.GetVertexPositions().GetLength(),
+              mesh_other.GetVertexPositions().GetLength());
+    EXPECT_EQ(mesh_cpu.GetTriangleIndices().GetLength(),
+              mesh_other.GetTriangleIndices().GetLength());
 }
 
 }  // namespace tests

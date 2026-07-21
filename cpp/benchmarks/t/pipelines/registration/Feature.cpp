@@ -21,14 +21,22 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-data::BunnyMesh pointcloud_ply;
-static const std::string path = pointcloud_ply.GetPath();
+namespace {
+
+const std::string& BunnyMeshPath() {
+    static data::BunnyMesh bunny;
+    static const std::string path = bunny.GetPath();
+    return path;
+}
+
+}  // namespace
 
 void LegacyComputeFPFHFeature(benchmark::State& state,
                               std::optional<int> max_nn,
                               std::optional<double> radius,
                               std::optional<double> ratio_indices) {
-    auto pcd = open3d::io::CreatePointCloudFromFile(path)->UniformDownSample(3);
+    auto pcd = open3d::io::CreatePointCloudFromFile(BunnyMeshPath())
+                       ->UniformDownSample(3);
     pcd->EstimateNormals();
 
     std::optional<std::vector<size_t>> indices = std::nullopt;
@@ -71,7 +79,7 @@ void ComputeFPFHFeature(benchmark::State& state,
                         std::optional<double> radius,
                         std::optional<double> ratio_indices) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd);
+    t::io::ReadPointCloud(BunnyMeshPath(), pcd);
     pcd = pcd.To(device).UniformDownSample(3);
     pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
     pcd.EstimateNormals();
@@ -244,6 +252,35 @@ ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 50 | 0.1] Hybrid Indices, 50, 0.02, 0.1, "CUDA:0")
 ENUM_FPFH_METHOD_DEVICE(
         CUDA[0.02 | 50 | 1.0] Hybrid Indices, 50, 0.02, 1.0, "CUDA:0")
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.01 | 100] Hybrid, 100, 0.01, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50] Hybrid, 50, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 100] Hybrid, 100, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(SYCL[50] KNN, 50, std::nullopt, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[100] KNN, 100, std::nullopt, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.01] Radius, std::nullopt, 0.01, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02] Radius, std::nullopt, 0.02, std::nullopt, "SYCL:0")
+
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | null] Hybrid Indices, 50, 0.02, std::nullopt, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.0001] Hybrid Indices, 50, 0.02, 0.0001, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.001] Hybrid Indices, 50, 0.02, 0.001, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.01] Hybrid Indices, 50, 0.02, 0.01, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 0.1] Hybrid Indices, 50, 0.02, 0.1, "SYCL:0")
+ENUM_FPFH_METHOD_DEVICE(
+        SYCL[0.02 | 50 | 1.0] Hybrid Indices, 50, 0.02, 1.0, "SYCL:0")
 #endif
 
 }  // namespace registration
