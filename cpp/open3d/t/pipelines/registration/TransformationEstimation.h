@@ -215,6 +215,40 @@ private:
             TransformationEstimationType::PointToPlane;
 };
 
+/// \class TransformationEstimationSymmetric
+///
+/// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
+/// Float64, on CPU or CUDA device for symmetric point-to-plane distance.
+class TransformationEstimationSymmetric : public TransformationEstimation {
+public:
+    explicit TransformationEstimationSymmetric(
+            const RobustKernel &kernel =
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
+        : kernel_(kernel) {}
+    ~TransformationEstimationSymmetric() override {}
+
+public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return TransformationEstimationType::PointToPlane;
+    };
+
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
+
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
+
+public:
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
+};
+
 /// \class TransformationEstimationForColoredICP
 ///
 /// This is implementation of following paper

@@ -23,6 +23,7 @@ target_sources(pipelines PRIVATE
     registration/FastGlobalRegistration.cpp
     registration/Feature.cpp
     registration/GeneralizedICP.cpp
+    registration/SymmetricICP.cpp
     registration/GlobalOptimization.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp
