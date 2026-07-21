@@ -7,8 +7,7 @@
 
 // SYCL wrapper for FixedRadiusSearch PyTorch op. Implements count-then-gather
 // using CountNeighborsSYCL + WriteNeighborsSYCL from the core NNS layer,
-// with the PyTorch XPU stream queue. Only L2 metric is supported (matching
-// the SYCL NNS backend).
+// with the PyTorch XPU stream queue.
 
 #include <c10/xpu/XPUStream.h>
 
@@ -40,15 +39,15 @@ void FixedRadiusSearchSYCL(const torch::Tensor& points,
                            torch::Tensor& neighbors_index,
                            torch::Tensor& neighbors_row_splits,
                            torch::Tensor& neighbors_distance) {
-    TORCH_CHECK(metric == Metric::L2,
-                "FixedRadiusSearch SYCL only supports L2 metric");
-
     sycl::queue& queue = c10::xpu::getCurrentXPUStream().queue();
     auto dpl_policy = oneapi::dpl::execution::make_device_policy(queue);
 
     const T radius_t = static_cast<T>(radius);
-    const T threshold = radius_t * radius_t;  // compare squared distances
     const T inv_voxel_size = T(1) / (T(2) * radius_t);
+    T threshold = radius_t;
+    if (metric == Metric::L2) {
+        threshold = radius_t * radius_t;
+    }
 
     const T* points_ptr = points.data_ptr<T>();
     const T* queries_ptr = queries.data_ptr<T>();
@@ -82,7 +81,8 @@ void FixedRadiusSearchSYCL(const torch::Tensor& points,
                               cell_splits_ptr + first_cell_idx, hash_table_size,
                               queries_ptr + 3 * query_begin,
                               query_end - query_begin, points_ptr,
-                              inv_voxel_size, radius_t, threshold);
+                              inv_voxel_size, radius_t, metric,
+                              ignore_query_point, threshold);
     }
     queue.wait_and_throw();
 
@@ -126,8 +126,8 @@ void FixedRadiusSearchSYCL(const torch::Tensor& points,
                 row_splits_ptr + query_begin, hash_index_ptr,
                 cell_splits_ptr + first_cell_idx, hash_table_size,
                 queries_ptr + 3 * query_begin, query_end - query_begin,
-                points_ptr, inv_voxel_size, radius_t, threshold,
-                return_distances);
+                points_ptr, inv_voxel_size, radius_t, metric,
+                ignore_query_point, threshold, return_distances);
     }
     queue.wait_and_throw();
 
