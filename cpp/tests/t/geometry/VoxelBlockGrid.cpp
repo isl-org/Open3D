@@ -326,8 +326,8 @@ TEST_P(VoxelBlockGridPermuteDevices, IO) {
     core::Device device = GetParam();
 #if defined(_WIN32)
     if (device.IsSYCL()) {
-        GTEST_SKIP()
-                << "VoxelBlockGrid IO round-trip not validated on Windows SYCL yet.";
+        GTEST_SKIP() << "VoxelBlockGrid IO round-trip not validated on Windows "
+                        "SYCL yet.";
     }
 #endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
