@@ -19,7 +19,6 @@ from tensorboard.backend.event_processing.plugin_asset_util import PluginDirecto
 from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 
 import open3d as o3d
-from open3d.visualization import rendering
 # TODO(@ssheorey) Colormap and LabelLUT are duplicated from Open3D-ML. Remove
 # duplicates when 3DML is available on Windows.
 from .colormap import Colormap
@@ -613,6 +612,8 @@ class RenderUpdate:
                 updated.
             inference_data_proto : BoundingBox labels and confidences.
         """
+        from open3d.visualization import rendering
+
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return

@@ -17,29 +17,11 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-# pybind and libOpen3D are copied flat into open3d/. The ML ops
-# (open3d_{torch,tf}_ops) are built into base_dir/{cpu,cuda} subdirs; copy every
-# arch subdir that exists so a CUDA wheel bundles both the CPU- and CUDA-linked
-# ops (open3d/cpu and open3d/cuda), selected by device at runtime.
+# pybind, libOpen3D, and ML ops (open3d_{torch,tf}_ops) copy flat into open3d/.
 foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
-    get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
-    get_filename_component(COMPILED_MODULE_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
-    get_filename_component(COMPILED_MODULE_PARENT ${COMPILED_MODULE_DIR} NAME)
-    if(COMPILED_MODULE_PARENT STREQUAL "cpu" OR COMPILED_MODULE_PARENT STREQUAL "cuda"
-            OR COMPILED_MODULE_PARENT STREQUAL "sycl")
-        get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_DIR} DIRECTORY)
-        foreach(ARCH cpu cuda sycl)
-            if(EXISTS "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}")
-                file(COPY "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}"
-                     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}/"
-                     FOLLOW_SYMLINK_CHAIN)
-            endif()
-        endforeach()
-    else()
-        file(COPY ${COMPILED_MODULE_PATH}
-             DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
-             FOLLOW_SYMLINK_CHAIN)
-    endif()
+    file(COPY ${COMPILED_MODULE_PATH}
+         DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
+         FOLLOW_SYMLINK_CHAIN)
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)

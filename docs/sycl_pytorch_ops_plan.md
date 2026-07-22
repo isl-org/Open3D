@@ -116,18 +116,12 @@ i.e. in-scope for this phase):**
    Unsupported type`. Fixed by allocating the scratch count buffer as
    `int32_t` and `reinterpret_cast`-ing the pointer to `uint32_t*` (same bit
    width, used only as an internal counter).
-2. `cpp/pybind/make_python_package.cmake` only copied `cpu`/`cuda` arch
-   subdirectories when assembling the python package, never `sycl` — so
-   `open3d_torch_ops.so` (built under `lib/Release/sycl/` when
-   `BUILD_SYCL_MODULE=ON`) was silently missing from the installed package.
-   Fixed by adding `sycl` to the `foreach(ARCH cpu cuda sycl)` loop.
-3. `python/open3d/ml/torch/__init__.py`'s `_lib_arch` selection logic never
-   tried `sycl`, so even with the packaging fix, the SYCL-built ops library
-   would never be loaded by `import open3d.ml.torch`. Fixed by adding an
-   `elif BUILD_SYCL_MODULE and torch.xpu.is_available(): _lib_arch = ('sycl',)`
-   branch (single-lib-covers-CPU+XPU, unlike the CUDA `('cuda','cpu')`
-   fallback pair, since our SYCL `.so` already dispatches to CPU internally
-   for CPU tensors).
+2. **Historical:** `make_python_package.cmake` once copied `cpu`/`cuda`/`sycl`
+   arch subdirs; ops now install flat as `open3d/open3d_torch_ops.so` (see
+   `docs/local_open3d_ml_parity_testing.md`).
+3. **Historical:** `__init__.py` once selected `open3d/{sycl,cpu}` paths; the
+   loader now uses a single flat library (CPU and XPU dispatch inside the same
+   `.so`).
 
 An initial report of "large numerical error" in `ContinuousConv` (mean/sign
 completely wrong) turned out to be a **test-harness bug**, not an algorithm

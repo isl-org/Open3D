@@ -20,16 +20,11 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-# CUDA wheels ship open3d/{cpu,cuda} ops; try cuda when torch's CUDA matches
-# the wheel, else cpu. CPU-only wheels use cpu ops only.
-_lib_arch = ('cuda', 'cpu') if _build_config["BUILD_CUDA_MODULE"] else ('cpu',)
-_lib_path.extend([
-    _os.path.join(_package_root, _la, 'open3d_tf_ops' + _lib_suffix + _lib_ext)
-    for _la in _lib_arch
-])
+_lib_path.append(
+    _os.path.join(_package_root,
+                  'open3d_tf_ops' + _lib_suffix + _lib_ext))
 
-# Ops live in open3d/{cpu,cuda}; on Windows add the package root so Open3D.dll
-# (beside this package) is found when torch loads the ops.
+# On Windows add the package root so Open3D.dll is found when TF loads the ops.
 _dll_dir = None
 if _sys.platform == 'win32':
     _dll_dir = _os.add_dll_directory(_os.path.abspath(_package_root))
