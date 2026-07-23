@@ -49,6 +49,12 @@ public:
 
     virtual int GetNumberOfItems() const = 0;
 
+    /// Get the Menu by name. Returns nullptr if not found.
+    virtual std::shared_ptr<MenuBase> GetMenu(const char* name) = 0;
+
+    /// Get the Menu by ItemId. Returns nullptr if not found.
+    virtual std::shared_ptr<MenuBase> GetMenu(ItemId item_id) = 0;
+
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.
     virtual bool IsEnabled(ItemId item_id) const = 0;

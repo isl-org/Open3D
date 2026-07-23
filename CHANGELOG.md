@@ -80,7 +80,7 @@
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
-
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 
