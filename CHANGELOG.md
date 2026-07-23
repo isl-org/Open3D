@@ -47,6 +47,7 @@
 -   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Add 3D Normal Distributions Transform registration with C++ and Python APIs.
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
