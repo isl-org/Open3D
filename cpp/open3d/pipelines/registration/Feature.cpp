@@ -72,7 +72,7 @@ static Eigen::Vector4d ComputePairFeatures(const Eigen::Vector3d &p1,
     auto n2_copy = n2;
     double angle1 = n1_copy.dot(dp2p1) / result(3);
     double angle2 = n2_copy.dot(dp2p1) / result(3);
-    if (acos(fabs(angle1)) > acos(fabs(angle2))) {
+    if (fabs(angle1) < fabs(angle2)) {
         n1_copy = n2;
         n2_copy = n1;
         dp2p1 *= -1.0;
