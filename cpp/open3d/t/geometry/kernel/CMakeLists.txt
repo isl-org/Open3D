@@ -32,6 +32,16 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(tgeometry_kernel PRIVATE
+        ImageSYCL.cpp
+        PointCloudSYCL.cpp
+        TransformSYCL.cpp
+        TriangleMeshSYCL.cpp
+        VoxelBlockGridSYCL.cpp
+    )
+endif()
+
 if (WITH_IPP)
     target_sources(tgeometry_kernel PRIVATE
         IPPImage.cpp

@@ -16,6 +16,13 @@
 namespace open3d {
 namespace core {
 
+/// Tensor hash set (unique keys) on CPU, CUDA, or SYCL.
+///
+/// Thin wrapper around an internal \ref HashMap (dummy values). **Insert**,
+/// **Find**,
+/// **GetActiveIndices**, and **buf_indices** semantics are identical to \ref
+/// HashMap — see \ref HashMap class documentation for buffer-index rules,
+/// Int32→Int64, SYCL buffer holes, and usage examples.
 class HashSet : public core::IsDevice {
 public:
     /// Initialize a hash set given a key dtype and element shape.
@@ -31,20 +38,12 @@ public:
     /// Reserve the internal hash map with the capcity by rehashing.
     void Reserve(int64_t capacity);
 
-    /// Parallel insert arrays of keys and values in Tensors.
-    /// Return: output_buf_indices stores buffer indices that access buffer
-    /// tensors obtained from GetKeyTensor() and GetValueTensor() via advanced
-    /// indexing.
-    /// NOTE: output_buf_indices are stored in Int32. A conversion to
-    /// Int64 is required for further indexing.
-    /// Return: output_masks stores if the insertion is
-    /// a success or failure (key already exists).
+    /// Parallel insert keys. Returns buffer gather indices and per-row masks
+    /// (see \ref HashMap class docs for \c buf_indices and Int32 → Int64).
     std::pair<Tensor, Tensor> Insert(const Tensor& input_keys);
 
-    /// Parallel find an array of keys in Tensor.
-    /// Return: output_buf_indices, its role is the same as in Insert.
-    /// Return: output_masks stores if the finding is a success or failure (key
-    /// not found).
+    /// Parallel find keys. Same \p output_buf_indices / \p output_masks
+    /// semantics as \ref HashMap::Find (see \ref HashMap class docs).
     std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
 
     /// Parallel erase an array of keys in Tensor.
@@ -52,9 +51,7 @@ public:
     /// not found all already erased in another thread).
     Tensor Erase(const Tensor& input_keys);
 
-    /// Parallel collect all indices in the buffer corresponding to the active
-    /// entries in the hash map.
-    /// Return output_buf_indices, collected buffer indices.
+    /// Collect buffer indices for all active keys (length \ref Size()).
     Tensor GetActiveIndices() const;
 
     /// Same as Insert, but takes output_buf_indices

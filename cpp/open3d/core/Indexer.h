@@ -205,7 +205,11 @@ enum class DtypePolicy {
                             // have bool dtype.
 };
 
-/// Indexer to one Tensor
+/// Indexer to one Tensor.
+///
+/// \p workload_idx is a row-major linear element index. Contiguous tensors use
+/// a fast path in GetPtr(); general strided layouts decode per-dimension
+/// coordinates from byte strides.
 ///
 /// Example usage:
 ///
@@ -221,7 +225,17 @@ enum class DtypePolicy {
 class TensorIterator {
 public:
     TensorIterator(const Tensor& tensor)
-        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {}
+        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {
+        is_contiguous_ = true;
+        int64_t expected_byte_stride = input_.dtype_byte_size_;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            if (input_.byte_strides_[d] != expected_byte_stride) {
+                is_contiguous_ = false;
+                break;
+            }
+            expected_byte_stride *= input_.shape_[d];
+        }
+    }
 
     OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
         int64_t num_workloads = 1;
@@ -231,24 +245,29 @@ public:
         return num_workloads;
     }
 
+    /// Pointer to the element at linear index \p workload_idx, or nullptr.
     OPEN3D_HOST_DEVICE void* GetPtr(int64_t workload_idx) const {
         if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
             return nullptr;
         }
-        int64_t offset = 0;
-        workload_idx = workload_idx * input_.dtype_byte_size_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / input_.byte_strides_[i] *
-                      input_.byte_strides_[i];
-            workload_idx = workload_idx % input_.byte_strides_[i];
+        if (is_contiguous_) {
+            return static_cast<char*>(input_.data_ptr_) +
+                   workload_idx * input_.dtype_byte_size_;
         }
-        return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
-                                  offset);
+        int64_t offset = 0;
+        int64_t remaining = workload_idx;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            const int64_t coord = remaining % input_.shape_[d];
+            remaining /= input_.shape_[d];
+            offset += coord * input_.byte_strides_[d];
+        }
+        return static_cast<char*>(input_.data_ptr_) + offset;
     }
 
 protected:
     TensorRef input_;
     int64_t ndims_;
+    bool is_contiguous_;
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.
