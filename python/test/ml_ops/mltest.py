@@ -63,8 +63,6 @@ try:
     if torch.cuda.is_available() and o3d._build_config['BUILD_CUDA_MODULE']:
         _ml_modules['torch_cuda'] = MLModules(torch, ml3d_ops, ml3d_layers,
                                               ml3d_classes, 'cuda', 'cpu', True)
-    # Intel GPU (SYCL/XPU) path: conv ops use the sycl-tla GEMM shim, other
-    # ops use hand-written SYCL kernels (see docs/sycl_pytorch_ops_plan.md).
     if (o3d._build_config['BUILD_SYCL_MODULE'] and hasattr(torch, 'xpu') and
             torch.xpu.is_available()):
         _ml_modules['torch_xpu'] = MLModules(torch, ml3d_ops, ml3d_layers,

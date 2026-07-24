@@ -15,10 +15,6 @@
 #include "pybind/open3d_pybind.h"
 #include "pybind/pybind_utils.h"
 
-#ifdef BUILD_SYCL_MODULE
-#include "open3d/core/SYCLContext.h"
-#endif
-
 namespace open3d {
 namespace ml {
 namespace contrib {
@@ -124,8 +120,6 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
 #ifdef BUILD_SYCL_MODULE
 py::array IouBevSYCL(py::array boxes_a, py::array boxes_b) {
     core::Device sycl_device("SYCL:0");
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(sycl_device);
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(sycl_device);
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
@@ -142,7 +136,7 @@ py::array IouBevSYCL(py::array boxes_a, py::array boxes_b) {
             {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
             core::Float32, sycl_device);
 
-    IoUBevSYCLKernel(queue, boxes_a_tensor.GetDataPtr<float>(),
+    IoUBevSYCLKernel(sycl_device, boxes_a_tensor.GetDataPtr<float>(),
                      boxes_b_tensor.GetDataPtr<float>(),
                      iou_tensor.GetDataPtr<float>(), num_a, num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
@@ -150,8 +144,6 @@ py::array IouBevSYCL(py::array boxes_a, py::array boxes_b) {
 
 py::array Iou3dSYCL(py::array boxes_a, py::array boxes_b) {
     core::Device sycl_device("SYCL:0");
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(sycl_device);
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(sycl_device);
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
@@ -168,7 +160,7 @@ py::array Iou3dSYCL(py::array boxes_a, py::array boxes_b) {
             {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
             core::Float32, sycl_device);
 
-    IoU3dSYCLKernel(queue, boxes_a_tensor.GetDataPtr<float>(),
+    IoU3dSYCLKernel(sycl_device, boxes_a_tensor.GetDataPtr<float>(),
                     boxes_b_tensor.GetDataPtr<float>(),
                     iou_tensor.GetDataPtr<float>(), num_a, num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));

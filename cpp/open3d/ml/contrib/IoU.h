@@ -8,12 +8,7 @@
 #pragma once
 
 #ifdef BUILD_SYCL_MODULE
-// IoU{Bev,3d}SYCLKernel take a real sycl::queue&, so any TU that sees this
-// declaration needs the full SYCL runtime; IoUSYCL.cpp and any *.cpp
-// including this header (IoU.cpp, pybind/ml/contrib/iou.cpp) are all
-// compiled SYCL-aware when BUILD_SYCL_MODULE=ON (see contrib/CMakeLists.txt
-// / pybind/ml/CMakeLists.txt).
-#include <sycl/sycl.hpp>
+#include "open3d/core/Device.h"
 #endif
 
 namespace open3d {
@@ -47,26 +42,26 @@ void IoU3dCUDAKernel(const float *boxes_a,
 #endif
 
 #ifdef BUILD_SYCL_MODULE
-/// \param queue SYCL queue to run the kernel on.
-/// \param boxes_a (num_a, 5) float32.
-/// \param boxes_b (num_b, 5) float32.
-/// \param iou (num_a, num_b) float32, output iou values.
+/// \param device SYCL device; uses SYCLContext's default queue for that device.
+/// \param boxes_a (num_a, 5) float32 on \p device.
+/// \param boxes_b (num_b, 5) float32 on \p device.
+/// \param iou (num_a, num_b) float32 on \p device, output iou values.
 /// \param num_a Number of boxes in boxes_a.
 /// \param num_b Number of boxes in boxes_b.
-void IoUBevSYCLKernel(sycl::queue &queue,
+void IoUBevSYCLKernel(const core::Device &device,
                       const float *boxes_a,
                       const float *boxes_b,
                       float *iou,
                       int num_a,
                       int num_b);
 
-/// \param queue SYCL queue to run the kernel on.
-/// \param boxes_a (num_a, 7) float32.
-/// \param boxes_b (num_b, 7) float32.
-/// \param iou (num_a, num_b) float32, output iou values.
+/// \param device SYCL device; uses SYCLContext's default queue for that device.
+/// \param boxes_a (num_a, 7) float32 on \p device.
+/// \param boxes_b (num_b, 7) float32 on \p device.
+/// \param iou (num_a, num_b) float32 on \p device, output iou values.
 /// \param num_a Number of boxes in boxes_a.
 /// \param num_b Number of boxes in boxes_b.
-void IoU3dSYCLKernel(sycl::queue &queue,
+void IoU3dSYCLKernel(const core::Device &device,
                      const float *boxes_a,
                      const float *boxes_b,
                      float *iou,

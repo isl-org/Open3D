@@ -9,6 +9,7 @@
 // independent, so unlike the CUDA grid-stride-loop kernel this uses a plain
 // 1-D parallel_for over num_a*num_b elements.
 
+#include "open3d/core/SYCLContext.h"
 #include "open3d/ml/contrib/IoU.h"
 #include "open3d/ml/contrib/IoUImpl.h"
 
@@ -16,12 +17,14 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-void IoUBevSYCLKernel(sycl::queue &queue,
-                      const float *boxes_a,
-                      const float *boxes_b,
-                      float *iou,
-                      int num_a,
-                      int num_b) {
+namespace {
+
+void IoUBevSYCLKernelImpl(sycl::queue &queue,
+                          const float *boxes_a,
+                          const float *boxes_b,
+                          float *iou,
+                          int num_a,
+                          int num_b) {
     const int n = num_a * num_b;
     if (n == 0) {
         return;
@@ -41,12 +44,12 @@ void IoUBevSYCLKernel(sycl::queue &queue,
     queue.wait_and_throw();
 }
 
-void IoU3dSYCLKernel(sycl::queue &queue,
-                     const float *boxes_a,
-                     const float *boxes_b,
-                     float *iou,
-                     int num_a,
-                     int num_b) {
+void IoU3dSYCLKernelImpl(sycl::queue &queue,
+                         const float *boxes_a,
+                         const float *boxes_b,
+                         float *iou,
+                         int num_a,
+                         int num_b) {
     const int n = num_a * num_b;
     if (n == 0) {
         return;
@@ -64,6 +67,30 @@ void IoU3dSYCLKernel(sycl::queue &queue,
                          });
     });
     queue.wait_and_throw();
+}
+
+}  // namespace
+
+void IoUBevSYCLKernel(const core::Device &device,
+                      const float *boxes_a,
+                      const float *boxes_b,
+                      float *iou,
+                      int num_a,
+                      int num_b) {
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    IoUBevSYCLKernelImpl(queue, boxes_a, boxes_b, iou, num_a, num_b);
+}
+
+void IoU3dSYCLKernel(const core::Device &device,
+                     const float *boxes_a,
+                     const float *boxes_b,
+                     float *iou,
+                     int num_a,
+                     int num_b) {
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    IoU3dSYCLKernelImpl(queue, boxes_a, boxes_b, iou, num_a, num_b);
 }
 
 }  // namespace contrib

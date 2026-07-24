@@ -12,13 +12,12 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 if(BUILD_SYCL_MODULE)
-    # IoU.cpp is compiled SYCL-aware (-fsycl) too: IoU.h declares
-    # IoU{Bev,3d}SYCLKernel(sycl::queue&, ...) under BUILD_SYCL_MODULE, which
-    # needs the full SYCL runtime even though IoU.cpp itself only defines the
-    # CPU kernels.
+    # IoU.cpp only defines CPU kernels; IoUSYCL.cpp holds SYCL device code.
     open3d_sycl_target_sources(ml_contrib PRIVATE
-        IoU.cpp
         IoUSYCL.cpp
+    )
+    target_sources(ml_contrib PRIVATE
+        IoU.cpp
     )
 else()
     target_sources(ml_contrib PRIVATE

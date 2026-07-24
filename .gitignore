@@ -38,6 +38,7 @@ _vimrc_local.vim
 .vscode/
 .clangd/
 .ccls-cache/
+AGENTS.local.md
 
 # Build artifacts
 **/package-lock.json
