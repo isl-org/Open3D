@@ -13,7 +13,8 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-class MenuImgui : public MenuBase {
+class MenuImgui : public MenuBase,
+                  public std::enable_shared_from_this<MenuImgui> {
 public:
     MenuImgui();
     virtual ~MenuImgui();

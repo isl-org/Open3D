@@ -103,9 +103,11 @@ void MenuImgui::InsertItem(int index,
             kv.second += 1;
         }
     }
-    impl_->id2idx_[item_id] = impl_->items_.size();
     impl_->items_.insert(impl_->items_.begin() + index,
                          {item_id, name, key, nullptr});
+    if (item_id != NO_ITEM) {
+        impl_->id2idx_[item_id] = size_t(index);
+    }
 }
 
 void MenuImgui::InsertMenu(int index,
@@ -145,9 +147,18 @@ std::shared_ptr<MenuBase> MenuImgui::GetMenu(const char *name) {
 }
 
 std::shared_ptr<MenuBase> MenuImgui::GetMenu(ItemId item_id) {
-    auto item = impl_->FindMenuItem(item_id);
-    if (item) {
-        return item->submenu_;
+    if (item_id == NO_ITEM) {
+        return nullptr;
+    }
+    if (impl_->id2idx_.find(item_id) != impl_->id2idx_.end()) {
+        return shared_from_this();
+    }
+    for (auto &item : impl_->items_) {
+        if (item.submenu_) {
+            if (item.submenu_->GetMenu(item_id)) {
+                return item.submenu_;
+            }
+        }
     }
     return nullptr;
 }
