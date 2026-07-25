@@ -76,6 +76,12 @@ jobs:
         with:
           name: open3d-cpp-tests
           path: .
+      - name: Install runtime dependencies
+        # Open3D links against EGL for GPU-accelerated offscreen rendering
+        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
+        # This bare runner (unlike the docker_build.sh image) does not have
+        # it installed by default.
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
       - name: Run C++ unit tests
         run: |
           source util/ci_utils.sh
@@ -244,6 +250,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
+      - name: Install runtime dependencies
+        # Open3D links against EGL for GPU-accelerated offscreen rendering
+        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
+        # This bare runner (unlike the docker_build.sh image) does not have
+        # it installed by default.
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
       - name: Test Python package
         run: |
           python -V

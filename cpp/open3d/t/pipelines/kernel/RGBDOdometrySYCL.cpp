@@ -1,0 +1,318 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+/// \file RGBDOdometrySYCL.cpp
+/// \brief SYCL RGB-D odometry kernels (see RGBDOdometryImpl.h).
+
+#include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
+#include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/kernel/GeometryIndexer.h"
+#include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
+#include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
+
+namespace open3d {
+namespace t {
+namespace pipelines {
+namespace kernel {
+namespace odometry {
+
+using t::geometry::kernel::NDArrayIndexer;
+using t::geometry::kernel::TransformIndexer;
+
+namespace {
+
+constexpr int kReduceDimOdometry = 29;
+constexpr int kJtJDimOdometry = 21;
+
+}  // namespace
+
+void ComputeOdometryResultPointToPlaneSYCL(
+        const core::Tensor &source_vertex_map,
+        const core::Tensor &target_vertex_map,
+        const core::Tensor &target_normal_map,
+        const core::Tensor &intrinsics,
+        const core::Tensor &init_source_to_target,
+        core::Tensor &delta,
+        float &inlier_residual,
+        int &inlier_count,
+        const float depth_outlier_trunc,
+        const float depth_huber_delta) {
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+    NDArrayIndexer target_normal_indexer(target_normal_map, 2);
+
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = init_source_to_target;
+    TransformIndexer ti(intrinsics, trans);
+
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
+    const int64_t n = rows * cols;
+
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
+    float *global_sum_ptr = global_sum.GetDataPtr<float>();
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
+
+                float J[6] = {0};
+                float r = 0;
+                const bool valid = GetJacobianPointToPlane(
+                        x, y, depth_outlier_trunc, source_vertex_indexer,
+                        target_vertex_indexer, target_normal_indexer, ti, J, r);
+
+                if (valid) {
+                    const float d_huber = HuberDeriv(r, depth_huber_delta);
+                    const float r_huber = HuberLoss(r, depth_huber_delta);
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J[i] * J[j];
+                        }
+                        local_sum[21 + i] += J[i] * d_huber;
+                    }
+                    local_sum[27] += r_huber;
+                    local_sum[28] += 1.0f;
+                }
+            });
+
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
+}
+
+void ComputeOdometryResultIntensitySYCL(
+        const core::Tensor &source_depth,
+        const core::Tensor &target_depth,
+        const core::Tensor &source_intensity,
+        const core::Tensor &target_intensity,
+        const core::Tensor &target_intensity_dx,
+        const core::Tensor &target_intensity_dy,
+        const core::Tensor &source_vertex_map,
+        const core::Tensor &intrinsics,
+        const core::Tensor &init_source_to_target,
+        core::Tensor &delta,
+        float &inlier_residual,
+        int &inlier_count,
+        const float depth_outlier_trunc,
+        const float intensity_huber_delta) {
+    NDArrayIndexer source_depth_indexer(source_depth, 2);
+    NDArrayIndexer target_depth_indexer(target_depth, 2);
+    NDArrayIndexer source_intensity_indexer(source_intensity, 2);
+    NDArrayIndexer target_intensity_indexer(target_intensity, 2);
+    NDArrayIndexer target_intensity_dx_indexer(target_intensity_dx, 2);
+    NDArrayIndexer target_intensity_dy_indexer(target_intensity_dy, 2);
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = init_source_to_target;
+    TransformIndexer ti(intrinsics, trans);
+
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
+    const int64_t n = rows * cols;
+
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
+    float *global_sum_ptr = global_sum.GetDataPtr<float>();
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
+
+                float J_I[6] = {0};
+                float r_I = 0;
+                const bool valid = GetJacobianIntensity(
+                        x, y, depth_outlier_trunc, source_depth_indexer,
+                        target_depth_indexer, source_intensity_indexer,
+                        target_intensity_indexer, target_intensity_dx_indexer,
+                        target_intensity_dy_indexer, source_vertex_indexer, ti,
+                        J_I, r_I);
+
+                if (valid) {
+                    const float d_huber =
+                            HuberDeriv(r_I, intensity_huber_delta);
+                    const float r_huber = HuberLoss(r_I, intensity_huber_delta);
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J_I[i] * J_I[j];
+                        }
+                        local_sum[21 + i] += J_I[i] * d_huber;
+                    }
+                    local_sum[27] += r_huber;
+                    local_sum[28] += 1.0f;
+                }
+            });
+
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
+}
+
+void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
+                                     const core::Tensor &target_depth,
+                                     const core::Tensor &source_intensity,
+                                     const core::Tensor &target_intensity,
+                                     const core::Tensor &target_depth_dx,
+                                     const core::Tensor &target_depth_dy,
+                                     const core::Tensor &target_intensity_dx,
+                                     const core::Tensor &target_intensity_dy,
+                                     const core::Tensor &source_vertex_map,
+                                     const core::Tensor &intrinsics,
+                                     const core::Tensor &init_source_to_target,
+                                     core::Tensor &delta,
+                                     float &inlier_residual,
+                                     int &inlier_count,
+                                     const float depth_outlier_trunc,
+                                     const float depth_huber_delta,
+                                     const float intensity_huber_delta) {
+    NDArrayIndexer source_depth_indexer(source_depth, 2);
+    NDArrayIndexer target_depth_indexer(target_depth, 2);
+    NDArrayIndexer source_intensity_indexer(source_intensity, 2);
+    NDArrayIndexer target_intensity_indexer(target_intensity, 2);
+    NDArrayIndexer target_depth_dx_indexer(target_depth_dx, 2);
+    NDArrayIndexer target_depth_dy_indexer(target_depth_dy, 2);
+    NDArrayIndexer target_intensity_dx_indexer(target_intensity_dx, 2);
+    NDArrayIndexer target_intensity_dy_indexer(target_intensity_dy, 2);
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = init_source_to_target;
+    TransformIndexer ti(intrinsics, trans);
+
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
+    const int64_t n = rows * cols;
+
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
+    float *global_sum_ptr = global_sum.GetDataPtr<float>();
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+
+    core::sy::PersistentReduce<kReduceDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kReduceDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
+
+                float J_I[6] = {0}, J_D[6] = {0};
+                float r_I = 0, r_D = 0;
+                const bool valid = GetJacobianHybrid(
+                        x, y, depth_outlier_trunc, source_depth_indexer,
+                        target_depth_indexer, source_intensity_indexer,
+                        target_intensity_indexer, target_depth_dx_indexer,
+                        target_depth_dy_indexer, target_intensity_dx_indexer,
+                        target_intensity_dy_indexer, source_vertex_indexer, ti,
+                        J_I, J_D, r_I, r_D);
+
+                if (valid) {
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] +=
+                                    J_I[i] * J_I[j] + J_D[i] * J_D[j];
+                        }
+                        local_sum[21 + i] +=
+                                J_I[i] *
+                                        HuberDeriv(r_I, intensity_huber_delta) +
+                                J_D[i] * HuberDeriv(r_D, depth_huber_delta);
+                    }
+                    local_sum[27] += HuberLoss(r_I, intensity_huber_delta) +
+                                     HuberLoss(r_D, depth_huber_delta);
+                    local_sum[28] += 1.0f;
+                }
+            });
+
+    DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
+}
+
+void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
+                                          const core::Tensor &target_vertex_map,
+                                          const core::Tensor &intrinsic,
+                                          const core::Tensor &source_to_target,
+                                          const float square_dist_thr,
+                                          core::Tensor &information) {
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = source_to_target;
+    TransformIndexer ti(intrinsic, trans);
+
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
+    const int64_t n = rows * cols;
+
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kJtJDimOdometry}, core::Float32, device);
+    float *global_sum_ptr = global_sum.GetDataPtr<float>();
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+
+    core::sy::PersistentReduce<kJtJDimOdometry, float>(
+            queue, n, wgs, global_sum_ptr,
+            [=](int64_t gid, float(&local_sum)[kJtJDimOdometry]) {
+                const int y = static_cast<int>(gid / cols);
+                const int x = static_cast<int>(gid % cols);
+
+                float J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+                float rx = 0, ry = 0, rz = 0;
+                const bool valid = GetJacobianPointToPoint(
+                        x, y, square_dist_thr, source_vertex_indexer,
+                        target_vertex_indexer, ti, J_x, J_y, J_z, rx, ry, rz);
+
+                if (valid) {
+                    int offset = 0;
+                    for (int i = 0; i < 6; ++i) {
+                        for (int j = 0; j <= i; ++j) {
+                            local_sum[offset++] += J_x[i] * J_x[j] +
+                                                   J_y[i] * J_y[j] +
+                                                   J_z[i] * J_z[j];
+                        }
+                    }
+                }
+            });
+
+    const core::Device host(core::Device("CPU:0"));
+    information = core::Tensor::Empty({6, 6}, core::Float64, host);
+    global_sum = global_sum.To(host, core::Float64);
+
+    double *info_ptr = information.GetDataPtr<double>();
+    double *reduction_ptr = global_sum.GetDataPtr<double>();
+    for (int j = 0; j < 6; j++) {
+        const int64_t reduction_idx = ((j * (j + 1)) / 2);
+        for (int k = 0; k <= j; k++) {
+            info_ptr[j * 6 + k] = reduction_ptr[reduction_idx + k];
+            info_ptr[k * 6 + j] = reduction_ptr[reduction_idx + k];
+        }
+    }
+}
+
+}  // namespace odometry
+}  // namespace kernel
+}  // namespace pipelines
+}  // namespace t
+}  // namespace open3d

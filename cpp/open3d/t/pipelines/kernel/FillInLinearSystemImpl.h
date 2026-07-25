@@ -13,6 +13,27 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+
+// Computes the 12-element point-to-plane rigid alignment Jacobian for a
+// correspondence pair (frame i, frame j), given the transformed target point
+// q_prime and the rotated source normal normal_p_prime. J_ij[0:6] is the
+// Jacobian w.r.t. frame i's 6-DoF pose; J_ij[6:12] w.r.t. frame j's pose is
+// its negation. Shared by the CPU/CUDA path below and
+// FillInLinearSystemSYCL.cpp.
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void ComputeRigidAlignmentJacobian(
+        const float *q_prime, const float *normal_p_prime, float *J_ij) {
+    J_ij[0] = -q_prime[2] * normal_p_prime[1] + q_prime[1] * normal_p_prime[2];
+    J_ij[1] = q_prime[2] * normal_p_prime[0] - q_prime[0] * normal_p_prime[2];
+    J_ij[2] = -q_prime[1] * normal_p_prime[0] + q_prime[0] * normal_p_prime[1];
+    J_ij[3] = normal_p_prime[0];
+    J_ij[4] = normal_p_prime[1];
+    J_ij[5] = normal_p_prime[2];
+    for (int k = 0; k < 6; ++k) {
+        J_ij[k + 6] = -J_ij[k];
+    }
+}
+
+#ifndef OPEN3D_SKIP_FILL_IN_LS_MAIN
 #if defined(__CUDACC__)
 void FillInRigidAlignmentTermCUDA
 #else
@@ -62,18 +83,7 @@ void FillInRigidAlignmentTermCPU
                 if (abs(r) > threshold) return;
 
                 float J_ij[12];
-                J_ij[0] = -q_prime[2] * normal_p_prime[1] +
-                          q_prime[1] * normal_p_prime[2];
-                J_ij[1] = q_prime[2] * normal_p_prime[0] -
-                          q_prime[0] * normal_p_prime[2];
-                J_ij[2] = -q_prime[1] * normal_p_prime[0] +
-                          q_prime[0] * normal_p_prime[1];
-                J_ij[3] = normal_p_prime[0];
-                J_ij[4] = normal_p_prime[1];
-                J_ij[5] = normal_p_prime[2];
-                for (int k = 0; k < 6; ++k) {
-                    J_ij[k + 6] = -J_ij[k];
-                }
+                ComputeRigidAlignmentJacobian(q_prime, normal_p_prime, J_ij);
 
         // Not optimized; Switch to reduction if necessary.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -471,6 +481,7 @@ void FillInSLACRegularizerTermCPU
                 }
             });
 }
+#endif  // OPEN3D_SKIP_FILL_IN_LS_MAIN
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

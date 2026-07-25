@@ -128,9 +128,6 @@ jobs:
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Docker test
-        run: docker/docker_test.sh "${DOCKER_TAG}"
-
       - name: Generate wheel attestation
         uses: actions/attest@v4
         with:
@@ -149,3 +146,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           .github/workflows/update_release.sh ${{ env.PIP_PKG_NAME }}
+
+      # Move after artifact upload, so failing / flaky C++ tests don't block the uploads.
+      - name: Docker test
+        run: docker/docker_test.sh "${DOCKER_TAG}"

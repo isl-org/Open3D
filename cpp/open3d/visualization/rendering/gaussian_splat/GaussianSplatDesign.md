@@ -249,8 +249,8 @@ can treat `gl_SubgroupSize` as a constant.
 | Field | Meaning |
 |-------|---------|
 | `scene.z` | Antialias flag (0 = off, 1 = density compensation) |
-| `limits.x` | Tile-entry capacity allocated for the frame |
-| `limits.y` | `RenderConfig::max_tiles_per_splat` |
+| `limits.x` | Tile-entry capacity allocated for the frame; `min(splat_count * RenderConfig::avg_tiles_per_splat, max_tile_entries_total)` — a statistical sizing estimate, not an enforced limit |
+| `limits.y` | `RenderConfig::max_tiles_per_splat`; enforced as a hard per-splat cap in `gaussian_project.comp` (see below). Decoupled from `limits.x`'s sizing estimate above |
 | `limits.z` | `RenderConfig::max_tile_entries_total` |
 | `limits.w` | $T$ (tile bit count for sort key split) |
 | `depth_range_and_flags.w` | 1.0 = scene depth present, 0.0 = absent |
@@ -296,19 +296,55 @@ $$\text{compensation} = \sqrt{\frac{\det(\Sigma_{\text{orig}})}{\det(\Sigma_{\te
 
 ### Runtime Capacity Limits and Error Flags
 
-`RenderConfig` exposes two runtime safety knobs:
+`RenderConfig` exposes three runtime safety knobs. `max_tiles_per_splat` (the enforced cap) and
+`avg_tiles_per_splat` (the buffer-sizing estimate) are **intentionally decoupled** — they used
+to be the same field, which forced a low cap (to keep buffers small) that visibly cropped
+large/close-up splats. Splitting them lets the cap be generous while keeping typical-scene
+memory use unchanged:
 
-- `max_tiles_per_splat` — per-splat budget for estimating sort buffer size.
+- `max_tiles_per_splat` (default 256) — hard per-splat cap on tile-entry count, enforced
+  directly in `gaussian_project.comp` (`ProjectGaussian`): if a splat's screen-space bbox would
+  cover more tiles than this, the splat is **culled entirely** (no sort entries are written for
+  it) rather than rendered from a smaller tile rectangle. 
+- `avg_tiles_per_splat` (default 32) — the expected *mean* tiles-per-splat for the scene, used
+  only to size the shared sort-entry buffers as `splat_count * avg_tiles_per_splat` (see
+  `PackGaussianViewParams`). It is a statistical estimate, not an enforced limit: individual
+  splats may legitimately use up to `max_tiles_per_splat` tiles. The write path in
+  `WriteSortEntries` bounds-checks every entry against the allocated capacity regardless, so an
+  actual mean higher than this estimate cannot overflow the buffer — it can only cause excess
+  entries to be dropped (bit 0 below) until the estimate is raised to match the scene.
 - `max_tile_entries_total` — hard ceiling for sort keys, values, and tile entries.
 
-Both are forwarded to shaders via `GaussianViewParams.limits`.
+All three are forwarded to shaders via `GaussianViewParams.limits` (`limits.x` = capacity from
+`avg_tiles_per_splat`, `limits.y` = `max_tiles_per_splat`, `limits.z` =
+`max_tile_entries_total`).
 
 GPU error bits in `counters_buf.error_flags`:
 
-- Bit 0: tile-entry overflow in the scatter pass; excess entries dropped.
+- Bit 0: tile-entry overflow in the scatter pass; excess entries dropped. This is the signal
+  that `avg_tiles_per_splat` underestimates the scene's real mean (or `splat_count *
+  avg_tiles_per_splat` itself exceeds `max_tile_entries_total`) — raise `avg_tiles_per_splat`
+  or `max_tile_entries_total`, not `max_tiles_per_splat`.
 - Bit 1: dispatch / sort count clamped in `gaussian_compute_dispatch_args.comp`.
+- Bit 2: `max_tiles_per_splat` cap in `ProjectGaussian` culled one or more splats whose tile
+  footprint exceeded the limit. Set via `atomicOr` right where the cull happens. Unlike bit 0,
+  this is not itself a buffer-overflow risk — it only means some (typically huge/close) splats
+  are missing from the image; raise `max_tiles_per_splat` to make them reappear.
 
-The pass runner downloads this bitmask once after GPU work and logs each warning once per view.
+The pass runner downloads this bitmask in `RunGaussianCompositePass`, immediately after
+`WaitForGeometryPass()` — the earliest point at which the geometry pass (which writes these
+counters) is guaranteed to have completed on the GPU. Reading any earlier (e.g. right after
+recording/submitting the geometry pass, as this code used to do) would observe a stale or
+previous-frame value on both the Vulkan and Metal backends and silently miss real overflow
+conditions. `GaussianSplatGpuContext::WaitForGeometryPass()` is implemented per backend: Vulkan
+CPU-waits on the geometry fence if still pending; Metal waits on the last committed geometry
+command buffer if not already complete.
+
+Warnings are logged once when a new error bit first appears, and then re-logged at most once
+every 5 seconds while the condition persists (`kGpuErrorRewarnInterval`), so a lingering issue
+(e.g. the camera staying too close to an oversized splat) stays visible instead of only warning
+once ever. Messages lead with the user-facing cause (camera too close / scene too dense) and
+action (move back, raise the near plane) before naming the underlying `MaterialRecord` knobs.
 
 ---
 
@@ -388,6 +424,14 @@ consistency even though the shader does not evaluate them.
 | Bit-packed visibility mask | 1 bit per splat (0.125 B/splat).  The project shader reads a single `uint32` word per 32 splats; masked splats write no sort entries. |
 | Pre-destroy invalidation on resize | `InvalidateGaussianSplatOutput()` tears down the GS render target before `FilamentView` frees `color_buffer_`, preventing use-after-free during maximize/resize. |
 | Metal `SetOnAppleGaussianCompositeComplete` + `PostRedraw` | Composite runs after `endFrame()`; without a `PostRedraw()`, the first frame shows no splats until the next user event.  The callback schedules a deferred redraw. |
+
+---
+
+## Future Work / TODO
+
+1. **User shader callbacks.** Add user-provided shader callbacks to mimic Spark's
+   programmable rendering and shader-graph functionality, allowing user code to
+   modify splats or shading on the GPU.
 
 ---
 

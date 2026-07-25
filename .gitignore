@@ -3,9 +3,6 @@
 # Docker build artifacts (wheel, dev package, ccache)
 docker/*.tar.gz
 docker/*.tar.xz
-open3d-artifacts/*.tar.xz
-open3d-artifacts/*.deb
-open3d-artifacts/*.whl
 
 # Windows build temp cmake file
 CMakeSettings.json
@@ -30,6 +27,7 @@ cmake-build-release/
 util/pip_package/dist/
 doxygen/
 node_modules/
+.yarn
 
 # Editor files
 *.*~
@@ -40,6 +38,8 @@ _vimrc_local.vim
 .vscode/
 .clangd/
 .ccls-cache/
+AGENTS.local.md
+CLAUDE.local.md
 
 # Build artifacts
 **/package-lock.json

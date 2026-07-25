@@ -469,9 +469,18 @@ void pybind_rendering_definitions(py::module &m) {
             .def_readwrite(
                     "gaussian_splat_max_tiles_per_splat",
                     &MaterialRecord::gaussian_splat_max_tiles_per_splat,
-                    "Maximum number of screen tiles a single splat may cover. "
-                    "Increase for very large / close-up splats at the cost of "
-                    "higher GPU memory use. Default: 32.")
+                    "Hard per-splat cap on the number of screen tiles a "
+                    "single splat may cover; splats exceeding this are "
+                    "culled (dropped). Increase for very large / close-up"
+                    " splats. Decoupled from GPU memory use (see "
+                    "gaussian_splat_avg_tiles_per_splat). Default: 256.")
+            .def_readwrite(
+                    "gaussian_splat_avg_tiles_per_splat",
+                    &MaterialRecord::gaussian_splat_avg_tiles_per_splat,
+                    "Expected mean tiles-per-splat across the scene, used "
+                    "only to size the shared tile-entry buffers. Increase "
+                    "for scenes with many large/overlapping splats at the "
+                    "cost of higher GPU memory use. Default: 32.")
             .def_readwrite(
                     "gaussian_splat_max_tile_entries_total",
                     &MaterialRecord::gaussian_splat_max_tile_entries_total,

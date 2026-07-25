@@ -106,6 +106,8 @@ OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
 
 #if defined(__CUDACC__)
 void ComputeFPFHFeatureCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeFPFHFeatureSYCL
 #else
 void ComputeFPFHFeatureCPU
 #endif

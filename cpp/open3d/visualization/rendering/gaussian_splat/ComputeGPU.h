@@ -118,6 +118,8 @@ struct GaussianSplatViewGpuResources {
     int final_sort_src = 0;
     std::uint64_t cached_scene_id = 0;
     std::uint32_t cached_splat_count = 0;
+    /// GPU error bits already reported at least once for this view; latched
+    /// so each distinct error condition is warned about exactly once.
     std::uint32_t warned_gpu_error_flags = 0;
 };
 
@@ -264,10 +266,13 @@ public:
     virtual void BeginCompositePass() {}
     virtual void EndCompositePass() {}
 
-    /// Ensure geometry pass GPU work has finished before composite begins.
-    /// Vulkan: CPU-waits on the geometry fence if still pending
-    /// (fire-and-forget geometry overlaps Filament rendering; this drains it
-    /// only if needed). Metal/other: no-op — those backends already wait
+    /// Ensure geometry pass GPU work has finished before composite begins,
+    /// and before any CPU-side readback of GPU-written data (e.g. the error
+    /// counters used for overflow warnings). Vulkan: CPU-waits on the
+    /// geometry fence if still pending (fire-and-forget geometry overlaps
+    /// Filament rendering; this drains it only if needed). Metal: waits on
+    /// the last committed geometry command buffer if not already complete.
+    /// Base default is a no-op for backends that submit geometry
     /// synchronously.
     virtual void WaitForGeometryPass() {}
 

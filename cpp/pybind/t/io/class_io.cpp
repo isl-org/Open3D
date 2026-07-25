@@ -67,6 +67,11 @@ static const std::unordered_map<std::string, std::string>
                 {"feature", "The ``Feature`` object for I/O."},
                 {"print_progress",
                  "If set to true a progress bar is visualized in the console."},
+                {"gaussian_splat_antialias",
+                 "For SPZ writes, set the file header antialiased flag (mip-"
+                 "splat density compensation). Ignored by other formats. "
+                 "Matches MaterialRecord.gaussian_splat_antialias when "
+                 "rendering."},
 };
 
 void pybind_class_io_declarations(py::module &m_io) {
@@ -138,13 +143,16 @@ void pybind_class_io_definitions(py::module &m_io) {
             },
             R"(Read a tensor :class:`open3d.t.geometry.PointCloud` from file.
 
-For 3D Gaussian splat data (``.ply`` / ``.splat`` with the usual attributes):
+For 3D Gaussian splat data (``.ply`` / ``.splat`` / ``.spz`` with the usual
+attributes):
 
 - **In-memory ``scale``** on the returned point cloud is always **linear** (axis
   lengths), which matches the Filament / rendering path.
 - **PLY** files follow the common convention of storing **log-scale** per axis;
   the reader applies ``exp`` so the tensor attribute ``scale`` is linear.
 - **SPLAT** files store **linear** scales already; no conversion is applied.
+- **SPZ** files are compressed and use log-scale and xyzw quaternion storage;
+  the reader converts them to Open3D's linear-scale and wxyz representation.
 
 When writing PLY from a Gaussian splat cloud, ``write_point_cloud`` converts
 ``scale`` back to log-space for the same file convention.)",
@@ -157,20 +165,26 @@ When writing PLY from a Gaussian splat cloud, ``write_point_cloud`` converts
             "write_point_cloud",
             [](const fs::path &filename,
                const t::geometry::PointCloud &pointcloud, bool write_ascii,
-               bool compressed, bool print_progress) {
+               bool compressed, bool print_progress,
+               bool gaussian_splat_antialias) {
                 py::gil_scoped_release release;
-                return WritePointCloud(
-                        filename.string(), pointcloud,
-                        {write_ascii, compressed, print_progress});
+                open3d::io::WritePointCloudOption params{
+                        write_ascii, compressed, print_progress};
+                params.gaussian_splat_antialias = gaussian_splat_antialias;
+                return WritePointCloud(filename.string(), pointcloud, params);
             },
             R"(Write a tensor :class:`open3d.t.geometry.PointCloud` to file.
 
 For Gaussian splat clouds written as **PLY**, per-point ``scale`` is converted
 from the in-memory **linear** representation to **log-scale** in the file, matching
 common 3DGS PLY conventions (see :meth:`read_point_cloud`). SPLAT output writes
-linear scales directly.)",
+linear scales directly. SPZ output uses compressed log-scale and xyzw quaternion
+storage while preserving the full spherical-harmonics data. Pass
+``gaussian_splat_antialias=True`` when writing SPZ to set the file header
+antialiased flag.)",
             "filename"_a, "pointcloud"_a, "write_ascii"_a = false,
-            "compressed"_a = false, "print_progress"_a = false);
+            "compressed"_a = false, "print_progress"_a = false,
+            "gaussian_splat_antialias"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 

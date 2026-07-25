@@ -84,7 +84,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
                 "VisualizerWithVertexSelection only supports one geometry");
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     // Add the geometry/renderer
     geometry_ptr_ = geometry_in_ptr;

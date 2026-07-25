@@ -73,6 +73,7 @@ public:
     MenuBase* CreateOSMenu() override;
 
     void SetClipboardText(OSWindow w, const char* text) override;
+    std::string GetClipboardText(OSWindow w) override;
 
 private:
     static void DrawCallback(GLFWwindow* window);

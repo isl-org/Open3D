@@ -120,6 +120,9 @@ const float kMinDeterminant = 1e-8;
 const float kMinEigenValue = 1e-6;
 const float kMinAlpha = 1.0 / 255.0;
 const uint kGsErrorTileEntryOverflow = 1u << 0;
+// Set when a splat's tile footprint exceeds RenderConfig::max_tiles_per_splat
+// and the splat is culled (dropped entirely) rather than rendered cropped.
+const uint kGsErrorMaxTilesPerSplatExceeded = 1u << 2;
 
 uint GetSplatCount() { return view_params.scene.x; }
 
@@ -416,6 +419,20 @@ SortEntryParams ProjectGaussian(uint splat_index) {
     uvec2 tile_max = uvec2(clamped_max_pixel) / tile_size;
     tile_min = min(tile_min, tile_count - uvec2(1u));
     tile_max = min(tile_max, tile_count - uvec2(1u));
+
+    // Splats whose tile footprint exceeds max_tiles_per_splat are culled
+    // rather than cropped, since cropping a huge splate would render it as a
+    // hard-edged opaque block. This cap is separate from buffer sizing
+    // (avg_tiles_per_splat/limits.x), which is bounds-checked independently and
+    // can only drop entries, never overflow.
+    uint max_tiles_per_splat = view_params.limits.y;
+    uint tile_span_x = tile_max.x - tile_min.x + 1u;
+    uint tile_span_y = tile_max.y - tile_min.y + 1u;
+    if (max_tiles_per_splat > 0u &&
+        tile_span_x * tile_span_y > max_tiles_per_splat) {
+        atomicOr(gs_counters.error_flags, kGsErrorMaxTilesPerSplatExceeded);
+        return CulledEntryParams(splat_index);
+    }
 
     float inv_basis_det = 1.0 / basis_det;
     vec4 inv_basis =

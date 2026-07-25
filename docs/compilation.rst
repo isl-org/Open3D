@@ -25,12 +25,17 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 11.5+ (optional): Open3D supports GPU acceleration through CUDA on Linux.
-  Prebuilt wheels statically link the CUDA runtime libraries directly into
-  ``libOpen3D``, so no separate NVIDIA runtime pip packages are required at
-  import time. For building from source, install the CUDA toolkit
+* CUDA 11.5+ (optional): Open3D supports GPU acceleration through CUDA on Linux
+  and Windows. On Linux, prebuilt wheels statically link the CUDA runtime
+  libraries directly into ``libOpen3D``, so no separate NVIDIA runtime pip
+  packages are required at import time. On Windows, NVIDIA does not provide
+  static CUDA libraries, so the CUDA runtime is linked dynamically and the
+  ``open3d-cuda`` wheel depends on the ``nvidia-*-cu12`` runtime pip packages
+  (see ``python/requirements-win-cuda.txt``), installed automatically as wheel
+  dependencies. For building from source, install the CUDA toolkit
   (``nvidia-smi``, ``nvcc -V``) and configure with ``-DBUILD_CUDA_MODULE=ON``
-  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default). We recommend using CUDA 13+
+  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default on Linux; ignored on Windows,
+  where CUDA is always linked dynamically). We recommend using CUDA 13+
   for the best compatibility with recent GPUs and optional external
   dependencies such as Tensorflow or PyTorch.
 
@@ -361,10 +366,14 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
               -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
 
     CUDA runtime libraries are statically linked into ``libOpen3D`` by default
-    (``-DBUILD_WITH_CUDA_STATIC=ON``), so CUDA wheels do not need any NVIDIA
-    redistributable pip packages at import time. Pass
+    on Linux (``-DBUILD_WITH_CUDA_STATIC=ON``), so CUDA wheels do not need any
+    NVIDIA redistributable pip packages at import time. Pass
     ``-DBUILD_WITH_CUDA_STATIC=OFF`` to dynamically link the CUDA runtime
-    instead. For development, ensure the CUDA toolkit is available:
+    instead. On Windows, NVIDIA does not provide static CUDA libraries, so
+    ``BUILD_WITH_CUDA_STATIC`` is ignored and CUDA is always linked
+    dynamically; the ``open3d-cuda`` wheel depends on the ``nvidia-*-cu12``
+    runtime pip packages instead (see ``python/requirements_win_cuda.txt``).
+    For development, ensure the CUDA toolkit is available:
 
     .. code-block:: bash
 

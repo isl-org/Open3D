@@ -410,7 +410,10 @@ cpu-shared-ml_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.10
+    # Keep in sync with the "Set up Python" step for the build-docs job in
+    # .github/workflows/ubuntu.yml, which installs this wheel and therefore
+    # needs a matching interpreter version.
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -425,7 +428,8 @@ cpu-shared-ml-release_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.10
+    # See cpu-shared-ml_export_env() above: must match build-docs' Python.
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
