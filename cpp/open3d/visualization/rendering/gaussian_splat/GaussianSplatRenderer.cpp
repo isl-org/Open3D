@@ -594,7 +594,8 @@ bool GaussianSplatRenderer::ValidateRenderConfig(
            config.composite_group_size.x() > 0 &&
            config.composite_group_size.y() > 0 && config.max_sh_degree >= 0 &&
            config.max_sh_degree <= kMaxSupportedShDegree &&
-           config.max_tiles_per_splat > 0 && config.max_tile_entries_total > 0;
+           config.max_tiles_per_splat > 0 && config.avg_tiles_per_splat > 0 &&
+           config.max_tile_entries_total > 0;
 }
 
 }  // namespace rendering

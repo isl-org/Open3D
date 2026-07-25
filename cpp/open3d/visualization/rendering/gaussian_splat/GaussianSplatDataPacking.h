@@ -104,10 +104,17 @@ static constexpr std::size_t kGaussianCounterErrorFlagsIndex = 1;
 static constexpr std::size_t kGaussianCounterTileCountIndex = 2;
 static constexpr std::size_t kGaussianCounterSplatCountIndex = 3;
 
+/// Set when the shared sort-entry buffer overflows (total entries > capacity).
 inline constexpr std::uint32_t kGaussianGpuErrorTileEntryOverflow = 1u << 0;
+/// Set when the radix-sort dispatch count is clamped to the entry capacity.
 inline constexpr std::uint32_t kGaussianGpuErrorSortCountClamped = 1u << 1;
+/// Set when a splat's tile footprint exceeded max_tiles_per_splat and the
+/// splat was culled (dropped) rather than rendered.
+inline constexpr std::uint32_t kGaussianGpuErrorMaxTilesPerSplatExceeded = 1u
+                                                                           << 2;
 inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
-        kGaussianGpuErrorTileEntryOverflow | kGaussianGpuErrorSortCountClamped;
+        kGaussianGpuErrorTileEntryOverflow | kGaussianGpuErrorSortCountClamped |
+        kGaussianGpuErrorMaxTilesPerSplatExceeded;
 
 // ----- CPU-side representation -----------------------------------------------
 
@@ -192,6 +199,9 @@ void ComputeGaussianGpuBufferSizes(const PackedGaussianScene& packed,
 /// Pack camera, viewport, and scene metadata into the view-params UBO.
 /// Uses the splat count, SH degree, and antialias flag from `attrs`.
 /// Per-frame GPU cost: glBufferSubData / MTLBuffer memcpy of 288 bytes.
+/// Tile-entry buffer capacity (`limits.x`) is sized from
+/// `config.avg_tiles_per_splat`; the per-splat hard cap (`limits.y`) enforced
+/// in `gaussian_project.comp` comes from `config.max_tiles_per_splat`.
 PackedGaussianScene PackGaussianViewParams(
         const GaussianSplatPackedAttrs& attrs,
         const GaussianSplatRenderer::ViewRenderData& render_data,

@@ -25,6 +25,11 @@ void CPUResetHeap(Tensor &heap);
 void CUDAResetHeap(Tensor &heap);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+/// Initialize the hash-map buffer index heap on a SYCL device.
+void SYCLResetHeap(Tensor &heap);
+#endif
+
 // The heap array stores the indices of the key/values buffers. It is not
 // injective.
 // During Allocate, an buffer index (buf_index) is extracted from the
@@ -46,6 +51,10 @@ using buf_index_t = uint32_t;
 class HashBackendBuffer {
 public:
     struct HeapTop {
+        // Device-resident heap top (a single Int32 element). Despite the name,
+        // this Tensor is reused for any device backend that needs the heap top
+        // to live in device memory (currently CUDA and SYCL). The CPU backend
+        // uses the std::atomic member below instead.
         Tensor cuda;
         std::atomic<int> cpu = {0};
     };

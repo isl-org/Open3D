@@ -17,6 +17,9 @@ namespace kernel {
 namespace {
 
 template <typename scalar_t>
+class IndexAddContiguousKernel;
+
+template <typename scalar_t>
 // Launches contiguous index_add over dim0:
 //   dst[index[i], ...] += src[i, ...]
 // Contract:
@@ -61,16 +64,13 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
              sycl::local_accessor<int64_t, 1> l_idx(sycl::range<1>(TILE_ROWS),
                                                     cgh);
 
-             cgh.parallel_for(
+             cgh.parallel_for<IndexAddContiguousKernel<scalar_t>>(
                      launch,
                      [=](sycl::nd_item<2> it) [[sycl::reqd_sub_group_size(
                              16)]] {
                          const int lid_x = int(it.get_local_id(1));
                          const int64_t group_y = it.get_group(0);
                          const int64_t col = it.get_global_id(1);
-                         if (col >= broadcasting_elems) {
-                             return;
-                         }
 
                          const int64_t row_base = group_y * int64_t(TILE_ROWS);
 
@@ -80,6 +80,10 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
                                                                : int64_t(-1);
                          }
                          it.barrier(sycl::access::fence_space::local_space);
+
+                         if (col >= broadcasting_elems) {
+                             return;
+                         }
 
                          int run_start = 0;
                          while (run_start < TILE_ROWS) {

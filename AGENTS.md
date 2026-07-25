@@ -14,7 +14,7 @@ functionality is out of scope.
 - Keep changes focused and small. Avoid broad refactors unless requested.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.
 - **Debugging:** Test root cause hypothesis with logging before trying fixes. Validate with logging afterwards. Undo failed fixes.
-- Developer docs: Document the code with brief comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
+- Developer docs: Document the code with brief (2-3 lines) comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
 - User docs: Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
 - For new functionality, docs and examples, prefer Tensor implementations that work on CPU+CUDA+SYCL. 
 - Use the Eigen library for Math operations and oneAPI TBB for multithreading. Avoid: OpenMP, stdgpu.

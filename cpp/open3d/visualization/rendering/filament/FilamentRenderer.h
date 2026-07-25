@@ -10,6 +10,9 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#if defined(__APPLE__)
+#include <vector>
+#endif
 
 #include "open3d/visualization/rendering/Renderer.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -151,6 +154,10 @@ private:
     std::function<void()> on_after_draw_;
     std::function<void()> on_apple_gaussian_composite_complete_;
     bool needs_wait_after_draw_ = false;
+#if defined(__APPLE__)
+    // Scratch buffer for RequestReadPixels' Metal RGBA readback workaround;
+    std::vector<uint8_t> read_pixels_rgba_buffer_;
+#endif
 };
 
 }  // namespace rendering

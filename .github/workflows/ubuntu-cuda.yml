@@ -47,6 +47,9 @@ jobs:
     name: Build and run
     permissions:
       contents: write   # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     needs: [skip-check]
     if: needs.skip-check.outputs.skip == 'no'
@@ -54,14 +57,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - CI_CONFIG: 2-jammy
-          - CI_CONFIG: 3-ml-shared-jammy
-          - CI_CONFIG: 5-ml-noble
+          - CI_CONFIG: 2-noble
+          - CI_CONFIG: 3-ml-shared-noble
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
-      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-jammy"]'), matrix.CI_CONFIG) }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-noble"]'), matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
@@ -150,6 +152,12 @@ jobs:
             gcloud compute scp --zone="${GCE_ZONE}" \
               "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
           fi
+
+      - name: Generate package attestation
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ github.workspace }}/open3d-devel-linux*.tar.xz
 
       - name: Upload package
         if: ${{ env.BUILD_PACKAGE == 'true' }}

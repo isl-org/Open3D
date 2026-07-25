@@ -87,6 +87,21 @@ bool WritePointCloudToSPLAT(const std::string &filename,
                             const geometry::PointCloud &pointcloud,
                             const WritePointCloudOption &params);
 
+/// Reads the SPZ compressed 3D Gaussian splat format. SPZ stores scales in
+/// log-space and quaternions as xyzw; the returned point cloud uses Open3D's
+/// canonical linear scales and wxyz quaternions. The packed format requires
+/// at least one splat. If the file header has antialiased=true, a LogInfo
+/// reminds the caller to set MaterialRecord::gaussian_splat_antialias.
+bool ReadPointCloudFromSPZ(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params);
+
+/// Writes SPZ. Scales are stored as log-space and rotations as xyzw.
+/// WritePointCloudOption::gaussian_splat_antialias sets the file header flag.
+bool WritePointCloudToSPZ(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
+
 bool ReadPointCloudFromPTS(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);

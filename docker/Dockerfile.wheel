@@ -2,23 +2,26 @@
 ARG BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
 FROM ${BASE_IMAGE}
 
-# Customizable build arguments from cuda.yml
+# Customizable build arguments
 ARG DEVELOPER_BUILD
 ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
+ARG BUILD_PYTHON_MODULE
+ARG OPEN3D_BUILD_MODE=wheel
 ARG CI
 
-# Forward all ARG to ENV
-# ci_utils.sh requires these environment variables
+# Forward all ARG to ENV (ci_utils.sh reads these)
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}
+ENV OPEN3D_BUILD_MODE=${OPEN3D_BUILD_MODE}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,18 +30,10 @@ ENV SUDO=command
 
 SHELL ["/bin/bash", "-c"]
 
-# Fix Nvidia repo key rotation issue
-# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
-# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
-# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
-RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
- && apt-key del 7fa2af80 \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
- && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
-
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
     wget \
+    ca-certificates \
     ccache \
     build-essential \
     libssl-dev \
@@ -57,6 +52,11 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
+# Install NVIDIA repository keyring package
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb \
+ && dpkg -i cuda-keyring_1.1-1_all.deb \
+ && rm cuda-keyring_1.1-1_all.deb
+
 # Dependencies: cmake
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -nv https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
@@ -65,10 +65,6 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
 # Download ccache from GCS bucket (optional)
-# Example directory structure:
-# CCACHE_DIR        = ~/.cache/ccache
-# CCACHE_DIR_NAME   = ccache
-# CCACHE_DIR_PARENT = ~/.cache
 RUN ccache --version \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
@@ -77,72 +73,89 @@ RUN ccache --version \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; }
-# We need to set ccache size explicitly with -M, otherwise the default size is
-# *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 4G \
  && ccache -s
 
-# pyenv
-# The pyenv python paths are used during docker run, in this way docker run
-# does not need to activate the environment again.
-# The soft link from the python patch level version to the python mino version
-# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
-# which patch level pyenv will install (latest).
+# pyenv (needed for wheel builds; lib mode uses a dummy Python version)
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash \
+RUN if [ ! -d "$PYENV_ROOT" ]; then \
+        wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
+    fi \
         && pyenv update \
-        && pyenv install $PYTHON_VERSION \
+        && pyenv install -s $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+        && ln -sf $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
 RUN python --version && pip --version
 
-# Checkout Open3D-ML main branch
-# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# Checkout Open3D-ML (wheel mode may bundle it; lib mode keeps ops OFF)
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}; \
+    fi
 
 # Open3D C++ dependencies
-# Done before copying the full Open3D directory for better Docker caching
 COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
 
-# Open3D Python dependencies
+# Open3D Python dependencies (wheel mode)
 COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
 COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 COPY ./python/requirements_build.txt /root/Open3D/python/
-RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-jupyter
+RUN if [ "${OPEN3D_BUILD_MODE}" = "wheel" ]; then \
+        source /root/Open3D/util/ci_utils.sh \
+        && install_python_dependencies with-jupyter; \
+    fi
 
-# Open3D Jupyter dependencies
-RUN mkdir -p /etc/apt/keyrings \
- && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
- | tee /etc/apt/sources.list.d/nodesource.list \
- && apt-get update \
- && apt-get install -y nodejs \
- && rm -rf /var/lib/apt/lists/* \
- && node --version \
- && npm install -g yarn \
- && yarn --version
+# Open3D Jupyter / Node (wheel mode)
+RUN if [ "${OPEN3D_BUILD_MODE}" = "wheel" ]; then \
+        mkdir -p /etc/apt/keyrings \
+        && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+        && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
+        | tee /etc/apt/sources.list.d/nodesource.list \
+        && apt-get update \
+        && apt-get install -y nodejs \
+        && rm -rf /var/lib/apt/lists/* \
+        && npm install -g yarn; \
+    fi
+
+# Optional pre-extracted devel packages for wheel-from-installed builds
+# (copied by docker_build.sh into docker build context as open3d-artifacts/)
+ARG OPEN3D_CPU_DEVEL_TAR=
+ARG OPEN3D_CUDA_DEVEL_TAR=
+COPY open3d-artifacts/ /tmp/open3d-artifacts/
+RUN mkdir -p /opt/open3d-cpu /opt/open3d-cuda /open3d-artifacts \
+ && if [ -n "${OPEN3D_CPU_DEVEL_TAR}" ] && [ -f "/tmp/open3d-artifacts/${OPEN3D_CPU_DEVEL_TAR}" ]; then \
+        tar -C /opt/open3d-cpu --strip-components=1 -xf "/tmp/open3d-artifacts/${OPEN3D_CPU_DEVEL_TAR}"; \
+    fi \
+ && if [ -n "${OPEN3D_CUDA_DEVEL_TAR}" ] && [ -f "/tmp/open3d-artifacts/${OPEN3D_CUDA_DEVEL_TAR}" ]; then \
+        tar -C /opt/open3d-cuda --strip-components=1 -xf "/tmp/open3d-artifacts/${OPEN3D_CUDA_DEVEL_TAR}"; \
+    fi \
+ && cp -a /tmp/open3d-artifacts/. /open3d-artifacts/ 2>/dev/null || true
+
+ENV OPEN3D_CPU_ROOT=/opt/open3d-cpu
+ENV OPEN3D_CUDA_ROOT=/opt/open3d-cuda
+ENV OPEN3D_ARTIFACTS_DIR=/open3d-artifacts
 
 # Open3D repo
-# Always keep /root/Open3D as the WORKDIR
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-# Build python wheel
+# Build: lib packages or wheels (logic lives in util/ci_utils.sh)
 RUN export NPROC=$(($(nproc)+2)) \
- && export BUILD_SHARED_LIBS=OFF \
  && source /root/Open3D/util/ci_utils.sh \
- && build_pip_package build_azure_kinect build_jupyter \
- && if [ ${CI:-}a != a ]; then find /root/Open3D/build -mindepth 1 -maxdepth 1 ! -name 'lib' -exec rm -rf {} + ; fi
- # remove build folder (except lib) to save CI space on Github
+ && if [ "${OPEN3D_BUILD_MODE}" = "lib" ]; then \
+        build_devel_packages_cpu_cuda; \
+    elif [ -d /opt/open3d-cuda/lib/cmake/Open3D ] && [ -d /opt/open3d-cpu/lib/cmake/Open3D ]; then \
+        build_pip_package_from_installed build_azure_kinect build_jupyter; \
+    else \
+        build_pip_package build_azure_kinect build_jupyter; \
+    fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

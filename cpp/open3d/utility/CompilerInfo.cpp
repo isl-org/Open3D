@@ -7,7 +7,6 @@
 
 #include "open3d/utility/CompilerInfo.h"
 
-#include <memory>
 #include <string>
 
 #include "open3d/utility/Logging.h"
@@ -35,11 +34,19 @@ std::string CompilerInfo::CXXCompilerVersion() const {
 }
 
 std::string CompilerInfo::CUDACompilerId() const {
+#ifdef BUILD_CUDA_MODULE
     return std::string(OPEN3D_CUDA_COMPILER_ID);
+#else
+    return "";
+#endif
 }
 
 std::string CompilerInfo::CUDACompilerVersion() const {
+#ifdef BUILD_CUDA_MODULE
     return std::string(OPEN3D_CUDA_COMPILER_VERSION);
+#else
+    return "";
+#endif
 }
 
 void CompilerInfo::Print() const {

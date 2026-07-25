@@ -1,4 +1,9 @@
 ## Main
+-   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
+-   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
+-   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
 -   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
