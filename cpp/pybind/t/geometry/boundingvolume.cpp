@@ -394,7 +394,9 @@ Example:
         o3d.visualization.draw([obb.to_legacy() for obb in obbs] + [mesh])
 )",
                    "points"_a, "robust"_a = false,
-                   "method"_a = MethodOBBCreate::MINIMAL_APPROX);
+                   py::arg_v("method",
+                             MethodOBBCreate::MINIMAL_APPROX,
+                             "open3d.t.geometry.MethodOBBCreate.MINIMAL_APPROX"));
 
     docstring::ClassMethodDocInject(
             m, "OrientedBoundingBox", "set_center",

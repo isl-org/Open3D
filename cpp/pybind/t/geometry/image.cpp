@@ -255,8 +255,16 @@ void pybind_image_definitions(py::module &m) {
     // Conversion.
     image.def(
             "to",
-            py::overload_cast<core::Dtype, bool, std::optional<double>, double>(
-                    &Image::To, py::const_),
+          // scale is py::object instead of std::optional<double> to allow
+          // pybind11-stubgen to produce valid stubs with default value of None.
+            [](const Image &img, core::Dtype dtype, bool copy,
+               py::object scale, double offset) {
+                std::optional<double> scale_opt;
+                if (!scale.is_none()) {
+                    scale_opt = scale.cast<double>();
+                }
+                return img.To(dtype, copy, scale_opt, offset);
+            },
             "Returns an Image with the specified Dtype.", "dtype"_a,
             "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
