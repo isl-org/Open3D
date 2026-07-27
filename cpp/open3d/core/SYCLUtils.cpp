@@ -84,6 +84,15 @@ int SYCLDemo() {
 
 #ifdef BUILD_SYCL_MODULE
 
+namespace open3d {
+namespace detail {
+
+sycl::global<int, sycl::memory_order::relaxed, sycl::memory_scope::device>
+        open3d_sycl_assert_reported(0);
+
+}  // namespace detail
+}  // namespace open3d
+
 OPEN3D_DLL_LOCAL std::string GetDeviceTypeName(const sycl::device &device) {
     auto device_type = device.get_info<sycl::info::device::device_type>();
     switch (device_type) {

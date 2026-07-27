@@ -1568,7 +1568,7 @@ void ExtractTriangleMeshCPU
             index_t linear_idx_e =
                     GetLinearIdx(xv + (e == 0), yv + (e == 1), zv + (e == 2),
                                  workload_block_idx);
-            OPEN3D_ASSERT(linear_idx_e > 0 &&
+            OPEN3D_ASSERT(linear_idx_e > 0,
                           "Internal error: GetVoxelAt returns nullptr.");
             float tsdf_e = tsdf_base_ptr[linear_idx_e];
             float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);

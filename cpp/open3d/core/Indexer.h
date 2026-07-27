@@ -253,12 +253,8 @@ public:
             workload_idx = workload_idx % input_.byte_strides_[i];
         }
 
-#if defined(__CUDACC__)
-        assert(offset >= 0 && offset < input_.total_byte_size_);
-#else
-        OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_ &&
+        OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_,
                       "TensorIterator operation data pointer is out of range.");
-#endif
 
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
                                   offset);
@@ -576,12 +572,8 @@ protected:
             }
         }
 
-#if defined(__CUDACC__)
-        assert(offset >= 0 && offset < tr.total_byte_size_);
-#else
-        OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_ &&
+        OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_,
                       "Index operation data pointer is out of range.");
-#endif
         return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
@@ -651,7 +643,7 @@ protected:
 class IndexerIterator {
 public:
     struct Iterator {
-        Iterator(){};
+        Iterator() {};
         Iterator(const Indexer& indexer);
         Iterator(Iterator&& other) = default;
 
