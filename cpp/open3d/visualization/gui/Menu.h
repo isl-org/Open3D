@@ -45,6 +45,13 @@ public:
 
     int GetNumberOfItems() const override;
 
+    /// Get the Menu by name. Returns nullptr if not found.
+    std::shared_ptr<MenuBase> GetMenu(const char* name) override;
+
+    /// Get the submenu that contains a leaf item with \p item_id (searches
+    /// recursively). Returns nullptr if the id is not found.
+    std::shared_ptr<MenuBase> GetMenu(ItemId item_id) override;
+
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.
     bool IsEnabled(ItemId item_id) const override;

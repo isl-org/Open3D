@@ -161,6 +161,10 @@ public:
 
     void ResetCameraToDefault();
 
+    /// Get menubar from window system. The window came from
+    /// `Application::GetInstance()`
+    std::shared_ptr<gui::MenuBase> GetMenubar();
+
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
     void SetIBL(const std::string& path);

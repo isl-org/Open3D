@@ -66,7 +66,7 @@ jobs:
             docker/docker_test.sh cpu-shared-ml-release
           fi
       - name: Generate package attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-devel-*.tar.xz
@@ -92,7 +92,7 @@ jobs:
           if-no-files-found: error
 
       - name: Generate viewer attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-viewer-*-Linux.deb
@@ -166,6 +166,7 @@ jobs:
           tar -C docs/_out -czvf open3d-${GITHUB_SHA}-docs.tar.gz html
 
       - name: Generate docs attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-${{ github.sha }}-docs.tar.gz
