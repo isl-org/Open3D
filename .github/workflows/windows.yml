@@ -241,7 +241,7 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate package attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
@@ -281,7 +281,7 @@ jobs:
             $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate viewer attestation
-        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
+        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
@@ -563,7 +563,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Generate wheel attestation
-        if: ${{ env.SKIPPED != 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.SKIPPED != 'true' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}

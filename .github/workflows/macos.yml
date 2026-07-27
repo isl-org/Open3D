@@ -103,7 +103,7 @@ jobs:
           ccache -s
 
       - name: Generate package attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v4
         with:
           subject-path: build/package/${{ env.DEVEL_PKG_NAME }}
@@ -117,7 +117,7 @@ jobs:
           if-no-files-found: error
 
       - name: Generate viewer attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v4
         with:
           subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
@@ -238,6 +238,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Generate wheel attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
