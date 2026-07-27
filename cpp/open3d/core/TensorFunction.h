@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <optional>
+
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
@@ -53,7 +54,7 @@ namespace core {
 /// \return A new tensor with the values of list of tensors
 /// concatenated in order, along the given axis.
 Tensor Concatenate(const std::vector<Tensor>& tensors,
-                   const utility::optional<int64_t>& axis = 0);
+                   const std::optional<int64_t>& axis = 0);
 
 /// \brief Appends the two tensors, along the given axis into a new tensor.
 /// Both the tensors must have same data-type, device, and number of
@@ -89,7 +90,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 /// axis is None, out is a flattened tensor.
 Tensor Append(const Tensor& self,
               const Tensor& other,
-              const utility::optional<int64_t>& axis = utility::nullopt);
+              const std::optional<int64_t>& axis = std::nullopt);
 
 /// \brief Computes the element-wise maximum of input and other. The tensors
 /// must have same data type and device.

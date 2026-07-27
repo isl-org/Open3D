@@ -45,6 +45,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory);
 
 std::string GetWorkingDirectory();
 
+std::string GetSelfBinaryDirectory();
+
 std::vector<std::string> GetPathComponents(const std::string &path);
 
 std::string GetTempDirectoryPath();

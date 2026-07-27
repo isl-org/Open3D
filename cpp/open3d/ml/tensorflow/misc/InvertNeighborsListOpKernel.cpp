@@ -32,13 +32,13 @@ public:
                 num_attributes ? inp_neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 num_attributes,
-                (int64_t*)inp_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)inp_neighbors_row_splits.flat<int64_t>().data(),
                 inp_neighbors_row_splits.shape().dim_size(0) - 1,
                 neighbors_index.flat<TIndex>().data(),
                 num_attributes ? neighbors_attributes.flat<TAttr>().data()
                                : nullptr,
                 neighbors_index.shape().dim_size(0),
-                (int64_t*)neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)neighbors_row_splits.flat<int64_t>().data(),
                 neighbors_row_splits.shape().dim_size(0) - 1);
     }
 };
@@ -53,7 +53,7 @@ REG_KB(int32_t, uint8_t)
 REG_KB(int32_t, int8_t)
 REG_KB(int32_t, int16_t)
 REG_KB(int32_t, int32_t)
-REG_KB(int32_t, int64)
+REG_KB(int32_t, int64_t)
 REG_KB(int32_t, float)
 REG_KB(int32_t, double)
 #undef REG_KB

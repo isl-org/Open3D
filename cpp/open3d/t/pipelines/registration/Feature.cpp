@@ -19,11 +19,10 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-core::Tensor ComputeFPFHFeature(
-        const geometry::PointCloud &input,
-        const utility::optional<int> max_nn,
-        const utility::optional<double> radius,
-        const utility::optional<core::Tensor> &indices) {
+core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
+                                const std::optional<int> max_nn,
+                                const std::optional<double> radius,
+                                const std::optional<core::Tensor> &indices) {
     core::AssertTensorDtypes(input.GetPointPositions(),
                              {core::Float64, core::Float32});
     if (max_nn.has_value() && max_nn.value() <= 3) {

@@ -72,6 +72,11 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
 
+    /// @brief Returns the 3D coordinates of all corners of every voxel in
+    /// the grid.
+    /// @return A std::vector of Eigen::Vector3d representing the corners of all
+    /// voxels.
+    std::vector<Eigen::Vector3d> GetAllVoxelCorners() const;
     /// Creates the axis-aligned bounding box around the object.
     /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
@@ -111,10 +116,10 @@ public:
         auto it = voxels_.find(idx);
         if (it != voxels_.end()) {
             auto voxel = it->second;
-            return ((voxel.grid_index_.cast<double>() +
-                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
-                    voxel_size_) +
-                   origin_;
+            Eigen::Vector3d local = (voxel.grid_index_.cast<double>() +
+                                     Eigen::Vector3d(0.5, 0.5, 0.5)) *
+                                    voxel_size_;
+            return origin_ + rotation_ * local;
         } else {
             return Eigen::Vector3d::Zero();
         }
@@ -259,6 +264,9 @@ public:
     double voxel_size_ = 0.0;
     /// Coordinate of the origin point.
     Eigen::Vector3d origin_ = Eigen::Vector3d::Zero();
+    /// Orientation (rotation) of the voxel grid (world = origin_ +
+    /// rotation_ * local)
+    Eigen::Matrix3d rotation_ = Eigen::Matrix3d::Identity();
     /// Voxels contained in voxel grid
     std::unordered_map<Eigen::Vector3i,
                        Voxel,

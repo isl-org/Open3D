@@ -7,12 +7,11 @@
 
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
-#include <p2p/base/basic_packet_socket_factory.h>
-#include <p2p/base/stun_server.h>
-#include <p2p/base/turn_server.h>
+#include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
 #include <rtc_base/thread.h>
 
+#include <atomic>
 #include <chrono>
 #include <sstream>
 #include <thread>
@@ -103,6 +102,8 @@ struct WebRTCWindowSystem::Impl {
 
     std::thread webrtc_thread_;
     bool sever_started_ = false;
+    // Set while the WebRTC std::thread is inside Run(); used for shutdown.
+    std::atomic<webrtc::Thread *> webrtc_message_thread_{nullptr};
 
     std::unordered_map<std::string, std::function<std::string(std::string)>>
             data_channel_message_callbacks_;
@@ -197,8 +198,14 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 }
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {
+    if (impl_->sever_started_ && impl_->webrtc_thread_.joinable()) {
+        webrtc::Thread *message_thread = impl_->webrtc_message_thread_.load();
+        if (message_thread) {
+            message_thread->Quit();
+        }
+        impl_->webrtc_thread_.join();
+    }
     impl_->peer_connection_manager_ = nullptr;
-    rtc::Thread::Current()->Quit();
 }
 
 WebRTCWindowSystem::OSWindow WebRTCWindowSystem::CreateOSWindow(
@@ -262,16 +269,25 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                     gui::Application::GetInstance().GetResourcePath());
             impl_->web_root_ = resource_path + "/html";
 
-            // Logging settings.
-            // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
-            rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_ERROR);
+            // Logging settings (M149: rtc_base/logging.h).
+            webrtc::LoggingConfig log_config;
+            log_config.set_debug_severity(webrtc::LS_ERROR);
+            log_config.set_log_thread(true);
+            log_config.set_log_timestamp(true);
+            webrtc::InitializeLogging(std::move(log_config));
 
-            rtc::LogMessage::LogTimestamps();
-            rtc::LogMessage::LogThreads();
+            // Associate this std::thread with WebRTC's message loop (required
+            // before Thread::Current()->Run() and PeerConnectionFactory).
+            webrtc::ThreadManager::Instance()->WrapCurrentThread();
+            struct WebRtcThreadScope {
+                ~WebRtcThreadScope() {
+                    webrtc::ThreadManager::Instance()->UnwrapCurrentThread();
+                }
+            } webrtc_thread_scope;
+            webrtc::Thread *thread = webrtc::Thread::Current();
+            impl_->webrtc_message_thread_.store(thread);
 
-            // PeerConnectionManager manages all WebRTC connections.
-            rtc::Thread *thread = rtc::Thread::Current();
-            rtc::InitializeSSL();
+            webrtc::InitializeSSL();
             Json::Value config;
             std::list<std::string> ice_servers;
             ice_servers.insert(ice_servers.end(), s_public_ice_servers.begin(),
@@ -345,7 +361,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                 utility::LogInfo("WebRTC Jupyter handshake mode enabled.");
                 thread->Run();
             }
-            rtc::CleanupSSL();
+            impl_->webrtc_message_thread_.store(nullptr);
+            webrtc::CleanupSSL();
         };
         impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
         impl_->sever_started_ = true;
@@ -364,8 +381,8 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
             reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
-            const auto os_window = GetOSWindowByUID(window_uid);
-            if (os_window) PostRedrawEvent(os_window);
+            // Custom callbacks that mutate GUI state (e.g. add/remove geometry)
+            // must call window->PostRedraw() or post_redraw() themselves.
             return reply;
         } else {
             reply = fmt::format(
@@ -405,7 +422,7 @@ void WebRTCWindowSystem::OnFrame(const std::string &window_uid,
 void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     utility::LogInfo("Sending init frames to {}.", window_uid);
     static const int s_max_initial_frames = 5;
-    static const int s_sleep_between_frames_ms = 100;
+    static const int s_sleep_between_frames_ms = 50;
     const auto os_window = GetOSWindowByUID(window_uid);
     if (!os_window) return;
     for (int i = 0; os_window != nullptr && i < s_max_initial_frames; ++i) {

@@ -57,7 +57,8 @@ FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
-    view_->setSampleCount(4);
+    filament::MultiSampleAntiAliasingOptions msaao({true, 4, false});
+    view_->setMultiSampleAntiAliasingOptions(msaao);
     SetAntiAliasing(true, false);
     SetPostProcessing(true);
     SetAmbientOcclusion(true, false);
@@ -86,8 +87,19 @@ FilamentView::FilamentView(filament::Engine& engine,
 }
 
 FilamentView::~FilamentView() {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+#endif
     view_->setCamera(nullptr);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
     view_->setScene(nullptr);
+    // Clear any custom render target so Filament's deferred view-destroy
+    // command doesn't hold a reference to a render target that may be freed
+    // before the engine processes its shutdown queue.
+    view_->setRenderTarget(nullptr);
 
     camera_.reset();
     engine_.destroy(view_);
@@ -140,9 +152,16 @@ void FilamentView::SetWireframe(bool enable) {
     }
 }
 
-void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
+void FilamentView::SetSampleCount(int n) {
+    auto msaao = view_->getMultiSampleAntiAliasingOptions();
+    msaao.sampleCount = n;
+    view_->setMultiSampleAntiAliasingOptions(msaao);
+}
 
-int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
+int FilamentView::GetSampleCount() const {
+    auto msaao = view_->getMultiSampleAntiAliasingOptions();
+    return msaao.sampleCount;
+}
 
 void FilamentView::SetViewport(std::int32_t x,
                                std::int32_t y,
@@ -180,14 +199,12 @@ void FilamentView::SetBloom(bool enabled,
 }
 
 void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
-    if (enabled) {
-        filament::View::TemporalAntiAliasingOptions options;
-        options.enabled = temporal;
-        view_->setAntiAliasing(filament::View::AntiAliasing::FXAA);
-        view_->setTemporalAntiAliasingOptions(options);
-    } else {
-        view_->setAntiAliasing(filament::View::AntiAliasing::NONE);
-    }
+    auto options = view_->getTemporalAntiAliasingOptions();
+    auto msaao = view_->getMultiSampleAntiAliasingOptions();
+    options.enabled = temporal;
+    msaao.enabled = enabled;
+    view_->setMultiSampleAntiAliasingOptions(msaao);
+    view_->setTemporalAntiAliasingOptions(options);
 }
 
 void FilamentView::SetShadowing(bool enabled, ShadowType type) {
@@ -227,30 +244,34 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
             break;
     }
 
-    filament::ColorGrading::ToneMapping tm =
-            filament::ColorGrading::ToneMapping::LINEAR;
-    switch (color_grading.GetToneMapping()) {
-        case ColorGradingParams::ToneMapping::kAcesLegacy:
-            tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
-            break;
-        case ColorGradingParams::ToneMapping::kAces:
-            tm = filament::ColorGrading::ToneMapping::ACES;
-            break;
-        case ColorGradingParams::ToneMapping::kFilmic:
-            tm = filament::ColorGrading::ToneMapping::FILMIC;
-            break;
-        case ColorGradingParams::ToneMapping::kUchimura:
-            tm = filament::ColorGrading::ToneMapping::UCHIMURA;
-            break;
-        case ColorGradingParams::ToneMapping::kReinhard:
-            tm = filament::ColorGrading::ToneMapping::REINHARD;
-            break;
-        case ColorGradingParams::ToneMapping::kDisplayRange:
-            tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
-            break;
-        default:
-            break;
-    }
+    // Tone mapping is not supported in Filament's ColorGrading::Builder API.
+    // The toneMapping() method was removed/deprecated in newer versions of
+    // Filament, so this code is commented out. The ToneMapping parameter in
+    // ColorGradingParams is kept for API compatibility but is not applied.
+    // filament::ColorGrading::ToneMapping tm =
+    //         filament::ColorGrading::ToneMapping::LINEAR;
+    // switch (color_grading.GetToneMapping()) {
+    //     case ColorGradingParams::ToneMapping::kAcesLegacy:
+    //         tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
+    //         break;
+    //     case ColorGradingParams::ToneMapping::kAces:
+    //         tm = filament::ColorGrading::ToneMapping::ACES;
+    //         break;
+    //     case ColorGradingParams::ToneMapping::kFilmic:
+    //         tm = filament::ColorGrading::ToneMapping::FILMIC;
+    //         break;
+    //     case ColorGradingParams::ToneMapping::kUchimura:
+    //         tm = filament::ColorGrading::ToneMapping::UCHIMURA;
+    //         break;
+    //     case ColorGradingParams::ToneMapping::kReinhard:
+    //         tm = filament::ColorGrading::ToneMapping::REINHARD;
+    //         break;
+    //     case ColorGradingParams::ToneMapping::kDisplayRange:
+    //         tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
+    //         break;
+    //     default:
+    //         break;
+    // }
 
     if (color_grading_) {
         engine_.destroy(color_grading_);
@@ -258,7 +279,7 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
     color_grading_ =
             filament::ColorGrading::Builder()
                     .quality(q)
-                    .toneMapping(tm)
+                    // .toneMapping(tm)
                     .whiteBalance(color_grading.GetTemperature(),
                                   color_grading.GetTint())
                     .channelMixer(
@@ -285,7 +306,7 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
 }
 
 void FilamentView::ConfigureForColorPicking() {
-    view_->setSampleCount(1);
+    SetSampleCount(1);
     SetPostProcessing(false);
     SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);
@@ -297,6 +318,14 @@ void FilamentView::EnableViewCaching(bool enable) {
 
     if (caching_enabled_) {
         if (render_target_) {
+            // Tear down the GS render target BEFORE freeing color_buffer_.
+            // The GS RT uses color_buffer_ as its Filament color attachment;
+            // if color_buffer_ is freed first, Filament's handle allocator
+            // finds the attachment handle already freed and panics with a
+            // use-after-free assertion (e.g. on window maximize / resize).
+            if (scene_) {
+                scene_->InvalidateGaussianSplatOutput(*this);
+            }
             resource_mgr_.Destroy(render_target_);
             resource_mgr_.Destroy(color_buffer_);
             resource_mgr_.Destroy(depth_buffer_);
@@ -324,6 +353,15 @@ void FilamentView::EnableViewCaching(bool enable) {
 bool FilamentView::IsCached() const { return caching_enabled_; }
 
 TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
+
+TextureHandle FilamentView::GetDepthBuffer() { return depth_buffer_; }
+
+TextureHandle FilamentView::GetGaussianSplatOverlay() {
+    if (scene_ && scene_->UsesGaussianSplatOutput(*this)) {
+        return scene_->GetColorBufferForView(*this);
+    }
+    return {};
+}
 
 void FilamentView::SetRenderTarget(const RenderTargetHandle render_target) {
     if (!render_target) {
@@ -355,7 +393,8 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.color_grading_) {
         view_->setColorGrading(other.color_grading_);
     }
-    view_->setSampleCount(other.view_->getSampleCount());
+    view_->setMultiSampleAntiAliasingOptions(
+            other.view_->getMultiSampleAntiAliasingOptions());
     auto ao_options = other.view_->getAmbientOcclusionOptions();
     view_->setAmbientOcclusionOptions(ao_options);
     auto aa_mode = other.view_->getAntiAliasing();
@@ -386,8 +425,8 @@ void FilamentView::PreRender() {
             const auto n = camera_->GetNativeCamera()->getNear();
 
             FilamentMaterialModifier(selected_material, material_handle)
-                    .SetParameter("cameraNear", n)
-                    .SetParameter("cameraFar", f)
+                    .SetParameter("cameraNear", static_cast<float>(n))
+                    .SetParameter("cameraFar", static_cast<float>(f))
                     .Finish();
         }
     } else if (mode_ == Mode::Normals) {

@@ -3,7 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 # For bash-specific commands
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
@@ -68,9 +68,9 @@ RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
 RUN apt-get update && apt-get install -y \
     git  \
     wget \
-    curl \
     build-essential \
     ccache \
+    parallel \
     pkg-config \
     zlib1g \
     zlib1g-dev \
@@ -79,6 +79,7 @@ RUN apt-get update && apt-get install -y \
     libreadline-dev \
     libsqlite3-dev \
     libncursesw5-dev \
+    libusb-1.0-0-dev \
     xz-utils \
     tk-dev \
     libxml2-dev \
@@ -97,20 +98,23 @@ RUN apt-get update && apt-get install -y \
 # which patch level pyenv will install (latest).
 ENV PYENV_ROOT=/root/.pyenv
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
-RUN curl https://pyenv.run | bash \
+# Install pyenv if it is not already present in BASE_IMAGE.
+RUN if [ ! -d "$PYENV_ROOT" ]; then \
+        wget -qO- https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash; \
+    fi \
         && pyenv update \
-        && pyenv install $PYTHON_VERSION \
+        && pyenv install -s $PYTHON_VERSION \
         && pyenv global $PYTHON_VERSION \
         && pyenv rehash \
-        && ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
-RUN python --version && pip --version \
+        && ln -sf $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Dependencies: cmake
 ENV PATH=/opt/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
- && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && wget -nv https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
@@ -128,16 +132,19 @@ RUN ccache --version \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.?z ]; then tar -xf ${CCACHE_TAR_NAME}.tar.?z; fi \
+ && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; } \
  && mkdir -p ${CCACHE_DIR} \
  && ccache -M 4G \
  && ccache -s
 
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# Install Open3D-ML if it is not already present in BASE_IMAGE.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}; \
+    fi
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR
@@ -145,13 +152,8 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Open3D C++ dependencies
-# If BUILD_SYCL_MODULE=ON, do not install clang - this installs libomp5-dev which gets linked into the shared library.
-RUN if [[ "$(uname -m)" = "x86_64" ]] ; then \
-        ./util/install_deps_ubuntu.sh assume-yes no-filament-deps ; \
-    else \
-        ./util/install_deps_ubuntu.sh assume-yes ; \
-    fi
-
+# For build filament clang is needed (bundled with filament)
+RUN ./util/install_deps_ubuntu.sh assume-yes
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
  && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
@@ -162,10 +164,11 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
+# Avoid gpg prompting to overwrite it interactively.
 RUN mkdir -p /etc/apt/keyrings \
- && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" \
+ && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+ | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
  | tee /etc/apt/sources.list.d/nodesource.list \
  && apt-get update \
  && apt-get install -y nodejs \
@@ -173,7 +176,6 @@ RUN mkdir -p /etc/apt/keyrings \
  && node --version \
  && npm install -g yarn \
  && yarn --version
-
 
 # Build all
 RUN \
@@ -186,9 +188,9 @@ RUN \
         export CMAKE_C_COMPILER=gcc; \
         export BUILD_ISPC_MODULE=ON; \
     fi \
- && mkdir build \
+ && mkdir -p build \
  && cd build \
- && cmake -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
+ && cmake --fresh -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
@@ -225,7 +227,7 @@ RUN ccache -s \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [[ "${BUILD_SYCL_MODULE}" = "ON"  && "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

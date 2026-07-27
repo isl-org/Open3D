@@ -77,7 +77,7 @@ static Tensor ConcatenateImpl(const std::vector<Tensor>& tensors,
 }
 
 Tensor Concatenate(const std::vector<Tensor>& tensors,
-                   const utility::optional<int64_t>& axis) {
+                   const std::optional<int64_t>& axis) {
     const int num_tensors = tensors.size();
 
     if (num_tensors < 1) {
@@ -111,13 +111,14 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
                     axis.value());
         }
 
-        return ConcatenateImpl(tensors, axis.value());
+        Tensor result = ConcatenateImpl(tensors, axis.value());
+        return result;
     }
 }
 
 Tensor Append(const Tensor& self,
               const Tensor& other,
-              const utility::optional<int64_t>& axis) {
+              const std::optional<int64_t>& axis) {
     return Concatenate({self, other}, axis);
 }
 

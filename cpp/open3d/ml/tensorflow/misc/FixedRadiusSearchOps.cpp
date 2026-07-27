@@ -79,7 +79,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
                 neighbors_distance_shape = c->MakeShape({0});
             c->set_output(2, neighbors_distance_shape);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Computes the indices of all neighbors within a radius.

@@ -7,10 +7,13 @@
 
 #include "open3d/visualization/visualizer/RenderOption.h"
 
+#include <filesystem>
+
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "pybind/docstring.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind/visualization/visualization_trampoline.h"
+namespace fs = std::filesystem;
 
 namespace open3d {
 namespace visualization {

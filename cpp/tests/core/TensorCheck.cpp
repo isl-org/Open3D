@@ -174,7 +174,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with initializer_list.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t, {4, utility::nullopt});
+        core::AssertTensorShape(t, {4, std::nullopt});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),
@@ -190,8 +190,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with DynamicSizeVector instance.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t,
-                                core::DynamicSizeVector({4, utility::nullopt}));
+        core::AssertTensorShape(t, core::DynamicSizeVector({4, std::nullopt}));
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),
@@ -229,8 +228,7 @@ bool IsSyclDeviceAssertError(const char* what) {
 
 // CUDA device assert leaves a pending CUDA error that aborts the process during
 // teardown after this test (see OPEN3D_ASSERT + __trap). Run locally with
-// --gtest_also_run_disabled_tests and filter
-// Tensor/TensorCheckPermuteDevices.DISABLED_AssertTensorIndexOps/*
+// --gtest_also_run_disabled_tests and filter *AssertTensorIndexOps*
 TEST_P(TensorCheckPermuteDevices, DISABLED_AssertTensorIndexOps) {
     core::Device device = GetParam();
     core::Tensor idx = core::Tensor::Init<int64_t>(

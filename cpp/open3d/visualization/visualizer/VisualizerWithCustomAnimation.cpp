@@ -107,17 +107,18 @@ void VisualizerWithCustomAnimation::Play(
                 view_control.ConvertToPinholeCameraParameters(parameter);
                 trajectory_ptr->parameters_.push_back(parameter);
             }
-            std::string buffer;
             if (recording_depth) {
-                buffer = fmt::format(recording_depth_filename_format_.c_str(),
-                                     recording_file_index_);
-                CaptureDepthImage(
-                        recording_depth_basedir_ + std::string(buffer), false);
+                auto buffer = fmt::format(
+                        fmt::runtime(recording_depth_basedir_ +
+                                     recording_depth_filename_format_),
+                        recording_file_index_);
+                CaptureDepthImage(buffer, false);
             } else {
-                buffer = fmt::format(recording_image_filename_format_.c_str(),
-                                     recording_file_index_);
-                CaptureScreenImage(
-                        recording_image_basedir_ + std::string(buffer), false);
+                auto buffer = fmt::format(
+                        fmt::runtime(recording_depth_basedir_ +
+                                     recording_image_filename_format_),
+                        recording_file_index_);
+                CaptureScreenImage(buffer, false);
             }
         }
         view_control.Step(1.0);

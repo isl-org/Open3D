@@ -66,7 +66,7 @@ From the author:
 ## Python quick start
 
 Pre-built pip packages support Ubuntu 20.04+, macOS 10.15+ and Windows 10+
-(64-bit) with Python 3.8-3.11.
+(64-bit) with Python 3.10-3.14.
 
 ```bash
 # Install
@@ -90,6 +90,13 @@ To get the latest features in Open3D, install the
 [development pip package](https://www.open3d.org/docs/latest/getting_started.html#development-version-pip).
 To compile Open3D from source, refer to
 [compiling from source](https://www.open3d.org/docs/release/compilation.html).
+
+Release artifacts (Python wheels and C++ binaries) include signed
+[SLSA](https://slsa.dev) build-provenance attestations (GitHub Artifact
+Attestations), aligned with [OpenSSF](https://openssf.org) supply-chain
+guidance. See
+[Getting started — supply chain attestations](https://www.open3d.org/docs/latest/getting_started.html#supply-chain-attestations)
+for verification with the GitHub CLI.
 
 ## C++ quick start
 

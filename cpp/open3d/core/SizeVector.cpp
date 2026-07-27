@@ -10,22 +10,22 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
 
 DynamicSizeVector::DynamicSizeVector(
-        const std::initializer_list<utility::optional<int64_t>>& dim_sizes)
+        const std::initializer_list<std::optional<int64_t>>& dim_sizes)
     : super_t(dim_sizes) {}
 
 DynamicSizeVector::DynamicSizeVector(
-        const std::vector<utility::optional<int64_t>>& dim_sizes)
+        const std::vector<std::optional<int64_t>>& dim_sizes)
     : super_t(dim_sizes.begin(), dim_sizes.end()) {}
 
 DynamicSizeVector::DynamicSizeVector(const DynamicSizeVector& other)
@@ -62,7 +62,7 @@ std::string DynamicSizeVector::ToString() const {
     std::stringstream ss;
     ss << "{";
     bool first = true;
-    for (const utility::optional<int64_t>& element : *this) {
+    for (const std::optional<int64_t>& element : *this) {
         if (first) {
             first = false;
         } else {
@@ -81,7 +81,7 @@ std::string DynamicSizeVector::ToString() const {
 bool DynamicSizeVector::IsDynamic() const {
     return std::any_of(
             this->begin(), this->end(),
-            [](const utility::optional<int64_t>& v) { return !v.has_value(); });
+            [](const std::optional<int64_t>& v) { return !v.has_value(); });
 }
 
 SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)

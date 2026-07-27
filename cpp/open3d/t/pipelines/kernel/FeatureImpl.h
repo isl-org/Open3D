@@ -106,6 +106,8 @@ OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
 
 #if defined(__CUDACC__)
 void ComputeFPFHFeatureCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeFPFHFeatureSYCL
 #else
 void ComputeFPFHFeatureCPU
 #endif
@@ -115,8 +117,8 @@ void ComputeFPFHFeatureCPU
          const core::Tensor &distance2,
          const core::Tensor &counts,
          core::Tensor &fpfhs,
-         const utility::optional<core::Tensor> &mask,
-         const utility::optional<core::Tensor> &map_info_idx_to_point_idx) {
+         const std::optional<core::Tensor> &mask,
+         const std::optional<core::Tensor> &map_info_idx_to_point_idx) {
     const core::Dtype dtype = points.GetDtype();
     const core::Device device = points.GetDevice();
     const int64_t n_points = points.GetLength();

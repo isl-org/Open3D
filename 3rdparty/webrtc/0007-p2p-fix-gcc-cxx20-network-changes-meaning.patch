@@ -1,0 +1,19 @@
+Subject: [PATCH] p2p: qualify Network() return type to fix GCC C++20 error
+
+GCC (C++20 mode) treats a method named `Network()` returning an
+unqualified `Network*` as a "changes meaning" error, because the method
+name shadows the class name `Network` inside its own declaration.
+Qualify the return type with `::webrtc::` to disambiguate.
+
+diff --git a/p2p/base/port_interface.h b/p2p/base/port_interface.h
+--- a/p2p/base/port_interface.h
++++ b/p2p/base/port_interface.h
+@@ -52,7 +52,7 @@ class PortInterface {
+   virtual ~PortInterface();
+ 
+   virtual IceCandidateType Type() const = 0;
+-  virtual const Network* Network() const = 0;
++  virtual const ::webrtc::Network* Network() const = 0;
+ 
+   // Methods to set/get ICE role and tiebreaker values.
+   virtual void SetIceRole(IceRole role) = 0;

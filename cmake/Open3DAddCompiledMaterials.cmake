@@ -35,7 +35,7 @@ function(open3d_add_compiled_materials target)
     if (IOS OR ANDROID)
         set(FILAMENT_MATC_ARGS "--platform=mobile")
     else()
-        set(FILAMENT_MATC_ARGS "--platform=desktop")
+        set(FILAMENT_MATC_ARGS "--api=all")
     endif()
 
     get_filename_component(OUTPUT_DIRECTORY_FULL_PATH "${ARG_OUTPUT_DIRECTORY}" ABSOLUTE)

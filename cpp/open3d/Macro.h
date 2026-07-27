@@ -58,7 +58,7 @@
 
 #if defined(__CUDA_ARCH__)
 
-#include "open3d/core/CUDAAssertDevice.cuh"
+#include "open3d/core/CUDAUtils.h"
 
 #define OPEN3D_ASSERT_MSG(condition, message)                         \
     do {                                                              \

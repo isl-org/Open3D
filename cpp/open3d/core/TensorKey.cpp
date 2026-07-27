@@ -44,18 +44,28 @@ private:
 
 class TensorKey::SliceImpl : public TensorKey::Impl {
 public:
-    SliceImpl(utility::optional<int64_t> start,
-              utility::optional<int64_t> stop,
-              utility::optional<int64_t> step)
+    SliceImpl(std::optional<int64_t> start,
+              std::optional<int64_t> stop,
+              std::optional<int64_t> step)
         : TensorKey::Impl(TensorKeyMode::Slice),
           start_(start),
           stop_(stop),
           step_(step) {}
     std::shared_ptr<SliceImpl> InstantiateDimSize(int64_t dim_size) const {
+        int64_t step = step_.has_value() ? step_.value() : 1;
+        int64_t start_default, stop_default;
+        if (step >= 0) {
+            // Positive step: default start is 0, default stop is dim_size
+            start_default = 0;
+            stop_default = dim_size;
+        } else {
+            // Negative step: default start is dim_size - 1, default stop is -1
+            start_default = dim_size - 1;
+            stop_default = -1;
+        }
         return std::make_shared<SliceImpl>(
-                start_.has_value() ? start_.value() : 0,
-                stop_.has_value() ? stop_.value() : dim_size,
-                step_.has_value() ? step_.value() : 1);
+                start_.has_value() ? start_.value() : start_default,
+                stop_.has_value() ? stop_.value() : stop_default, step);
     }
     int64_t GetStart() const {
         if (start_.has_value()) {
@@ -103,9 +113,9 @@ public:
     }
 
 private:
-    utility::optional<int64_t> start_ = utility::nullopt;
-    utility::optional<int64_t> stop_ = utility::nullopt;
-    utility::optional<int64_t> step_ = utility::nullopt;
+    std::optional<int64_t> start_ = std::nullopt;
+    std::optional<int64_t> stop_ = std::nullopt;
+    std::optional<int64_t> step_ = std::nullopt;
 };
 
 class TensorKey::IndexTensorImpl : public TensorKey::Impl {
@@ -134,9 +144,9 @@ TensorKey TensorKey::Index(int64_t index) {
     return TensorKey(std::make_shared<IndexImpl>(index));
 }
 
-TensorKey TensorKey::Slice(utility::optional<int64_t> start,
-                           utility::optional<int64_t> stop,
-                           utility::optional<int64_t> step) {
+TensorKey TensorKey::Slice(std::optional<int64_t> start,
+                           std::optional<int64_t> stop,
+                           std::optional<int64_t> step) {
     return TensorKey(std::make_shared<SliceImpl>(start, stop, step));
 }
 
