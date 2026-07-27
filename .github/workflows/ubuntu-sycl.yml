@@ -146,6 +146,7 @@ jobs:
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
 
       - name: Generate artifact attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: |

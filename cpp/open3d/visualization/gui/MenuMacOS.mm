@@ -130,6 +130,36 @@ void MenuMacOS::InsertSeparator(int index) {
 
 int MenuMacOS::GetNumberOfItems() const { return impl_->menu_.numberOfItems; }
 
+std::shared_ptr<MenuBase> MenuMacOS::GetMenu(const char *name) {
+    size_t submenu_idx = 0;
+    for (NSInteger i = 0; i < impl_->menu_.numberOfItems; ++i) {
+        NSMenuItem *item = [impl_->menu_ itemAtIndex:i];
+        if (item.hasSubmenu) {
+            if ([item.title
+                        isEqualToString:[NSString stringWithUTF8String:name]]) {
+                return impl_->submenus_[submenu_idx];
+            }
+            ++submenu_idx;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<MenuBase> MenuMacOS::GetMenu(ItemId item_id) {
+    if (item_id == NO_ITEM) {
+        return nullptr;
+    }
+    if ([impl_->menu_ itemWithTag:item_id] != nil) {
+        return shared_from_this();
+    }
+    for (auto &submenu : impl_->submenus_) {
+        if (submenu->GetMenu(item_id)) {
+            return submenu;
+        }
+    }
+    return nullptr;
+}
+
 bool MenuMacOS::IsEnabled(ItemId item_id) const {
     NSMenuItem *item = impl_->FindMenuItem(item_id);
     if (item) {
