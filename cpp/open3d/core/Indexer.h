@@ -121,9 +121,9 @@ struct TensorRef {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
             // The end of the buffer should be at the end of the largest strided
-            // dimension block. This way, we can compute the total buffer size in
-            // both cases (when tensor is contiguous and when it is not). If it
-            // is not contiguous, the actual "end" of the buffer may not be
+            // dimension block. This way, we can compute the total buffer size
+            // in both cases (when tensor is contiguous and when it is not). If
+            // it is not contiguous, the actual "end" of the buffer may not be
             // simply NumElements() * dtype_byte_size_.
             total_byte_size_ =
                     std::max(total_byte_size_, shape_[i] * byte_strides_[i]);
