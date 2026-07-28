@@ -255,10 +255,11 @@ void pybind_image_definitions(py::module &m) {
     // Conversion.
     image.def(
             "to",
-          // scale is py::object instead of std::optional<double> to allow
-          // pybind11-stubgen to produce valid stubs with default value of None.
-            [](const Image &img, core::Dtype dtype, bool copy,
-               py::object scale, double offset) {
+            // scale is py::object instead of std::optional<double> to allow
+            // pybind11-stubgen to produce valid stubs with default value of
+            // None.
+            [](const Image &img, core::Dtype dtype, bool copy, py::object scale,
+               double offset) {
                 std::optional<double> scale_opt;
                 if (!scale.is_none()) {
                     scale_opt = scale.cast<double>();

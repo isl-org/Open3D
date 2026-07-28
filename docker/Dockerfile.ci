@@ -161,21 +161,8 @@ RUN source util/ci_utils.sh \
     else \
         install_python_dependencies with-jupyter; \
     fi \
- && pip install -r python/requirements_test.txt
-
-# Open3D Jupyter dependencies
-# Avoid gpg prompting to overwrite it interactively.
-RUN mkdir -p /etc/apt/keyrings \
- && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
- | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
- | tee /etc/apt/sources.list.d/nodesource.list \
- && apt-get update \
- && apt-get install -y nodejs \
- && rm -rf /var/lib/apt/lists/* \
- && node --version \
- && npm install -g yarn \
- && yarn --version
+ && pip install -r python/requirements_test.txt \
+ && install_nodejs_linux
 
 # Build all
 RUN \

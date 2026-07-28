@@ -8,6 +8,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #include <pybind11/stl/filesystem.h>
+
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/IJsonConvertibleIO.h"
@@ -157,7 +158,8 @@ void pybind_visualization_utility_definitions(py::module &m) {
                     if (py::isinstance<py::str>(json_filename)) {
                         json_str = json_filename.cast<std::string>();
                     } else {
-                        json_str = json_filename.attr("__fspath__")().cast<std::string>();
+                        json_str = json_filename.attr("__fspath__")()
+                                           .cast<std::string>();
                     }
                 }
                 DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name,
