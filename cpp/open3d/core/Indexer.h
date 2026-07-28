@@ -116,17 +116,24 @@ struct TensorRef {
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = t.GetDtype().ByteSize();
-        total_byte_size_ = 0;
+        int64_t num_elements = 1;
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
-            // The end of the buffer should be at the end of the largest strided
-            // dimension block. This way, we can compute the total buffer size
-            // in both cases (when tensor is contiguous and when it is not). If
-            // it is not contiguous, the actual "end" of the buffer may not be
-            // simply NumElements() * dtype_byte_size_.
-            total_byte_size_ =
-                    std::max(total_byte_size_, shape_[i] * byte_strides_[i]);
+            num_elements *= shape_[i];
+        }
+        // Exclusive end byte offset for valid row-major linear element indices.
+        total_byte_size_ = 0;
+        if (num_elements > 0) {
+            int64_t workload_idx = num_elements - 1;
+            int64_t offset = 0;
+            int64_t remaining = workload_idx;
+            for (int64_t d = ndims_ - 1; d >= 0; --d) {
+                const int64_t coord = remaining % shape_[d];
+                remaining /= shape_[d];
+                offset += coord * byte_strides_[d];
+            }
+            total_byte_size_ = offset + dtype_byte_size_;
         }
     }
 

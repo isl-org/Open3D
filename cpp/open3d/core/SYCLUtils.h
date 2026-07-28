@@ -28,28 +28,8 @@
 #if defined(BUILD_SYCL_MODULE) && defined(SYCL_LANGUAGE_VERSION)
 #include <sycl/sycl.hpp>
 
-namespace open3d {
-namespace detail {
-
-extern sycl::
-        global<int, sycl::memory_order::relaxed, sycl::memory_scope::device>
-                open3d_sycl_assert_reported;
-
-}  // namespace detail
-}  // namespace open3d
-
-/// Creates \c open3d_sycl_assert_stream for use with OPEN3D_ASSERT in SYCL
-/// device kernels. Call inside \c queue.submit before \c parallel_for.
-///
-/// Example:
-/// \code{.cpp}
-/// queue.submit([&](sycl::handler& cgh) {
-///     OPEN3D_SYCL_ASSERT_STREAM(cgh);
-///     cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> i) {
-///         OPEN3D_ASSERT(i < n, "Index out of bounds.");
-///     });
-/// }).wait_and_throw();
-/// \endcode
+/// Optional \c sycl::stream for device-side logging in SYCL kernels (not used
+/// by OPEN3D_ASSERT, which traps on failure).
 #define OPEN3D_SYCL_ASSERT_STREAM(cgh) \
     sycl::stream open3d_sycl_assert_stream(1024, 256, cgh)
 #endif  // BUILD_SYCL_MODULE && SYCL_LANGUAGE_VERSION

@@ -48,8 +48,7 @@
 //     OPEN3D_ASSERT(condition);
 //     OPEN3D_ASSERT(condition, "Error message");
 //
-// SYCL: call OPEN3D_SYCL_ASSERT_STREAM(cgh) inside queue.submit before
-// parallel_for (see open3d/core/SYCLUtils.h).
+// SYCL: device OPEN3D_ASSERT traps via __builtin_trap (see Macro.h).
 // For host-only code, utility::LogError() may also be used directly.
 #define OPEN3D_ASSERT_EXPAND(...) __VA_ARGS__
 #define OPEN3D_ASSERT_GET_MACRO(_1, _2, NAME, ...) NAME
@@ -70,51 +69,6 @@
         if (!(condition)) {                                           \
             ::open3d::detail::Open3DCudaAssertReportAndTrap(message); \
         }                                                             \
-    } while (0)
-
-#elif defined(__SYCL_DEVICE_ONLY__) && defined(SYCL_LANGUAGE_VERSION) && \
-        __has_include(<sycl/sycl.hpp>)
-
-#include <sycl/ext/oneapi/this_work_item.hpp>
-#include <sycl/sycl.hpp>
-
-#if __has_include(<sycl/ext/oneapi/experimental/device_trap.hpp>)
-#include <sycl/ext/oneapi/experimental/device_trap.hpp>
-#define OPEN3D_SYCL_ASSERT_TRAP() sycl::ext::oneapi::experimental::trap()
-#else
-#define OPEN3D_SYCL_ASSERT_TRAP() __builtin_trap()
-#endif
-
-namespace open3d {
-namespace detail {
-extern sycl::
-        global<int, sycl::memory_order::relaxed, sycl::memory_scope::device>
-                open3d_sycl_assert_reported;
-}  // namespace detail
-}  // namespace open3d
-
-#define OPEN3D_ASSERT_MSG(condition, message)                                \
-    do {                                                                     \
-        if (!(condition)) {                                                  \
-            sycl::atomic_ref<int, sycl::memory_order::relaxed,               \
-                             sycl::memory_scope::device,                     \
-                             sycl::access::address_space::global_space>      \
-                    reported(::open3d::detail::open3d_sycl_assert_reported); \
-            int open3d_assert_was_reported = 0;                              \
-            if (reported.compare_exchange_strong(open3d_assert_was_reported, \
-                                                 1)) {                       \
-                const auto it =                                              \
-                        sycl::ext::oneapi::this_work_item::get_nd_item<3>(); \
-                open3d_sycl_assert_stream                                    \
-                        << "Open3D SYCL assertion failed at global ["        \
-                        << it.get_global_id(0) << "," << it.get_global_id(1) \
-                        << "," << it.get_global_id(2) << "], local ["        \
-                        << it.get_local_id(0) << "," << it.get_local_id(1)   \
-                        << "," << it.get_local_id(2) << "]:\n"               \
-                        << message << sycl::endl;                            \
-            }                                                                \
-            OPEN3D_SYCL_ASSERT_TRAP();                                       \
-        }                                                                    \
     } while (0)
 
 #elif defined(__SYCL_DEVICE_ONLY__)
