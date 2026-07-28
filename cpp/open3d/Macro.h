@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cassert>
+
 // https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
 // In Open3D, we set symbol visibility based on folder / cmake target through
 // cmake. e.g. all symbols in kernel folders are hidden. These macros allow fine
@@ -67,12 +69,19 @@
         }                                                             \
     } while (0)
 
-#elif defined(__SYCL_DEVICE_ONLY__)
+#elif defined(__SYCL_DEVICE_ONLY__) && defined(BUILD_SYCL_MODULE)
 
-#include <sycl/ext/oneapi/experimental/device_trap.hpp>
 #include <sycl/ext/oneapi/this_work_item.hpp>
+#include <sycl/sycl.hpp>
 
 #include "open3d/core/SYCLUtils.h"
+
+#if __has_include(<sycl/ext/oneapi/experimental/device_trap.hpp>)
+#include <sycl/ext/oneapi/experimental/device_trap.hpp>
+#define OPEN3D_SYCL_ASSERT_TRAP() sycl::ext::oneapi::experimental::trap()
+#else
+#define OPEN3D_SYCL_ASSERT_TRAP() __builtin_trap()
+#endif
 
 #define OPEN3D_ASSERT_MSG(condition, message)                                \
     do {                                                                     \
@@ -94,7 +103,7 @@
                         << "," << it.get_local_id(2) << "]:\n"               \
                         << message << sycl::endl;                            \
             }                                                                \
-            sycl::ext::oneapi::experimental::trap();                         \
+            OPEN3D_SYCL_ASSERT_TRAP();                                       \
         }                                                                    \
     } while (0)
 

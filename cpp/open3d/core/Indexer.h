@@ -121,10 +121,10 @@ struct TensorRef {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
             // The end of the buffer should be at the end of the largest strided
-            // dimension block This way, we can compute the total buffer size in
-            // both cases (when tensor is contiguous and when it is not) If it
+            // dimension block. This way, we can compute the total buffer size in
+            // both cases (when tensor is contiguous and when it is not). If it
             // is not contiguous, the actual "end" of the buffer may not be
-            // simply NumElements() * dtype_byte_size_
+            // simply NumElements() * dtype_byte_size_.
             total_byte_size_ =
                     std::max(total_byte_size_, shape_[i] * byte_strides_[i]);
         }
@@ -273,9 +273,9 @@ public:
             }
         }
         OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_,
-                      "TensorIterator operation data pointer is out of range.");
+                      "Index operation data pointer is out of range.");
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
-                                    offset);
+                                  offset);
     }
 
 protected:
