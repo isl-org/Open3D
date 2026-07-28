@@ -255,6 +255,7 @@ add_custom_target(python-package
             -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
+            -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
     VERBATIM
     DEPENDS ${GENERATED_OUTPUTS}
