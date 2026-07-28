@@ -72,7 +72,8 @@
         }                                                             \
     } while (0)
 
-#elif defined(__SYCL_DEVICE_ONLY__) && defined(SYCL_LANGUAGE_VERSION)
+#elif defined(__SYCL_DEVICE_ONLY__) && defined(SYCL_LANGUAGE_VERSION) && \
+        __has_include(<sycl/sycl.hpp>)
 
 #include <sycl/ext/oneapi/this_work_item.hpp>
 #include <sycl/sycl.hpp>
