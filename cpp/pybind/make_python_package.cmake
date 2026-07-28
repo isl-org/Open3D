@@ -195,18 +195,12 @@ if(WITH_STUBGEN)
             ${PYBIND11_STUBGEN_FATAL_FLAGS}
         )
     endif()
-    set(STUBGEN_ENV_VARS "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}")
-    if(WIN32)
-        if(DEFINED ENV{PATH})
-            set(_stubgen_path "${PYTHON_PACKAGE_DST_DIR}/open3d;$ENV{PATH}")
-        else()
-            set(_stubgen_path "${PYTHON_PACKAGE_DST_DIR}/open3d")
-        endif()
-        list(APPEND STUBGEN_ENV_VARS "PATH=${_stubgen_path}")
-    endif()
+    # Do not put PATH in a CMake list: semicolons in $ENV{PATH} split list elements
+    # and break `cmake -E env`. open3d/__init__.py adds DLL directories on import.
     message(STATUS "Generating typing stubs...")
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E env ${STUBGEN_ENV_VARS}
+        COMMAND ${CMAKE_COMMAND} -E env
+                "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
                 pybind11-stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
                 ${PYBIND11_STUBGEN_FLAGS}
         COMMAND_ECHO STDOUT
