@@ -34,7 +34,7 @@ void roipool3dLauncherCPU(int batch_size,
             tbb::blocked_range<int>(0, batch_size * boxes_num),
             [&](const tbb::blocked_range<int> &r) {
                 for (int idx = r.begin(); idx != r.end(); ++idx) {
-                    const int i = idx / boxes_num;         // batch index
+                    const int i = idx / boxes_num;          // batch index
                     const int boxes_idx = idx % boxes_num;  // box index
 
                     int cnt = 0;
@@ -70,8 +70,7 @@ void roipool3dLauncherCPU(int batch_size,
                                 for (int j = 0; j < feature_in_len; j++)
                                     pooled_features[feature_out_offset + 3 +
                                                     j] =
-                                            pts_feature[feature_in_offset +
-                                                       j];
+                                            pts_feature[feature_in_offset + j];
 
                                 cnt++;
                             } else {

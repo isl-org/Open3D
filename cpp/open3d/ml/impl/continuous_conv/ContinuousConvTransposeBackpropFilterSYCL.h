@@ -135,8 +135,8 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
                     (run_i * num_cols_per_run * out_channels));
         }
 
-        sycl::event fill_column_event = FillColumnTransposeSYCL<
-                TFeat, TReal, TIndex>(
+        sycl::event fill_column_event = FillColumnTransposeSYCL<TFeat, TReal,
+                                                                TIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_neighbors_importance_sum, inp_neighbors_row_splits,
@@ -168,8 +168,7 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
         // FillColumnTransposeSYCL), so it depends on both events.
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32,
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 out_importance ? std::vector<sycl::event>{fill_column_event,
                                                           gradient_ready_event}
                                : std::vector<sycl::event>{fill_column_event});

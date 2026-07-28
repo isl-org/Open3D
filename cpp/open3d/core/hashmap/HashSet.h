@@ -18,10 +18,11 @@ namespace core {
 
 /// Tensor hash set (unique keys) on CPU, CUDA, or SYCL.
 ///
-/// Thin wrapper around an internal \ref HashMap (dummy values). **Insert**, **Find**,
-/// **GetActiveIndices**, and **buf_indices** semantics are identical to \ref HashMap
-/// — see \ref HashMap class documentation for buffer-index rules, Int32→Int64,
-/// SYCL buffer holes, and usage examples.
+/// Thin wrapper around an internal \ref HashMap (dummy values). **Insert**,
+/// **Find**,
+/// **GetActiveIndices**, and **buf_indices** semantics are identical to \ref
+/// HashMap — see \ref HashMap class documentation for buffer-index rules,
+/// Int32→Int64, SYCL buffer holes, and usage examples.
 class HashSet : public core::IsDevice {
 public:
     /// Initialize a hash set given a key dtype and element shape.
@@ -41,8 +42,8 @@ public:
     /// (see \ref HashMap class docs for \c buf_indices and Int32 → Int64).
     std::pair<Tensor, Tensor> Insert(const Tensor& input_keys);
 
-    /// Parallel find keys. Same \p output_buf_indices / \p output_masks semantics
-    /// as \ref HashMap::Find (see \ref HashMap class docs).
+    /// Parallel find keys. Same \p output_buf_indices / \p output_masks
+    /// semantics as \ref HashMap::Find (see \ref HashMap class docs).
     std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
 
     /// Parallel erase an array of keys in Tensor.

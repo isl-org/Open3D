@@ -108,7 +108,7 @@ void ContinuousConvBackpropFilterSYCL(
             const open3d::ml::impl::CoordinateMapping coordinate_mapping,     \
             const bool normalize,                                             \
             const open3d::ml::impl::InterpolationMode interpolation,          \
-            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            const int64_t max_temp_mem_MB, const bool allow_tf32,             \
             torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)

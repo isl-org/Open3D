@@ -1746,8 +1746,9 @@ TEST_P(TriangleMeshPermuteDevices, BackendParityNormalsAndAreasMatchCPU) {
     }
     const core::Device cpu("CPU:0");
 
-    t::geometry::TriangleMesh mesh_cpu = t::geometry::TriangleMesh::CreateSphere(
-            1.0, 4, core::Float32, core::Int64, cpu);
+    t::geometry::TriangleMesh mesh_cpu =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, cpu);
     t::geometry::TriangleMesh mesh_other =
             t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
                                                     core::Int64, device);

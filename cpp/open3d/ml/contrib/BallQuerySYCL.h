@@ -118,8 +118,8 @@ inline void BallQuerySYCL(sycl::queue& queue,
                     // bookkeeping (but slots are now assigned by the scan
                     // instead of a running scalar counter).
                     int slot = base_slot;
-                    for (int k = static_cast<int>(lid);
-                         k < n && slot < nsample; k += static_cast<int>(wg)) {
+                    for (int k = static_cast<int>(lid); k < n && slot < nsample;
+                         k += static_cast<int>(wg)) {
                         const float x = xyz_batch[k * 3 + 0];
                         const float y = xyz_batch[k * 3 + 1];
                         const float z = xyz_batch[k * 3 + 2];

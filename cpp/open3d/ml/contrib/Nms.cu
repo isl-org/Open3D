@@ -176,11 +176,11 @@ int NmsCUDAKernel(const float *boxes,
     OPEN3D_CUDA_CHECK(cudaMalloc((void **)&count_dev, sizeof(int)));
 
     NmsGreedyKeepKernel<<<1, 1>>>(mask_ptr, sort_indices, n, remv,
-                                 keep_indices_out, count_dev);
+                                  keep_indices_out, count_dev);
 
     int count = 0;
-    OPEN3D_CUDA_CHECK(cudaMemcpy(&count, count_dev, sizeof(int),
-                                 cudaMemcpyDeviceToHost));
+    OPEN3D_CUDA_CHECK(
+            cudaMemcpy(&count, count_dev, sizeof(int), cudaMemcpyDeviceToHost));
 
     OPEN3D_CUDA_CHECK(cudaFree(mask_ptr));
     OPEN3D_CUDA_CHECK(cudaFree(sort_indices));

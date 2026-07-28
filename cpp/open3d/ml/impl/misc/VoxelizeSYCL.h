@@ -21,7 +21,8 @@
 //   a genuine synchronization point (see RunLengthEncodeSYCL).
 // - cub::DeviceRadixSort::SortPairs -> oneapi::dpl::sort_by_key. Also has no
 //   async equivalent; a genuine synchronization point.
-// - cub::DeviceScan::InclusiveSum -> oneapi::dpl::experimental::inclusive_scan_async
+// - cub::DeviceScan::InclusiveSum ->
+// oneapi::dpl::experimental::inclusive_scan_async
 //   (non-blocking; same pattern as InvertNeighborsListSYCL.h).
 //
 // Each stage takes an optional `deps` event-vector and returns its
@@ -67,11 +68,10 @@ inline T ReadScalar(sycl::queue& queue,
 
 /// Assigns each point its batch id (index into row_splits) by looping over
 /// batches on the device. Ports ComputeIndicesBatchesKernel.
-inline sycl::event ComputeIndicesBatchesSYCL(
-        sycl::queue& queue,
-        int64_t* indices_batches,
-        const int64_t* row_splits,
-        int64_t batch_size) {
+inline sycl::event ComputeIndicesBatchesSYCL(sycl::queue& queue,
+                                             int64_t* indices_batches,
+                                             const int64_t* row_splits,
+                                             int64_t batch_size) {
     if (batch_size == 0) return sycl::event();
     return core::ParallelFor(
             queue, batch_size,
@@ -102,19 +102,24 @@ inline sycl::event ComputeHashSYCL(sycl::queue& queue,
                                    const std::vector<sycl::event>& deps = {}) {
     if (num_points == 0) return sycl::event();
     typedef MiniVec<T, NDIM> Vec_t;
-    return core::ParallelFor(queue, num_points, [=](int64_t i) {
-        Vec_t point(points + i * NDIM);
-        if ((point >= points_range_min_vec && point <= points_range_max_vec)
-                    .all()) {
-            auto coords = ((point - points_range_min_vec) * inv_voxel_size)
-                                  .template cast<int64_t>();
-            int64_t h = coords.dot(strides);
-            h += indices_batches[i] * batch_hash;
-            hashes[i] = h;
-        } else {
-            hashes[i] = invalid_hash;
-        }
-    }, deps);
+    return core::ParallelFor(
+            queue, num_points,
+            [=](int64_t i) {
+                Vec_t point(points + i * NDIM);
+                if ((point >= points_range_min_vec &&
+                     point <= points_range_max_vec)
+                            .all()) {
+                    auto coords =
+                            ((point - points_range_min_vec) * inv_voxel_size)
+                                    .template cast<int64_t>();
+                    int64_t h = coords.dot(strides);
+                    h += indices_batches[i] * batch_hash;
+                    hashes[i] = h;
+                } else {
+                    hashes[i] = invalid_hash;
+                }
+            },
+            deps);
 }
 
 /// Element-wise min(counts[i], limit). Ports LimitCountsKernel. Depends on
@@ -213,26 +218,31 @@ inline sycl::event ComputeStartIdxSYCL(
         int64_t max_points_per_voxel,
         const std::vector<sycl::event>& deps = {}) {
     if (batch_size == 0) return sycl::event();
-    return core::ParallelFor(queue, batch_size, [=](int64_t b) {
-        int64_t voxel_idx = (b == 0) ? 0 : num_voxels_prefix_sum[b - 1];
-        const int64_t begin_out = out_batch_splits[b];
-        const int64_t end_out = out_batch_splits[b + 1];
-        for (int64_t out_idx = begin_out; out_idx < end_out;
-             ++out_idx, ++voxel_idx) {
-            if (voxel_idx == 0) {
-                start_idx[out_idx] = 0;
-                points_count[out_idx] = sycl::min(
-                        max_points_per_voxel, unique_hashes_count_prefix_sum[0]);
-            } else {
-                start_idx[out_idx] =
-                        unique_hashes_count_prefix_sum[voxel_idx - 1];
-                points_count[out_idx] = sycl::min(
-                        max_points_per_voxel,
-                        unique_hashes_count_prefix_sum[voxel_idx] -
-                                unique_hashes_count_prefix_sum[voxel_idx - 1]);
-            }
-        }
-    }, deps);
+    return core::ParallelFor(
+            queue, batch_size,
+            [=](int64_t b) {
+                int64_t voxel_idx = (b == 0) ? 0 : num_voxels_prefix_sum[b - 1];
+                const int64_t begin_out = out_batch_splits[b];
+                const int64_t end_out = out_batch_splits[b + 1];
+                for (int64_t out_idx = begin_out; out_idx < end_out;
+                     ++out_idx, ++voxel_idx) {
+                    if (voxel_idx == 0) {
+                        start_idx[out_idx] = 0;
+                        points_count[out_idx] =
+                                sycl::min(max_points_per_voxel,
+                                          unique_hashes_count_prefix_sum[0]);
+                    } else {
+                        start_idx[out_idx] =
+                                unique_hashes_count_prefix_sum[voxel_idx - 1];
+                        points_count[out_idx] = sycl::min(
+                                max_points_per_voxel,
+                                unique_hashes_count_prefix_sum[voxel_idx] -
+                                        unique_hashes_count_prefix_sum
+                                                [voxel_idx - 1]);
+                    }
+                }
+            },
+            deps);
 }
 
 /// Computes integer voxel coordinates for each valid voxel from the position
@@ -354,8 +364,8 @@ void VoxelizeSYCL(sycl::queue& queue,
     // indices_batches, which ComputeIndicesBatchesSYCL wrote asynchronously.
     sycl::event hashes_event = ComputeHashSYCL<T, NDIM>(
             queue, hashes, int64_t(num_points), points, indices_batches,
-            points_range_min_vec, points_range_max_vec, inv_voxel_size,
-            strides, batch_hash, invalid_hash, {indices_batches_event});
+            points_range_min_vec, points_range_max_vec, inv_voxel_size, strides,
+            batch_hash, invalid_hash, {indices_batches_event});
     // indices_batches is freed here, so its last reader (ComputeHashSYCL)
     // must have completed first; sycl::free is not queue-ordered.
     hashes_event.wait();
@@ -408,9 +418,8 @@ void VoxelizeSYCL(sycl::queue& queue,
     // unique_hashes_count is read again later (aliased as points_count).
     sycl::event limit1_event;
     if (max_points_per_voxel < int64_t(num_points)) {
-        limit1_event = LimitCountsSYCL(queue, unique_hashes_count,
-                                       num_voxels, max_points_per_voxel,
-                                       {scan1_event});
+        limit1_event = LimitCountsSYCL(queue, unique_hashes_count, num_voxels,
+                                       max_points_per_voxel, {scan1_event});
     }
 
     // --- Step 5: group voxels by batch -------------------------------
@@ -456,9 +465,9 @@ void VoxelizeSYCL(sycl::queue& queue,
     // the Step 6 scan below depends on the right one.
     sycl::event num_voxels_per_batch_ready = scan2_event;
     if (num_voxels >= max_voxels) {
-        num_voxels_per_batch_ready = LimitCountsSYCL(
-                queue, num_voxels_per_batch, int64_t(batch_size), max_voxels,
-                {scan2_event});
+        num_voxels_per_batch_ready =
+                LimitCountsSYCL(queue, num_voxels_per_batch,
+                                int64_t(batch_size), max_voxels, {scan2_event});
     }
 
     // --- Step 6: batch splits over the (possibly limited) voxel counts ---
@@ -492,10 +501,9 @@ void VoxelizeSYCL(sycl::queue& queue,
         queue.fill(start_idx, int64_t(0), 1).wait();
         if (num_voxels > 1) {
             // Depends on scan1_event (unique_hashes_count_prefix_sum).
-            start_idx_ready_event =
-                    queue.memcpy(start_idx + 1, unique_hashes_count_prefix_sum,
-                                (num_voxels - 1) * sizeof(int64_t),
-                                scan1_event);
+            start_idx_ready_event = queue.memcpy(
+                    start_idx + 1, unique_hashes_count_prefix_sum,
+                    (num_voxels - 1) * sizeof(int64_t), scan1_event);
         }
         points_count = unique_hashes_count;
         points_count_is_alias = true;
@@ -530,13 +538,13 @@ void VoxelizeSYCL(sycl::queue& queue,
         // lazy default); depend on it in that case. Otherwise points_count
         // was written by ComputeStartIdxSYCL, already awaited via
         // start_idx_ready_event.wait() above.
-        scan4_event = oneapi::dpl::experimental::inclusive_scan_async(
-                              dpl_policy, points_count,
-                              points_count + num_valid_voxels,
-                              out_voxel_row_splits + 1,
-                              points_count_is_alias ? limit1_event
-                                                    : sycl::event())
-                              .event();
+        scan4_event =
+                oneapi::dpl::experimental::inclusive_scan_async(
+                        dpl_policy, points_count,
+                        points_count + num_valid_voxels,
+                        out_voxel_row_splits + 1,
+                        points_count_is_alias ? limit1_event : sycl::event())
+                        .event();
     }
 
     // --- Step 9: voxel coordinates + compacted point indices --------------
@@ -554,9 +562,8 @@ void VoxelizeSYCL(sycl::queue& queue,
 
     const int64_t num_valid_points =
             num_valid_voxels > 0
-                    ? ReadScalar(queue,
-                                out_voxel_row_splits + num_valid_voxels,
-                                {scan4_event})
+                    ? ReadScalar(queue, out_voxel_row_splits + num_valid_voxels,
+                                 {scan4_event})
                     : 0;
     int64_t* out_point_indices = nullptr;
     output_allocator.AllocVoxelPointIndices(&out_point_indices,

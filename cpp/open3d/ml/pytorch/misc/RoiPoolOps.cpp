@@ -71,9 +71,9 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
     if (xyz.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         open3d::ml::contrib::roipool3dLauncher(
-                batch_size, pts_num, boxes_num, feature_in_len,
-                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
-                pooled_features_data, pooled_empty_flag_data);
+                batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,
+                xyz_data, boxes3d_data, pts_feature_data, pooled_features_data,
+                pooled_empty_flag_data);
 #else
         TORCH_CHECK(false, "roi_pool was not compiled with CUDA support")
 #endif
@@ -89,9 +89,9 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
 #endif
     } else {
         open3d::ml::contrib::roipool3dLauncherCPU(
-                batch_size, pts_num, boxes_num, feature_in_len,
-                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
-                pooled_features_data, pooled_empty_flag_data);
+                batch_size, pts_num, boxes_num, feature_in_len, sampled_pts_num,
+                xyz_data, boxes3d_data, pts_feature_data, pooled_features_data,
+                pooled_empty_flag_data);
     }
 
     return std::tuple<torch::Tensor, torch::Tensor>(features, empty_flag);

@@ -7,8 +7,9 @@
 
 // SYCL implementation of InvertNeighborsList — ports InvertNeighborsList.cuh.
 // Replaces: atomicAdd → sycl::atomic_ref::fetch_add,
-//           cub::DeviceScan::InclusiveSum → oneapi::dpl::experimental::inclusive_scan_async,
-//           cudaMemsetAsync → queue.fill.
+//           cub::DeviceScan::InclusiveSum →
+//           oneapi::dpl::experimental::inclusive_scan_async, cudaMemsetAsync →
+//           queue.fill.
 // Each stage returns its completion sycl::event; callers chain via `deps`
 // instead of blocking waits, since the queue supplied by PyTorch may be
 // out-of-order.
@@ -28,12 +29,13 @@ namespace impl {
 /// to distinguish from the unrelated CountNeighborsSYCL in open3d::core::nns
 /// (which counts FRS neighbors).
 template <class T>
-sycl::event CountIndexOccurrencesSYCL(sycl::queue& queue,
-                                      uint32_t* count,
-                                      size_t count_size,
-                                      const T* indices,
-                                      size_t indices_size,
-                                      const std::vector<sycl::event>& deps = {}) {
+sycl::event CountIndexOccurrencesSYCL(
+        sycl::queue& queue,
+        uint32_t* count,
+        size_t count_size,
+        const T* indices,
+        size_t indices_size,
+        const std::vector<sycl::event>& deps = {}) {
     sycl::event fill_event = queue.fill(count, uint32_t(0), count_size, deps);
     if (indices_size == 0) return fill_event;
 
@@ -137,8 +139,7 @@ sycl::event InvertNeighborsListSYCL(sycl::queue& queue,
                                     size_t out_num_queries) {
     // Step 1: Count occurrences of each neighbor index → raw counts
     sycl::event count_event = CountIndexOccurrencesSYCL(
-            queue, count_buf, out_num_queries, inp_neighbors_index,
-            index_size);
+            queue, count_buf, out_num_queries, inp_neighbors_index, index_size);
 
     // Step 2: Compute inclusive prefix sum → out_neighbors_row_splits[1..]
     //         (out_neighbors_row_splits[0] = 0 is already zeroed by caller)

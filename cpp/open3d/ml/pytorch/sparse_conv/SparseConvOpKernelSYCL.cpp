@@ -26,7 +26,7 @@ void SparseConvSYCL(const torch::Tensor& filters,
                     const torch::Tensor& neighbors_row_splits,
                     const bool normalize,
                     const int64_t max_temp_mem_MB,
-                        const bool allow_tf32,
+                    const bool allow_tf32,
                     torch::Tensor& out_features) {
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
@@ -86,7 +86,7 @@ void SparseConvSYCL(const torch::Tensor& filters,
             const torch::Tensor& neighbors_kernel_index,                     \
             const torch::Tensor& neighbors_importance,                       \
             const torch::Tensor& neighbors_row_splits, const bool normalize, \
-            const int64_t max_temp_mem_MB, const bool allow_tf32,             \
+            const int64_t max_temp_mem_MB, const bool allow_tf32,            \
             torch::Tensor& out_features);
 
 INSTANTIATE(float, float, int32_t, uint8_t)

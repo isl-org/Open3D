@@ -109,7 +109,7 @@ public:
             inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
             neighbors_importance, neighbors_row_splits, normalize,             \
             max_temp_mem_MB, out_features
-#define SYCL_FN_PARAMETERS                                                      \
+#define SYCL_FN_PARAMETERS                                                     \
     filters, out_importance, inp_features, inp_neighbors_importance_sum,       \
             inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
             neighbors_importance, neighbors_row_splits, normalize,             \
@@ -122,12 +122,12 @@ public:
         fn<feat_t, out_t, index_t, kernel_index_t>(FN_PARAMETERS); \
         return out_features;                                       \
     }
-#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn)      \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                   \
-        CompareTorchDtype<index_t>(index_dtype) &&                 \
-        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {   \
+#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn)           \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                        \
+        CompareTorchDtype<index_t>(index_dtype) &&                      \
+        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {        \
         fn<feat_t, out_t, index_t, kernel_index_t>(SYCL_FN_PARAMETERS); \
-        return out_features;                                       \
+        return out_features;                                            \
     }
 
         if (inp_features.is_cuda()) {
@@ -140,8 +140,7 @@ public:
 #endif
         } else if (inp_features.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-            CALL_SYCL(float, float, int32_t, uint8_t,
-                      ::SparseConvTransposeSYCL)
+            CALL_SYCL(float, float, int32_t, uint8_t, ::SparseConvTransposeSYCL)
 #else
             TORCH_CHECK(false,
                         "SparseConvTranspose was not compiled with SYCL "
@@ -235,7 +234,7 @@ public:
                 max_temp_mem_MB, inp_features_backprop);                       \
         dispatch_success = true;                                               \
     }
-#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)            \
+#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)           \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
         CompareTorchDtype<index_t>(index_dtype) &&                             \
         CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {               \
@@ -247,7 +246,7 @@ public:
                 inp_neighbors_importance_sum, inp_neighbors_row_splits,        \
                 neighbors_index, neighbors_kernel_index, neighbors_importance, \
                 neighbors_row_splits, out_features_gradient, normalize,        \
-                max_temp_mem_MB, allow_tf32, filters_backprop);                 \
+                max_temp_mem_MB, allow_tf32, filters_backprop);                \
                                                                                \
         torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,          \
                 inv_neighbors_importance, inv_arange;                          \
@@ -274,7 +273,7 @@ public:
                 filters_transposed, out_features_gradient, out_importance,     \
                 inv_neighbors_index, inv_neighbors_kernel_index,               \
                 inv_neighbors_importance, inp_neighbors_row_splits, normalize, \
-                max_temp_mem_MB, allow_tf32, inp_features_backprop);            \
+                max_temp_mem_MB, allow_tf32, inp_features_backprop);           \
         dispatch_success = true;                                               \
     }
 
@@ -305,7 +304,7 @@ public:
                             neighbors_index.toString() +
                             " as input for neighbors_index")
 
-        #undef CALL_SYCL
+#undef CALL_SYCL
 
         return {filters_backprop, Variable(), inp_features_backprop,
                 Variable(),       Variable(), Variable(),

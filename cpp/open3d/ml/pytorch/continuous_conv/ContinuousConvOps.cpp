@@ -121,11 +121,11 @@ public:
             inp_importance, neighbors_index, neighbors_importance,        \
             neighbors_row_splits, align_corners, coordinate_mapping,      \
             normalize, interpolation, max_temp_mem_MB, out_features
-#define SYCL_FN_PARAMETERS                                                 \
+#define SYCL_FN_PARAMETERS                                                \
     filters, out_positions, extents, offset, inp_positions, inp_features, \
             inp_importance, neighbors_index, neighbors_importance,        \
             neighbors_row_splits, align_corners, coordinate_mapping,      \
-            normalize, interpolation, max_temp_mem_MB, allow_tf32,         \
+            normalize, interpolation, max_temp_mem_MB, allow_tf32,        \
             out_features
 
 #define CALL(feat_t, out_t, real_t, index_t, fn)           \
@@ -135,12 +135,12 @@ public:
         fn<feat_t, out_t, real_t, index_t>(FN_PARAMETERS); \
         return out_features;                               \
     }
-#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn)      \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&           \
-        CompareTorchDtype<real_t>(real_dtype) &&           \
-        CompareTorchDtype<index_t>(index_dtype)) {         \
+#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn)           \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                \
+        CompareTorchDtype<real_t>(real_dtype) &&                \
+        CompareTorchDtype<index_t>(index_dtype)) {              \
         fn<feat_t, out_t, real_t, index_t>(SYCL_FN_PARAMETERS); \
-        return out_features;                               \
+        return out_features;                                    \
     }
 
         if (inp_features.is_cuda()) {
@@ -253,7 +253,7 @@ public:
                 inp_features_backprop);                                        \
         dispatch_success = true;                                               \
     }
-#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn_suffix)                    \
+#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn_suffix)                   \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
         CompareTorchDtype<real_t>(real_dtype) &&                               \
         CompareTorchDtype<index_t>(index_dtype)) {                             \
@@ -266,7 +266,7 @@ public:
                 neighbors_importance, neighbors_row_splits,                    \
                 out_features_gradient, align_corners, coordinate_mapping,      \
                 normalize, interpolation, max_temp_mem_MB, allow_tf32,         \
-                filters_backprop);                                            \
+                filters_backprop);                                             \
                                                                                \
         torch::Tensor inv_neighbors_index, inv_neighbors_row_splits,           \
                 inv_neighbors_importance;                                      \
@@ -276,7 +276,7 @@ public:
                                     neighbors_row_splits,                      \
                                     neighbors_importance);                     \
         auto neighbors_importance_sum = ReduceSubarraysSum(                    \
-                neighbors_importance, neighbors_row_splits);                  \
+                neighbors_importance, neighbors_row_splits);                   \
         inp_features_backprop =                                                \
                 torch::ones(inp_features.sizes(),                              \
                             torch::dtype(real_dtype).device(device));          \
@@ -320,7 +320,7 @@ public:
                             neighbors_index.toString() +
                             " as input for neighbors_index")
 
-        #undef CALL_SYCL
+#undef CALL_SYCL
 
         return {filters_backprop, Variable(), Variable(),
                 Variable(),       Variable(), inp_features_backprop,

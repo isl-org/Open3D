@@ -118,8 +118,8 @@ void CConvTransposeComputeFeaturesSYCL(
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run));
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        sycl::event fill_column_event = FillColumnTransposeSYCL<
-                TFeat, TReal, TIndex>(
+        sycl::event fill_column_event = FillColumnTransposeSYCL<TFeat, TReal,
+                                                                TIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_neighbors_importance_sum, inp_neighbors_prefix_sum,
@@ -128,7 +128,7 @@ void CConvTransposeComputeFeaturesSYCL(
                 interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                          : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{});
 
         // C is MxN
         // B is KxN
@@ -147,8 +147,8 @@ void CConvTransposeComputeFeaturesSYCL(
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32, {fill_column_event});
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
+                {fill_column_event});
     }
 
     if (out_importance) {

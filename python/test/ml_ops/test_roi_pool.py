@@ -69,8 +69,8 @@ def test_roi_pool(ml):
             assigned_indices = np.nonzero(assigned_mask)[0]
 
             assert bool(ans1[b, box]) == (len(assigned_indices) == 0), (
-                    f"batch={b}, box={box}: pooled_empty_flag={ans1[b, box]} "
-                    f"but {len(assigned_indices)} points are assigned")
+                f"batch={b}, box={box}: pooled_empty_flag={ans1[b, box]} "
+                f"but {len(assigned_indices)} points are assigned")
             if ans1[b, box]:
                 continue  # empty box: pooled_features is all zeros either way
 
@@ -78,16 +78,16 @@ def test_roi_pool(ml):
             assigned_xyz = xyz[b, assigned_indices]
             assigned_feat = pts_feature[b, assigned_indices]
             assigned_rows = {
-                    tuple(np.concatenate([assigned_xyz[i], assigned_feat[i]]))
-                    for i in range(len(assigned_indices))
+                tuple(np.concatenate([assigned_xyz[i], assigned_feat[i]]))
+                for i in range(len(assigned_indices))
             }
             pooled_rows = [tuple(row) for row in pooled]
             for row in pooled_rows:
                 assert row in assigned_rows, (
-                        f"batch={b}, box={box}: pooled row {row} does not "
-                        f"correspond to any point assigned to this box")
+                    f"batch={b}, box={box}: pooled row {row} does not "
+                    f"correspond to any point assigned to this box")
             distinct_count = len(set(pooled_rows))
             expected_count = min(sampled_pts_num, len(assigned_indices))
             assert distinct_count == expected_count, (
-                    f"batch={b}, box={box}: got {distinct_count} distinct "
-                    f"pooled points, expected {expected_count}")
+                f"batch={b}, box={box}: got {distinct_count} distinct "
+                f"pooled points, expected {expected_count}")

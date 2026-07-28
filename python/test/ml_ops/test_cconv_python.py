@@ -119,9 +119,8 @@ def test_compare_to_conv3d(dtype, filter_size, out_channels, in_channels,
                         ])
 # yapf: enable
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])
-def test_compare_to_conv3d_torch(dtype, filter_size, out_channels,
-                                 in_channels, with_inp_importance,
-                                 with_normalization):
+def test_compare_to_conv3d_torch(dtype, filter_size, out_channels, in_channels,
+                                 with_inp_importance, with_normalization):
     """Compares the reference cconv implementation to torch.nn.functional.conv3d.
 
     This is a PyTorch-only mirror of test_compare_to_conv3d, so the reference
@@ -197,11 +196,11 @@ def test_compare_to_conv3d_torch(dtype, filter_size, out_channels,
     # (kD, kH, kW, in_channels, out_channels) convention.
     inp_volume_t = torch.from_numpy(inp_volume).to(torch_dtype).permute(
         0, 4, 1, 2, 3)
-    filters_t = torch.from_numpy(filters).to(torch_dtype).permute(
-        4, 3, 0, 1, 2)
+    filters_t = torch.from_numpy(filters).to(torch_dtype).permute(4, 3, 0, 1, 2)
     pad = [s // 2 for s in filter_size]
-    y_conv3d = torch.nn.functional.conv3d(
-        inp_volume_t, filters_t, padding=pad).permute(0, 2, 3, 4, 1).numpy()
+    y_conv3d = torch.nn.functional.conv3d(inp_volume_t, filters_t,
+                                          padding=pad).permute(0, 2, 3, 4,
+                                                               1).numpy()
 
     # extract result at output positions
     y_conv3d = np.ascontiguousarray(y_conv3d[0, out_positions_int[:, 2],

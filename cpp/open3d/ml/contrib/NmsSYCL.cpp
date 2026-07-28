@@ -50,14 +50,13 @@ int NmsSYCLKernel(sycl::queue &queue,
     // stable_sort has no non-blocking oneDPL async equivalent.
     int64_t *sort_indices = sycl::malloc_device<int64_t>(n, queue);
     queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-        sort_indices[id[0]] = static_cast<int64_t>(id[0]);
-    }).wait();
+             sort_indices[id[0]] = static_cast<int64_t>(id[0]);
+         }).wait();
 
     auto policy = oneapi::dpl::execution::make_device_policy(queue);
-    std::stable_sort(policy, sort_indices, sort_indices + n,
-                     [scores](int64_t i, int64_t j) {
-                         return scores[i] > scores[j];
-                     });
+    std::stable_sort(
+            policy, sort_indices, sort_indices + n,
+            [scores](int64_t i, int64_t j) { return scores[i] > scores[j]; });
 
     uint64_t *mask = sycl::malloc_device<uint64_t>(
             static_cast<size_t>(n) * num_block_cols, queue);
@@ -71,19 +70,16 @@ int NmsSYCLKernel(sycl::queue &queue,
         sycl::local_accessor<float, 1> block_boxes(NMS_BLOCK_SIZE * 5, cgh);
 
         cgh.parallel_for(
-                sycl::nd_range<1>(global, local),
-                [=](sycl::nd_item<1> item) {
+                sycl::nd_range<1>(global, local), [=](sycl::nd_item<1> item) {
                     const int group_id = static_cast<int>(item.get_group(0));
                     const int block_row_idx = group_id / num_block_cols;
                     const int block_col_idx = group_id % num_block_cols;
                     const int lid = static_cast<int>(item.get_local_id(0));
 
                     const int row_size = sycl::min(
-                            n - block_row_idx * NMS_BLOCK_SIZE,
-                            NMS_BLOCK_SIZE);
+                            n - block_row_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
                     const int col_size = sycl::min(
-                            n - block_col_idx * NMS_BLOCK_SIZE,
-                            NMS_BLOCK_SIZE);
+                            n - block_col_idx * NMS_BLOCK_SIZE, NMS_BLOCK_SIZE);
 
                     // Stage the block_col_idx-th column block of boxes into
                     // local memory (matches CUDA's __shared__ block_boxes).
@@ -105,9 +101,8 @@ int NmsSYCLKernel(sycl::queue &queue,
                                 NMS_BLOCK_SIZE * block_row_idx + lid;
                         // On the diagonal block, skip self- and
                         // already-compared pairs (dst_idx <= src local idx).
-                        int dst_idx = (block_row_idx == block_col_idx)
-                                              ? lid + 1
-                                              : 0;
+                        int dst_idx =
+                                (block_row_idx == block_col_idx) ? lid + 1 : 0;
 
                         uint64_t t = 0;
                         while (dst_idx < col_size) {
@@ -148,7 +143,8 @@ int NmsSYCLKernel(sycl::queue &queue,
     sycl::free(mask, queue);
     sycl::free(sort_indices, queue);
     sycl::free(remv, queue);
-    // @AGENT: Won't this sycl::free automatically wait for the previous memcpy to finish?
+    // @AGENT: Won't this sycl::free automatically wait for the previous memcpy
+    // to finish?
     sycl::free(count_dev, queue);
 
     return count;

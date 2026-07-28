@@ -104,13 +104,12 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
 /// pairwise-overlap kernel.
 template <typename T>
 inline std::vector<int64_t> SortIndexesDescending(const T *values,
-                                                   int64_t num) {
+                                                  int64_t num) {
     std::vector<int64_t> indices(num);
     std::iota(indices.begin(), indices.end(), 0);
-    std::stable_sort(indices.begin(), indices.end(),
-                     [&values](int64_t i, int64_t j) {
-                         return values[i] > values[j];
-                     });
+    std::stable_sort(
+            indices.begin(), indices.end(),
+            [&values](int64_t i, int64_t j) { return values[i] > values[j]; });
     return indices;
 }
 

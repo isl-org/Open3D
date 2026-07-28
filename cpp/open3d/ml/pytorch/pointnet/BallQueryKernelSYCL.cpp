@@ -22,6 +22,6 @@ void ball_query_launcher_sycl(int b,
                               const float *xyz,
                               int *idx) {
     sycl::queue &queue = c10::xpu::getCurrentXPUStream().queue();
-    open3d::ml::contrib::BallQuerySYCL(queue, b, n, m, radius, nsample,
-                                       new_xyz, xyz, idx);
+    open3d::ml::contrib::BallQuerySYCL(queue, b, n, m, radius, nsample, new_xyz,
+                                       xyz, idx);
 }

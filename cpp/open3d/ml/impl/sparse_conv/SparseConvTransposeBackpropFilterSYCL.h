@@ -130,8 +130,8 @@ void SparseConvTransposeBackpropFilterSYCL(
                                        run_i * num_cols_per_run * out_channels);
         }
 
-        sycl::event fill_column_event = FillColumnTransposeSYCL<
-                TFeat, TIndex, TKernelIndex>(
+        sycl::event fill_column_event = FillColumnTransposeSYCL<TFeat, TIndex,
+                                                                TKernelIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_neighbors_importance_sum,
                 inp_neighbors_row_splits, neighbors_index_size, neighbors_index,
@@ -158,8 +158,7 @@ void SparseConvTransposeBackpropFilterSYCL(
         // FillColumnTransposeSYCL), so it depends on both events.
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32,
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 out_importance ? std::vector<sycl::event>{fill_column_event,
                                                           gradient_ready_event}
                                : std::vector<sycl::event>{fill_column_event});

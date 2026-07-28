@@ -78,8 +78,7 @@ def test_to_legacy(device):
                                np.array([[6, 7, 8], [9, 10, 11]]))
 
 
-@pytest.mark.parametrize("device",
-                         list_devices(also_sycl_cpu=False))
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_member_functions(device):
     dtype = o3c.float32
 

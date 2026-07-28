@@ -147,8 +147,8 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32, {fill_column_event});
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
+                {fill_column_event});
     }
 }
 

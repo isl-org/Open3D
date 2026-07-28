@@ -48,8 +48,7 @@ void ReduceSubarraysSumSYCL(sycl::queue& queue,
                 [=](sycl::nd_item<1> item) {
                     const size_t i = item.get_group(0);
                     const size_t lid = item.get_local_id(0);
-                    const size_t begin_idx =
-                            static_cast<size_t>(row_splits[i]);
+                    const size_t begin_idx = static_cast<size_t>(row_splits[i]);
                     const size_t end_idx =
                             static_cast<size_t>(row_splits[i + 1]);
 
@@ -57,8 +56,7 @@ void ReduceSubarraysSumSYCL(sycl::queue& queue,
                     for (size_t j = begin_idx + lid; j < end_idx; j += wg) {
                         local_sum += values[j];
                     }
-                    T sum = sycl::reduce_over_group(item.get_group(),
-                                                    local_sum,
+                    T sum = sycl::reduce_over_group(item.get_group(), local_sum,
                                                     sycl::plus<T>());
                     if (lid == 0) {
                         out_sums[i] = sum;

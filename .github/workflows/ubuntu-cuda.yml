@@ -154,7 +154,7 @@ jobs:
           fi
 
       - name: Generate package attestation
-        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_PACKAGE == 'true' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/open3d-devel-linux*.tar.xz

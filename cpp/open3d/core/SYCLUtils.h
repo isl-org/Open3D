@@ -84,12 +84,12 @@ inline size_t PreferredWorkGroupSize(const Device& device) {
 /// assigned to a work-item by the grid-stride loop).
 template <int N, typename scalar_t, typename Func>
 inline void PersistentReduce(sycl::queue& queue,
-                                 int64_t n,
-                                 size_t wgs,
-                                 scalar_t* global_sum_ptr,
-                                 Func&& compute_local_sum) {
+                             int64_t n,
+                             size_t wgs,
+                             scalar_t* global_sum_ptr,
+                             Func&& compute_local_sum) {
     // optimal for A770 dGPU for reduction widths in [21, 157]
-    constexpr size_t kPersistentReduceGroups = 256;  
+    constexpr size_t kPersistentReduceGroups = 256;
     const int64_t natural_num_groups =
             std::max<int64_t>(1, (n + int64_t(wgs) - 1) / int64_t(wgs));
     const size_t num_groups = static_cast<size_t>(

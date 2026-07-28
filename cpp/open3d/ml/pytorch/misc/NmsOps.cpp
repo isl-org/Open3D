@@ -14,9 +14,9 @@
 #ifdef BUILD_SYCL_MODULE
 // This TU combines CUDA/XPU/CPU dispatch and is NOT compiled with -fsycl (see
 // pytorch/CMakeLists.txt), so open3d/core/SYCLContext.h's SYCLScopedQueue
-// (declared only under SYCL_LANGUAGE_VERSION) is unavailable here; NmsSYCLKernel
-// takes the raw PyTorch queue directly instead (see NmsSYCL.cpp, which is
-// -fsycl-compiled and installs the ambient queue internally).
+// (declared only under SYCL_LANGUAGE_VERSION) is unavailable here;
+// NmsSYCLKernel takes the raw PyTorch queue directly instead (see NmsSYCL.cpp,
+// which is -fsycl-compiled and installs the ambient queue internally).
 #include <c10/xpu/XPUStream.h>
 #endif
 
@@ -33,10 +33,10 @@ torch::Tensor Nms(torch::Tensor boxes,
         // device: NmsCUDAKernel never touches the host for the (up to
         // n-sized) result data, only for the final small `count`, so there
         // is no device->host->device round trip.
-        torch::Tensor keep_indices = torch::empty(
-                {boxes.size(0)},
-                torch::TensorOptions().dtype(torch::kLong).device(
-                        boxes.device()));
+        torch::Tensor keep_indices =
+                torch::empty({boxes.size(0)}, torch::TensorOptions()
+                                                      .dtype(torch::kLong)
+                                                      .device(boxes.device()));
         int count = open3d::ml::contrib::NmsCUDAKernel(
                 boxes.data_ptr<float>(), scores.data_ptr<float>(),
                 boxes.size(0), nms_overlap_thresh,
@@ -50,10 +50,10 @@ torch::Tensor Nms(torch::Tensor boxes,
 #endif
     } else if (boxes.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-        torch::Tensor keep_indices = torch::empty(
-                {boxes.size(0)},
-                torch::TensorOptions().dtype(torch::kLong).device(
-                        boxes.device()));
+        torch::Tensor keep_indices =
+                torch::empty({boxes.size(0)}, torch::TensorOptions()
+                                                      .dtype(torch::kLong)
+                                                      .device(boxes.device()));
         int count = open3d::ml::contrib::NmsSYCLKernel(
                 c10::xpu::getCurrentXPUStream().queue(),
                 boxes.data_ptr<float>(), scores.data_ptr<float>(),

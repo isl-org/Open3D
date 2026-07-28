@@ -195,8 +195,7 @@ sycl::event ParallelFor(const Device& device,
                         int64_t n,
                         const func_t& func,
                         std::initializer_list<sycl::event> deps) {
-    return ParallelForSYCL_(device, n, func,
-                            std::vector<sycl::event>(deps));
+    return ParallelForSYCL_(device, n, func, std::vector<sycl::event>(deps));
 }
 
 /// Run a function in parallel directly on the given SYCL queue, bypassing

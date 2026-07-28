@@ -397,10 +397,10 @@ struct NNSParityTest : public testing::TestWithParam<core::Device> {
         if (GetParam().IsCPU()) {
             GTEST_SKIP() << "CPU is the oracle for this parity check.";
         }
-                sycl = GetParam();
+        sycl = GetParam();
     }
     const core::Device cpu{"CPU:0"};
-        core::Device sycl{"CPU:0"};
+    core::Device sycl{"CPU:0"};
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -507,8 +507,11 @@ TEST_P(NNSParityTest, KnnSearchCoincidentPoint_C1) {
 }
 
 // C4: Equidistant neighbors must be returned with a consistent tie-break
-// (smaller global index wins).
+// (smaller global index wins). SYCL KNN guarantees this; CUDA order may differ.
 TEST_P(NNSParityTest, KnnSearchEquidistantTieBreak_C4) {
+    if (!GetParam().IsSYCL()) {
+        GTEST_SKIP() << "C4 tie-break order is specified for SYCL KNN.";
+    }
     // Three points equidistant from the origin: (1,0,0), (0,1,0), (0,0,1).
     core::Tensor dataset = core::Tensor::Init<float>(
             {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, sycl);

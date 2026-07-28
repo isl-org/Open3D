@@ -6,16 +6,18 @@
 // ----------------------------------------------------------------------------
 
 /// \file FixedRadiusSearchSYCLImpl.h
-/// \brief SYCL device kernels: uniform-grid fixed-radius and hybrid neighbor search.
+/// \brief SYCL device kernels: uniform-grid fixed-radius and hybrid neighbor
+/// search.
 ///
-/// Included by \ref KnnSearchOpsSYCL.cpp and PyTorch SYCL op wrappers (not public
-/// API). Algorithm matches CUDA `FixedRadiusSearchImpl.cuh`; shared geometry in
-/// \ref NeighborSearchCommon.h (`SpatialHash`, `ComputeVoxelIndex`). See
-/// `nns/SYCL_DESIGN.md` for overview.
+/// Included only from \ref KnnSearchOpsSYCL.cpp (not public API). Algorithm
+/// matches CUDA `FixedRadiusSearchImpl.cuh`; shared geometry in \ref
+/// NeighborSearchCommon.h
+/// (`SpatialHash`, `ComputeVoxelIndex`). See `nns/SYCL_DESIGN.md` for overview.
 ///
 /// \section FrsSyclGrid Grid build (\ref BuildSpatialHashTableSYCL)
 ///
-/// 1. Bucket dataset into a uniform spatial-hash grid with **cell size `2 * radius`**
+/// 1. Bucket dataset into a uniform spatial-hash grid with **cell size `2 *
+/// radius`**
 ///    (any neighbor within `radius` lies in the query cell or one of seven
 ///    corner-adjacent cells — **8 bins** visited per query, deduplicated).
 /// 2. **Count** points per cell (per batch).
@@ -23,22 +25,25 @@
 ///    oneDPL; CUDA uses CUB `DeviceScan::InclusiveSum`).
 /// 4. **Scatter** point indices into cell ranges (`hash_table_index`).
 ///
-/// Runs on **SYCL CPU and GPU**. Host driver uses one in-order queue with minimal
-/// sync between batch loops.
+/// Runs on **SYCL CPU and GPU**. Host driver uses one in-order queue with
+/// minimal sync between batch loops.
 ///
 /// \section FrsSyclQuery Query kernels
 ///
 /// | Mode | Kernels | Passes |
 /// |------|---------|--------|
-/// | Fixed-radius | \ref CountNeighborsSYCL, \ref WriteNeighborsSYCL | Count → scan on host → allocate → gather |
-/// | Hybrid | \ref WriteNeighborsHybridSYCL | Single pass: running top-`max_knn` + in-radius count, then bubble sort |
-/// | Optional sort | \ref SortNeighborsByDistanceSYCL (`sort=true`) | Segmented sort per query segment |
+/// | Fixed-radius | \ref CountNeighborsSYCL, \ref WriteNeighborsSYCL | Count →
+/// scan on host → allocate → gather | | Hybrid | \ref WriteNeighborsHybridSYCL
+/// | Single pass: running top-`max_knn` + in-radius count, then bubble sort |
+/// | Optional sort | \ref SortNeighborsByDistanceSYCL (`sort=true`) | Segmented
+/// sort per query segment |
 ///
-/// **Metrics:** L1, L2, Linf (same as CUDA). L2 compares **squared** distance to
-/// `radius²`; L1/Linf compare metric distance to `radius`.
+/// **Metrics:** L1, L2, Linf (same as CUDA). L2 compares **squared** distance
+/// to `radius²`; L1/Linf compare metric distance to `radius`.
 ///
-/// **Sort (`sort=true`):** oneDPL `sort_by_key` — `float` uses packed radix key;
-/// `double` uses struct key + comparator (needs full 64-bit distance). Ties are
+/// **Sort (`sort=true`):** oneDPL `sort_by_key` — `float` uses packed radix
+/// key; `double` uses struct key + comparator (needs full 64-bit distance).
+/// Ties are
 /// **not** secondarily ordered by neighbor index (CUDA parity).
 ///
 /// \section FrsSyclVsCuda Primitives (CUDA → SYCL)
@@ -47,7 +52,8 @@
 /// |------|------|------------------|
 /// | Prefix sum | CUB inclusive scan | oneDPL inclusive scan |
 /// | Segmented sort | CUB segmented radix sort | oneDPL `sort_by_key` |
-/// | Query parallelism | 1 thread / query | 1 work-item / query (`parallel_for`) |
+/// | Query parallelism | 1 thread / query | 1 work-item / query
+/// (`parallel_for`) |
 
 #pragma once
 
@@ -216,6 +222,13 @@ void BuildSpatialHashTableSYCLRaw(sycl::queue& queue,
     // scan over the whole (all-batches-concatenated) array -- mirrors CUDA,
     // which calls cub::DeviceScan::InclusiveSum once over the full
     // count_tmp/hash_table_cell_splits buffer rather than once per batch.
+    // This is valid (not just faster) because per-batch segments are laid
+    // out back-to-back and each segment's raw count at its own first slot is
+    // always 0 (see the "hash + 1" count in Pass 1): the running sum thus
+    // carries the *previous* batches' total point counts straight into the
+    // next batch's segment, which is exactly the absolute base offset that
+    // batch needs into the shared hash_table_index array. A segmented scan
+    // would compute the same per-batch-relative values and gain nothing.
     if (cell_splits_size > 0) {
         std::inclusive_scan(policy, cell_splits_ptr,
                             cell_splits_ptr + cell_splits_size, cell_splits_ptr);
@@ -289,20 +302,20 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
     const Device device = points.GetDevice();
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
+    const T inv_voxel_size = T(1) / T(2 * radius);
     const int batch_size = static_cast<int>(points_row_splits.GetShape(0)) - 1;
 
-    // Read host-side batch arrays (points_row_splits / hash_table_splits are
-    // CPU tensors per the FixedRadiusIndex contract).
-    std::vector<int64_t> host_pts_row_splits(batch_size + 1);
-    std::vector<uint32_t> host_ht_splits(batch_size + 1);
-    for (int i = 0; i <= batch_size; ++i) {
-        host_pts_row_splits[i] = points_row_splits[i].Item<int64_t>();
-        host_ht_splits[i] = hash_table_splits[i].Item<uint32_t>();
-    }
+    // points_row_splits / hash_table_splits are CPU tensors; extract raw host
+    // arrays so BuildSpatialHashTableSYCLRaw can share its implementation
+    // with the PyTorch XPU dispatch (which never has an Open3D Tensor).
+    const int64_t* host_points_row_splits =
+            points_row_splits.GetDataPtr<int64_t>();
+    const uint32_t* host_hash_table_splits =
+            hash_table_splits.GetDataPtr<uint32_t>();
 
     BuildSpatialHashTableSYCLRaw<T>(
-            queue, points.GetDataPtr<T>(), T(1) / T(2 * radius), batch_size,
-            host_pts_row_splits.data(), host_ht_splits.data(),
+            queue, points.GetDataPtr<T>(), inv_voxel_size, batch_size,
+            host_points_row_splits, host_hash_table_splits,
             hash_table_cell_splits.GetDataPtr<uint32_t>(),
             static_cast<size_t>(hash_table_cell_splits.NumElements()),
             hash_table_index.GetDataPtr<uint32_t>());

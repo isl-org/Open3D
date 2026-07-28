@@ -112,7 +112,7 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
         const size_t num_cols_this_run = end_idx - begin_idx;
 
         sycl::event fill_column_event = FillColumnSYCL<TFeat, TIndex,
-                                                        TKernelIndex>(
+                                                       TKernelIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,
@@ -138,8 +138,8 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32, {fill_column_event});
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
+                {fill_column_event});
     }
 }
 

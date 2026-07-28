@@ -1,4 +1,5 @@
 ## Main
+-   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
@@ -79,7 +80,7 @@
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
-
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 

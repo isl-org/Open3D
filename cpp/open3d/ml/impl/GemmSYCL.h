@@ -57,18 +57,17 @@
 
 #pragma once
 
-#include <array>
-#include <sstream>
-
 #include <cutlass/gemm/device/gemm_universal.h>
 #include <cutlass/gemm/device/gemm_universal_adapter.h>
 #include <cutlass/kernel_hardware_info.h>
 #include <cutlass/layout/matrix.h>
 
+#include <array>
 #include <cute/tensor.hpp>
 #include <cutlass/epilogue/collective/collective_builder.hpp>
 #include <cutlass/gemm/collective/collective_builder.hpp>
 #include <cutlass/util/packed_stride.hpp>
+#include <sstream>
 #include <sycl/sycl.hpp>
 
 namespace open3d {
@@ -210,7 +209,7 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(
             {m, n, k, 1},
             {reinterpret_cast<const ElementA*>(A), stride_A,
              reinterpret_cast<const ElementB*>(B), stride_B},
-             {{alpha, beta}, C, stride_C, D, stride_D},
+            {{alpha, beta}, C, stride_C, D, stride_D},
             hw_info};
 
     Gemm gemm_op;
@@ -288,7 +287,8 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
                     AlignmentB, ElementAccumulator, TileShape,
                     cute::Shape<cute::_1, cute::_1, cute::_1>,
                     cutlass::gemm::collective::StageCountAuto,
-                    cutlass::gemm::collective::KernelScheduleAuto>::CollectiveOp;
+                    cutlass::gemm::collective::KernelScheduleAuto>::
+                    CollectiveOp;
 
     using EpilogueOp = cutlass::epilogue::fusion::LinearCombination<
             ElementOutput, ElementComputeEpilogue, ElementAccumulator,
@@ -434,11 +434,10 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
     using MediumTile = cute::Shape<cute::_64, cute::_64, cute::_16>;
     using SmallTile = cute::Shape<cute::_16, cute::_16, cute::_8>;
 
-    using GemmFn = cutlass::Status (*)(sycl::queue&, int, int, int, float,
-                                       const float*, int64_t, const float*,
-                                       int64_t, float, const float*, int64_t,
-                                       float*, int64_t,
-                                       const std::vector<sycl::event>&);
+    using GemmFn = cutlass::Status (*)(
+            sycl::queue&, int, int, int, float, const float*, int64_t,
+            const float*, int64_t, float, const float*, int64_t, float*,
+            int64_t, const std::vector<sycl::event>&);
 
     // Pick the try-order of tiles from the (un-swapped) problem size instead
     // of always probing Large first: a 256x256 work-group tile only pays off
@@ -468,8 +467,8 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
                         ? std::array<GemmFn, 3>{medium, large, small}
                         : std::array<GemmFn, 3>{small, medium, large};
         for (GemmFn fn : order) {
-            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc,
-                       C, ldc, deps);
+            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
+                        ldc, deps);
             if (status == cutlass::Status::kSuccess) break;
         }
     }
@@ -487,8 +486,8 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
                         ? std::array<GemmFn, 2>{small, medium}
                         : std::array<GemmFn, 2>{medium, small};
         for (GemmFn fn : order) {
-            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc,
-                       C, ldc, deps);
+            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
+                        ldc, deps);
             if (status == cutlass::Status::kSuccess) break;
         }
     }
@@ -496,9 +495,8 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
     if (status != cutlass::Status::kSuccess) {
         std::ostringstream msg;
         msg << "GemmSYCL: sycl-tla GEMM cannot implement problem m=" << m
-            << ", n=" << n << ", k=" << k << ", lda=" << lda
-            << ", ldb=" << ldb << ", ldc=" << ldc
-            << (allow_tf32 ? " (TF32 XMX)" : " (IEEE fp32)");
+            << ", n=" << n << ", k=" << k << ", lda=" << lda << ", ldb=" << ldb
+            << ", ldc=" << ldc << (allow_tf32 ? " (TF32 XMX)" : " (IEEE fp32)");
         throw std::runtime_error(msg.str());
     }
 }

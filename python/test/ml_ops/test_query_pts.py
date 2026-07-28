@@ -63,10 +63,10 @@ def test_query_pts(ml):
                 continue
             in_range_mask = dist2[q, row] < radius2
             assert np.all(in_range_mask), (
-                    f"batch={b}, query={q}: returned index {row[~in_range_mask]}"
-                    f" is not within radius {radius}")
+                f"batch={b}, query={q}: returned index {row[~in_range_mask]}"
+                f" is not within radius {radius}")
             distinct_count = len(set(row.tolist()))
             expected_count = min(sample, in_range_counts[q])
             assert distinct_count == expected_count, (
-                    f"batch={b}, query={q}: got {distinct_count} distinct "
-                    f"neighbors, expected {expected_count}")
+                f"batch={b}, query={q}: got {distinct_count} distinct "
+                f"neighbors, expected {expected_count}")

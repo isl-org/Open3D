@@ -21,8 +21,7 @@ _package_root = _os.path.join(_this_dir, '..', '..', '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_path.append(
-    _os.path.join(_package_root,
-                  'open3d_tf_ops' + _lib_suffix + _lib_ext))
+    _os.path.join(_package_root, 'open3d_tf_ops' + _lib_suffix + _lib_ext))
 
 # On Windows add the package root so Open3D.dll is found when TF loads the ops.
 _dll_dir = None

@@ -45,11 +45,11 @@ def test_three_nn(ml):
     ans0_r = np.round(ans0, decimals=4)
     expected0_r = np.round(expected0, decimals=4)
     ans_sets = [
-            set(zip(d_row, i_row))
-            for d_row, i_row in zip(ans0_r.reshape(-1, 3), ans1.reshape(-1, 3))
+        set(zip(d_row, i_row))
+        for d_row, i_row in zip(ans0_r.reshape(-1, 3), ans1.reshape(-1, 3))
     ]
     expected_sets = [
-            set(zip(d_row, i_row)) for d_row, i_row in zip(
-                    expected0_r.reshape(-1, 3), expected1.reshape(-1, 3))
+        set(zip(d_row, i_row)) for d_row, i_row in zip(
+            expected0_r.reshape(-1, 3), expected1.reshape(-1, 3))
     ]
     assert ans_sets == expected_sets

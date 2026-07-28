@@ -116,13 +116,13 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
         const size_t num_cols_this_run = end_idx - begin_idx;
 
         sycl::event fill_column_event = FillColumnSYCL<TFeat, TIndex,
-                                                        TKernelIndex>(
+                                                       TKernelIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,
                 neighbors_row_splits, num_kernel_elements, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                          : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{});
 
         // C(MxN) = A(MxK) * B(KxN); A=filter, B=columns, C=out_features.
         const int m = out_channels;
@@ -139,8 +139,8 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32, {fill_column_event});
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
+                {fill_column_event});
     }
 }
 

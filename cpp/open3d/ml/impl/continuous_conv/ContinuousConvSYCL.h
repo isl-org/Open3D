@@ -131,7 +131,7 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
                 filter_dims, interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                          : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{});
 
         // C is MxN
         // B is KxN
@@ -150,8 +150,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
 
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
-                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32, {fill_column_event});
+                queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
+                {fill_column_event});
     }
 }
 

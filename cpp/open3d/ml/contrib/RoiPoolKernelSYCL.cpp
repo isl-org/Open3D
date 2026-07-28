@@ -54,8 +54,8 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
     sycl::event event1 = queue.submit([&](sycl::handler &cgh) {
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
-                              static_cast<size_t>(pts_num),
-                              static_cast<size_t>(boxes_num)),
+                               static_cast<size_t>(pts_num),
+                               static_cast<size_t>(boxes_num)),
                 [=](sycl::item<3> item) {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int pt_idx = static_cast<int>(item.get_id(1));
@@ -63,8 +63,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
 
                     const int assign_idx = bs_idx * pts_num * boxes_num +
                                            pt_idx * boxes_num + box_idx;
-                    const int box_offset =
-                            bs_idx * boxes_num * 7 + box_idx * 7;
+                    const int box_offset = bs_idx * boxes_num * 7 + box_idx * 7;
                     const int pt_offset = bs_idx * pts_num * 3 + pt_idx * 3;
 
                     pts_assign[assign_idx] = pt_in_box3d(
@@ -91,7 +90,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(
                         sycl::range<1>(static_cast<size_t>(batch_size) *
-                                      boxes_num * wg2),
+                                       boxes_num * wg2),
                         sycl::range<1>(wg2)),
                 [=](sycl::nd_item<1> item) {
                     const size_t group_id = item.get_group(0);
@@ -159,29 +158,27 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
         cgh.depends_on(event2);
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
-                              static_cast<size_t>(boxes_num),
-                              static_cast<size_t>(sampled_pts_num)),
+                               static_cast<size_t>(boxes_num),
+                               static_cast<size_t>(sampled_pts_num)),
                 [=](sycl::item<3> item) {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int box_idx = static_cast<int>(item.get_id(1));
-                    const int sample_pt_idx =
-                            static_cast<int>(item.get_id(2));
+                    const int sample_pt_idx = static_cast<int>(item.get_id(2));
 
                     if (pooled_empty_flag[bs_idx * boxes_num + box_idx]) {
                         return;
                     }
 
-                    const int temp_idx =
-                            bs_idx * boxes_num * sampled_pts_num +
-                            box_idx * sampled_pts_num + sample_pt_idx;
+                    const int temp_idx = bs_idx * boxes_num * sampled_pts_num +
+                                         box_idx * sampled_pts_num +
+                                         sample_pt_idx;
                     const int src_pt_idx = pts_idx[temp_idx];
                     const int dst_feature_offset =
                             temp_idx * (3 + feature_in_len);
 
                     for (int j = 0; j < 3; j++)
                         pooled_features[dst_feature_offset + j] =
-                                xyz[bs_idx * pts_num * 3 + src_pt_idx * 3 +
-                                   j];
+                                xyz[bs_idx * pts_num * 3 + src_pt_idx * 3 + j];
 
                     const int src_feature_offset =
                             bs_idx * pts_num * feature_in_len +

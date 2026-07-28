@@ -193,8 +193,8 @@ inline void ThreeInterpolateSYCL(sycl::queue& queue,
                 const int* const id = idx + bs_idx * n * 3 + pt_idx * 3;
                 float* const o = out + bs_idx * c * n + c_idx * n;
 
-                o[pt_idx] =
-                        w[0] * pts[id[0]] + w[1] * pts[id[1]] + w[2] * pts[id[2]];
+                o[pt_idx] = w[0] * pts[id[0]] + w[1] * pts[id[1]] +
+                            w[2] * pts[id[2]];
             });
 }
 
