@@ -51,10 +51,13 @@
 // SYCL: call OPEN3D_SYCL_ASSERT_STREAM(cgh) inside queue.submit before
 // parallel_for (see open3d/core/SYCLUtils.h).
 // For host-only code, utility::LogError() may also be used directly.
+#define OPEN3D_ASSERT_EXPAND(...) __VA_ARGS__
 #define OPEN3D_ASSERT_GET_MACRO(_1, _2, NAME, ...) NAME
-#define OPEN3D_ASSERT(...)                                                   \
-    OPEN3D_ASSERT_GET_MACRO(__VA_ARGS__, OPEN3D_ASSERT_MSG, OPEN3D_ASSERT_1) \
-    (__VA_ARGS__)
+#define OPEN3D_ASSERT_CHOOSER(...)                \
+    OPEN3D_ASSERT_EXPAND(OPEN3D_ASSERT_GET_MACRO( \
+            __VA_ARGS__, OPEN3D_ASSERT_MSG, OPEN3D_ASSERT_1, ))
+#define OPEN3D_ASSERT(...) \
+    OPEN3D_ASSERT_EXPAND(OPEN3D_ASSERT_CHOOSER(__VA_ARGS__)(__VA_ARGS__))
 #define OPEN3D_ASSERT_1(condition) \
     OPEN3D_ASSERT_MSG(condition, "Assertion failed: " #condition)
 
@@ -69,12 +72,10 @@
         }                                                             \
     } while (0)
 
-#elif defined(__SYCL_DEVICE_ONLY__) && defined(BUILD_SYCL_MODULE)
+#elif defined(__SYCL_DEVICE_ONLY__) && defined(SYCL_LANGUAGE_VERSION)
 
 #include <sycl/ext/oneapi/this_work_item.hpp>
 #include <sycl/sycl.hpp>
-
-#include "open3d/core/SYCLUtils.h"
 
 #if __has_include(<sycl/ext/oneapi/experimental/device_trap.hpp>)
 #include <sycl/ext/oneapi/experimental/device_trap.hpp>
@@ -82,6 +83,14 @@
 #else
 #define OPEN3D_SYCL_ASSERT_TRAP() __builtin_trap()
 #endif
+
+namespace open3d {
+namespace detail {
+extern sycl::
+        global<int, sycl::memory_order::relaxed, sycl::memory_scope::device>
+                open3d_sycl_assert_reported;
+}  // namespace detail
+}  // namespace open3d
 
 #define OPEN3D_ASSERT_MSG(condition, message)                                \
     do {                                                                     \
@@ -105,6 +114,15 @@
             }                                                                \
             OPEN3D_SYCL_ASSERT_TRAP();                                       \
         }                                                                    \
+    } while (0)
+
+#elif defined(__SYCL_DEVICE_ONLY__)
+
+#define OPEN3D_ASSERT_MSG(condition, message) \
+    do {                                      \
+        if (!(condition)) {                   \
+            __builtin_trap();                 \
+        }                                     \
     } while (0)
 
 #else
