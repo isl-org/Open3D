@@ -40,9 +40,12 @@
 
 #ifdef BUILD_SYCL_MODULE
 // roipool3dLauncherSYCL takes a real sycl::queue&, so any TU that sees this
-// declaration needs the full SYCL runtime; RoiPoolKernelSYCL.cpp (built with
-// -fsycl) and any *.cpp including this header are all compiled SYCL-aware
-// when BUILD_SYCL_MODULE=ON (see pytorch/CMakeLists.txt).
+// declaration needs the full SYCL runtime type (not -fsycl compilation --
+// RoiPoolOps.cpp already gets this transitively via
+// <c10/xpu/XPUDeviceProp.h>, but this header may be included first, so it
+// must include the SYCL header directly to avoid an incomplete-type error).
+// RoiPoolKernelSYCL.cpp (built with -fsycl) is where the actual device
+// kernels are compiled.
 #include <sycl/sycl.hpp>
 #endif
 

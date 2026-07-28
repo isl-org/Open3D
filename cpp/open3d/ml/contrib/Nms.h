@@ -25,9 +25,11 @@
 
 #ifdef BUILD_SYCL_MODULE
 // NmsSYCLKernel takes a real sycl::queue&, so any TU that sees this
-// declaration needs the full SYCL runtime; NmsSYCL.cpp (built with -fsycl)
-// and any *.cpp including this header are all compiled SYCL-aware when
-// BUILD_SYCL_MODULE=ON (see pytorch/CMakeLists.txt / contrib/CMakeLists.txt).
+// declaration needs the full SYCL runtime type (not -fsycl compilation --
+// NmsOps.cpp already gets this transitively via <c10/xpu/XPUDeviceProp.h>,
+// but Nms.h is included before that, so it must include the header directly
+// to avoid an incomplete-type error). NmsSYCL.cpp (built with -fsycl) is
+// where the actual device kernels are compiled.
 #include <sycl/sycl.hpp>
 #endif
 
@@ -67,7 +69,8 @@ int NmsCUDAKernel(const float *boxes,
 /// SYCL counterpart of NmsCUDAKernel(); see its documentation. \p
 /// keep_indices_out is device (USM) memory, typically the data_ptr() of a
 /// torch::empty({n}, ...) tensor already on the SYCL/XPU device.
-/// \param queue SYCL queue to run the kernel on.
+/// \param queue SYCL queue to run the kernel on (typically PyTorch's current
+/// XPU queue, c10::xpu::getCurrentXPUStream().queue()).
 /// \param boxes (n, 5) float32.
 /// \param scores (n,) float32.
 /// \param n Number of boxes.

@@ -15,6 +15,7 @@
 #include <sstream>
 #include <type_traits>
 
+#include "open3d/core/Device.h"
 #include "open3d/ml/ShapeChecking.h"
 
 // Macros for checking tensor properties

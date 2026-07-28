@@ -7,14 +7,16 @@
 
 // SYCL implementation of InvertNeighborsList — ports InvertNeighborsList.cuh.
 // Replaces: atomicAdd → sycl::atomic_ref::fetch_add,
-//           cub::DeviceScan::InclusiveSum → std::inclusive_scan (oneDPL),
+//           cub::DeviceScan::InclusiveSum → oneapi::dpl::experimental::inclusive_scan_async,
 //           cudaMemsetAsync → queue.fill.
+// Each stage returns its completion sycl::event; callers chain via `deps`
+// instead of blocking waits, since the queue supplied by PyTorch may be
+// out-of-order.
 
 #pragma once
 
-#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/async>
 #include <oneapi/dpl/execution>
-#include <oneapi/dpl/numeric>
 #include <sycl/sycl.hpp>
 
 namespace open3d {
@@ -22,19 +24,21 @@ namespace ml {
 namespace impl {
 
 /// Count the number of occurrences of each index value using atomic add.
-/// count[] must be zero-initialized before the call.
-/// Named CountIndexOccurrencesSYCL to distinguish from the unrelated
-/// CountNeighborsSYCL in open3d::core::nns (which counts FRS neighbors).
+/// count[] is zero-initialized by this call. Named CountIndexOccurrencesSYCL
+/// to distinguish from the unrelated CountNeighborsSYCL in open3d::core::nns
+/// (which counts FRS neighbors).
 template <class T>
-void CountIndexOccurrencesSYCL(sycl::queue& queue,
-                               uint32_t* count,
-                               size_t count_size,
-                               const T* indices,
-                               size_t indices_size) {
-    queue.fill(count, uint32_t(0), count_size).wait();
-    if (indices_size == 0) return;
+sycl::event CountIndexOccurrencesSYCL(sycl::queue& queue,
+                                      uint32_t* count,
+                                      size_t count_size,
+                                      const T* indices,
+                                      size_t indices_size,
+                                      const std::vector<sycl::event>& deps = {}) {
+    sycl::event fill_event = queue.fill(count, uint32_t(0), count_size, deps);
+    if (indices_size == 0) return fill_event;
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+        cgh.depends_on(fill_event);
         cgh.parallel_for(sycl::range<1>(indices_size), [=](sycl::item<1> item) {
             T idx = indices[item.get_id(0)];
             sycl::atomic_ref<uint32_t, sycl::memory_order::relaxed,
@@ -44,13 +48,12 @@ void CountIndexOccurrencesSYCL(sycl::queue& queue,
             ref.fetch_add(1u);
         });
     });
-    queue.wait_and_throw();
 }
 
 /// Fill output index and attribute arrays for the inverted list.
 /// Uses atomic_ref to claim positions within each output row.
 template <class TIndex, class TAttr>
-void FillNeighborsIndexAndAttributesSYCL(
+sycl::event FillNeighborsIndexAndAttributesSYCL(
         sycl::queue& queue,
         uint32_t* count,  // scratch: reused as write-position counter
         size_t count_size,
@@ -63,13 +66,15 @@ void FillNeighborsIndexAndAttributesSYCL(
         const int64_t* inp_neighbors_row_splits,
         size_t inp_num_queries,
         const int64_t* out_neighbors_row_splits,
-        size_t out_num_queries) {
-    queue.fill(count, uint32_t(0), count_size).wait();
-    if (inp_num_queries == 0) return;
+        size_t out_num_queries,
+        const std::vector<sycl::event>& deps = {}) {
+    sycl::event fill_event = queue.fill(count, uint32_t(0), count_size, deps);
+    if (inp_num_queries == 0) return fill_event;
 
     const bool fill_attributes = (inp_neighbors_attributes != nullptr) &&
                                  (num_attributes_per_neighbor > 0);
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+        cgh.depends_on(fill_event);
         cgh.parallel_for(sycl::range<1>(inp_num_queries), [=](sycl::item<1>
                                                                       item) {
             const size_t i = item.get_id(0);
@@ -104,7 +109,6 @@ void FillNeighborsIndexAndAttributesSYCL(
             }
         });
     });
-    queue.wait_and_throw();
 }
 
 /// Inverts a neighbors list.
@@ -114,37 +118,44 @@ void FillNeighborsIndexAndAttributesSYCL(
 ///
 /// count_buf must be device memory of at least out_num_queries uint32_t
 /// elements (used as a scratch buffer, zero-initialized internally).
+/// \return The completion event of the last stage; the caller only needs to
+/// wait on it if a host-visible completion signal is required (e.g. before
+/// returning a torch::Tensor built from the output buffers to Python, PyTorch's
+/// own queue-based dependency tracking makes an explicit wait unnecessary).
 template <class TIndex, class TAttr>
-void InvertNeighborsListSYCL(sycl::queue& queue,
-                             uint32_t* count_buf,
-                             const TIndex* inp_neighbors_index,
-                             const TAttr* inp_neighbors_attributes,
-                             int num_attributes_per_neighbor,
-                             const int64_t* inp_neighbors_row_splits,
-                             size_t inp_num_queries,
-                             TIndex* out_neighbors_index,
-                             TAttr* out_neighbors_attributes,
-                             size_t index_size,
-                             int64_t* out_neighbors_row_splits,
-                             size_t out_num_queries) {
+sycl::event InvertNeighborsListSYCL(sycl::queue& queue,
+                                    uint32_t* count_buf,
+                                    const TIndex* inp_neighbors_index,
+                                    const TAttr* inp_neighbors_attributes,
+                                    int num_attributes_per_neighbor,
+                                    const int64_t* inp_neighbors_row_splits,
+                                    size_t inp_num_queries,
+                                    TIndex* out_neighbors_index,
+                                    TAttr* out_neighbors_attributes,
+                                    size_t index_size,
+                                    int64_t* out_neighbors_row_splits,
+                                    size_t out_num_queries) {
     // Step 1: Count occurrences of each neighbor index → raw counts
-    CountIndexOccurrencesSYCL(queue, count_buf, out_num_queries,
-                              inp_neighbors_index, index_size);
+    sycl::event count_event = CountIndexOccurrencesSYCL(
+            queue, count_buf, out_num_queries, inp_neighbors_index,
+            index_size);
 
     // Step 2: Compute inclusive prefix sum → out_neighbors_row_splits[1..]
     //         (out_neighbors_row_splits[0] = 0 is already zeroed by caller)
     auto dpl_policy = oneapi::dpl::execution::make_device_policy(queue);
-    std::inclusive_scan(dpl_policy, count_buf, count_buf + out_num_queries,
-                        out_neighbors_row_splits + 1);
-    queue.wait_and_throw();
+    sycl::event scan_event =
+            oneapi::dpl::experimental::inclusive_scan_async(
+                    dpl_policy, count_buf, count_buf + out_num_queries,
+                    out_neighbors_row_splits + 1, count_event)
+                    .event();
 
     // Step 3: Fill output indices and attributes using atomic position tracking
-    FillNeighborsIndexAndAttributesSYCL(
+    return FillNeighborsIndexAndAttributesSYCL(
             queue, count_buf, out_num_queries, out_neighbors_index,
             out_neighbors_attributes, inp_neighbors_index,
             inp_neighbors_attributes, num_attributes_per_neighbor, index_size,
             inp_neighbors_row_splits, inp_num_queries, out_neighbors_row_splits,
-            out_num_queries);
+            out_num_queries, {scan_event});
 }
 
 }  // namespace impl

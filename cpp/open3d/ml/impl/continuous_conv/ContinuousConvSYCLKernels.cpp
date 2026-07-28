@@ -22,15 +22,17 @@ constexpr size_t kFillColumnWGSize = 32;
 }  // namespace
 
 template <class T>
-void MultiplyColumnsSYCL(sycl::queue& queue,
-                         size_t rows,
-                         size_t cols,
-                         T* col_major_matrix,
-                         const T* const vector) {
+sycl::event MultiplyColumnsSYCL(sycl::queue& queue,
+                                size_t rows,
+                                size_t cols,
+                                T* col_major_matrix,
+                                const T* const vector,
+                                const std::vector<sycl::event>& deps) {
     const size_t n = rows * cols;
-    if (n == 0) return;
+    if (n == 0) return sycl::event();
     const size_t num_groups = (n + kBlockSize - 1) / kBlockSize;
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(deps);
              cgh.parallel_for(
                      sycl::nd_range<1>(sycl::range<1>(num_groups * kBlockSize),
                                        sycl::range<1>(kBlockSize)),
@@ -40,20 +42,22 @@ void MultiplyColumnsSYCL(sycl::queue& queue,
                          const size_t col = idx / rows;
                          col_major_matrix[idx] *= vector[col];
                      });
-         }).wait_and_throw();
+         });
 }
 
 template <class T>
-void MultiplyAndCopyColumnsSYCL(sycl::queue& queue,
-                                size_t rows,
-                                size_t cols,
-                                T* out_ptr,
-                                const T* const col_major_matrix,
-                                const T* const vector) {
+sycl::event MultiplyAndCopyColumnsSYCL(sycl::queue& queue,
+                                       size_t rows,
+                                       size_t cols,
+                                       T* out_ptr,
+                                       const T* const col_major_matrix,
+                                       const T* const vector,
+                                       const std::vector<sycl::event>& deps) {
     const size_t n = rows * cols;
-    if (n == 0) return;
+    if (n == 0) return sycl::event();
     const size_t num_groups = (n + kBlockSize - 1) / kBlockSize;
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(deps);
              cgh.parallel_for(
                      sycl::nd_range<1>(sycl::range<1>(num_groups * kBlockSize),
                                        sycl::range<1>(kBlockSize)),
@@ -63,22 +67,25 @@ void MultiplyAndCopyColumnsSYCL(sycl::queue& queue,
                          const size_t col = idx / rows;
                          out_ptr[idx] = col_major_matrix[idx] * vector[col];
                      });
-         }).wait_and_throw();
+         });
 }
 
-template void MultiplyColumnsSYCL<float>(sycl::queue& queue,
-                                         size_t rows,
-                                         size_t cols,
-                                         float* col_major_matrix,
-                                         const float* const vector);
+template sycl::event MultiplyColumnsSYCL<float>(
+        sycl::queue& queue,
+        size_t rows,
+        size_t cols,
+        float* col_major_matrix,
+        const float* const vector,
+        const std::vector<sycl::event>& deps);
 
-template void MultiplyAndCopyColumnsSYCL<float>(
+template sycl::event MultiplyAndCopyColumnsSYCL<float>(
         sycl::queue& queue,
         size_t rows,
         size_t cols,
         float* out_ptr,
         const float* const col_major_matrix,
-        const float* const vector);
+        const float* const vector,
+        const std::vector<sycl::event>& deps);
 
 namespace {
 
@@ -94,48 +101,51 @@ template <class TFeat,
           bool ALIGN_CORNERS,
           CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
-void FillColumnKernelSYCL(sycl::queue& queue,
-                          TFeat* columns,
-                          int in_channels,
-                          TIndex begin_idx,
-                          TIndex end_idx,
-                          TIndex num_out,
-                          const TReal* const out_positions,
-                          TIndex num_inp,
-                          const TReal* const inp_positions,
-                          const TFeat* const inp_features,
-                          const TFeat* const inp_importance,
-                          size_t neighbors_index_size,
-                          const TIndex* const neighbors_index,
-                          const TFeat* const neighbors_importance,
-                          const int64_t* const neighbors_row_splits,
-                          const TReal* const extents,
-                          const TReal* const offsets,
-                          int filter_size_x,
-                          int filter_size_y,
-                          int filter_size_z,
-                          bool individual_extent,
-                          bool isotropic_extent,
-                          bool normalize) {
+sycl::event FillColumnKernelSYCL(sycl::queue& queue,
+                                 TFeat* columns,
+                                 int in_channels,
+                                 TIndex begin_idx,
+                                 TIndex end_idx,
+                                 TIndex num_out,
+                                 const TReal* const out_positions,
+                                 TIndex num_inp,
+                                 const TReal* const inp_positions,
+                                 const TFeat* const inp_features,
+                                 const TFeat* const inp_importance,
+                                 size_t neighbors_index_size,
+                                 const TIndex* const neighbors_index,
+                                 const TFeat* const neighbors_importance,
+                                 const int64_t* const neighbors_row_splits,
+                                 const TReal* const extents,
+                                 const TReal* const offsets,
+                                 int filter_size_x,
+                                 int filter_size_y,
+                                 int filter_size_z,
+                                 bool individual_extent,
+                                 bool isotropic_extent,
+                                 bool normalize,
+                                 const std::vector<sycl::event>& deps) {
     constexpr int NUM_INTERP_VALUES =
             (INTERPOLATION == InterpolationMode::LINEAR ||
                              INTERPOLATION == InterpolationMode::LINEAR_BORDER
                      ? 8
                      : 1);
     const TIndex num_columns = end_idx - begin_idx;
-    if (num_columns <= 0) return;
+    if (num_columns <= 0) return sycl::event();
 
     const bool point_importance = inp_importance != nullptr;
     const bool neighbor_importance = neighbors_importance != nullptr;
 
     // Zero the whole columns buffer up front, matching the CUDA
     // cudaMemsetAsync(columns, 0, ...) call before FillColumnKernel launch.
-    queue.fill(columns, TFeat(0),
-               size_t(filter_size_x) * filter_size_y * filter_size_z *
-                       in_channels * size_t(num_columns))
-            .wait();
+    sycl::event fill_event = queue.fill(
+            columns, TFeat(0),
+            size_t(filter_size_x) * filter_size_y * filter_size_z *
+                    in_channels * size_t(num_columns),
+            deps);
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(fill_event);
              cgh.parallel_for(
                      sycl::nd_range<1>(
                              sycl::range<1>(num_columns * kFillColumnWGSize),
@@ -265,7 +275,7 @@ void FillColumnKernelSYCL(sycl::queue& queue,
                              }
                          }  // for n
                      });
-         }).wait_and_throw();
+         });
 }
 
 /// Kernel body for FillColumnTransposeSYCL. Ports FillColumnTransposeKernel
@@ -278,7 +288,7 @@ template <class TFeat,
           bool ALIGN_CORNERS,
           CoordinateMapping MAPPING,
           InterpolationMode INTERPOLATION>
-void FillColumnTransposeKernelSYCL(
+sycl::event FillColumnTransposeKernelSYCL(
         sycl::queue& queue,
         TFeat* columns,
         int in_channels,
@@ -302,14 +312,15 @@ void FillColumnTransposeKernelSYCL(
         int filter_size_z,
         bool individual_extent,
         bool isotropic_extent,
-        bool normalize) {
+        bool normalize,
+        const std::vector<sycl::event>& deps) {
     constexpr int NUM_INTERP_VALUES =
             (INTERPOLATION == InterpolationMode::LINEAR ||
                              INTERPOLATION == InterpolationMode::LINEAR_BORDER
                      ? 8
                      : 1);
     const TIndex num_columns = end_idx - begin_idx;
-    if (num_columns <= 0) return;
+    if (num_columns <= 0) return sycl::event();
 
     const bool has_neighbors_importance = inp_neighbors_importance_sum;
     const bool neighbor_importance = neighbors_importance != nullptr;
@@ -317,12 +328,14 @@ void FillColumnTransposeKernelSYCL(
     // Zero the whole columns buffer up front, matching the CUDA
     // cudaMemsetAsync(columns, 0, ...) call before FillColumnTransposeKernel
     // launch.
-    queue.fill(columns, TFeat(0),
-               size_t(filter_size_x) * filter_size_y * filter_size_z *
-                       in_channels * size_t(num_columns))
-            .wait();
+    sycl::event fill_event = queue.fill(
+            columns, TFeat(0),
+            size_t(filter_size_x) * filter_size_y * filter_size_z *
+                    in_channels * size_t(num_columns),
+            deps);
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(fill_event);
              cgh.parallel_for(
                      sycl::nd_range<1>(
                              sycl::range<1>(num_columns * kFillColumnWGSize),
@@ -453,7 +466,7 @@ void FillColumnTransposeKernelSYCL(
                              }
                          }  // for n
                      });
-         }).wait_and_throw();
+         });
 }
 
 }  // namespace
@@ -463,33 +476,35 @@ void FillColumnTransposeKernelSYCL(
 // CALL_TEMPLATE/CALL_TEMPLATE2/3/4 macro cascade in ContinuousConvCUDAKernels
 // .cu (same set of 3*3*2=18 instantiations selected at runtime).
 template <class TFeat, class TReal, class TIndex>
-void FillColumnSYCL(sycl::queue& queue,
-                    TFeat* columns,
-                    int in_channels,
-                    TIndex begin_idx,
-                    TIndex end_idx,
-                    TIndex num_out,
-                    const TReal* const out_positions,
-                    TIndex num_inp,
-                    const TReal* const inp_positions,
-                    const TFeat* const inp_features,
-                    const TFeat* const inp_importance,
-                    size_t neighbors_index_size,
-                    const TIndex* const neighbors_index,
-                    const TFeat* const neighbors_importance,
-                    const int64_t* const neighbors_row_splits,
-                    const TReal* const extents,
-                    const TReal* const offsets,
-                    const std::vector<int>& filter_dims,
-                    InterpolationMode interpolation,
-                    CoordinateMapping coordinate_mapping,
-                    bool align_corners,
-                    bool individual_extent,
-                    bool isotropic_extent,
-                    bool normalize) {
+sycl::event FillColumnSYCL(sycl::queue& queue,
+                          TFeat* columns,
+                          int in_channels,
+                          TIndex begin_idx,
+                          TIndex end_idx,
+                          TIndex num_out,
+                          const TReal* const out_positions,
+                          TIndex num_inp,
+                          const TReal* const inp_positions,
+                          const TFeat* const inp_features,
+                          const TFeat* const inp_importance,
+                          size_t neighbors_index_size,
+                          const TIndex* const neighbors_index,
+                          const TFeat* const neighbors_importance,
+                          const int64_t* const neighbors_row_splits,
+                          const TReal* const extents,
+                          const TReal* const offsets,
+                          const std::vector<int>& filter_dims,
+                          InterpolationMode interpolation,
+                          CoordinateMapping coordinate_mapping,
+                          bool align_corners,
+                          bool individual_extent,
+                          bool isotropic_extent,
+                          bool normalize,
+                          const std::vector<sycl::event>& deps) {
     const int filter_size_z = filter_dims[0];
     const int filter_size_y = filter_dims[1];
     const int filter_size_x = filter_dims[2];
+    sycl::event result_event;
 
 #define FN_PARAMETERS                                                          \
     queue, columns, in_channels, begin_idx, end_idx, num_out, out_positions,   \
@@ -497,13 +512,14 @@ void FillColumnSYCL(sycl::queue& queue,
             neighbors_index_size, neighbors_index, neighbors_importance,       \
             neighbors_row_splits, extents, offsets, filter_size_x,             \
             filter_size_y, filter_size_z, individual_extent, isotropic_extent, \
-            normalize
+            normalize, deps
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS)               \
     if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
         ALIGN_CORNERS == align_corners)                                    \
-        FillColumnKernelSYCL<TFeat, TReal, TIndex, ALIGN_CORNERS, MAPPING, \
-                             INTERPOLATION>(FN_PARAMETERS);
+        result_event =                                                    \
+                FillColumnKernelSYCL<TFeat, TReal, TIndex, ALIGN_CORNERS,  \
+                                     MAPPING, INTERPOLATION>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)  \
     CALL_TEMPLATE(INTERPOLATION, MAPPING, true) \
@@ -527,37 +543,41 @@ void FillColumnSYCL(sycl::queue& queue,
 #undef CALL_TEMPLATE3
 #undef CALL_TEMPLATE4
 #undef FN_PARAMETERS
+    return result_event;
 }
 
 template <class TFeat, class TReal, class TIndex>
-void FillColumnTransposeSYCL(sycl::queue& queue,
-                             TFeat* columns,
-                             int in_channels,
-                             TIndex begin_idx,
-                             TIndex end_idx,
-                             TIndex num_out,
-                             const TReal* const out_positions,
-                             TIndex num_inp,
-                             const TReal* const inp_positions,
-                             const TFeat* const inp_features,
-                             const TFeat* const inp_neighbors_importance_sum,
-                             const int64_t* const inp_neighbors_prefix_sum,
-                             size_t neighbors_index_size,
-                             const TIndex* const neighbors_index,
-                             const TFeat* const neighbors_importance,
-                             const int64_t* const neighbors_row_splits,
-                             const TReal* const extents,
-                             const TReal* const offsets,
-                             const std::vector<int>& filter_dims,
-                             InterpolationMode interpolation,
-                             CoordinateMapping coordinate_mapping,
-                             bool align_corners,
-                             bool individual_extent,
-                             bool isotropic_extent,
-                             bool normalize) {
+sycl::event FillColumnTransposeSYCL(
+        sycl::queue& queue,
+        TFeat* columns,
+        int in_channels,
+        TIndex begin_idx,
+        TIndex end_idx,
+        TIndex num_out,
+        const TReal* const out_positions,
+        TIndex num_inp,
+        const TReal* const inp_positions,
+        const TFeat* const inp_features,
+        const TFeat* const inp_neighbors_importance_sum,
+        const int64_t* const inp_neighbors_prefix_sum,
+        size_t neighbors_index_size,
+        const TIndex* const neighbors_index,
+        const TFeat* const neighbors_importance,
+        const int64_t* const neighbors_row_splits,
+        const TReal* const extents,
+        const TReal* const offsets,
+        const std::vector<int>& filter_dims,
+        InterpolationMode interpolation,
+        CoordinateMapping coordinate_mapping,
+        bool align_corners,
+        bool individual_extent,
+        bool isotropic_extent,
+        bool normalize,
+        const std::vector<sycl::event>& deps) {
     const int filter_size_z = filter_dims[0];
     const int filter_size_y = filter_dims[1];
     const int filter_size_x = filter_dims[2];
+    sycl::event result_event;
 
 #define FN_PARAMETERS                                                          \
     queue, columns, in_channels, begin_idx, end_idx, num_out, out_positions,   \
@@ -566,13 +586,14 @@ void FillColumnTransposeSYCL(sycl::queue& queue,
             neighbors_index_size, neighbors_index, neighbors_importance,       \
             neighbors_row_splits, extents, offsets, filter_size_x,             \
             filter_size_y, filter_size_z, individual_extent, isotropic_extent, \
-            normalize
+            normalize, deps
 
 #define CALL_TEMPLATE(INTERPOLATION, MAPPING, ALIGN_CORNERS)               \
     if (INTERPOLATION == interpolation && MAPPING == coordinate_mapping && \
         ALIGN_CORNERS == align_corners)                                    \
-        FillColumnTransposeKernelSYCL<TFeat, TReal, TIndex, ALIGN_CORNERS, \
-                                      MAPPING, INTERPOLATION>(FN_PARAMETERS);
+        result_event = FillColumnTransposeKernelSYCL<                     \
+                TFeat, TReal, TIndex, ALIGN_CORNERS, MAPPING,              \
+                INTERPOLATION>(FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(INTERPOLATION, MAPPING)  \
     CALL_TEMPLATE(INTERPOLATION, MAPPING, true) \
@@ -596,9 +617,10 @@ void FillColumnTransposeSYCL(sycl::queue& queue,
 #undef CALL_TEMPLATE3
 #undef CALL_TEMPLATE4
 #undef FN_PARAMETERS
+    return result_event;
 }
 
-template void FillColumnSYCL<float, float, int32_t>(
+template sycl::event FillColumnSYCL<float, float, int32_t>(
         sycl::queue& queue,
         float* columns,
         int in_channels,
@@ -622,9 +644,10 @@ template void FillColumnSYCL<float, float, int32_t>(
         bool align_corners,
         bool individual_extent,
         bool isotropic_extent,
-        bool normalize);
+        bool normalize,
+        const std::vector<sycl::event>& deps);
 
-template void FillColumnTransposeSYCL<float, float, int32_t>(
+template sycl::event FillColumnTransposeSYCL<float, float, int32_t>(
         sycl::queue& queue,
         float* columns,
         int in_channels,
@@ -649,7 +672,8 @@ template void FillColumnTransposeSYCL<float, float, int32_t>(
         bool align_corners,
         bool individual_extent,
         bool isotropic_extent,
-        bool normalize);
+        bool normalize,
+        const std::vector<sycl::event>& deps);
 
 }  // namespace impl
 }  // namespace ml

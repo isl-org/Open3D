@@ -955,6 +955,7 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
+# @AGENT: Make the comment below brief (<6 lines)
 # curl and openssl (BoringSSL) are mutually referential static archives: curl
 # needs OpenSSL symbols and, depending on how the final link line gets
 # flattened by CMake (e.g. when Open3D itself is a shared library and must

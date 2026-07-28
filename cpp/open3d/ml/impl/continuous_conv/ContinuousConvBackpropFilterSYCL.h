@@ -97,16 +97,20 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
     }
 
     // init output
-    queue.fill(filter_backprop, TOut(0),
-               size_t(spatial_filter_size) * in_channels * out_channels)
-            .wait();
+    sycl::event filter_backprop_fill_event = queue.fill(
+            filter_backprop, TOut(0),
+            size_t(spatial_filter_size) * in_channels * out_channels);
 
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
 
     TFeat* columns = (TFeat*)mem_columns.first;
 
-    // if we cannot process all data at once we need multiple runs
+    // if we cannot process all data at once we need multiple runs. Every
+    // chunk's GEMM accumulates into the same filter_backprop buffer, so
+    // chunks are serialized by GemmColumnMajorSYCL's internal blocking (see
+    // the analogous comment in SparseConvBackpropFilterSYCL.h). Only the
+    // first chunk needs to depend on filter_backprop_fill_event.
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
@@ -114,13 +118,16 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run));
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumnSYCL<TFeat, TReal, TIndex>(
+        sycl::event fill_column_event = FillColumnSYCL<TFeat, TReal, TIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_importance, neighbors_index_size, neighbors_index,
                 neighbors_importance, neighbors_row_splits, extents, offsets,
                 filter_dims, interpolation, coordinate_mapping, align_corners,
-                individual_extent, isotropic_extent, normalize);
+                individual_extent, isotropic_extent, normalize,
+                run_i == 0
+                        ? std::vector<sycl::event>{filter_backprop_fill_event}
+                        : std::vector<sycl::event>{});
 
         // C is MxN
         // B is KxN
@@ -141,7 +148,7 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32);
+                allow_tf32, {fill_column_event});
     }
 }
 

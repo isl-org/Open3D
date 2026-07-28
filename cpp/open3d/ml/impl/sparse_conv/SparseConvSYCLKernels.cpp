@@ -19,33 +19,35 @@ constexpr size_t kWGSize = 32;
 }  // namespace
 
 template <class TReal, class TIndex, class TKernelIndex>
-void FillColumnSYCL(sycl::queue& queue,
-                    TReal* columns,
-                    int in_channels,
-                    TIndex begin_idx,
-                    TIndex end_idx,
-                    TIndex num_out,
-                    TIndex num_inp,
-                    const TReal* const inp_features,
-                    const TReal* const inp_importance,
-                    size_t neighbors_index_size,
-                    const TIndex* const neighbors_index,
-                    const TKernelIndex* const neighbors_kernel_index,
-                    const TReal* const neighbors_importance,
-                    const int64_t* const neighbors_row_splits,
-                    const int num_kernel_elements,
-                    bool normalize) {
+sycl::event FillColumnSYCL(sycl::queue& queue,
+                           TReal* columns,
+                           int in_channels,
+                           TIndex begin_idx,
+                           TIndex end_idx,
+                           TIndex num_out,
+                           TIndex num_inp,
+                           const TReal* const inp_features,
+                           const TReal* const inp_importance,
+                           size_t neighbors_index_size,
+                           const TIndex* const neighbors_index,
+                           const TKernelIndex* const neighbors_kernel_index,
+                           const TReal* const neighbors_importance,
+                           const int64_t* const neighbors_row_splits,
+                           const int num_kernel_elements,
+                           bool normalize,
+                           const std::vector<sycl::event>& deps) {
     const TIndex num_columns = end_idx - begin_idx;
-    if (num_columns <= 0) return;
+    if (num_columns <= 0) return sycl::event();
 
-    queue.fill(columns, TReal(0),
-               size_t(num_kernel_elements) * in_channels * num_columns)
-            .wait();
+    sycl::event fill_event = queue.fill(
+            columns, TReal(0),
+            size_t(num_kernel_elements) * in_channels * num_columns, deps);
 
     const bool point_importance = inp_importance != nullptr;
     const bool neighbor_importance = neighbors_importance != nullptr;
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(fill_event);
              cgh.parallel_for(
                      sycl::nd_range<1>(sycl::range<1>(num_columns * kWGSize),
                                        sycl::range<1>(kWGSize)),
@@ -115,37 +117,40 @@ void FillColumnSYCL(sycl::queue& queue,
                              }
                          }
                      });
-         }).wait_and_throw();
+         });
 }
 
 template <class TReal, class TIndex, class TKernelIndex>
-void FillColumnTransposeSYCL(sycl::queue& queue,
-                             TReal* columns,
-                             int in_channels,
-                             TIndex begin_idx,
-                             TIndex end_idx,
-                             TIndex num_out,
-                             TIndex num_inp,
-                             const TReal* const inp_features,
-                             const TReal* const inp_neighbors_importance_sum,
-                             const int64_t* const inp_neighbors_prefix_sum,
-                             size_t neighbors_index_size,
-                             const TIndex* const neighbors_index,
-                             const TKernelIndex* const neighbors_kernel_index,
-                             const TReal* const neighbors_importance,
-                             const int64_t* const neighbors_row_splits,
-                             const int num_kernel_elements,
-                             bool normalize) {
+sycl::event FillColumnTransposeSYCL(
+        sycl::queue& queue,
+        TReal* columns,
+        int in_channels,
+        TIndex begin_idx,
+        TIndex end_idx,
+        TIndex num_out,
+        TIndex num_inp,
+        const TReal* const inp_features,
+        const TReal* const inp_neighbors_importance_sum,
+        const int64_t* const inp_neighbors_prefix_sum,
+        size_t neighbors_index_size,
+        const TIndex* const neighbors_index,
+        const TKernelIndex* const neighbors_kernel_index,
+        const TReal* const neighbors_importance,
+        const int64_t* const neighbors_row_splits,
+        const int num_kernel_elements,
+        bool normalize,
+        const std::vector<sycl::event>& deps) {
     const TIndex num_columns = end_idx - begin_idx;
-    if (num_columns <= 0) return;
+    if (num_columns <= 0) return sycl::event();
 
-    queue.fill(columns, TReal(0),
-               size_t(num_kernel_elements) * in_channels * num_columns)
-            .wait();
+    sycl::event fill_event = queue.fill(
+            columns, TReal(0),
+            size_t(num_kernel_elements) * in_channels * num_columns, deps);
 
     const bool neighbor_importance = neighbors_importance != nullptr;
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
+             cgh.depends_on(fill_event);
              cgh.parallel_for(
                      sycl::nd_range<1>(sycl::range<1>(num_columns * kWGSize),
                                        sycl::range<1>(kWGSize)),
@@ -222,11 +227,11 @@ void FillColumnTransposeSYCL(sycl::queue& queue,
                              }
                          }
                      });
-         }).wait_and_throw();
+         });
 }
 
 #define INSTANTIATE(TREAL, TINDEX, TKERNELINDEX)                              \
-    template void FillColumnSYCL<TREAL, TINDEX, TKERNELINDEX>(                \
+    template sycl::event FillColumnSYCL<TREAL, TINDEX, TKERNELINDEX>(         \
             sycl::queue & queue, TREAL * columns, int in_channels,            \
             TINDEX begin_idx, TINDEX end_idx, TINDEX num_out, TINDEX num_inp, \
             const TREAL* const inp_features,                                  \
@@ -235,8 +240,9 @@ void FillColumnTransposeSYCL(sycl::queue& queue,
             const TKERNELINDEX* const neighbors_kernel_index,                 \
             const TREAL* const neighbors_importance,                          \
             const int64_t* const neighbors_row_splits,                        \
-            const int num_kernel_elements, bool normalize);                   \
-    template void FillColumnTransposeSYCL<TREAL, TINDEX, TKERNELINDEX>(       \
+            const int num_kernel_elements, bool normalize,                    \
+            const std::vector<sycl::event>& deps);                           \
+    template sycl::event FillColumnTransposeSYCL<TREAL, TINDEX, TKERNELINDEX>( \
             sycl::queue & queue, TREAL * columns, int in_channels,            \
             TINDEX begin_idx, TINDEX end_idx, TINDEX num_out, TINDEX num_inp, \
             const TREAL* const inp_features,                                  \
@@ -244,9 +250,10 @@ void FillColumnTransposeSYCL(sycl::queue& queue,
             const int64_t* const inp_neighbors_prefix_sum,                    \
             size_t neighbors_index_size, const TINDEX* const neighbors_index, \
             const TKERNELINDEX* const neighbors_kernel_index,                 \
-            const TREAL* const neighbors_importance,                          \
+            const TREAL* const neighbors_importance,                         \
             const int64_t* const neighbors_row_splits,                        \
-            const int num_kernel_elements, bool normalize);
+            const int num_kernel_elements, bool normalize,                    \
+            const std::vector<sycl::event>& deps);
 
 INSTANTIATE(float, int32_t, int16_t)
 INSTANTIATE(float, int32_t, uint8_t)

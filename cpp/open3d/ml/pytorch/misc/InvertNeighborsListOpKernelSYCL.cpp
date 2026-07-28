@@ -6,7 +6,8 @@
 // ----------------------------------------------------------------------------
 
 // XPU dispatch wrapper for InvertNeighborsList. Allocates scratch + output
-// tensors on the XPU device and delegates to InvertNeighborsListSYCL.h.
+// tensors on the XPU device and delegates to InvertNeighborsListSYCL.h using
+// PyTorch's current XPU queue directly.
 
 #include <c10/xpu/XPUStream.h>
 
@@ -49,7 +50,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListSYCL(
     sycl::queue& queue = c10::xpu::getCurrentXPUStream().queue();
 
     open3d::ml::impl::InvertNeighborsListSYCL(
-            queue, reinterpret_cast<uint32_t*>(count_buf.data_ptr<int32_t>()),
+            queue,
+            reinterpret_cast<uint32_t*>(count_buf.data_ptr<int32_t>()),
             inp_neighbors_index.data_ptr<TIndex>(),
             num_attributes ? inp_neighbors_attributes.data_ptr<TAttr>()
                            : nullptr,

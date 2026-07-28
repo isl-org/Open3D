@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// XPU dispatch wrapper for RaggedToDense: obtains the current SYCL queue from
-// PyTorch XPU context and delegates to the SYCL impl in RaggedToDenseSYCL.h.
+// XPU dispatch wrapper for RaggedToDense: delegates to the SYCL impl in
+// RaggedToDenseSYCL.h using PyTorch's current XPU queue directly.
 
 #include <c10/xpu/XPUStream.h>
 

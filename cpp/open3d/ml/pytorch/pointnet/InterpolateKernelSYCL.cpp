@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// XPU dispatch wrappers for three_nn / three_interpolate(_grad): obtain the
-// current SYCL queue from PyTorch XPU context and delegate to the SYCL impl
-// in InterpolatePointsSYCL.h.
+// XPU dispatch wrappers for three_nn / three_interpolate(_grad): delegate to
+// the SYCL impl in InterpolatePointsSYCL.h using PyTorch's current XPU queue
+// directly.
 
 #include <c10/xpu/XPUStream.h>
 

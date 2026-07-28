@@ -11,7 +11,10 @@
 // chunked-GEMM loop over `num_cols_per_run` output points at a time. Only
 // device-specific pieces changed: cudaStream_t -> sycl::queue&,
 // cudaMemsetAsync -> queue.fill, CUTLASS 2.x device::Gemm -> the sycl-tla
-// backed GemmColumnMajorSYCL shim (see GemmSYCL.h).
+// backed GemmColumnMajorSYCL shim (see GemmSYCL.h). Each chunk's FillColumn
+// depends on the previous chunk's GEMM (both write into/read from the shared
+// `columns` scratch buffer); GemmColumnMajorSYCL itself has no event-based
+// API (see GemmSYCL.h), so it remains a synchronization point between chunks.
 #pragma once
 
 #include "open3d/ml/impl/GemmSYCL.h"
@@ -90,7 +93,8 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
         throw std::runtime_error(ss.str());
     }
 
-    queue.fill(out_features, TOut(0), size_t(num_out) * out_channels).wait();
+    sycl::event out_features_fill_event =
+            queue.fill(out_features, TOut(0), size_t(num_out) * out_channels);
 
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
@@ -98,17 +102,27 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
     TFeat* columns = (TFeat*)mem_columns.first;
 
     size_t num_runs = DivUp(num_out, num_cols_per_run);
+    // Each chunk's GEMM reads the `columns` buffer that chunk's FillColumn
+    // just wrote, so it depends on that specific FillColumn event (via
+    // GemmColumnMajorSYCL's ext_oneapi_submit_barrier, see GemmSYCL.h) rather
+    // than assuming queue order. GemmColumnMajorSYCL still blocks internally
+    // before returning (a sycl-tla API-boundary limitation, see GemmSYCL.h),
+    // so consecutive chunks are naturally serialized without needing to
+    // thread an inter-chunk event explicitly.
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run));
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumnSYCL<TFeat, TIndex, TKernelIndex>(
+        sycl::event fill_column_event = FillColumnSYCL<TFeat, TIndex,
+                                                        TKernelIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,
-                neighbors_row_splits, num_kernel_elements, normalize);
+                neighbors_row_splits, num_kernel_elements, normalize,
+                run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
+                          : std::vector<sycl::event>{});
 
         // C(MxN) = A(MxK) * B(KxN); A=filter, B=columns, C=out_features.
         const int m = out_channels;
@@ -126,7 +140,7 @@ void SparseConvComputeFeaturesSYCL(sycl::queue& queue,
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32);
+                allow_tf32, {fill_column_event});
     }
 }
 

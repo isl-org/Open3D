@@ -35,6 +35,11 @@
 #include "open3d/ml/pytorch/TorchHelper.h"
 
 #ifdef BUILD_SYCL_MODULE
+// This TU combines CUDA/XPU/CPU dispatch and is NOT compiled with -fsycl (see
+// pytorch/CMakeLists.txt), so open3d/core/SYCLContext.h's SYCLScopedQueue
+// (declared only under SYCL_LANGUAGE_VERSION) is unavailable here;
+// roipool3dLauncherSYCL takes the raw PyTorch queue directly instead (see
+// RoiPoolKernelSYCL.cpp, which is -fsycl-compiled).
 #include <c10/xpu/XPUStream.h>
 #endif
 
@@ -74,11 +79,11 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
 #endif
     } else if (xyz.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-        sycl::queue &queue = c10::xpu::getCurrentXPUStream().queue();
         open3d::ml::contrib::roipool3dLauncherSYCL(
-                queue, batch_size, pts_num, boxes_num, feature_in_len,
-                sampled_pts_num, xyz_data, boxes3d_data, pts_feature_data,
-                pooled_features_data, pooled_empty_flag_data);
+                c10::xpu::getCurrentXPUStream().queue(), batch_size, pts_num,
+                boxes_num, feature_in_len, sampled_pts_num, xyz_data,
+                boxes3d_data, pts_feature_data, pooled_features_data,
+                pooled_empty_flag_data);
 #else
         TORCH_CHECK(false, "roi_pool was not compiled with SYCL support")
 #endif

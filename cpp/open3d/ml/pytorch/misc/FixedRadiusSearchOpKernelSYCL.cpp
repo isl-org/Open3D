@@ -7,7 +7,12 @@
 
 // SYCL wrapper for FixedRadiusSearch PyTorch op. Implements count-then-gather
 // using CountNeighborsSYCL + WriteNeighborsSYCL from the core NNS layer,
-// with the PyTorch XPU stream queue.
+// with the PyTorch XPU stream queue. CountNeighborsSYCL/WriteNeighborsSYCL
+// (core/nns/, outside cpp/open3d/ml/) return void rather than a sycl::event,
+// so the queue.wait_and_throw() calls below (once per pass, not once per
+// batch inside the loops) remain the only available synchronization point
+// between passes -- not a lazy default, a hard requirement given those
+// functions' current API.
 
 #include <c10/xpu/XPUStream.h>
 

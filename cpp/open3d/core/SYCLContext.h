@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -106,6 +107,46 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+#if defined(SYCL_LANGUAGE_VERSION)
+
+/// Returns the ambient "current" SYCL queue for \p device: whatever a
+/// \ref SYCLScopedQueue installed for this thread and this device, or
+/// SYCLContext::GetInstance().GetDefaultQueue(device) if no override is
+/// active. Kernel-launch code (e.g. core::ParallelFor) should call this
+/// instead of going through SYCLContext directly, so that ML ops can route
+/// work onto a caller-supplied queue (e.g. PyTorch's current XPU queue).
+sycl::queue GetQueue(const Device& device);
+
+/// Switches the ambient current SYCL queue for \p device in the current
+/// scope; the previous queue (or lack thereof) is restored once leaving the
+/// scope. Mirrors core::CUDAScopedStream.
+///
+/// Example:
+/// ```cpp
+/// void my_func(const Device& device, sycl::queue& torch_queue) {
+///     core::sy::SYCLScopedQueue scoped_queue(device, torch_queue);
+///     // GetQueue(device) (and anything built on it, e.g. core::ParallelFor)
+///     // now returns torch_queue until scoped_queue goes out of scope.
+/// }
+/// ```
+class SYCLScopedQueue {
+public:
+    SYCLScopedQueue(const Device& device, sycl::queue queue);
+    ~SYCLScopedQueue();
+
+    SYCLScopedQueue(const SYCLScopedQueue&) = delete;
+    SYCLScopedQueue& operator=(const SYCLScopedQueue&) = delete;
+
+private:
+    Device device_;
+    // Empty if there was no prior override for `device_` (sycl::queue has no
+    // default constructor, so a nullable wrapper is used instead of a bool
+    // flag + default-constructed queue).
+    std::optional<sycl::queue> prev_queue_;
+};
+
+#endif  // SYCL_LANGUAGE_VERSION
 
 #endif  // BUILD_SYCL_MODULE
 

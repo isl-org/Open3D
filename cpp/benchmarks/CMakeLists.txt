@@ -14,6 +14,9 @@ if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)
     target_link_libraries(benchmarks PRIVATE CUDA::cudart)
 endif()
+if (BUILD_SYCL_MODULE)
+    target_link_libraries(benchmarks PRIVATE Open3D::3rdparty_sycl)
+endif()
 
 open3d_show_and_abort_on_warning(benchmarks)
 open3d_set_global_properties(benchmarks)
@@ -34,9 +37,3 @@ target_sources(benchmarks PRIVATE
 )
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
 target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-if (BUILD_SYCL_MODULE)
-    # benchmarks compiles its own SYCL device code above, so it needs the
-    # -fsycl link step.
-    target_link_libraries(benchmarks PRIVATE Open3D::3rdparty_sycl)
-endif()

@@ -103,7 +103,7 @@ void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
     if (n == 0) {
         return;
     }
-    auto queue = core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto queue = core::sy::GetQueue(device);
     size_t wg = core::sy::PreferredWorkGroupSize(device);
     const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
     sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
@@ -113,6 +113,35 @@ void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
                  func(i);
              }
          }).wait_and_throw();
+}
+
+/// SYCL-only: depends on \p deps before launching the kernel and returns its
+/// completion event instead of blocking. Shared implementation behind the
+/// public core::ParallelFor(..., std::initializer_list<sycl::event>) overload
+/// below; also called directly by ml/ impl code that already holds a
+/// `std::vector<sycl::event>` of dependencies.
+template <typename func_t>
+sycl::event ParallelForSYCL_(const Device& device,
+                             int64_t n,
+                             const func_t& func,
+                             const std::vector<sycl::event>& deps) {
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    if (n == 0) {
+        return sycl::event();
+    }
+    auto queue = core::sy::GetQueue(device);
+    size_t wg = core::sy::PreferredWorkGroupSize(device);
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
+    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
+        int64_t i = item.get_global_id(0);
+        if (i < n) {
+            func(i);
+        }
+    });
 }
 
 #endif
@@ -145,6 +174,82 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
     ParallelForCPU_(device, n, func);
 #endif
 }
+
+#if defined(SYCL_LANGUAGE_VERSION)
+/// SYCL-only overload: waits on \p deps before launching the kernel and
+/// returns its completion event instead of blocking, so this call can be
+/// ordered against unrelated async work on the same (possibly out-of-order)
+/// queue -- e.g. a preceding oneDPL async algorithm -- without a redundant
+/// host-side wait. Only meaningful for \p device.IsSYCL(); use the plain
+/// core::ParallelFor(device, n, func) on CPU/CUDA.
+///
+/// Example:
+/// \code
+/// sycl::event scan_event = oneapi::dpl::experimental::inclusive_scan_async(
+///         policy, first, last, d_first).event();
+/// sycl::event kernel_event = core::ParallelFor(
+///         device, n, [=](int64_t i) { ... }, {scan_event});
+/// \endcode
+template <typename func_t>
+sycl::event ParallelFor(const Device& device,
+                        int64_t n,
+                        const func_t& func,
+                        std::initializer_list<sycl::event> deps) {
+    return ParallelForSYCL_(device, n, func,
+                            std::vector<sycl::event>(deps));
+}
+
+/// Run a function in parallel directly on the given SYCL queue, bypassing
+/// Open3D's Device/SYCLContext machinery entirely. Use this at boundaries
+/// where the queue's actual bound device cannot be reliably mapped back to
+/// one of Open3D's own enumerated Devices (e.g. PyTorch's current XPU stream
+/// queue on a multi-GPU machine, where torch's device index has no
+/// guaranteed correspondence to Open3D's own -- currently single-GPU --
+/// device enumeration; see core/SYCLContext.cpp). Work-group size is derived
+/// directly from the queue's own device, so this is always correct
+/// regardless of enumeration-order mismatches.
+template <typename func_t>
+void ParallelFor(sycl::queue& queue, int64_t n, const func_t& func) {
+    if (n == 0) return;
+    size_t max_wg =
+            queue.get_device()
+                    .get_info<sycl::info::device::max_work_group_size>();
+    size_t wg = std::min<size_t>(256, max_wg);
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
+    queue.parallel_for(nd_range, [=](sycl::nd_item<1> item) {
+             int64_t i = item.get_global_id(0);
+             if (i < n) func(i);
+         }).wait_and_throw();
+}
+
+/// Non-blocking, event-dependency variant of the above.
+template <typename func_t>
+sycl::event ParallelFor(sycl::queue& queue,
+                        int64_t n,
+                        const func_t& func,
+                        const std::vector<sycl::event>& deps) {
+    if (n == 0) return sycl::event();
+    size_t max_wg =
+            queue.get_device()
+                    .get_info<sycl::info::device::max_work_group_size>();
+    size_t wg = std::min<size_t>(256, max_wg);
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
+    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
+        int64_t i = item.get_global_id(0);
+        if (i < n) func(i);
+    });
+}
+
+template <typename func_t>
+sycl::event ParallelFor(sycl::queue& queue,
+                        int64_t n,
+                        const func_t& func,
+                        std::initializer_list<sycl::event> deps) {
+    return ParallelFor(queue, n, func, std::vector<sycl::event>(deps));
+}
+#endif
 
 /// Run a potentially vectorized function in parallel on CPU or CUDA.
 ///

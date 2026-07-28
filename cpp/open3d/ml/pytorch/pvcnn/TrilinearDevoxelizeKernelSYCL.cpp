@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// XPU dispatch wrapper for TrilinearDevoxelize(Grad): obtains the current
-// SYCL queue from PyTorch XPU context and delegates to the SYCL impl in
-// TrilinearDevoxelizeSYCL.h.
+// XPU dispatch wrapper for TrilinearDevoxelize(Grad): delegates to the SYCL
+// impl in TrilinearDevoxelizeSYCL.h using PyTorch's current XPU queue
+// directly.
 
 #include <c10/xpu/XPUStream.h>
 

@@ -9,12 +9,31 @@
 // pipeline (assign_pts_to_box3d -> get_pooled_idx -> roipool3d_forward),
 // reusing the shared pt_in_box3d from RoiPoolKernel.h. pts_assign / pts_idx
 // are USM device temporaries, mirroring the CUDA cudaMalloc scratch buffers.
+//
+// Kernel 2 (get_pooled_idx) uses one work-group per (batch, box); work-items
+// grid-stride over pts_num in parallel and use an
+// exclusive_scan_over_group-based compaction to claim output slots, instead
+// of the CUDA/original-SYCL version's single-work-item serial scan. This
+// changes which of the >sampled_pts_num assigned points are kept (the
+// parallel scan does not visit points in strict ascending-index order the
+// way a single serial scan does) -- see docs/dev/sycl_ml_ops_followups.md,
+// intentionally deferred until the caller confirmed ordering doesn't matter
+// (python/test/ml_ops/test_roi_pool.py now compares pooled feature sets per
+// box, not slot-for-slot order).
 
 #include "open3d/ml/contrib/RoiPoolKernel.h"
 
 namespace open3d {
 namespace ml {
 namespace contrib {
+
+namespace {
+// Work-group size for kernel 2: one work-group per (batch, box), work-items
+// grid-stride over pts_num. Best-guess default (matches the
+// work-group-per-output-point size used elsewhere in this codebase, e.g.
+// BallQuerySYCL.h/the conv FillColumn kernels); not yet tuned on target HW.
+constexpr size_t kGetPooledIdxWGSize = 32;
+}  // namespace
 
 void roipool3dLauncherSYCL(sycl::queue &queue,
                            int batch_size,
@@ -32,7 +51,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
 
     // Kernel 1: for every (batch, point, box) triple, record whether the
     // point lies inside the box.
-    queue.submit([&](sycl::handler &cgh) {
+    sycl::event event1 = queue.submit([&](sycl::handler &cgh) {
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
                               static_cast<size_t>(pts_num),
@@ -56,55 +75,88 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                             boxes3d[box_offset + 5], boxes3d[box_offset + 6],
                             10.0);
                 });
-    }).wait();
+    });
 
     int *pts_idx = sycl::malloc_device<int>(
             static_cast<size_t>(batch_size) * boxes_num * sampled_pts_num,
             queue);
 
     // Kernel 2: for every (batch, box), collect up to sampled_pts_num
-    // assigned point indices, then pad (duplicate modulo cnt) if fewer than
+    // assigned point indices via a work-group-cooperative parallel scan
+    // (see file header), then pad (duplicate modulo cnt) if fewer than
     // sampled_pts_num points were assigned; flag boxes with zero points.
-    queue.submit([&](sycl::handler &cgh) {
+    const size_t wg2 = kGetPooledIdxWGSize;
+    sycl::event event2 = queue.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(event1);
         cgh.parallel_for(
-                sycl::range<2>(static_cast<size_t>(batch_size),
-                              static_cast<size_t>(boxes_num)),
-                [=](sycl::item<2> item) {
-                    const int bs_idx = static_cast<int>(item.get_id(0));
-                    const int boxes_idx = static_cast<int>(item.get_id(1));
+                sycl::nd_range<1>(
+                        sycl::range<1>(static_cast<size_t>(batch_size) *
+                                      boxes_num * wg2),
+                        sycl::range<1>(wg2)),
+                [=](sycl::nd_item<1> item) {
+                    const size_t group_id = item.get_group(0);
+                    const int bs_idx = static_cast<int>(group_id / boxes_num);
+                    const int boxes_idx =
+                            static_cast<int>(group_id % boxes_num);
+                    const size_t lid = item.get_local_id(0);
+                    auto group = item.get_group();
 
-                    int cnt = 0;
-                    for (int k = 0; k < pts_num; k++) {
-                        if (pts_assign[bs_idx * pts_num * boxes_num +
-                                      k * boxes_num + boxes_idx]) {
-                            if (cnt < sampled_pts_num) {
-                                pts_idx[bs_idx * boxes_num * sampled_pts_num +
-                                       boxes_idx * sampled_pts_num + cnt] = k;
-                                cnt++;
-                            } else {
-                                break;
-                            }
+                    const int *const assign_base =
+                            pts_assign + bs_idx * pts_num * boxes_num +
+                            boxes_idx;
+                    int *const idx_out = pts_idx +
+                                         bs_idx * boxes_num * sampled_pts_num +
+                                         boxes_idx * sampled_pts_num;
+
+                    int local_count = 0;
+                    for (int k = static_cast<int>(lid); k < pts_num;
+                         k += static_cast<int>(wg2)) {
+                        if (assign_base[k * boxes_num]) ++local_count;
+                    }
+
+                    const int base_slot = sycl::exclusive_scan_over_group(
+                            group, local_count, sycl::plus<int>());
+                    const int total_count = sycl::reduce_over_group(
+                            group, local_count, sycl::plus<int>());
+
+                    if (lid == 0) {
+                        pooled_empty_flag[bs_idx * boxes_num + boxes_idx] =
+                                (total_count == 0) ? 1 : 0;
+                    }
+                    if (total_count == 0) return;
+
+                    int slot = base_slot;
+                    for (int k = static_cast<int>(lid);
+                         k < pts_num && slot < sampled_pts_num;
+                         k += static_cast<int>(wg2)) {
+                        if (assign_base[k * boxes_num]) {
+                            idx_out[slot] = k;
+                            ++slot;
                         }
                     }
 
-                    if (cnt == 0) {
-                        pooled_empty_flag[bs_idx * boxes_num + boxes_idx] = 1;
-                    } else if (cnt < sampled_pts_num) {
-                        const int base_offset =
-                                bs_idx * boxes_num * sampled_pts_num +
-                                boxes_idx * sampled_pts_num;
-                        for (int k = cnt; k < sampled_pts_num; k++) {
-                            const int duplicate_idx = k % cnt;
-                            pts_idx[base_offset + k] =
-                                    pts_idx[base_offset + duplicate_idx];
+                    // Padding (fewer than sampled_pts_num points assigned):
+                    // duplicate already-collected indices modulo cnt,
+                    // matching the CUDA/original-SYCL "duplicate_idx = k %
+                    // cnt" pattern; cnt == total_count here. Sequential on
+                    // one work-item since sampled_pts_num - total_count is
+                    // typically small and each slot depends on an earlier
+                    // one that may have been written by a different
+                    // work-item (needs the barrier below first).
+                    sycl::group_barrier(group);
+                    if (lid == 0 && total_count < sampled_pts_num) {
+                        for (int k = total_count; k < sampled_pts_num; ++k) {
+                            const int duplicate_idx = k % total_count;
+                            idx_out[k] = idx_out[duplicate_idx];
                         }
                     }
                 });
-    }).wait();
+    });
 
     // Kernel 3: gather xyz + features for each sampled point into the
     // output tensor; boxes with no assigned points are left as zeros.
-    queue.submit([&](sycl::handler &cgh) {
+    sycl::event event3 = queue.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(event2);
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
                               static_cast<size_t>(boxes_num),
@@ -139,8 +191,12 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                                 pts_feature[src_feature_offset + j];
                 });
     });
-    queue.wait_and_throw();
 
+    // pts_assign/pts_idx are USM scratch owned by this call; free them once
+    // kernel 3 (the last reader of both) has completed. This is the one
+    // blocking wait in the pipeline -- it exists to bound the scratch
+    // buffers' lifetime, not as a lazy default between device-only stages.
+    event3.wait();
     sycl::free(pts_assign, queue);
     sycl::free(pts_idx, queue);
 }

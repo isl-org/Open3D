@@ -47,6 +47,7 @@ int NmsSYCLKernel(sycl::queue &queue,
     // Rank `scores` in descending order entirely on device: fill
     // sort_indices with 0..n-1, then stable_sort it by score via oneDPL
     // (mirrors Nms.cu's thrust::sequence + thrust::stable_sort_by_key).
+    // stable_sort has no non-blocking oneDPL async equivalent.
     int64_t *sort_indices = sycl::malloc_device<int64_t>(n, queue);
     queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
         sort_indices[id[0]] = static_cast<int64_t>(id[0]);
@@ -66,7 +67,7 @@ int NmsSYCLKernel(sycl::queue &queue,
     const sycl::range<1> global(num_groups * NMS_BLOCK_SIZE);
     const sycl::range<1> local(NMS_BLOCK_SIZE);
 
-    queue.submit([&](sycl::handler &cgh) {
+    sycl::event mask_event = queue.submit([&](sycl::handler &cgh) {
         sycl::local_accessor<float, 1> block_boxes(NMS_BLOCK_SIZE * 5, cgh);
 
         cgh.parallel_for(
@@ -122,7 +123,6 @@ int NmsSYCLKernel(sycl::queue &queue,
                     }
                 });
     });
-    queue.wait_and_throw();
 
     // Greedy keep-loop: run on-device as a single-work-item kernel (see file
     // header comment), writing straight into the caller-owned
@@ -132,20 +132,23 @@ int NmsSYCLKernel(sycl::queue &queue,
     uint64_t *remv = sycl::malloc_device<uint64_t>(num_block_cols, queue);
     int *count_dev = sycl::malloc_device<int>(1, queue);
 
-    queue.submit([&](sycl::handler &cgh) {
+    sycl::event keep_event = queue.submit([&](sycl::handler &cgh) {
+        cgh.depends_on(mask_event);
         cgh.single_task([=]() {
             *count_dev = NmsGreedyKeepCore(mask, sort_indices, n, remv,
                                            keep_indices_out);
         });
     });
-    queue.wait_and_throw();
 
+    // Reading `count` back to the host is a genuine synchronization point
+    // (PyTorch needs the tensor shape on the host); wait only on this read.
     int count = 0;
-    queue.memcpy(&count, count_dev, sizeof(int)).wait();
+    queue.memcpy(&count, count_dev, sizeof(int), keep_event).wait();
 
     sycl::free(mask, queue);
     sycl::free(sort_indices, queue);
     sycl::free(remv, queue);
+    // @AGENT: Won't this sycl::free automatically wait for the previous memcpy to finish?
     sycl::free(count_dev, queue);
 
     return count;

@@ -101,7 +101,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
     }
 
     // init output
-    queue.fill(out_features, TOut(0), size_t(num_out) * out_channels).wait();
+    sycl::event out_features_fill_event =
+            queue.fill(out_features, TOut(0), size_t(num_out) * out_channels);
 
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
@@ -109,7 +110,11 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
     // this is the pointer to the patch matrix
     TFeat* columns = (TFeat*)mem_columns.first;
 
-    // if we cannot process all data at once we need multiple runs
+    // if we cannot process all data at once we need multiple runs. Each
+    // chunk's GEMM depends on that chunk's FillColumn event (via
+    // GemmColumnMajorSYCL's internal barrier, see GemmSYCL.h);
+    // GemmColumnMajorSYCL blocks before returning, so chunks are naturally
+    // serialized without an explicit inter-chunk dependency.
     const size_t num_runs = DivUp(num_out, num_cols_per_run);
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
@@ -118,13 +123,15 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
         const size_t num_cols_this_run = end_idx - begin_idx;
 
         // compute the patch matrix
-        FillColumnSYCL<TFeat, TReal, TIndex>(
+        sycl::event fill_column_event = FillColumnSYCL<TFeat, TReal, TIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 out_positions, num_inp, inp_positions, inp_features,
                 inp_importance, neighbors_index_size, neighbors_index,
                 neighbors_importance, neighbors_row_splits, extents, offsets,
                 filter_dims, interpolation, coordinate_mapping, align_corners,
-                individual_extent, isotropic_extent, normalize);
+                individual_extent, isotropic_extent, normalize,
+                run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
+                          : std::vector<sycl::event>{});
 
         // C is MxN
         // B is KxN
@@ -144,7 +151,7 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32);
+                allow_tf32, {fill_column_event});
     }
 }
 

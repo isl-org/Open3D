@@ -32,15 +32,15 @@ namespace {
 /// \param idxs       Output sampled indices, shape [b, m].
 /// \param work_group_size    Work-group size (tunable hyperparameter);
 ///        capped internally to the device's max and to a power of two.
-void FurthestPointSamplingSYCL(sycl::queue& queue,
-                               int b,
-                               int n,
-                               int m,
-                               const float* const dataset,
-                               float* const temp,
-                               int* const idxs,
-                               size_t work_group_size = 256) {
-    if (b <= 0 || m <= 0) return;
+sycl::event FurthestPointSamplingSYCL(sycl::queue& queue,
+                                      int b,
+                                      int n,
+                                      int m,
+                                      const float* const dataset,
+                                      float* const temp,
+                                      int* const idxs,
+                                      size_t work_group_size = 256) {
+    if (b <= 0 || m <= 0) return sycl::event();
 
     const size_t max_wg =
             queue.get_device()
@@ -54,7 +54,7 @@ void FurthestPointSamplingSYCL(sycl::queue& queue,
     const sycl::range<1> global(static_cast<size_t>(b) * wg);
     const sycl::range<1> local(wg);
 
-    queue.submit([&](sycl::handler& cgh) {
+    return queue.submit([&](sycl::handler& cgh) {
         sycl::local_accessor<float, 1> dists(wg, cgh);
         sycl::local_accessor<int, 1> dists_i(wg, cgh);
 
@@ -120,7 +120,6 @@ void FurthestPointSamplingSYCL(sycl::queue& queue,
                     }
                 });
     });
-    queue.wait_and_throw();
 }
 
 }  // namespace

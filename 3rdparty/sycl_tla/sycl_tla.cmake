@@ -5,6 +5,9 @@ include(ExternalProject)
 # Track sycl-tla main while validating the device-agnostic float32 GEMM path.
 # Used by the SYCL ML ops path (BUILD_SYCL_MODULE=ON) for future Intel GPU
 # support. Actual CUDA→SYCL kernel porting is handled separately.
+# @AGENT: Update patch command to work in Windows. Use the common cmake script
+# from 3rdparty/librealsense/apply_patch.cmake
+# @AGENT: Use zip download from github instead of a shallow git clone.
 ExternalProject_Add(
     ext_sycl_tla
     PREFIX sycl_tla

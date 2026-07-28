@@ -17,6 +17,11 @@ namespace {
 // Set by SYCLContext ctor; used by static Clear() without calling
 // GetInstance().
 open3d::core::sy::SYCLContext* g_sycl_context = nullptr;
+
+// Per-thread queue overrides installed by SYCLScopedQueue, keyed by Device.
+// thread_local (not a single scalar like CUDA's current-stream state) since
+// SYCL queues are always bound to a specific device.
+thread_local std::map<open3d::core::Device, sycl::queue> g_queue_overrides;
 }  // namespace
 
 namespace open3d {
@@ -139,6 +144,31 @@ std::vector<Device> SYCLContext::GetAvailableSYCLDevices() {
 
 sycl::queue SYCLContext::GetDefaultQueue(const Device& device) {
     return impl_->devices.at(device).queue;
+}
+
+sycl::queue GetQueue(const Device& device) {
+    auto it = g_queue_overrides.find(device);
+    if (it != g_queue_overrides.end()) {
+        return it->second;
+    }
+    return SYCLContext::GetInstance().GetDefaultQueue(device);
+}
+
+SYCLScopedQueue::SYCLScopedQueue(const Device& device, sycl::queue queue)
+    : device_(device) {
+    auto it = g_queue_overrides.find(device_);
+    if (it != g_queue_overrides.end()) {
+        prev_queue_ = it->second;
+    }
+    g_queue_overrides[device_] = std::move(queue);
+}
+
+SYCLScopedQueue::~SYCLScopedQueue() {
+    if (prev_queue_) {
+        g_queue_overrides[device_] = *prev_queue_;
+    } else {
+        g_queue_overrides.erase(device_);
+    }
 }
 
 SYCLDevice SYCLContext::GetDeviceProperties(const Device& device) {

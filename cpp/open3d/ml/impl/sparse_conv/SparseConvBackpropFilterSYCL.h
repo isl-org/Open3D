@@ -87,9 +87,9 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
         throw std::runtime_error(ss.str());
     }
 
-    queue.fill(filter_backprop, TOut(0),
-               size_t(num_kernel_elements) * in_channels * out_channels)
-            .wait();
+    sycl::event filter_backprop_fill_event = queue.fill(
+            filter_backprop, TOut(0),
+            size_t(num_kernel_elements) * in_channels * out_channels);
 
     size_t num_cols_per_run =
             std::min(mem_columns.second / bytes_per_column, size_t(num_out));
@@ -97,17 +97,29 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
     TFeat* columns = (TFeat*)mem_columns.first;
 
     size_t num_runs = DivUp(num_out, num_cols_per_run);
+    // Every chunk's GEMM accumulates (beta=1) into the SAME filter_backprop
+    // buffer, so chunks must run strictly sequentially regardless of event
+    // dependencies; GemmColumnMajorSYCL blocking internally before returning
+    // (see GemmSYCL.h) guarantees this. Only the first chunk needs to depend
+    // on filter_backprop_fill_event -- later chunks' FillColumn calls don't
+    // touch filter_backprop at all (they only fill the reused `columns`
+    // scratch, which the same queue's prior GEMM has already finished
+    // reading by the time the next FillColumn's kernel runs).
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
                 std::min(size_t(num_out), (run_i + 1) * num_cols_per_run));
         const size_t num_cols_this_run = end_idx - begin_idx;
 
-        FillColumnSYCL<TFeat, TIndex, TKernelIndex>(
+        sycl::event fill_column_event = FillColumnSYCL<TFeat, TIndex,
+                                                        TKernelIndex>(
                 queue, columns, in_channels, begin_idx, end_idx, num_out,
                 num_inp, inp_features, inp_importance, neighbors_index_size,
                 neighbors_index, neighbors_kernel_index, neighbors_importance,
-                neighbors_row_splits, num_kernel_elements, normalize);
+                neighbors_row_splits, num_kernel_elements, normalize,
+                run_i == 0
+                        ? std::vector<sycl::event>{filter_backprop_fill_event}
+                        : std::vector<sycl::event>{});
 
         // C(MxN) = A(MxK) * B(KxN); A=gradient (col-major), B=columns
         // (row-major), C=filter_backprop (col-major).
@@ -127,7 +139,7 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                             cutlass::layout::RowMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
-                allow_tf32);
+                allow_tf32, {fill_column_event});
     }
 }
 

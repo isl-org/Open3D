@@ -6,8 +6,12 @@
 // ----------------------------------------------------------------------------
 
 // SYCL implementation of ReduceSubarraysSum — ports ReduceSubarraysSum.cuh.
-// One work-item per sub-array: serial sum over
-// values[row_splits[i]..row_splits[i+1]].
+// One work-group per sub-array: work-items grid-stride over
+// values[row_splits[i]..row_splits[i+1]) accumulating a partial sum, then
+// sycl::reduce_over_group combines them (same pattern as FillColumnSYCL's
+// normalizer in impl/sparse_conv/SparseConvSYCLKernels.cpp). Test tolerance
+// for floating-point dtypes (rtol=1e-5) permits the reassociated summation
+// order; integer dtypes remain exact.
 
 #pragma once
 
@@ -17,7 +21,15 @@ namespace open3d {
 namespace ml {
 namespace impl {
 
-/// Each work-item i sums values[row_splits[i]..row_splits[i+1]) into
+namespace {
+// Work-group size for the per-sub-array reduction: 256, a sensible default
+// for launches that have no hardware-specific tuning of their own (unlike
+// e.g. the conv FillColumn kernels' warp-per-point=32, which deliberately
+// mirrors the CUDA design).
+constexpr size_t kReduceSubarraysSumWGSize = 256;
+}  // namespace
+
+/// Each work-group i sums values[row_splits[i]..row_splits[i+1]) into
 /// out_sums[i].
 template <class T>
 void ReduceSubarraysSumSYCL(sycl::queue& queue,
@@ -28,20 +40,31 @@ void ReduceSubarraysSumSYCL(sycl::queue& queue,
                             T* out_sums) {
     if (num_arrays == 0) return;
 
+    const size_t wg = kReduceSubarraysSumWGSize;
     queue.submit([&](sycl::handler& cgh) {
-        cgh.parallel_for(sycl::range<1>(num_arrays), [=](sycl::item<1> item) {
-            const size_t i = item.get_id(0);
-            const size_t begin_idx = static_cast<size_t>(row_splits[i]);
-            const size_t end_idx = static_cast<size_t>(row_splits[i + 1]);
+        cgh.parallel_for(
+                sycl::nd_range<1>(sycl::range<1>(num_arrays * wg),
+                                  sycl::range<1>(wg)),
+                [=](sycl::nd_item<1> item) {
+                    const size_t i = item.get_group(0);
+                    const size_t lid = item.get_local_id(0);
+                    const size_t begin_idx =
+                            static_cast<size_t>(row_splits[i]);
+                    const size_t end_idx =
+                            static_cast<size_t>(row_splits[i + 1]);
 
-            T sum = T(0);
-            for (size_t j = begin_idx; j < end_idx; ++j) {
-                sum += values[j];
-            }
-            out_sums[i] = sum;
-        });
+                    T local_sum = T(0);
+                    for (size_t j = begin_idx + lid; j < end_idx; j += wg) {
+                        local_sum += values[j];
+                    }
+                    T sum = sycl::reduce_over_group(item.get_group(),
+                                                    local_sum,
+                                                    sycl::plus<T>());
+                    if (lid == 0) {
+                        out_sums[i] = sum;
+                    }
+                });
     });
-    queue.wait_and_throw();
 }
 
 }  // namespace impl

@@ -57,6 +57,7 @@
 
 #pragma once
 
+#include <array>
 #include <sstream>
 
 #include <cutlass/gemm/device/gemm_universal.h>
@@ -126,20 +127,22 @@ auto MakeStrideB(int64_t ld) {
 /// A is (M x K, LayoutA), B is (K x N, LayoutB). GEMM element type is
 /// cutlass::tfloat32_t (see file header); accumulation/output stay `float`.
 template <class TileShape, class LayoutA, class LayoutB>
-cutlass::Status RunGemmXmxTf32RowMajorOutput(sycl::queue& queue,
-                                             int m,
-                                             int n,
-                                             int k,
-                                             float alpha,
-                                             const float* A,
-                                             int64_t lda,
-                                             const float* B,
-                                             int64_t ldb,
-                                             float beta,
-                                             const float* C,
-                                             int64_t ldc,
-                                             float* D,
-                                             int64_t ldd) {
+cutlass::Status RunGemmXmxTf32RowMajorOutput(
+        sycl::queue& queue,
+        int m,
+        int n,
+        int k,
+        float alpha,
+        const float* A,
+        int64_t lda,
+        const float* B,
+        int64_t ldb,
+        float beta,
+        const float* C,
+        int64_t ldc,
+        float* D,
+        int64_t ldd,
+        const std::vector<sycl::event>& deps = {}) {
     using ElementA = cutlass::tfloat32_t;
     using ElementB = cutlass::tfloat32_t;
     using ElementAccumulator = float;
@@ -227,7 +230,20 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(sycl::queue& queue,
         if (workspace) sycl::free(workspace, queue);
         return status;
     }
+    // sycl-tla's GemmUniversalAdapter::run() takes only a sycl::queue*, with
+    // no event-dependency parameter, so an explicit barrier is needed to
+    // make the GEMM's kernels wait for `deps` on a possibly out-of-order
+    // queue (submission order alone would not guarantee this).
+    if (!deps.empty()) {
+        queue.ext_oneapi_submit_barrier(deps);
+    }
     status = gemm_op.run(&queue);
+    // sycl-tla's GemmUniversalAdapter::run() returns only a cutlass::Status,
+    // not a sycl::event, so there is no completion event this function could
+    // return for a caller to chain via depends_on() -- unlike the rest of
+    // this codebase's event-based synchronization, this wait is a genuine
+    // library-API-boundary necessity, not a lazy default between
+    // Open3D-owned device-only stages.
     queue.wait_and_throw();
     if (workspace) sycl::free(workspace, queue);
     return status;
@@ -249,7 +265,8 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
         const float* C,
         int64_t ldc,
         float* D,
-        int64_t ldd) {
+        int64_t ldd,
+        const std::vector<sycl::event>& deps = {}) {
     using ElementA = float;
     using ElementB = float;
     using ElementAccumulator = float;
@@ -330,10 +347,49 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
         if (workspace) sycl::free(workspace, queue);
         return status;
     }
+    // See the analogous comment in RunGemmXmxTf32RowMajorOutput above: an
+    // explicit barrier is needed since run() has no event-dependency param.
+    if (!deps.empty()) {
+        queue.ext_oneapi_submit_barrier(deps);
+    }
     status = gemm_op.run(&queue);
+    // See the analogous comment in RunGemmXmxTf32RowMajorOutput above: no
+    // completion event is available from sycl-tla's run() to chain via
+    // depends_on(), so this wait is a genuine library boundary, not a lazy
+    // default.
     queue.wait_and_throw();
     if (workspace) sycl::free(workspace, queue);
     return status;
+}
+
+/// Coarse GEMM problem-size class used to pick the starting collective tile
+/// shape in GemmColumnMajorSYCL before falling back to smaller tiles via
+/// `can_implement` (see ChooseGemmTileClass below).
+enum class GemmTileClass { kLarge, kMedium, kSmall };
+
+// Best-guess specialization constants for the GemmTileClass thresholds,
+// evaluated on the caller-facing (un-swapped) m/n/k. A 256x256 work-group
+// tile only pays off when both M and N are large enough to fill it; the
+// small per-chunk GEMMs typical of the conv ops (e.g. ~32 output columns per
+// run, see SparseConvSYCL.h/ContinuousConvSYCL.h) should start at the Small
+// tile directly instead of paying for a failed (or under-filled, if it
+// happens to succeed) probe against the Large/Medium tiles first. Tune these
+// thresholds on target Intel GPU hardware later.
+constexpr int kGemmLargeTileMinMN = 256;
+constexpr int kGemmLargeTileMinK = 32;
+constexpr int kGemmMediumTileMinMN = 64;
+constexpr int kGemmMediumTileMinK = 16;
+
+inline GemmTileClass ChooseGemmTileClass(int m, int n, int k) {
+    if (m >= kGemmLargeTileMinMN && n >= kGemmLargeTileMinMN &&
+        k >= kGemmLargeTileMinK) {
+        return GemmTileClass::kLarge;
+    }
+    if (m >= kGemmMediumTileMinMN && n >= kGemmMediumTileMinMN &&
+        k >= kGemmMediumTileMinK) {
+        return GemmTileClass::kMedium;
+    }
+    return GemmTileClass::kSmall;
 }
 
 }  // namespace sycl_gemm_detail
@@ -366,7 +422,8 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
                          float beta,
                          float* C,
                          int64_t ldc,
-                         bool allow_tf32 = false) {
+                         bool allow_tf32 = false,
+                         const std::vector<sycl::event>& deps = {}) {
     using namespace sycl_gemm_detail;
     // D_colmajor(M,N) = A*B  <=>  D_rowmajor(N,M) = B^T * A^T (same memory,
     // ld=ldc; see file header). Swap operands, swap M/N, transpose layout
@@ -377,36 +434,65 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
     using MediumTile = cute::Shape<cute::_64, cute::_64, cute::_16>;
     using SmallTile = cute::Shape<cute::_16, cute::_16, cute::_8>;
 
+    using GemmFn = cutlass::Status (*)(sycl::queue&, int, int, int, float,
+                                       const float*, int64_t, const float*,
+                                       int64_t, float, const float*, int64_t,
+                                       float*, int64_t,
+                                       const std::vector<sycl::event>&);
+
+    // Pick the try-order of tiles from the (un-swapped) problem size instead
+    // of always probing Large first: a 256x256 work-group tile only pays off
+    // when the problem is big enough to fill it, and probing it for the
+    // small per-chunk GEMMs typical of the conv ops just adds a failed (or
+    // under-filled) can_implement() round-trip before reaching the tile
+    // that actually runs. All tiles are still tried -- just reordered
+    // best-to-worst for the problem's size class -- so correctness (some
+    // tile succeeding) is unaffected.
+    const GemmTileClass tile_class = ChooseGemmTileClass(m, n, k);
+
     cutlass::Status status = cutlass::Status::kErrorNotSupported;
     if (allow_tf32) {
-        status = RunGemmXmxTf32RowMajorOutput<LargeTile, SwappedLayoutA,
-                                              SwappedLayoutB>(
-                queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C, ldc);
-        if (status != cutlass::Status::kSuccess) {
-            status = RunGemmXmxTf32RowMajorOutput<MediumTile, SwappedLayoutA,
-                                                  SwappedLayoutB>(
-                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
-                    ldc);
-        }
-        if (status != cutlass::Status::kSuccess) {
-            status = RunGemmXmxTf32RowMajorOutput<SmallTile, SwappedLayoutA,
-                                                  SwappedLayoutB>(
-                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
-                    ldc);
+        const GemmFn large =
+                &RunGemmXmxTf32RowMajorOutput<LargeTile, SwappedLayoutA,
+                                              SwappedLayoutB>;
+        const GemmFn medium =
+                &RunGemmXmxTf32RowMajorOutput<MediumTile, SwappedLayoutA,
+                                              SwappedLayoutB>;
+        const GemmFn small =
+                &RunGemmXmxTf32RowMajorOutput<SmallTile, SwappedLayoutA,
+                                              SwappedLayoutB>;
+        const std::array<GemmFn, 3> order =
+                tile_class == GemmTileClass::kLarge
+                        ? std::array<GemmFn, 3>{large, medium, small}
+                : tile_class == GemmTileClass::kMedium
+                        ? std::array<GemmFn, 3>{medium, large, small}
+                        : std::array<GemmFn, 3>{small, medium, large};
+        for (GemmFn fn : order) {
+            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc,
+                       C, ldc, deps);
+            if (status == cutlass::Status::kSuccess) break;
         }
     }
 
     if (status != cutlass::Status::kSuccess) {
-        status = RunGemmIeeeFp32RowMajorOutput<MediumTile, SwappedLayoutA,
-                                               SwappedLayoutB>(
-                queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C, ldc);
-        if (status != cutlass::Status::kSuccess) {
-            status = RunGemmIeeeFp32RowMajorOutput<SmallTile, SwappedLayoutA,
-                                                   SwappedLayoutB>(
-                    queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc, C,
-                    ldc);
+        // IEEE fp32 path only has Medium/Small tiles.
+        const GemmFn medium =
+                &RunGemmIeeeFp32RowMajorOutput<MediumTile, SwappedLayoutA,
+                                               SwappedLayoutB>;
+        const GemmFn small =
+                &RunGemmIeeeFp32RowMajorOutput<SmallTile, SwappedLayoutA,
+                                               SwappedLayoutB>;
+        const std::array<GemmFn, 2> order =
+                tile_class == GemmTileClass::kSmall
+                        ? std::array<GemmFn, 2>{small, medium}
+                        : std::array<GemmFn, 2>{medium, small};
+        for (GemmFn fn : order) {
+            status = fn(queue, n, m, k, alpha, B, ldb, A, lda, beta, C, ldc,
+                       C, ldc, deps);
+            if (status == cutlass::Status::kSuccess) break;
         }
     }
+
     if (status != cutlass::Status::kSuccess) {
         std::ostringstream msg;
         msg << "GemmSYCL: sycl-tla GEMM cannot implement problem m=" << m
