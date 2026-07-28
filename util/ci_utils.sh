@@ -136,7 +136,8 @@ install_nodejs_linux() {
     esac
 
     tarball="node-${NODEJS_VERSION}-${node_arch}.tar.xz"
-    curl -fsSL "https://nodejs.org/dist/${NODEJS_VERSION}/${tarball}" \
+    # wget is available in CI Docker images; curl is not always installed.
+    wget -qO- "https://nodejs.org/dist/${NODEJS_VERSION}/${tarball}" \
         | tar -xJ -C /usr/local --strip-components=1
 
     npm install -g yarn
