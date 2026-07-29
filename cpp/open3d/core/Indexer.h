@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <limits>
 #include <sstream>
 
 #include "open3d/core/CUDAUtils.h"
@@ -122,19 +123,42 @@ struct TensorRef {
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
             num_elements *= shape_[i];
         }
-        // Exclusive end byte offset for valid row-major linear element indices.
+        UpdateByteOffsetBounds();
+    }
+
+    /// Inclusive min and span \p total_byte_size_ cover all element byte
+    /// offsets relative to \p data_ptr_ (supports negative strides and sliced
+    /// views).
+    void UpdateByteOffsetBounds() {
+        int64_t num_elements = 1;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            num_elements *= shape_[i];
+        }
+        min_byte_offset_ = 0;
         total_byte_size_ = 0;
-        if (num_elements > 0) {
-            int64_t workload_idx = num_elements - 1;
+        if (num_elements == 0) {
+            return;
+        }
+        int64_t min_o = std::numeric_limits<int64_t>::max();
+        int64_t max_o = std::numeric_limits<int64_t>::min();
+        for (int64_t w = 0; w < num_elements; ++w) {
             int64_t offset = 0;
-            int64_t remaining = workload_idx;
+            int64_t remaining = w;
             for (int64_t d = ndims_ - 1; d >= 0; --d) {
                 const int64_t coord = remaining % shape_[d];
                 remaining /= shape_[d];
                 offset += coord * byte_strides_[d];
             }
-            total_byte_size_ = offset + dtype_byte_size_;
+            min_o = std::min(min_o, offset);
+            max_o = std::max(max_o, offset);
         }
+        min_byte_offset_ = min_o;
+        total_byte_size_ = max_o - min_o + dtype_byte_size_;
+    }
+
+    OPEN3D_HOST_DEVICE bool ContainsByteOffset(int64_t offset) const {
+        return offset >= min_byte_offset_ &&
+               offset + dtype_byte_size_ <= min_byte_offset_ + total_byte_size_;
     }
 
     /// \brief Permute (dimension shuffle) the reference to a Tensor.
@@ -190,6 +214,7 @@ struct TensorRef {
         rc = rc && (data_ptr_ == other.data_ptr_);
         rc = rc && (ndims_ == other.ndims_);
         rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        rc = rc && (min_byte_offset_ == other.min_byte_offset_);
         rc = rc && (total_byte_size_ == other.total_byte_size_);
         for (int64_t i = 0; i < ndims_; ++i) {
             rc = rc && (shape_[i] == other.shape_[i]);
@@ -208,6 +233,7 @@ struct TensorRef {
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
+    int64_t min_byte_offset_ = 0;
     int64_t total_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
     int64_t byte_strides_[MAX_DIMS];
@@ -279,7 +305,7 @@ public:
                 offset += coord * input_.byte_strides_[d];
             }
         }
-        OPEN3D_ASSERT(offset >= 0 && offset < input_.total_byte_size_,
+        OPEN3D_ASSERT(input_.ContainsByteOffset(offset),
                       "Index operation data pointer is out of range.");
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
                                   offset);
@@ -588,7 +614,14 @@ protected:
         }
 
         int64_t offset = 0;
-        if (tr_contiguous) {
+        bool use_linear = tr_contiguous;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            if (tr.byte_strides_[i] == 0) {
+                use_linear = false;
+                break;
+            }
+        }
+        if (use_linear) {
             offset = workload_idx * tr.dtype_byte_size_;
         } else {
             for (int64_t i = 0; i < ndims_; ++i) {
@@ -598,7 +631,7 @@ protected:
             }
         }
 
-        OPEN3D_ASSERT(offset >= 0 && offset < tr.total_byte_size_,
+        OPEN3D_ASSERT(tr.ContainsByteOffset(offset),
                       "Index operation data pointer is out of range.");
         return static_cast<char*>(tr.data_ptr_) + offset;
     }
