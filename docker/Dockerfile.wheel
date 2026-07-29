@@ -108,20 +108,8 @@ COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 COPY ./python/requirements_build.txt /root/Open3D/python/
 RUN if [ "${OPEN3D_BUILD_MODE}" = "wheel" ]; then \
         source /root/Open3D/util/ci_utils.sh \
-        && install_python_dependencies with-jupyter; \
-    fi
-
-# Open3D Jupyter / Node (wheel mode)
-RUN if [ "${OPEN3D_BUILD_MODE}" = "wheel" ]; then \
-        mkdir -p /etc/apt/keyrings \
-        && wget -qO- https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
-        | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-        && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_25.x nodistro main" \
-        | tee /etc/apt/sources.list.d/nodesource.list \
-        && apt-get update \
-        && apt-get install -y nodejs \
-        && rm -rf /var/lib/apt/lists/* \
-        && npm install -g yarn; \
+        && install_python_dependencies with-jupyter \
+        && install_nodejs_linux; \
     fi
 
 # Optional pre-extracted devel packages for wheel-from-installed builds
