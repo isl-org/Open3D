@@ -174,3 +174,5 @@ if sys.platform == "win32":
     for dll_dir in _win32_dll_dirs:
         dll_dir.close()
 del os, sys, Path, warnings, _insert_pybind_names
+# If this is removed, pybind11_stubgen adds an incomplete "open3d = " to the stub file
+del open3d

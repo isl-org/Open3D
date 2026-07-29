@@ -152,3 +152,59 @@ file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+
+# Generate typing stub files (.pyi) and py.typed marker file.
+if(WITH_STUBGEN)
+    if(NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python3_EXECUTABLE is required when WITH_STUBGEN is ON")
+    endif()
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        list(APPEND PYBIND11_STUBGEN_FLAGS "--exit-code")
+    endif()
+    set(PYBIND11_STUBGEN_FATAL_FLAGS "")
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    # stubgen imports open3d, which loads Open3D.dll on Windows. CUDA/SYCL wheels
+    # need the same pip runtimes as end users (see open3d/__init__.py) before import.
+    if(WIN32 AND BUILD_CUDA_MODULE)
+        message(STATUS "Installing Windows CUDA pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUILD_SYCL_MODULE)
+        message(STATUS "Installing SYCL pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND
+       EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+        message(STATUS "Installing Open3D-ML pip requirements for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    "${OPEN3D_ML_ROOT}/requirements.txt"
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    # Do not put PATH in a CMake list: semicolons in $ENV{PATH} split list elements
+    # and break `cmake -E env`. open3d/__init__.py adds DLL directories on import.
+    message(STATUS "Generating typing stubs...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env
+                "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
+                pybind11-stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
+                ${PYBIND11_STUBGEN_FLAGS}
+        COMMAND_ECHO STDOUT
+        ${PYBIND11_STUBGEN_FATAL_FLAGS}
+    )
+    file(WRITE "${PYTHON_PACKAGE_DST_DIR}/open3d/py.typed" "")
+endif()
