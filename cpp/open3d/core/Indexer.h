@@ -117,11 +117,9 @@ struct TensorRef {
         data_ptr_ = const_cast<void*>(t.GetDataPtr());
         ndims_ = t.NumDims();
         dtype_byte_size_ = t.GetDtype().ByteSize();
-        int64_t num_elements = 1;
         for (int64_t i = 0; i < ndims_; ++i) {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
-            num_elements *= shape_[i];
         }
         UpdateByteOffsetBounds();
     }
@@ -157,6 +155,9 @@ struct TensorRef {
     }
 
     OPEN3D_HOST_DEVICE bool ContainsByteOffset(int64_t offset) const {
+        if (total_byte_size_ == 0) {
+            return true;
+        }
         return offset >= min_byte_offset_ &&
                offset + dtype_byte_size_ <= min_byte_offset_ + total_byte_size_;
     }
@@ -619,6 +620,19 @@ protected:
             if (tr.byte_strides_[i] == 0) {
                 use_linear = false;
                 break;
+            }
+        }
+        if (use_linear) {
+            int64_t tr_elements = 1;
+            for (int64_t i = 0; i < tr.ndims_; ++i) {
+                tr_elements *= tr.shape_[i];
+            }
+            int64_t primary_elements = 1;
+            for (int64_t i = 0; i < ndims_; ++i) {
+                primary_elements *= primary_shape_[i];
+            }
+            if (tr_elements != primary_elements) {
+                use_linear = false;
             }
         }
         if (use_linear) {
