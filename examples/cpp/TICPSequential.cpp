@@ -358,36 +358,26 @@ private:
                 } else if (name == "visualization") {
                     visualize = value;
                 } else if (name == "start_index") {
-                    std::istringstream is(value);
                     start_index_ = std::stoi(value);
                 } else if (name == "end_index") {
-                    std::istringstream is(value);
                     end_index_ = std::stoi(value);
                 } else if (name == "registration_method") {
                     registration_method_ = value;
                 } else if (name == "criteria.relative_fitness") {
-                    std::istringstream is(value);
                     relative_fitness.push_back(std::stod(value));
                 } else if (name == "criteria.relative_rmse") {
-                    std::istringstream is(value);
                     relative_rmse.push_back(std::stod(value));
                 } else if (name == "criteria.max_iterations") {
-                    std::istringstream is(value);
                     max_iterations.push_back(std::stoi(value));
                 } else if (name == "voxel_size") {
-                    std::istringstream is(value);
                     voxel_sizes_.push_back(std::stod(value));
                 } else if (name == "search_radii") {
-                    std::istringstream is(value);
                     search_radius_.push_back(std::stod(value));
                 } else if (name == "verbosity") {
-                    std::istringstream is(value);
                     verb = value;
                 } else if (name == "visualization_min") {
-                    std::istringstream is(value);
                     min_visualization_scalar_ = std::stod(value);
                 } else if (name == "visualization_max") {
-                    std::istringstream is(value);
                     max_visualization_scalar_ = std::stod(value);
                 }
             }
@@ -715,7 +705,7 @@ int main(int argc, char* argv[]) {
     widget_string = widget_string + device_string;
 
     auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, (const char**)argv);
+    app.Initialize();
     app.AddWindow(std::make_shared<ExampleWindow>(path_config,
                                                   core::Device(device_string)));
     app.Run();

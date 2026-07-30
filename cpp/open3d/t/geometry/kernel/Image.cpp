@@ -23,6 +23,12 @@ void To(const core::Tensor &src,
         ToCPU(src, dst, scale, offset);
     } else if (device.IsCUDA()) {
         CUDA_CALL(ToCUDA, src, dst, scale, offset);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ToSYCL(src, dst, scale, offset);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -40,6 +46,12 @@ void ClipTransform(const core::Tensor &src,
     } else if (device.IsCUDA()) {
         CUDA_CALL(ClipTransformCUDA, src, dst, scale, min_value, max_value,
                   clip_fill);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ClipTransformSYCL(src, dst, scale, min_value, max_value, clip_fill);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -54,6 +66,12 @@ void PyrDownDepth(const core::Tensor &src,
         PyrDownDepthCPU(src, dst, diff_threshold, invalid_fill);
     } else if (device.IsCUDA()) {
         CUDA_CALL(PyrDownDepthCUDA, src, dst, diff_threshold, invalid_fill);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        PyrDownDepthSYCL(src, dst, diff_threshold, invalid_fill);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -71,6 +89,12 @@ void CreateVertexMap(const core::Tensor &src,
         CreateVertexMapCPU(src, dst, intrinsics_d, invalid_fill);
     } else if (device.IsCUDA()) {
         CUDA_CALL(CreateVertexMapCUDA, src, dst, intrinsics_d, invalid_fill);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        CreateVertexMapSYCL(src, dst, intrinsics_d, invalid_fill);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -84,6 +108,12 @@ void CreateNormalMap(const core::Tensor &src,
         CreateNormalMapCPU(src, dst, invalid_fill);
     } else if (device.IsCUDA()) {
         CUDA_CALL(CreateNormalMapCUDA, src, dst, invalid_fill);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        CreateNormalMapSYCL(src, dst, invalid_fill);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -99,6 +129,12 @@ void ColorizeDepth(const core::Tensor &src,
         ColorizeDepthCPU(src, dst, scale, min_value, max_value);
     } else if (device.IsCUDA()) {
         CUDA_CALL(ColorizeDepthCUDA, src, dst, scale, min_value, max_value);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ColorizeDepthSYCL(src, dst, scale, min_value, max_value);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }

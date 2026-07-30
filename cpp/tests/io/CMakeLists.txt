@@ -1,4 +1,5 @@
 target_sources(tests PRIVATE
+    FileFormatIO.cpp
     FeatureIO.cpp
     IJsonConvertibleIO.cpp
     ImageIO.cpp

@@ -1,6 +1,6 @@
 /*
 ** The OpenGL Extension Wrangler Library
-** Copyright (C) 2008-2019, Nigel Stewart <nigels[]users sourceforge net>
+** Copyright (C) 2008-2025, Nigel Stewart <nigels[]nigels com>
 ** Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 ** Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 ** Copyright (C) 2002, Lev Povalahev
@@ -674,6 +674,17 @@ typedef void ( * PFNGLXRELEASETEXIMAGEATIPROC) (Display *dpy, GLXPbuffer pbuf, i
 #define GLXEW_EXT_framebuffer_sRGB GLXEW_GET_VAR(__GLXEW_EXT_framebuffer_sRGB)
 
 #endif /* GLX_EXT_framebuffer_sRGB */
+
+/* ----------------------- GLX_EXT_get_drawable_type ----------------------- */
+
+#ifndef GLX_EXT_get_drawable_type
+#define GLX_EXT_get_drawable_type 1
+
+#define GLX_DRAWABLE_TYPE 0x8010
+
+#define GLXEW_EXT_get_drawable_type GLXEW_GET_VAR(__GLXEW_EXT_get_drawable_type)
+
+#endif /* GLX_EXT_get_drawable_type */
 
 /* ------------------------- GLX_EXT_import_context ------------------------ */
 
@@ -1760,6 +1771,7 @@ GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_create_context_es2_profile;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_create_context_es_profile;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_fbconfig_packed_float;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_framebuffer_sRGB;
+GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_get_drawable_type;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_import_context;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_libglvnd;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_EXT_no_config_context;
@@ -1811,7 +1823,7 @@ GLXEW_VAR_EXPORT GLboolean __GLXEW_SUN_get_transparent_index;
 GLXEW_VAR_EXPORT GLboolean __GLXEW_SUN_video_resize;
 /* ------------------------------------------------------------------------ */
 
-GLEWAPI GLenum GLEWAPIENTRY glxewInit ();
+GLEWAPI GLenum GLEWAPIENTRY glxewInit (void);
 GLEWAPI GLboolean GLEWAPIENTRY glxewIsSupported (const char *name);
 
 #ifndef GLXEW_GET_VAR

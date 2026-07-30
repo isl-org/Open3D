@@ -84,7 +84,7 @@ This function needs to be called once before performing search operations.
 
 Args:
     radius (float, optional): Radius value for fixed-radius search. Required
-        for GPU fixed radius index.
+        for CUDA and SYCL fixed radius indices.
 
 Returns:
     True on success.
@@ -115,7 +115,7 @@ This function needs to be called once before performing search operations.
 
 Args:
     radius (float, optional): Radius value for hybrid search. Required
-        for GPU hybrid index.
+        for CUDA and SYCL hybrid indices.
 
 Returns:
     True on success.
@@ -130,7 +130,8 @@ Note:
     To use knn_search initialize the index using knn_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. CPU,
+        CUDA, and SYCL devices are supported.
     knn (int): Number of neighbors to search per query point.
 
 Example:
@@ -179,6 +180,7 @@ Note:
 
 Args:
         query_points (open3d.core.Tensor): Query points with shape {n, d}.
+            CPU, CUDA, and SYCL devices are supported.
         radius (float): Radius value for fixed-radius search. Note that this
             parameter can differ from the radius used to initialize the index
             for convenience, which may cause the index to be rebuilt for GPU 
@@ -234,7 +236,8 @@ Note:
     To use multi_radius_search initialize the index using multi_radius_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. Only
+        CPU tensors are supported.
     radii (open3d.core.Tensor): Radii of query points. Each query point has one radius.
 
 Returns:
@@ -292,7 +295,8 @@ Note:
     To use hybrid_search initialize the index using hybrid_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. CPU,
+        CUDA, and SYCL devices are supported.
     radius (float): Radius value for hybrid search.
     max_knn (int): Maximum number of neighbor to search per query.
 

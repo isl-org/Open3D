@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
+#include <vector>
 
-#include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/Image.h"
 
 namespace open3d {
@@ -57,6 +59,12 @@ bool WriteImage(const std::string &filename,
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
 
+/// Decode a PNG image from a memory buffer (no file I/O).
+/// Supports the same formats as ReadImageFromPNG.
+bool ReadImageFromPNGInMemory(const uint8_t *data,
+                              size_t size,
+                              geometry::Image &image);
+
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality = kOpen3DImageIODefaultQuality);
@@ -66,6 +74,17 @@ bool WriteImageToPNGInMemory(std::vector<uint8_t> &output_buffer,
                              int quality = kOpen3DImageIODefaultQuality);
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image);
+
+/// Decode a JPEG image from a memory buffer (no file I/O).
+bool ReadImageFromJPGInMemory(const uint8_t *data,
+                              size_t size,
+                              geometry::Image &image);
+
+/// Decode a PNG or JPEG image from a memory buffer, auto-detected by magic
+/// bytes. Used for embedded textures in 3D model files (e.g. GLB via ASSIMP).
+bool ReadImageFromMemory(const uint8_t *data,
+                         size_t size,
+                         geometry::Image &image);
 
 bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,

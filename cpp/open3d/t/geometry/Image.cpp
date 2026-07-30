@@ -134,20 +134,30 @@ Image Image::RGBToGray() const {
     };
 
     Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
-                                       GetDevice());
     if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
+        dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
+                                           GetDtype(), GetDevice());
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
     } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
+        dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
+                                           GetDtype(), GetDevice());
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
     } else {
-        utility::LogError(
-                "RGBToGray with data type {} on device {} is not implemented!",
-                GetDtype().ToString(), GetDevice().ToString());
+        auto R = data_.Slice(2, 0, 1).To(core::Float32);
+        auto G = data_.Slice(2, 1, 2).To(core::Float32);
+        auto B = data_.Slice(2, 2, 3).To(core::Float32);
+        auto gray = R * 0.299f + G * 0.587f + B * 0.114f;
+        if (GetDtype() == core::UInt8) {
+            dst_im.data_ = gray.Round().Clip_(0, 255).To(core::UInt8);
+        } else if (GetDtype() == core::UInt16) {
+            dst_im.data_ = gray.Round().Clip_(0, 65535).To(core::UInt16);
+        } else {
+            dst_im.data_ = gray.To(GetDtype());
+        }
     }
     return dst_im;
 }

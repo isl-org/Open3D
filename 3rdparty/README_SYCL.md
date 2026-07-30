@@ -25,7 +25,7 @@ referring to "DPC++".
 
    # We'll be using oneAPI's distribution of conda and Python
    # Python 3.6+ will work
-   conda create -n sycl python=3.8
+   conda create -n sycl python=3.10
    conda activate sycl
    ```
 4. Check your environment
@@ -33,7 +33,7 @@ referring to "DPC++".
    which icx        # /opt/intel/oneapi/compiler/<version>/linux/bin/icx
    which icpx       # /opt/intel/oneapi/compiler/<version>/linux/bin/icpx
    which python     # ${HOME}/.conda/envs/sycl/bin/python
-   python --version # Python 3.8.12 :: Intel Corporation
+   python --version # Python 3.10.0 :: Intel Corporation
    ```
 5. Config and build
    ```bash
@@ -98,9 +98,15 @@ Open3D is designed to make use of the SYCL GPU devices.
 
 ## List of oneAPI Python packages
 
-To make `pip install open3d` works out-of-the box on SYCL-enabled platforms,
-we can utilize runtime libraries released via PyPI. This feature needs to be
-implemented.
+Open3D SYCL wheels declare a dependency on `dpcpp-cpp-rt` (see
+`python/requirements_sycl.txt`). Pip installs the transitive Intel runtime
+packages into the same Python environment. On Linux, ``pybind`` RPATH finds
+``<venv>/lib``; on Windows, ``open3d/__init__.py`` registers
+``site-packages/*.data/data/Library/bin`` with ``add_dll_directory``.
+
+Windows CI (xpu) installs build-time oneAPI from Intel Base + HPC webimages with
+selective components only (``util/ci_install_oneapi_windows_sycl.ps1``, aligned
+with `oneapi-ci <https://github.com/oneapi-src/oneapi-ci/tree/0804a4c9281440d8a91ac0680388b101e5f673ad>`_).
 
 User:
 - https://pypi.org/user/IntelAutomationEngineering/
