@@ -166,11 +166,13 @@ if(WITH_STUBGEN)
         set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
     endif()
     # Do not put PATH in a CMake list: semicolons in $ENV{PATH} split list elements
-    # and break `cmake -E env`. open3d/__init__.py adds DLL directories on import.
+    # and break `cmake -E env`. open3d/__init__.py adds DLL directories on import
+    # if OPEN3D_ADD_DLL_DIRECTORIES_FROM_PATH=1 is set.
     message(STATUS "Generating typing stubs...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env
                 "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
+                "OPEN3D_ADD_DLL_DIRECTORIES_FROM_PATH=1"
                 ${Python3_EXECUTABLE} -m pybind11_stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
                 ${PYBIND11_STUBGEN_FLAGS}
         COMMAND_ECHO STDOUT
