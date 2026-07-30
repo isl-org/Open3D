@@ -175,8 +175,11 @@ if (BUILD_SYCL_MODULE)
         ../contrib/RoiPoolKernelSYCL.cpp
     )
 
-    # Shared impl SYCL kernel files (im2col, normalizer reductions)
+    # Shared impl SYCL kernel files (GEMM shim, im2col, normalizer reductions).
+    # GemmSYCL.cpp holds the only sycl-tla template instantiation, keeping the
+    # heavy CUTLASS/CuTe compile cost out of the conv op TUs above.
     open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        ../impl/GemmSYCL.cpp
         ../impl/continuous_conv/ContinuousConvSYCLKernels.cpp
         ../impl/sparse_conv/SparseConvSYCLKernels.cpp
     )
