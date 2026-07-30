@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <limits>
 #include <sstream>
 
 #include "open3d/core/CUDAUtils.h"
@@ -126,7 +125,8 @@ struct TensorRef {
 
     /// Inclusive min and span \p total_byte_size_ cover all element byte
     /// offsets relative to \p data_ptr_ (supports negative strides and sliced
-    /// views).
+    /// views). Computed in O(ndims_) from per-dimension min/max of
+    /// c_d * byte_strides_[d] for c_d in [0, shape_[d] - 1].
     void UpdateByteOffsetBounds() {
         int64_t num_elements = 1;
         for (int64_t i = 0; i < ndims_; ++i) {
@@ -137,18 +137,15 @@ struct TensorRef {
         if (num_elements == 0) {
             return;
         }
-        int64_t min_o = std::numeric_limits<int64_t>::max();
-        int64_t max_o = std::numeric_limits<int64_t>::min();
-        for (int64_t w = 0; w < num_elements; ++w) {
-            int64_t offset = 0;
-            int64_t remaining = w;
-            for (int64_t d = ndims_ - 1; d >= 0; --d) {
-                const int64_t coord = remaining % shape_[d];
-                remaining /= shape_[d];
-                offset += coord * byte_strides_[d];
-            }
-            min_o = std::min(min_o, offset);
-            max_o = std::max(max_o, offset);
+        int64_t min_o = 0;
+        int64_t max_o = 0;
+        for (int64_t d = 0; d < ndims_; ++d) {
+            const int64_t max_coord = shape_[d] - 1;
+            const int64_t stride = byte_strides_[d];
+            const int64_t dim_min = stride >= 0 ? 0 : max_coord * stride;
+            const int64_t dim_max = stride >= 0 ? max_coord * stride : 0;
+            min_o += dim_min;
+            max_o += dim_max;
         }
         min_byte_offset_ = min_o;
         total_byte_size_ = max_o - min_o + dtype_byte_size_;
@@ -156,7 +153,7 @@ struct TensorRef {
 
     OPEN3D_HOST_DEVICE bool ContainsByteOffset(int64_t offset) const {
         if (total_byte_size_ == 0) {
-            return true;
+            return offset == min_byte_offset_;
         }
         return offset >= min_byte_offset_ &&
                offset + dtype_byte_size_ <= min_byte_offset_ + total_byte_size_;

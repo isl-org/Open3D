@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <cassert>
-
 // https://gcc.gnu.org/wiki/Visibility updated to use C++11 attribute syntax
 // In Open3D, we set symbol visibility based on folder / cmake target through
 // cmake. e.g. all symbols in kernel folders are hidden. These macros allow fine
@@ -48,7 +46,9 @@
 //     OPEN3D_ASSERT(condition);
 //     OPEN3D_ASSERT(condition, "Error message");
 //
-// SYCL: device OPEN3D_ASSERT traps via __builtin_trap (see Macro.h).
+// CUDA and SYCL device: OPEN3D_ASSERT prints the message and traps
+// unconditionally (independent of NDEBUG), so it fires in both Debug and
+// Release.
 // For host-only code, utility::LogError() may also be used directly.
 #define OPEN3D_ASSERT_EXPAND(...) __VA_ARGS__
 #define OPEN3D_ASSERT_GET_MACRO(_1, _2, NAME, ...) NAME
@@ -73,12 +73,18 @@
 
 #elif defined(__SYCL_DEVICE_ONLY__)
 
+#include <sycl/ext/oneapi/experimental/builtins.hpp>
+#include <sycl/sycl.hpp>
+
 #define OPEN3D_ASSERT_MSG(condition, message) \
     do {                                      \
         if (!(condition)) {                   \
-            __builtin_trap();                 \
-        }                                     \
-    } while (0)
+            sycl::ext::oneapi::experimental::printf(
+            "Open3D SYCL device assertion failed: %s\n", message);
+            __builtin_trap();
+            }
+            }
+            while (0)
 
 #else
 

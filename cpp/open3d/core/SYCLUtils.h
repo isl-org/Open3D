@@ -25,15 +25,6 @@
 #include <sycl/sycl.hpp>
 #endif
 
-#if defined(BUILD_SYCL_MODULE) && defined(SYCL_LANGUAGE_VERSION)
-#include <sycl/sycl.hpp>
-
-/// Optional \c sycl::stream for device-side logging in SYCL kernels (not used
-/// by OPEN3D_ASSERT, which traps on failure).
-#define OPEN3D_SYCL_ASSERT_STREAM(cgh) \
-    sycl::stream open3d_sycl_assert_stream(1024, 256, cgh)
-#endif  // BUILD_SYCL_MODULE && SYCL_LANGUAGE_VERSION
-
 namespace open3d {
 namespace core {
 namespace sy {
