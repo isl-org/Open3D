@@ -74,8 +74,9 @@ def test_poisson_default_parameters(sample_point_cloud):
         "point_weight": 10.0
     },
 ])
-def test_poisson_with_various_parameters(sample_point_cloud, params):
-    """Test Poisson reconstruction with various parameter combinations."""
+def test_poisson_various_parameters(sample_point_cloud, params):
+    """Smoke test: verify Poisson reconstruction succeeds with various
+    parameter combinations without crashing or producing empty output."""
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
         sample_point_cloud, **params)
     _assert_valid_mesh(mesh, densities)

@@ -42,21 +42,21 @@ namespace geometry {
 namespace {
 
 // The order of the B-Spline used to splat in data for color interpolation
-static const int DATA_DEGREE = 0;
+constexpr int DATA_DEGREE = 0;
 // Default pull factor for color/auxiliary data interpolation (PoissonRecon
 // --data default)
-static const float DEFAULT_DATAX = 32.f;
+constexpr float DEFAULT_DATAX = 32.f;
 // The order of the B-Spline used to splat in the weights for density estimation
-static const int WEIGHT_DEGREE = 2;
+constexpr int WEIGHT_DEGREE = 2;
 // The order of the B-Spline used to splat in the normals for constructing the
 // Laplacian constraints
-static const int NORMAL_DEGREE = 2;
+constexpr int NORMAL_DEGREE = 2;
 // The default finite-element degree
-static const int DEFAULT_FEM_DEGREE = 1;
+constexpr int DEFAULT_FEM_DEGREE = 1;
 // The default finite-element boundary type
-static const BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
+constexpr BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
 // The dimension of the system
-static const int DIMENSION = 3;
+constexpr int DIMENSION = 3;
 
 class Open3DData {
 public:
@@ -423,16 +423,16 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     XForm<Real, Dim + 1> xForm, iXForm;
     xForm = XForm<Real, Dim + 1>::Identity();
 
-    // Other internal parameters remain hardcoded
+    // Keep other internal parameters hardcoded.
+    // confidence and exact_interpolation have been removed.
+    // full_depth, samples_per_node, and point_weight are now passed as
+    // function arguments.
     int base_depth = 0;
     int base_v_cycles = 1;
     float confidence_bias = 0.f;
     float cg_solver_accuracy = 1e-3f;
     int iters = 8;
     float datax = DEFAULT_DATAX;
-
-    // Parameters are now passed as function arguments:
-    // full_depth, samples_per_node, point_weight
 
     double startTime = Time();
     Real isoValue = 0;
