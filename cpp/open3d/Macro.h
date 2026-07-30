@@ -76,15 +76,24 @@
 #include <sycl/ext/oneapi/experimental/builtins.hpp>
 #include <sycl/sycl.hpp>
 
-#define OPEN3D_ASSERT_MSG(condition, message) \
-    do {                                      \
-        if (!(condition)) {                   \
-            sycl::ext::oneapi::experimental::printf(
+namespace open3d {
+namespace detail {
+
+inline void Open3DSyclAssertReportAndTrap(const char *message) {
+    sycl::ext::oneapi::experimental::printf(
             "Open3D SYCL device assertion failed: %s\n", message);
-            __builtin_trap();
-            }
-            }
-            while (0)
+    __builtin_trap();
+}
+
+}  // namespace detail
+}  // namespace open3d
+
+#define OPEN3D_ASSERT_MSG(condition, message)                         \
+    do {                                                              \
+        if (!(condition)) {                                           \
+            ::open3d::detail::Open3DSyclAssertReportAndTrap(message); \
+        }                                                             \
+    } while (0)
 
 #else
 
