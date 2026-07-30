@@ -103,9 +103,11 @@ void MenuImgui::InsertItem(int index,
             kv.second += 1;
         }
     }
-    impl_->id2idx_[item_id] = impl_->items_.size();
     impl_->items_.insert(impl_->items_.begin() + index,
                          {item_id, name, key, nullptr});
+    if (item_id != NO_ITEM) {
+        impl_->id2idx_[item_id] = size_t(index);
+    }
 }
 
 void MenuImgui::InsertMenu(int index,
@@ -134,6 +136,32 @@ void MenuImgui::InsertSeparator(int index) {
 }
 
 int MenuImgui::GetNumberOfItems() const { return int(impl_->items_.size()); }
+
+std::shared_ptr<MenuBase> MenuImgui::GetMenu(const char *name) {
+    for (auto &item : impl_->items_) {
+        if (item.name_.compare(name) == 0) {
+            return item.submenu_;
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<MenuBase> MenuImgui::GetMenu(ItemId item_id) {
+    if (item_id == NO_ITEM) {
+        return nullptr;
+    }
+    if (impl_->id2idx_.find(item_id) != impl_->id2idx_.end()) {
+        return shared_from_this();
+    }
+    for (auto &item : impl_->items_) {
+        if (item.submenu_) {
+            if (item.submenu_->GetMenu(item_id)) {
+                return item.submenu_;
+            }
+        }
+    }
+    return nullptr;
+}
 
 bool MenuImgui::IsEnabled(ItemId item_id) const {
     auto *item = impl_->FindMenuItem(item_id);
