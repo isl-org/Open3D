@@ -48,14 +48,6 @@ if sys.platform == "win32":
                 if os.path.isdir(_nvidia_bin_dir):
                     _win32_dll_dirs.append(
                         os.add_dll_directory(_nvidia_bin_dir))
-    if os.environ.get("OPEN3D_ADD_DLL_DIRECTORIES_FROM_PATH",
-                      "").lower() in ("1", "true"):
-        for _path_dir in os.environ.get("PATH", "").split(os.pathsep):
-            if _path_dir and os.path.isdir(_path_dir):
-                try:
-                    _win32_dll_dirs.append(os.add_dll_directory(_path_dir))
-                except OSError:
-                    pass
 
 from open3d.pybind import (
     core,

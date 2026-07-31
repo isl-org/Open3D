@@ -165,14 +165,43 @@ if(WITH_STUBGEN)
     if(NOT IGNORE_STUBGEN_ERRORS)
         set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
     endif()
-    # Do not put PATH in a CMake list: semicolons in $ENV{PATH} split list elements
-    # and break `cmake -E env`. open3d/__init__.py adds DLL directories on import
-    # if OPEN3D_ADD_DLL_DIRECTORIES_FROM_PATH=1 is set.
+    # stubgen imports open3d, which loads Open3D.dll on Windows. CUDA/SYCL wheels
+    # need the same pip runtimes as end users (see open3d/__init__.py) before import.
+    # Reuse the current build environment's Python (${Python3_EXECUTABLE}) rather
+    # than a `pybind11-stubgen` console script that may resolve to a different
+    # interpreter.
+    if(WIN32 AND BUILD_CUDA_MODULE)
+        message(STATUS "Installing Windows CUDA pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUILD_SYCL_MODULE)
+        message(STATUS "Installing SYCL pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND
+       EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+        message(STATUS "Installing Open3D-ML pip requirements for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    "${OPEN3D_ML_ROOT}/requirements.txt"
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
     message(STATUS "Generating typing stubs...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env
                 "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
-                "OPEN3D_ADD_DLL_DIRECTORIES_FROM_PATH=1"
                 ${Python3_EXECUTABLE} -m pybind11_stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
                 ${PYBIND11_STUBGEN_FLAGS}
         COMMAND_ECHO STDOUT
