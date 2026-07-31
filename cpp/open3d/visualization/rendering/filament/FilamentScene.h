@@ -125,6 +125,8 @@ public:
                          bool receive_shadows) override;
     void SetGeometryCulling(const std::string& object_name,
                             bool enable) override;
+    void SetGeometryBackfaceCulling(const std::string& object_name,
+                                    bool enable) override;
     void SetGeometryPriority(const std::string& object_name,
                              uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
@@ -339,6 +341,10 @@ private:
                                   const MaterialRecord& material,
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
+    // Applies the back-face-culling state to material instances whose shader
+    // was compiled with the double-sided capability. No-op for other shaders
+    // (points, lines, transparency/SSR, background, etc.).
+    void UpdateBackfaceCulling(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultLitSSR(GeometryMaterialInstance& geom_mi);
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
