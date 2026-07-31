@@ -24,9 +24,9 @@ void ArangeSYCL(const Tensor& start,
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t sstart = start.Item<scalar_t>();
         scalar_t sstep = step.Item<scalar_t>();
-        scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
+        scalar_t* __restrict__ dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
-        queue.parallel_for(n, [=](int64_t i) {
+        queue.parallel_for(n, [=](int64_t i) [[intel::kernel_args_restrict]] {
                  dst_ptr[i] = sstart + static_cast<scalar_t>(sstep * i);
              }).wait_and_throw();
     });

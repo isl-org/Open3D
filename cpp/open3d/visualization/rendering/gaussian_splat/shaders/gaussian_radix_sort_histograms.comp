@@ -1,0 +1,66 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
+// ----------------------------------------------------------------------------
+
+// Gaussian radix sort — histogram pass.
+//
+// Computes per-workgroup histograms of 8-bit radix digits for the current
+// shift amount.  Each workgroup atomically accumulates a local 256-bin
+// histogram in shared memory, then stores it into a global histogram buffer.
+//
+// Adapted from VkRadixSort by Mirco Werner (MIT license):
+//   https://github.com/MircoWerner/VkRadixSort
+// Based on Intel Embree's GPU sort kernel.
+
+#version 460
+
+#define WORKGROUP_SIZE 256
+#define RADIX_SORT_BINS 256
+
+layout(local_size_x = WORKGROUP_SIZE) in;
+
+layout(std140, binding = 14) uniform RadixSortParams {
+    uint g_num_elements;
+    uint g_shift;
+    uint g_num_workgroups;
+    uint g_num_blocks_per_workgroup;
+};
+
+layout(std430, binding = 0) restrict readonly buffer KeysIn {
+    uint g_keys_in[];
+};
+
+layout(std430, binding = 1) restrict buffer Histograms { uint g_histograms[]; };
+
+shared uint histogram[RADIX_SORT_BINS];
+
+void main() {
+    uint lID = gl_LocalInvocationID.x;
+    uint wID = gl_WorkGroupID.x;
+
+    // Initialize per-workgroup histogram.
+    if (lID < RADIX_SORT_BINS) {
+        histogram[lID] = 0u;
+    }
+    barrier();
+
+    // Accumulate histogram: count keys by their 8-bit radix digit at g_shift.
+    for (uint index = 0u; index < g_num_blocks_per_workgroup; index++) {
+        uint elementId = wID * g_num_blocks_per_workgroup * WORKGROUP_SIZE +
+                         index * WORKGROUP_SIZE + lID;
+        if (elementId < g_num_elements) {
+            uint bin = (g_keys_in[elementId] >> g_shift) &
+                       uint(RADIX_SORT_BINS - 1);
+            atomicAdd(histogram[bin], 1u);
+        }
+    }
+    barrier();
+
+    // Store per-workgroup histogram to global buffer (one row per WG).
+    if (lID < RADIX_SORT_BINS) {
+        g_histograms[RADIX_SORT_BINS * wID + lID] = histogram[lID];
+    }
+}

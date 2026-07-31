@@ -50,7 +50,6 @@ namespace rendering {
 class FilamentResourceManager {
 public:
     static const MaterialHandle kDefaultLit;
-    static const MaterialHandle kGaussianSplatShader;
     static const MaterialHandle kDefaultLitWithTransparency;
     static const MaterialHandle kDefaultLitSSR;
     static const MaterialHandle kDefaultUnlit;
@@ -94,8 +93,30 @@ public:
     // Creates a texture for use as a depth attachment to a RenderTarget
     TextureHandle CreateDepthAttachmentTexture(int width, int height);
 
+    // Creates a Filament texture that wraps an externally-owned GL texture.
+    // The caller retains ownership of the GL texture — Filament will not
+    // delete it.  `format` is a Filament InternalFormat, `usage` is a
+    // combination of Filament TextureUsage flags.
+    TextureHandle CreateImportedTexture(std::uint32_t gl_handle,
+                                        int width,
+                                        int height,
+                                        int format,
+                                        int usage);
+
+#if defined(__APPLE__)
+    /// Wraps an existing `MTLTexture` (caller retains until Filament is done).
+    TextureHandle CreateImportedMTLTexture(std::uintptr_t mtl_texture,
+                                           int width,
+                                           int height,
+                                           int format,
+                                           int usage);
+#endif
+
     RenderTargetHandle CreateRenderTarget(TextureHandle color,
                                           TextureHandle depth);
+    /// Create a color-only render target (no depth attachment).
+    /// Used for readPixels readback from a compute-written texture.
+    RenderTargetHandle CreateColorOnlyRenderTarget(TextureHandle color);
 
     // Replaces the contents of the texture with the image. Returns false if
     // the image is not the same size of the texture.

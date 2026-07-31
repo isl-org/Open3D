@@ -71,6 +71,8 @@ public:
     Size GetWindowSize(OSWindow w) const override;
     void SetWindowSize(OSWindow w, int width, int height) override;
 
+    Size GetWindowFrameSize(OSWindow w) const override;
+
     Size GetWindowSizePixels(OSWindow w) const override;
     void SetWindowSizePixels(OSWindow w, const Size& size) override;
 

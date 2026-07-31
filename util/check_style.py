@@ -356,8 +356,9 @@ def main():
     python_style_config = str(pwd.parent / ".style.yapf")
 
     cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
-    cpp_files = _glob_files(CPP_FORMAT_DIRS,
-                            ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])
+    cpp_files = _glob_files(
+        CPP_FORMAT_DIRS,
+        ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in", "mm", "comp"])
     cpp_files = _filter_files(cpp_files, cpp_ignored_files)
 
     # Check or apply style

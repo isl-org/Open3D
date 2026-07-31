@@ -1,0 +1,38 @@
+Subject: [PATCH] third_party/protobuf: disable constinit on Apple in port.cc
+
+Apple Clang (Xcode 15.4): GlobalEmptyString (std::string) requires heap
+allocation in its constructor, which is not a constant expression.
+Skip PROTOBUF_CONSTINIT to avoid a "variable does not have a constant
+initializer" hard error. This supplements the port_def.inc patch
+(0006), which prevents PROTOBUF_CONSTINIT from expanding to
+constinit/[[clang::require_constant_initialization]] on Apple, by
+directly guarding this specific declaration as an additional safety
+measure in case the port_def.inc path alone is insufficient.
+
+Note: this patch must be applied with the working directory at the
+`third_party` git root (not `third_party/protobuf`, which is a plain
+subdirectory and not a repository root) -- see apply_webrtc_patches.sh.
+
+diff --git a/protobuf/src/google/protobuf/port.cc b/protobuf/src/google/protobuf/port.cc
+--- a/protobuf/src/google/protobuf/port.cc
++++ b/protobuf/src/google/protobuf/port.cc
+@@ -115,9 +115,19 @@ void RealDebugCounter::Register(absl::string_view name) {
+   }
+ }
+ 
++#if defined(__APPLE__)
++// Apple Clang (Xcode 15.4): GlobalEmptyString (std::string) requires heap
++// allocation in its constructor, which is not a constant expression.
++// Skip PROTOBUF_CONSTINIT to avoid "variable does not have a constant
++// initializer" hard error.
++PROTOBUF_ATTRIBUTE_NO_DESTROY
++    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString
++        fixed_address_empty_string{};
++#else
+ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GlobalEmptyString
+         fixed_address_empty_string{};
++#endif  // !defined(__APPLE__)
+ 
+ }  // namespace internal
+ }  // namespace protobuf

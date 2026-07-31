@@ -212,18 +212,19 @@ bool IsDeviceAvailable(const Device &device) {
 #endif
 }
 
-std::string GetDeviceType(const Device &device) {
+SYCLDevice GetSYCLDeviceProperties(const Device &device) {
 #ifdef BUILD_SYCL_MODULE
-    if (IsDeviceAvailable(device)) {
-        return SYCLContext::GetInstance()
-                .GetDeviceProperties(device)
-                .device_type;
-    } else {
-        return "";
+    if (!IsDeviceAvailable(device)) {
+        return SYCLDevice{};
     }
+    return SYCLContext::GetInstance().GetDeviceProperties(device);
 #else
-    return "";
+    return SYCLDevice{};
 #endif
+}
+
+bool IsCPUDevice(const Device &device) {
+    return GetSYCLDeviceProperties(device).device_type == "cpu";
 }
 
 std::vector<Device> GetAvailableSYCLDevices() {
