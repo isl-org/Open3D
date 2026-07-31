@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "open3d/io/FileFormatIO.h"
@@ -557,7 +558,12 @@ bool GenerateHeader(const geometry::PointCloud &pointcloud,
         header.pointsize += 12;
     }
     if (pointcloud.HasColors()) {
+        // Pack RGB as uint32 (TYPE U), not float. The historical PCL "float"
+        // packing is often a denormal; Intel FTZ/DAZ zeroes those on ASCII
+        // write/read. Byte layout is unchanged; only the ASCII encoding and
+        // TYPE differ. Readers already support U via UnpackASCIIPCDColor.
         field.name = "rgb";
+        field.type = 'U';
         header.fields.push_back(field);
         header.elementnum++;
         header.pointsize += 4;
@@ -618,12 +624,15 @@ bool WritePCDHeader(FILE *file, const PCDHeader &header) {
     return true;
 }
 
-float ConvertRGBToFloat(const Eigen::Vector3d &color) {
+// Pack BGR color bytes into a uint32 (PCD rgb field). Same 4-byte layout as
+// the historical float packing, but stored/printed as an integer so Intel
+// FTZ/DAZ cannot destroy denormal bit patterns.
+static std::uint32_t PackRGBToUint32(const Eigen::Vector3d &color) {
     auto rgb = utility::ColorToUint8(color);
+    std::uint32_t bits = 0;
     std::uint8_t rgba[4] = {rgb(2), rgb(1), rgb(0), 0};
-    float value;
-    memcpy(&value, rgba, 4);
-    return value;
+    std::memcpy(&bits, rgba, 4);
+    return bits;
 }
 
 bool WritePCDData(FILE *file,
@@ -644,8 +653,7 @@ bool WritePCDData(FILE *file,
                         normal(2));
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
-                fprintf(file, " %.10g", ConvertRGBToFloat(color));
+                fprintf(file, " %u", PackRGBToUint32(pointcloud.colors_[i]));
             }
             fprintf(file, "\n");
             if (i % 1000 == 0) {
@@ -668,8 +676,9 @@ bool WritePCDData(FILE *file,
                 idx += 3;
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
-                data[idx] = ConvertRGBToFloat(color);
+                const std::uint32_t bits =
+                        PackRGBToUint32(pointcloud.colors_[i]);
+                std::memcpy(&data[idx], &bits, 4);
             }
             fwrite(data.get(), sizeof(float), header.elementnum, file);
             if (i % 1000 == 0) {
@@ -701,8 +710,9 @@ bool WritePCDData(FILE *file,
                 idx += 3;
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
-                buffer[idx * strip_size + i] = ConvertRGBToFloat(color);
+                const std::uint32_t bits =
+                        PackRGBToUint32(pointcloud.colors_[i]);
+                std::memcpy(&buffer[idx * strip_size + i], &bits, 4);
             }
             if (i % 1000 == 0) {
                 reporter.Update(i);

@@ -461,6 +461,52 @@ Tensor Tensor::Arange(const Scalar start,
     return kernel::Arange(t_start, t_stop, t_step);
 }
 
+Tensor Tensor::Quasirandom(int64_t n,
+                           int64_t dims,
+                           const Dtype dtype,
+                           const Device& device) {
+    // Implements a simple quasirandom (low-discrepancy) sequence generator
+    // using the method from
+    // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    // Uses the fractional part of multiples of the generalized golden ratio for
+    // each dimension.
+
+    // Validate input
+    if (n <= 0) {
+        utility::LogError("Quasirandom: n must be positive, got {}", n);
+    }
+    if (dims <= 0) {
+        utility::LogError("Quasirandom: dims must be positive, got {}", dims);
+    }
+    if (!(dtype == core::Float32 || dtype == core::Float64)) {
+        utility::LogError(
+                "Quasirandom: dtype must be Float32 or Float64, got {}",
+                dtype.ToString());
+    }
+
+    // Compute generalized golden ratio for each dimension
+    std::vector<double> alpha(dims + 1);
+    // Use the recurrence: phi_1 = 1, phi_{d+1} = (1 + sqrt(1 + 4*phi_d)) / 2
+    alpha[0] = 1.0;
+    for (int64_t d = 1; d < dims + 1; ++d) {
+        alpha[d] = (1.0 + std::sqrt(1.0 + 4.0 * alpha[d - 1])) / 2.0;
+        alpha[d - 1] = 1. / alpha[d - 1];  // Each dimension basis is 1/phi^d
+    }
+    alpha[dims] = 1. / alpha[dims];
+    Tensor out({n, dims}, dtype, Device("CPU:0"));  // on the CPU for now.
+    // Fill tensor with quasirandom values
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t* data = static_cast<scalar_t*>(out.GetDataPtr());
+        for (int64_t i = 0; i < n; ++i) {
+            for (int64_t d = 0; d < dims; ++d) {
+                double val = std::fmod(0.5 + alpha[d + 1] * (i + 1), 1.0);
+                data[i * dims + d] = static_cast<scalar_t>(val);
+            }
+        }
+    });
+    return out.To(device);
+}
+
 Tensor Tensor::Reverse() const {
     // TODO: Unoptimized with ai. Can be improved when negative step in Slice is
     // implemented.
@@ -644,7 +690,7 @@ Tensor Tensor::Expand(const SizeVector& dst_shape) const {
     int64_t omitted_ndims = dst_ndims - src_ndims;
 
     // Fill 1 in shape for omitted dimensions in front.
-    // Noe that unexpanded_new_shape is not the expanded shape. The expanded
+    // Note that unexpanded_new_shape is not the expanded shape. The expanded
     // shape is the dst_shape.
     SizeVector unexpanded_new_shape(dst_ndims, 1);
     for (int64_t i = 0; i < src_ndims; ++i) {
@@ -867,36 +913,64 @@ Tensor Tensor::Slice(int64_t dim,
     }
     if (step == 0) {
         utility::LogError("Step size cannot be 0.");
-    } else if (step < 0) {
-        // TODO: support negative step sizes
-        utility::LogError("Step size cannot be < 0.");
     }
+    uint64_t new_dim = 0;
+    if (step > 0) {
+        // Positive step: forward traversal
+        // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+        if (start < 0) {
+            start += shape_[dim];
+        }
+        if (start < 0) {
+            start = 0;
+        } else if (start >= shape_[dim]) {
+            start = shape_[dim];
+        }
 
-    // Wrap start. Out-of-range slice is valid and produces empty Tensor.
-    if (start < 0) {
-        start += shape_[dim];
-    }
-    if (start < 0) {
-        start = 0;
-    } else if (start >= shape_[dim]) {
-        start = shape_[dim];
-    }
+        // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
+        if (stop < 0) {
+            stop += shape_[dim];
+        }
+        if (stop < start) {
+            stop = start;
+        } else if (stop >= shape_[dim]) {
+            stop = shape_[dim];
+        }
+        new_dim = (stop - start + step - 1) / step;
+    } else {
+        // Negative step: reverse traversal
+        // Wrap start. Out-of-range slice is valid and produces empty Tensor.
+        if (start < 0) {
+            start += shape_[dim];
+        }
+        if (start < 0) {
+            start = 0;
+        }
+        if (start >= shape_[dim]) {
+            start = shape_[dim] - 1;
+        }
 
-    // Wrap stop. Out-of-range slice is valid and produces empty Tensor.
-    if (stop < 0) {
-        stop += shape_[dim];
+        // Handle stop: -1 means "before index 0"
+        // Other negative values wrap around
+        if (stop != -1 && stop < 0) {
+            stop += shape_[dim];
+        }
+        if (stop < -1) {
+            stop = -1;
+        }
+        if (stop >= shape_[dim]) {
+            stop = shape_[dim] - 1;
+        }
+        if (stop > start) {
+            stop = start;
+        }
+        new_dim = (start - stop + (-step) - 1) / (-step);
     }
-    if (stop < start) {
-        stop = start;
-    } else if (stop >= shape_[dim]) {
-        stop = shape_[dim];
-    }
-
     void* new_data_ptr = static_cast<char*>(data_ptr_) +
                          start * strides_[dim] * dtype_.ByteSize();
     SizeVector new_shape = shape_;
     SizeVector new_strides = strides_;
-    new_shape[dim] = (stop - start + step - 1) / step;
+    new_shape[dim] = new_dim;
     new_strides[dim] = strides_[dim] * step;
     return Tensor(new_shape, new_strides, new_data_ptr, dtype_, blob_);
 }
@@ -1091,6 +1165,29 @@ Tensor Tensor::T() const {
 double Tensor::Det() const {
     AssertTensorDtypes(*this, {Float32, Float64});
     return core::Det(*this);
+}
+
+Tensor Tensor::Cross(const Tensor& other, int64_t axis) const {
+    AssertTensorDevice(other, GetDevice());
+    AssertTensorDtype(other, GetDtype());
+    if (GetShape(axis) != 3 || other.GetShape(axis) != 3) {
+        utility::LogError(
+                "[Tensor::Cross] Dim axis={} of both tensors must have shape "
+                "3. Got {} and {} instead.",
+                axis, GetShape(axis), other.GetShape(axis));
+    }
+    Tensor t_x = Slice(axis, 0, 1), t_y = Slice(axis, 1, 2),
+           t_z = Slice(axis, 2, 3);
+    Tensor b_x = other.Slice(axis, 0, 1), b_y = other.Slice(axis, 1, 2),
+           b_z = other.Slice(axis, 2, 3);
+    Tensor dst_tensor(shape_util::BroadcastedShape(shape_, other.shape_),
+                      dtype_, GetDevice());
+
+    // TODO: Slow. Needs tiling for speed.
+    dst_tensor.Slice(axis, 0, 1) = t_y * b_z - t_z * b_y;
+    dst_tensor.Slice(axis, 1, 2) = t_z * b_x - t_x * b_z;
+    dst_tensor.Slice(axis, 2, 3) = t_x * b_y - t_y * b_x;
+    return dst_tensor;
 }
 
 Tensor Tensor::Add(const Tensor& value) const {
@@ -1429,6 +1526,31 @@ Tensor Tensor::Trunc() const {
     Tensor dst_tensor(shape_, dtype_, GetDevice());
     kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::Trunc);
     return dst_tensor;
+}
+
+Tensor Tensor::Norm(const SizeVector& dims, bool keepdim, float p) const {
+    // Determine output dtype
+    Dtype output_dtype = dtype_;
+    if (dtype_ != core::Float32 && dtype_ != core::Float64) {
+        output_dtype = core::Float32;
+    }
+    if (std::isinf(p)) {
+        // L-infinity
+        return Abs().Max(dims, keepdim).To(output_dtype);
+    } else if (p == 0.0) {
+        // L0 "norm": count of non-zero elements
+        return Ne(0).To(output_dtype).Sum(dims, keepdim);
+    } else if (p == 1.0) {
+        // L1 norm: sum(|x|)
+        return Abs().To(output_dtype).Sum(dims, keepdim);
+    } else if (p == 2.0) {
+        // L2 norm: sqrt(sum(x^2))
+        Tensor out = To(output_dtype);
+        return (out * out).Sum(dims, keepdim).Sqrt();
+    } else {
+        utility::LogError(
+                "Norm order p must be 0, 1, 2 or INFINITY, but got {}.", p);
+    }
 }
 
 Device Tensor::GetDevice() const {

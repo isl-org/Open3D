@@ -45,13 +45,19 @@ namespace core {
 namespace nns {
 
 // L2 + select kernel for k == 1, implements re-use of ||c||^2
+// row_stride: the stride between rows in productDistances (may differ from dim
+// for non-contiguous views)
+// out_row_stride: the stride between rows in output (may differ from 1 for
+// non-contiguous output views)
 template <typename T, typename TIndex, int kRowsPerBlock, int kBlockSize>
 __global__ void l2SelectMin1(T* productDistances,
                              T* centroidDistances,
                              T* outDistances,
                              TIndex* outIndices,
                              int num_points,
-                             int dim) {
+                             int dim,
+                             int row_stride,
+                             int out_row_stride) {
     // Each block handles kRowsPerBlock rows of the distances (results)
     Pair<T, int> threadMin[kRowsPerBlock];
     __shared__ Pair<T, int> blockMin[kRowsPerBlock * (kBlockSize / kWarpSize)];
@@ -80,7 +86,7 @@ __global__ void l2SelectMin1(T* productDistances,
         for (int row = rowStart; row < num_points; ++row) {
             for (int col = threadIdx.x; col < dim; col += blockDim.x) {
                 distance[0] = centroidDistances[col] +
-                              productDistances[row + dim + col];
+                              productDistances[row * row_stride + col];
 
                 if (distance[0] < threadMin[0].k) {
                     threadMin[0].k = distance[0];
@@ -94,8 +100,8 @@ __global__ void l2SelectMin1(T* productDistances,
                     threadMin[0], Min<Pair<T, int>>(), blockMin);
 
             if (threadIdx.x == 0) {
-                outDistances[row + 0] = threadMin[0].k;
-                outIndices[row + 0] = threadMin[0].v;
+                outDistances[row * out_row_stride] = threadMin[0].k;
+                outIndices[row * out_row_stride] = threadMin[0].v;
             }
 
             // so we can use the shared memory again
@@ -110,7 +116,8 @@ __global__ void l2SelectMin1(T* productDistances,
 
 #pragma unroll
             for (int row = 0; row < kRowsPerBlock; ++row) {
-                distance[row] = productDistances[(rowStart + row) * dim + col];
+                distance[row] =
+                        productDistances[(rowStart + row) * row_stride + col];
             }
 
 #pragma unroll
@@ -134,8 +141,10 @@ __global__ void l2SelectMin1(T* productDistances,
         if (threadIdx.x == 0) {
 #pragma unroll
             for (int row = 0; row < kRowsPerBlock; ++row) {
-                outDistances[rowStart + row + 0] = threadMin[row].k;
-                outIndices[rowStart + row + 0] = threadMin[row].v;
+                outDistances[(rowStart + row) * out_row_stride] =
+                        threadMin[row].k;
+                outIndices[(rowStart + row) * out_row_stride] =
+                        threadMin[row].v;
             }
         }
     }
@@ -214,13 +223,21 @@ void runL2SelectMin(const cudaStream_t stream,
         auto grid =
                 dim3(utility::DivUp(outDistances.GetShape(0), kRowsPerBlock));
 
+        // Get the actual row stride for memory access (may differ from shape
+        // for non-contiguous views)
+        int64_t row_stride = productDistances.GetStride(0);
+        // Get output row stride (for non-contiguous output views)
+        int64_t out_row_stride = outDistances.GetStride(0);
+
         l2SelectMin1<T, TIndex, kRowsPerBlock, kThreadsPerBlock>
                 <<<grid, block, 0, stream>>>(productDistances.GetDataPtr<T>(),
                                              centroidDistances.GetDataPtr<T>(),
                                              outDistances.GetDataPtr<T>(),
                                              outIndices.GetDataPtr<TIndex>(),
                                              (int)productDistances.GetShape(0),
-                                             (int)productDistances.GetShape(1));
+                                             (int)productDistances.GetShape(1),
+                                             (int)row_stride,
+                                             (int)out_row_stride);
     } else {
         auto grid = dim3(outDistances.GetShape(0));
 
