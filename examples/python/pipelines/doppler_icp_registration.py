@@ -178,7 +178,7 @@ def run_doppler_icp(args):
         outlier_rejection_min_iteration=2,
         geometric_robust_loss_min_iteration=0,
         doppler_robust_loss_min_iteration=2,
-        goemetric_kernel=kernel,
+        geometric_kernel=kernel,
         doppler_kernel=kernel,
         transform_vehicle_to_sensor=transform_vehicle_to_sensor)
 
