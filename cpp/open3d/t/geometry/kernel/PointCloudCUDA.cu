@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <limits>
+
 #include "open3d/t/geometry/kernel/PointCloudImpl.h"
 
 namespace open3d {
@@ -37,7 +39,7 @@ void ProjectCUDA(
     // buffer for id and depth
     core::Tensor index_buffer = core::Tensor::Full(
             {height, width},
-            0xFFFFFFFFFFFFFFFF,  // The largest possible 64-bit number
+            std::numeric_limits<uint64_t>::max(),
             core::UInt64, depth.GetDevice());
 
     uint64_t* index_buffer_ptr = index_buffer.GetDataPtr<uint64_t>();
@@ -65,20 +67,19 @@ void ProjectCUDA(
                     return;
                 }
 
-                float* depth_ptr = depth_indexer.GetDataPtr<float>(
-                        static_cast<int64_t>(u), static_cast<int64_t>(v));
+                int64_t pu = static_cast<int64_t>(u),
+                        pv = static_cast<int64_t>(v);
+
+                float* depth_ptr = depth_indexer.GetDataPtr<float>(pu, pv);
                 float d = zc * depth_scale;
                 float d_old = atomicExch(depth_ptr, d);
                 if (d_old > 0) {
                     atomicMinf(depth_ptr, d_old);
                 }
 
-                int64_t row = static_cast<int64_t>(v);
-                int64_t col = static_cast<int64_t>(u);
-
-                // Get the specific address for this pixel (u, v)
+                // Get the specific address for this pixel (pu, pv)
                 uint64_t* pixel_address =
-                        index_buffer_ptr + (row * width + col);
+                        index_buffer_ptr + (pv * width + pu);
 
                 // Prepare the packed value of id and depth
                 uint32_t d_as_uint = __float_as_uint(d);
@@ -120,7 +121,8 @@ void ProjectCUDA(
                         static_cast<uint32_t>(final_val & 0xFFFFFFFF);
 
                 if (winning_idx == (uint32_t)workload_idx) {
-                    float* color_ptr = color_indexer.GetDataPtr<float>(u, v);
+                    float* color_ptr =
+                            color_indexer.GetDataPtr<float>(pu, pv);
                     color_ptr[0] = point_colors_ptr[3 * workload_idx + 0];
                     color_ptr[1] = point_colors_ptr[3 * workload_idx + 1];
                     color_ptr[2] = point_colors_ptr[3 * workload_idx + 2];
