@@ -1338,8 +1338,8 @@ void FilamentScene::UpdateBackfaceCulling(GeometryMaterialInstance& geom_mi) {
     // surface/mesh shaders where it is meaningful (ignore points, lines, depth,
     // background, etc.).
     static const std::unordered_set<std::string> kCullableShaders = {
-            "defaultLit",   "defaultLitTransparency", "defaultUnlit",
-            "normals",      "unlitGradient",          "unlitSolidColor"};
+            "defaultLit", "defaultLitTransparency", "defaultUnlit",
+            "normals",    "unlitGradient",          "unlitSolidColor"};
     if (kCullableShaders.count(geom_mi.properties.shader) == 0) {
         return;
     }
@@ -1350,9 +1350,10 @@ void FilamentScene::UpdateBackfaceCulling(GeometryMaterialInstance& geom_mi) {
         //                              lighting stays correct because these
         //                              materials keep back-face normal flipping
         //                              on by default.
-        mi->setCullingMode(geom_mi.properties.backface_culling
-                                   ? filament::MaterialInstance::CullingMode::BACK
-                                   : filament::MaterialInstance::CullingMode::NONE);
+        mi->setCullingMode(
+                geom_mi.properties.backface_culling
+                        ? filament::MaterialInstance::CullingMode::BACK
+                        : filament::MaterialInstance::CullingMode::NONE);
     }
 }
 
