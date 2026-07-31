@@ -279,10 +279,16 @@ def test_project_to_rgbd_image(device):
     assert np.any(hit_colors > 0), "projected pixels should have non-zero color"
 
 
-def test_project_to_rgbd_image_cpu_cuda_consistent():
-    """When both CPU and CUDA are available, RGBD projection should match."""
-    if o3c.cuda.device_count() == 0:
-        pytest.skip("CUDA not available")
+@pytest.mark.parametrize(
+    "accel_device",
+    list_devices(enable_cpu=False) or [None],
+    ids=lambda d: "no_accelerator" if d is None else str(d),
+)
+def test_project_to_rgbd_image_cpu_accelerator_consistent(accel_device):
+    """RGBD projection on CPU should match CUDA or SYCL when built and available."""
+    if accel_device is None:
+        pytest.skip("No CUDA or SYCL device available")
+
     width, height = 16, 16
     np.random.seed(42)
     n = 50
@@ -304,37 +310,31 @@ def test_project_to_rgbd_image_cpu_cuda_consistent():
     depth_cpu = rgbd_cpu.depth.as_tensor().cpu().numpy()
     color_cpu = rgbd_cpu.color.as_tensor().cpu().numpy()
 
-    pcd_cuda = pcd_cpu.to(o3c.Device("CUDA:0"))
-    num_cuda_runs = 5
-    depth_cuda_ref = None
-    color_cuda_ref = None
-    for _ in range(num_cuda_runs):
-        rgbd_cuda = pcd_cuda.project_to_rgbd_image(width,
-                                                   height,
-                                                   intrinsics,
-                                                   extrinsics,
-                                                   depth_scale=1.0,
-                                                   depth_max=5.0)
-        depth_cuda = rgbd_cuda.depth.as_tensor().cpu().numpy()
-        color_cuda = rgbd_cuda.color.as_tensor().cpu().numpy()
-        if depth_cuda_ref is None:
-            depth_cuda_ref = depth_cuda
-            color_cuda_ref = color_cuda
+    pcd_accel = pcd_cpu.to(accel_device)
+    num_accel_runs = 5
+    depth_accel_ref = None
+    color_accel_ref = None
+    for _ in range(num_accel_runs):
+        rgbd_accel = pcd_accel.project_to_rgbd_image(width,
+                                                     height,
+                                                     intrinsics,
+                                                     extrinsics,
+                                                     depth_scale=1.0,
+                                                     depth_max=5.0)
+        depth_accel = rgbd_accel.depth.as_tensor().cpu().numpy()
+        color_accel = rgbd_accel.color.as_tensor().cpu().numpy()
+        if depth_accel_ref is None:
+            depth_accel_ref = depth_accel
+            color_accel_ref = color_accel
         else:
-            np.testing.assert_allclose(depth_cuda_ref,
-                                       depth_cuda,
+            np.testing.assert_allclose(depth_accel_ref,
+                                       depth_accel,
                                        rtol=1e-5,
                                        atol=1e-5)
-            np.testing.assert_allclose(color_cuda_ref,
-                                       color_cuda,
+            np.testing.assert_allclose(color_accel_ref,
+                                       color_accel,
                                        rtol=1e-5,
                                        atol=1e-5)
 
-    np.testing.assert_allclose(depth_cpu,
-                               depth_cuda_ref,
-                               rtol=1e-5,
-                               atol=1e-5)
-    np.testing.assert_allclose(color_cpu,
-                               color_cuda_ref,
-                               rtol=1e-5,
-                               atol=1e-5)
+    np.testing.assert_allclose(depth_cpu, depth_accel_ref, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(color_cpu, color_accel_ref, rtol=1e-5, atol=1e-5)
