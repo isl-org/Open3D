@@ -558,8 +558,8 @@ public:
     /// density. Lower values (e.g., 1.0) allow finer subdivision and capture
     /// more detail but may increase noise. Higher values (e.g., 3.0) suppress
     /// noise but may lose fine details. Recommended range: 1.0-3.0.
-    /// \param point_weight Importance of point interpolation constraints
-    /// (default: 4.0). Controls the trade-off between data fidelity and surface
+        /// \param point_weight Importance of point interpolation constraints
+        /// (default: 2.0). Controls the trade-off between data fidelity and surface
     /// smoothness. Higher values (e.g., 10.0) prioritize fitting input points
     /// exactly, resulting in surfaces closer to the data. Lower values produce
     /// smoother surfaces. Recommended range: 2.0-10.0.
@@ -574,7 +574,7 @@ public:
                                 int n_threads = -1,
                                 int full_depth = 5,
                                 float samples_per_node = 1.5f,
-                                float point_weight = 4.0f);
+                                float point_weight = 2.0f);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
