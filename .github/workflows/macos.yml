@@ -26,9 +26,12 @@ env:
   BUILD_CUDA_MODULE: OFF
 
 jobs:
-  MacOS:
+  build-lib:
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -37,10 +40,8 @@ jobs:
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      # Tensorflow 2.19, PyTorch 2.7 are only available for Apple Silicon (macos-14)
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.CONFIG == 'ON' && matrix.os == 'macos-14' ) && 'ON' || 'OFF' }}
-      LOW_MEM_USAGE: ON
+      BUILD_TENSORFLOW_OPS: 'ON'
+      BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -65,22 +66,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
-
-          if [[ ${{ runner.arch }} == "ARM64"  ]]; then
-            # Fix gfortran not found issue
-            brew install gcc
-            ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
-          fi
+          brew install ccache glslang spirv-cross gcc
+          # Fix gfortran not found issue
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
+          export BUILD_PYTHON_MODULE=OFF
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+          
+          # Compress build directory for reuse (exclude some large potentially unnecessary files if needed)
+          # We need 'build' directory.
+          tar -caf build.tar.xz build
+
+      - name: Upload build artifact
+        if: ${{ matrix.CONFIG == 'OFF' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+          path: build.tar.xz
+          retention-days: 1
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
@@ -92,6 +102,12 @@ jobs:
           zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
           ccache -s
 
+      - name: Generate package attestation
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/package/${{ env.DEVEL_PKG_NAME }}
+
       - name: Upload package
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
@@ -100,13 +116,11 @@ jobs:
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Update package devel release
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
+      - name: Generate viewer attestation
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'OFF' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
@@ -116,10 +130,25 @@ jobs:
           path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
 
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ env.BUILD_SHARED_LIBS }}" == 'ON' ]]; then
+            .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
+          else
+            .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          fi
+
   build-wheel:
+    needs: build-lib
     name: Build wheel
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -140,10 +169,10 @@ jobs:
             python_version: '3.13'
 
     env:
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version >= '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon) and python 3.9-3.13 (only torch>=2.9 supports python 3.14)
-      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -156,6 +185,14 @@ jobs:
           ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+      
+      - name: Unpack build artifact
+        run: tar -xf build.tar.xz
+
       - name: Setup cache
         uses: actions/cache@v4
         with:
@@ -167,8 +204,7 @@ jobs:
           # Restore any ccache cache entry, if none for
           # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
           # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ccache
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -186,13 +222,10 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
 
-          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-          fi
-
-          brew install ccache
+          brew install ccache glslang spirv-cross gcc
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          # Fix gfortran not found issue
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
       - name: Config and build wheel
         run: |
@@ -204,12 +237,26 @@ jobs:
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
+      - name: Generate wheel attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+
       - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PIP_PKG_NAME }}
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
+
+      - name: Update devel release
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/workflows/update_release.sh build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+      
 
   test-wheel:
     name: Test wheel
@@ -235,11 +282,11 @@ jobs:
             python_version: '3.13'
 
     env:
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      # TensorFlow v2.19 only supports macOS-14 (Apple Silicon) and python 3.9-3.12
-      BUILD_TENSORFLOW_OPS: ${{ ( matrix.python_version >= '3.13' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
-      # PyTorch 2.7 only supports macOS-14 (Apple Silicon) and python 3.9-3.13 (only torch>=2.9 supports python 3.14)
-      BUILD_PYTORCH_OPS: ${{ ( matrix.python_version >= '3.14' || matrix.os == 'macos-13' ) && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

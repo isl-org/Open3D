@@ -21,14 +21,14 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
-# Hide all 3rd party symbols, e.g. from header libraries.
-get_target_property(TARGET_TYPE ${target} TYPE)
-if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+    # Hide all 3rd party symbols, e.g. from header libraries.
+    get_target_property(TARGET_TYPE ${target} TYPE)
+    if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
         if (APPLE)
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[*open3d*
-                   *Open3D*
-                ]=])
+*Open3D*
+]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
                 -Wl,-exported_symbols_list
                 "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
@@ -38,7 +38,7 @@ if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
     global:
         *open3d*;
         extern "C++" {
-             open3d::*;
+            open3d::*;
         };
     local: *;
 };]=])
@@ -56,6 +56,17 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
+
+if(ENABLE_SANITIZER)
+    message(STATUS "Enabling sanitizer: ${ENABLE_SANITIZER}")
+    if(MSVC)
+        add_compile_options(/fsanitize=${ENABLE_SANITIZER})
+        add_link_options(/fsanitize=${ENABLE_SANITIZER})
+    else()
+        add_compile_options(-fsanitize=${ENABLE_SANITIZER} -fno-omit-frame-pointer -g)
+        add_link_options(-fsanitize=${ENABLE_SANITIZER})
+    endif()
+endif()
 
 add_library(Open3D)
 
@@ -135,6 +146,49 @@ open3d_show_and_abort_on_warning(Open3D)
 open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
+
+if (BUILD_SYCL_MODULE)
+    # parallel linking to speed up SYCL link time code generation
+    cmake_host_system_information(RESULT NUM_CORES QUERY NUMBER_OF_PHYSICAL_CORES)
+    target_link_options(Open3D PRIVATE -fsycl-max-parallel-link-jobs=${NUM_CORES})
+endif()
+# Switch linker to lld for clang and gcc, if lld is available
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    find_program(LLD_PROGRAM lld)
+    if (LLD_PROGRAM)
+        target_link_options(Open3D PRIVATE -fuse-ld=lld)
+    endif()
+endif()
+if (BUILD_SYCL_MODULE AND NOT BUILD_SHARED_LIBS)
+    # Static libraries do not perform the SYCL device link step themselves.
+    # Propagate the SYCL link target so final executables link with -fsycl and
+    # bundle device images from Open3D object files.
+    target_link_libraries(Open3D INTERFACE Open3D::3rdparty_sycl)
+    target_link_options(Open3D INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=${OPEN3D_SYCL_TARGETS}>)
+    if (OPEN3D_SYCL_TARGET_BACKEND_OPTIONS)
+        target_link_options(Open3D INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-Xs ${OPEN3D_SYCL_TARGET_BACKEND_OPTIONS}>)
+    endif()
+endif()
+
+# GLX: All rendering, since GaussianSplatting interop with filament requires it.
+# Vulkan: GS compute.
+# EGL: Legacy offscreen rendering.
+if (NOT APPLE)
+    if (UNIX AND NOT APPLE)
+        find_package(OpenGL COMPONENTS EGL REQUIRED)
+    else()
+        find_package(OpenGL COMPONENTS EGL)
+    endif()
+    if (OpenGL_EGL_FOUND)
+        target_link_libraries(Open3D PRIVATE OpenGL::EGL)
+    endif()
+    find_package(X11 QUIET)
+    if (X11_FOUND)
+        target_link_libraries(Open3D PRIVATE X11::X11)
+    endif()
+endif()
 
 # If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
 # libraries that are not hidden during compilation. Don't propagate beyond

@@ -223,9 +223,10 @@ public:
     /// \param intrinsic_matrix The upper triangular intrinsic matrix with
     /// shape {3,3}.
     /// \param extrinsic_matrix The 4x4 world to camera SE(3) transformation
-    /// matrix. \param width_px The width of the image in pixels. \param
-    /// height_px The height of the image in pixels. \return A tensor of shape
-    /// {height_px, width_px, 6} with the rays.
+    /// matrix.
+    /// \param width_px The width of the image in pixels.
+    /// \param height_px The height of the image in pixels.
+    /// \return A tensor of shape {height_px, width_px, 6} with the rays.
     static core::Tensor CreateRaysPinhole(const core::Tensor &intrinsic_matrix,
                                           const core::Tensor &extrinsic_matrix,
                                           int width_px,

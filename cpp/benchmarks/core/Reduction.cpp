@@ -15,6 +15,11 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Kernel.h"
 
+#if defined(SYCL_LANGUAGE_VERSION)
+#include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -26,7 +31,16 @@ void Reduction(benchmark::State& state, const Device& device) {
     (void)warm_up;
     for (auto _ : state) {
         Tensor dst = src.Sum({1});
-        cuda::Synchronize(device);
+#ifdef BUILD_CUDA_MODULE
+        if (device.IsCUDA()) {
+            cuda::Synchronize(device);
+        }
+#endif
+#if defined(SYCL_LANGUAGE_VERSION)
+        if (device.IsSYCL()) {
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device).wait();
+        }
+#endif
     }
 }
 
@@ -35,6 +49,11 @@ BENCHMARK_CAPTURE(Reduction, CPU, Device("CPU:0"))
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Reduction, CUDA, Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+#if defined(SYCL_LANGUAGE_VERSION)
+BENCHMARK_CAPTURE(Reduction, SYCL, Device("SYCL:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 

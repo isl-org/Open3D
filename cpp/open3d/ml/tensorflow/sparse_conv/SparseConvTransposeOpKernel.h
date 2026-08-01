@@ -11,6 +11,8 @@
 #include <tensorflow/core/framework/op_kernel.h>
 #include <tensorflow/core/lib/core/errors.h>
 
+#include <cstdint>
+
 #include "open3d/ml/tensorflow/TensorFlowHelper.h"
 
 template <class TIndex>
@@ -30,8 +32,8 @@ public:
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
         using namespace open3d::ml::op_util;
-        static_assert(sizeof(int64) == sizeof(int64_t),
-                      "int64 type is not compatible");
+        static_assert(sizeof(int64_t) == sizeof(int64_t),
+                      "int64_t type is not compatible");
         const Tensor& filters = context->input(0);
         const Tensor& out_importance = context->input(1);
         const Tensor& inp_features = context->input(2);

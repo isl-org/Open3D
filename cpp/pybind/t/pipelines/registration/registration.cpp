@@ -365,7 +365,7 @@ void pybind_registration_definitions(py::module &m) {
                "doppler_outlier_threshold"_a,
                "outlier_rejection_min_iteration"_a,
                "geometric_robust_loss_min_iteration"_a,
-               "doppler_robust_loss_min_iteration"_a, "goemetric_kernel"_a,
+               "doppler_robust_loss_min_iteration"_a, "geometric_kernel"_a,
                "doppler_kernel"_a, "transform_vehicle_to_sensor"_a)
             .def(py::init([](const double lambda_doppler) {
                      return new TransformationEstimationForDopplerICP(

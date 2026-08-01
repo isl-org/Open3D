@@ -12,9 +12,12 @@ actions updates. On macOS and Windows, using Ubuntu reduces CI cost.
 
 ### Directory structure
 
--   `.github/workflows/documentation.yml`: Github Actions workflow file to
-    create and deploy documentation. Documentation is created for every branch
-    as a CI test, but deployed only for `main`.
+-   `.github/workflows/ubuntu.yml`: The `build-docs` job creates and deploys
+    documentation, using the Open3D Python wheel built by the `ubuntu` job in
+    the same workflow (EGL-based offscreen rendering means the standard wheel
+    supports headless notebook execution, so no separate headless build is
+    needed). Documentation is created for every branch as a CI test, but
+    deployed only for `main`.
 -   `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to build documentation.
 -   `unpack_docs.sh`: Called by the documentation server to deploy the docs into
     the website.
@@ -134,7 +137,7 @@ either due to lack of resources or GPU quota exhaustion.
 
 The custom VM image has NVIDIA drivers, `nvidia-container-toolkit` and `docker`
 installed. It contains today's date in the name and the image family is set to
-`ubuntu-os-docker-gpu-2004-lts`. The latest image from this family is
+`ubuntu-os-docker-gpu-2204-lts`. The latest image from this family is
 used for running CI.
 
 #### Step 3: GitHub

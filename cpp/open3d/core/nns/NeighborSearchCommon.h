@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+/// \file NeighborSearchCommon.h
+/// \brief Shared types and SYCL nearest-neighbor search tuning defaults.
+
 #pragma once
 
 #include <memory>
@@ -53,6 +56,21 @@ HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
 struct NanoFlannIndexHolderBase {
     virtual ~NanoFlannIndexHolderBase() {}
 };
+
+/// SYCL NNS defaults for \ref KnnIndex and \ref FixedRadiusIndex constructors.
+
+/// Default distance-tile budget in bytes (8 MiB, tuned for iGPU last-level
+/// cache). Discrete GPUs cache is larger and we can increase to 16-32 MiB.
+constexpr int64_t kSYCLKnnDefaultTileBytes = 8LL * 1024 * 1024;
+
+/// Upper bound of k for the GRF-register heap path (eliminates scratch spill).
+// ~32 on 128-GRF Xe, raise to 64 on 256-GRF Xe. Reduce if kernel occupancy
+// drops.
+constexpr int64_t kSYCLKnnSmallKMax = 32;
+
+/// Upper bound of k for the proportional scratch-resident heap path. Larger k
+/// uses sequential oneDPL partial_sort.
+constexpr int64_t kSYCLKnnMidKMax = 512;
 
 }  // namespace nns
 }  // namespace core

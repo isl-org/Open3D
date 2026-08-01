@@ -1,5 +1,11 @@
 ## Main
 -   Add vcpkg support for easier dependency management (PR #7386)
+-   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
+-   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
+-   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
+-   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.
 -   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
 -   Corrected documentation for Link Open3D in C++ projects (broken links).
@@ -70,10 +76,14 @@
 -   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
 -   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
 -   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
+-   Add assertion guard for invalid indexing operations (PR #7360)
+-   Implement CUDA multipass for KNN > `GPU_MAX_SELECTION_K` (PR #7381)
 -   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
-
+-   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
+-   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 
