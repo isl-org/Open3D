@@ -1,4 +1,5 @@
 ## Main
+-   Fix reading OBJ/MTL meshes from UTF-8 paths on Windows by loading through `utility::filesystem::FReadToBuffer` and tinyobj stream APIs instead of narrow `fopen`/`ifstream` (issue #7336)(PR #7524).
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
