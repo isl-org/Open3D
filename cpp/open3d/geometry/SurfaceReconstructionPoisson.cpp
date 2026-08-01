@@ -705,8 +705,9 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           float samples_per_node,
                                           float point_weight) {
     static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
-    typedef IsotropicUIntPack<
-            DIMENSION, FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+    typedef IsotropicUIntPack<DIMENSION,
+                              FEMDegreeAndBType</* Degree */ DEFAULT_FEM_DEGREE,
+                                                BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {
