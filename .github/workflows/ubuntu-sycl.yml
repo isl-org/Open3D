@@ -164,6 +164,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-*.whl --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh open3d*.whl
 
