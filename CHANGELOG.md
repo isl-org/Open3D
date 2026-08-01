@@ -80,6 +80,7 @@
 -   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
+-   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
