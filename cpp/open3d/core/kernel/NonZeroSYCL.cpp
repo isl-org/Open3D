@@ -23,21 +23,20 @@ Tensor NonZeroSYCL(const Tensor& src) {
     TensorIterator src_iter(src);
     const int64_t num_elements = src.NumElements();
     auto device = src.GetDevice();
+    OPEN3D_ASSERT(src.GetDataPtr() != nullptr, "Internal error.");
     Tensor indices = Tensor::Arange(0, num_elements, 1, core::Int64, device);
     Tensor non_zero_indices(SizeVector({num_elements}), Int64, device);
-    int64_t *non_zero_indices_ptr = non_zero_indices.GetDataPtr<int64_t>(),
-            *indices_ptr = indices.GetDataPtr<int64_t>();
+    int64_t* non_zero_indices_ptr = non_zero_indices.GetDataPtr<int64_t>();
+    int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
     size_t num_non_zeros;
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src.GetDtype(), [&]() {
-        auto it = std::copy_if(
-                oneapi::dpl::execution::dpcpp_default, indices_ptr,
-                indices_ptr + num_elements, non_zero_indices_ptr,
-                [src_iter](int64_t index) {
-                    auto src_ptr = static_cast<const scalar_t*>(
-                            src_iter.GetPtr(index));
-                    OPEN3D_ASSERT(src_ptr != nullptr && "Internal error.");
-                    return *src_ptr != 0;
-                });
+        auto it = std::copy_if(oneapi::dpl::execution::dpcpp_default,
+                               indices_ptr, indices_ptr + num_elements,
+                               non_zero_indices_ptr, [src_iter](int64_t index) {
+                                   auto src_ptr = static_cast<const scalar_t*>(
+                                           src_iter.GetPtr(index));
+                                   return *src_ptr != 0;
+                               });
         num_non_zeros = std::distance(non_zero_indices_ptr, it);
     });
 
@@ -61,7 +60,6 @@ Tensor NonZeroSYCL(const Tensor& src) {
              auto non_zero_index = non_zero_indices_ptr[i];
              auto this_result_ptr =
                      result_ptr + i + (num_dims - 1) * num_non_zeros;
-             OPEN3D_ASSERT(this_result_ptr != nullptr && "Internal error.");
              for (auto dim = num_dims - 1; dim >= 0;
                   dim--, this_result_ptr -= num_non_zeros) {
                  *this_result_ptr = non_zero_index % shape_vec[dim];
