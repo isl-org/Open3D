@@ -5,9 +5,13 @@
   "description": "Open3D: A Modern Library for 3D Data Processing",
   "homepage": "http://www.open3d.org/",
   "license": "MIT",
-  "supports": "!uwp",
+  "supports": "(windows & !uwp) | linux | osx",
   "dependencies": [
-    "assimp",
+    {
+      "name": "assimp",
+      "features": ["draco"]
+    },
+    "embree",
     "eigen3",
     "fmt",
     "glew",
@@ -21,25 +25,24 @@
     "tbb",
     "tinygltf",
     "tinyobjloader",
+    {
+      "name": "vtk",
+      "default-features": false
+    },
     "zeromq",
     "cppzmq",
     "openssl",
     "curl",
-    "zlib",
-    "minizip"
+    "zlib"
   ],
   "features": {
-    "cuda": {
-      "description": "Build with CUDA GPU acceleration support",
-      "supports": "windows | linux"
-    },
-    "embree": {
-      "description": "Build with Intel Embree ray tracing support",
-      "dependencies": ["embree"]
-    },
     "tests": {
-      "description": "Build unit tests",
+      "description": "Install GTest; configure Open3D with BUILD_UNIT_TESTS=ON",
       "dependencies": ["gtest"]
+    },
+    "minizip": {
+      "description": "Install MiniZIP; configure Open3D with WITH_MINIZIP=ON",
+      "dependencies": ["minizip"]
     }
   }
 }

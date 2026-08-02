@@ -262,6 +262,9 @@ endfunction()
 #        If not provided, PACKAGE_VERSION_VAR will default to <pkg>_VERSION.
 #    TARGETS <target> [<target> ...]
 #        the expected targets to be found in <pkg>
+#    TARGET_ALTERNATIVES <target> [<target> ...]
+#        alternative targets exported by <pkg>. The first existing target is
+#        linked, and the package is rejected if none of them exists.
 #    INCLUDE_DIRS
 #        the expected include directory variable names to be found in <pkg>.
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
@@ -276,13 +279,18 @@ endfunction()
 function(open3d_find_package_3rdparty_library name)
     cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
         "PACKAGE;VERSION;PACKAGE_VERSION_VAR"
-        "TARGETS;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
+        "TARGETS;TARGET_ALTERNATIVES;INCLUDE_DIRS;LIBRARIES;PATHS;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
     endif()
     if(NOT arg_PACKAGE)
         message(FATAL_ERROR "open3d_find_package_3rdparty_library: Expected value for argument PACKAGE")
+    endif()
+    if(arg_TARGETS AND arg_TARGET_ALTERNATIVES)
+        message(FATAL_ERROR
+            "open3d_find_package_3rdparty_library: TARGETS and "
+            "TARGET_ALTERNATIVES are mutually exclusive")
     endif()
     if(NOT arg_PACKAGE_VERSION_VAR)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
@@ -302,10 +310,26 @@ function(open3d_find_package_3rdparty_library name)
     endif()
     find_package(${arg_PACKAGE} ${find_package_args})
     if(${arg_PACKAGE}_FOUND)
+        set(targets_to_link ${arg_TARGETS})
+        if(arg_TARGET_ALTERNATIVES)
+            foreach(target IN LISTS arg_TARGET_ALTERNATIVES)
+                if(TARGET ${target})
+                    set(targets_to_link ${target})
+                    break()
+                endif()
+            endforeach()
+            if(NOT targets_to_link)
+                message(STATUS
+                    "Unable to use installed third-party library ${name}: "
+                    "none of the expected targets exist (${arg_TARGET_ALTERNATIVES})")
+                set(${name}_FOUND FALSE PARENT_SCOPE)
+                return()
+            endif()
+        endif()
         message(STATUS "Using installed third-party library ${name} ${${arg_PACKAGE}_VERSION}")
         add_library(${name} INTERFACE)
-        if(arg_TARGETS)
-            foreach(target IN LISTS arg_TARGETS)
+        if(targets_to_link)
+            foreach(target IN LISTS targets_to_link)
                 if (TARGET ${target})
                     target_link_libraries(${name} INTERFACE ${target})
                 else()
@@ -326,7 +350,7 @@ function(open3d_find_package_3rdparty_library name)
         if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
             install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
             # Ensure that imported targets will be found again.
-            if(arg_TARGETS)
+            if(targets_to_link)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES ${arg_PACKAGE})
                 set(Open3D_3RDPARTY_EXTERNAL_MODULES ${Open3D_3RDPARTY_EXTERNAL_MODULES} PARENT_SCOPE)
             endif()
@@ -799,7 +823,7 @@ if(USE_SYSTEM_JSONCPP)
     # Try JsonCpp::JsonCpp first (vcpkg), then jsoncpp_lib (system)
     open3d_find_package_3rdparty_library(3rdparty_jsoncpp
         PACKAGE jsoncpp
-        TARGETS JsonCpp::JsonCpp jsoncpp_lib
+        TARGET_ALTERNATIVES JsonCpp::JsonCpp jsoncpp_lib jsoncpp_static
     )
     if(NOT 3rdparty_jsoncpp_FOUND)
         set(USE_SYSTEM_JSONCPP OFF)
@@ -894,6 +918,10 @@ endif()
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
 if(USE_SYSTEM_CURL)
+    if(USE_SYSTEM_CURL_STATIC)
+        # CMake 3.28+ uses this hint to select a static libcurl.
+        set(CURL_USE_STATIC_LIBS ON)
+    endif()
     # Prefer find_package over pkg-config for better vcpkg compatibility
     open3d_find_package_3rdparty_library(3rdparty_curl
         PACKAGE CURL
@@ -908,12 +936,32 @@ if(USE_SYSTEM_CURL)
     if(NOT 3rdparty_curl_FOUND)
         set(USE_SYSTEM_CURL OFF)
     endif()
+    if(3rdparty_curl_FOUND)
+        set(_open3d_system_curl_static ${USE_SYSTEM_CURL_STATIC})
+        if(TARGET CURL::libcurl)
+            get_target_property(_open3d_curl_target_type CURL::libcurl TYPE)
+            if(_open3d_curl_target_type STREQUAL "STATIC_LIBRARY")
+                set(_open3d_system_curl_static ON)
+            endif()
+            unset(_open3d_curl_target_type)
+        endif()
+        if(_open3d_system_curl_static)
+            target_compile_definitions(3rdparty_curl INTERFACE CURL_STATICLIB)
+        endif()
+        unset(_open3d_system_curl_static)
+    endif()
+endif()
+
+# The bundled curl ExternalProject is configured against bundled BoringSSL.
+# Keep these two dependencies paired when curl falls back or is opted out.
+if(NOT USE_SYSTEM_CURL AND USE_SYSTEM_OPENSSL)
+    message(STATUS "Bundled curl requires bundled BoringSSL; setting USE_SYSTEM_OPENSSL=OFF")
+    set(USE_SYSTEM_OPENSSL OFF)
 endif()
 
 if(USE_SYSTEM_OPENSSL)
     open3d_find_package_3rdparty_library(3rdparty_openssl
         PACKAGE OpenSSL
-        REQUIRED
         TARGETS OpenSSL::Crypto
     )
     if(NOT 3rdparty_openssl_FOUND)
@@ -1115,11 +1163,19 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tinyfil
 
 # tinygltf
 if(USE_SYSTEM_TINYGLTF)
-    open3d_find_package_3rdparty_library(3rdparty_tinygltf
-        PACKAGE TinyGLTF
-        TARGETS TinyGLTF::TinyGLTF
-    )
-    if(NOT 3rdparty_tinygltf_FOUND)
+    # vcpkg's tinygltf port is header-only and does not export a CMake target.
+    find_path(TINYGLTF_INCLUDE_DIR NAMES tiny_gltf.h)
+    if(TINYGLTF_INCLUDE_DIR)
+        message(STATUS "Using installed third-party library 3rdparty_tinygltf")
+        add_library(3rdparty_tinygltf INTERFACE)
+        target_include_directories(3rdparty_tinygltf SYSTEM INTERFACE
+            $<BUILD_INTERFACE:${TINYGLTF_INCLUDE_DIR}>)
+        if(NOT BUILD_SHARED_LIBS)
+            install(TARGETS 3rdparty_tinygltf EXPORT ${PROJECT_NAME}Targets)
+        endif()
+        add_library(${PROJECT_NAME}::3rdparty_tinygltf ALIAS 3rdparty_tinygltf)
+    else()
+        message(STATUS "Unable to find installed third-party library 3rdparty_tinygltf")
         set(USE_SYSTEM_TINYGLTF OFF)
     endif()
 endif()
@@ -1129,11 +1185,12 @@ if(NOT USE_SYSTEM_TINYGLTF)
         INCLUDE_DIRS ${TINYGLTF_INCLUDE_DIRS}
         DEPENDS      ext_tinygltf
     )
-    target_compile_definitions(3rdparty_tinygltf INTERFACE TINYGLTF_IMPLEMENTATION STB_IMAGE_IMPLEMENTATION STB_IMAGE_WRITE_IMPLEMENTATION)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tinygltf)
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tinygltf)
 endif()
+target_compile_definitions(3rdparty_tinygltf INTERFACE
+    TINYGLTF_IMPLEMENTATION STB_IMAGE_IMPLEMENTATION STB_IMAGE_WRITE_IMPLEMENTATION)
 
 # tinyobjloader
 if(USE_SYSTEM_TINYOBJLOADER)
@@ -1287,9 +1344,18 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson
 if(WITH_MINIZIP)
     # Prefer find_package over pkg-config for better vcpkg compatibility
     open3d_find_package_3rdparty_library(3rdparty_minizip
-        PACKAGE unofficial-minizip
-        TARGETS unofficial::minizip::minizip
+        PACKAGE minizip
+        QUIET
+        TARGET_ALTERNATIVES MINIZIP::minizip MINIZIP::minizipstatic
     )
+    if(NOT 3rdparty_minizip_FOUND)
+        # Compatibility fallback for older vcpkg minizip packages.
+        open3d_find_package_3rdparty_library(3rdparty_minizip
+            PACKAGE unofficial-minizip
+            QUIET
+            TARGET_ALTERNATIVES unofficial::minizip::minizip
+        )
+    endif()
     if(NOT 3rdparty_minizip_FOUND)
         # Fallback to pkg-config
         open3d_pkg_config_3rdparty_library(3rdparty_minizip
@@ -1580,13 +1646,20 @@ list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_opengl)
 # RPC interface
 # zeromq
 if(USE_SYSTEM_ZEROMQ)
-    # Prefer find_package over pkg-config for better vcpkg compatibility
+    # cppzmq carries its ZeroMQ link dependency and provides zmq.hpp.
     open3d_find_package_3rdparty_library(3rdparty_zeromq
-        PACKAGE ZeroMQ
-        TARGETS libzmq
+        PACKAGE cppzmq
+        QUIET
+        TARGET_ALTERNATIVES cppzmq cppzmq-static
     )
     if(NOT 3rdparty_zeromq_FOUND)
-        # Fallback to pkg-config if find_package fails
+        open3d_find_package_3rdparty_library(3rdparty_zeromq
+            PACKAGE ZeroMQ
+            QUIET
+            TARGET_ALTERNATIVES libzmq libzmq-static
+        )
+    endif()
+    if(NOT 3rdparty_zeromq_FOUND)
         open3d_pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
     endif()
     if(NOT 3rdparty_zeromq_FOUND)
@@ -1681,8 +1754,10 @@ if(NOT USE_SYSTEM_VTK)
     if(UNIX AND NOT APPLE)
         target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
     endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_vtk)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
 
 # UVAtlas
 include(${Open3D_3RDPARTY_DIR}/uvatlas/uvatlas.cmake)
@@ -2100,6 +2175,11 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # embree
+if(BUILD_SYCL_MODULE AND USE_SYSTEM_EMBREE)
+    message(STATUS
+        "Open3D's SYCL module requires a SYCL-enabled Embree; using bundled Embree")
+    set(USE_SYSTEM_EMBREE OFF)
+endif()
 if(USE_SYSTEM_EMBREE)
     open3d_find_package_3rdparty_library(3rdparty_embree
         PACKAGE embree
@@ -2119,8 +2199,10 @@ if(NOT USE_SYSTEM_EMBREE)
         LIBRARIES    ${EMBREE_LIBRARIES}
         DEPENDS      ext_embree
     )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
+else()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_embree)
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
 
 # WebRTC
 if(BUILD_WEBRTC)
