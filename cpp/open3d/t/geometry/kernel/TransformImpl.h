@@ -87,8 +87,12 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void RotateNormalsKernel(
     normals_ptr[2] = x[2];
 }
 
+#ifndef OPEN3D_SKIP_TRANSFORM_MAIN
+
 #ifdef __CUDACC__
 void TransformPointsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void TransformPointsSYCL
 #else
 void TransformPointsCPU
 #endif
@@ -109,6 +113,8 @@ void TransformPointsCPU
 
 #ifdef __CUDACC__
 void TransformNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void TransformNormalsSYCL
 #else
 void TransformNormalsCPU
 #endif
@@ -129,6 +135,8 @@ void TransformNormalsCPU
 
 #ifdef __CUDACC__
 void RotatePointsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void RotatePointsSYCL
 #else
 void RotatePointsCPU
 #endif
@@ -151,6 +159,8 @@ void RotatePointsCPU
 
 #ifdef __CUDACC__
 void RotateNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void RotateNormalsSYCL
 #else
 void RotateNormalsCPU
 #endif
@@ -166,6 +176,8 @@ void RotateNormalsCPU
                           });
     });
 }
+
+#endif  // OPEN3D_SKIP_TRANSFORM_MAIN
 
 }  // namespace transform
 }  // namespace kernel

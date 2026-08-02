@@ -10,12 +10,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <fstream>
+#include <functional>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
 #include "open3d/core/ParallelFor.h"
-#include "open3d/io/ImageIO.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
@@ -28,15 +30,22 @@ namespace io {
 namespace {
 using signature_decoder_t =
         std::pair<std::string,
-                  std::function<bool(const std::string &, geometry::Image &)>>;
+                  std::function<bool(const std::string&, geometry::Image&)>>;
 static const std::array<signature_decoder_t, 2> signature_decoder_list{
-        {{"\x89\x50\x4e\x47\xd\xa\x1a\xa", ReadImageFromPNG},
+        {{"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", ReadImageFromPNG},
          {"\xFF\xD8\xFF", ReadImageFromJPG}}};
 static constexpr uint8_t MAX_SIGNATURE_LEN = 8;
 
+using mem_signature_decoder_t = std::pair<
+        std::string,
+        std::function<bool(const uint8_t*, size_t, geometry::Image&)>>;
+static const std::array<mem_signature_decoder_t, 2> mem_signature_decoder_list{
+        {{"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", ReadImageFromPNGInMemory},
+         {"\xFF\xD8\xFF", ReadImageFromJPGInMemory}}};
+
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::string &, const geometry::Image &, int)>>
+        std::function<bool(const std::string&, const geometry::Image&, int)>>
         file_extension_to_image_write_function{
                 {"png", WriteImageToPNG},
                 {"jpg", WriteImageToJPG},
@@ -45,13 +54,13 @@ static const std::unordered_map<
 }  // namespace
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
-        const std::string &filename) {
+        const std::string& filename) {
     auto image = std::make_shared<geometry::Image>();
     ReadImage(filename, *image);
     return image;
 }
 
-bool ReadImage(const std::string &filename, geometry::Image &image) {
+bool ReadImage(const std::string& filename, geometry::Image& image) {
     std::string signature_buffer(MAX_SIGNATURE_LEN, 0);
     std::ifstream file(filename, std::ios::binary);
     file.read(&signature_buffer[0], MAX_SIGNATURE_LEN);
@@ -60,7 +69,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
         err_msg = "Read geometry::Image failed for file {}. I/O error.";
     } else {
         file.close();
-        for (const auto &signature_decoder : signature_decoder_list) {
+        for (const auto& signature_decoder : signature_decoder_list) {
             if (signature_buffer.compare(0, signature_decoder.first.size(),
                                          signature_decoder.first) == 0) {
                 return signature_decoder.second(filename, image);
@@ -75,8 +84,31 @@ bool ReadImage(const std::string &filename, geometry::Image &image) {
     return false;
 }
 
-bool WriteImage(const std::string &filename,
-                const geometry::Image &image,
+bool ReadImageFromMemory(const uint8_t* data,
+                         size_t size,
+                         geometry::Image& image) {
+    if (data == nullptr || size == 0) {
+        utility::LogWarning(
+                "ReadImageFromMemory failed: null or empty buffer.");
+        image.Clear();
+        return false;
+    }
+    for (const auto& sig_dec : mem_signature_decoder_list) {
+        const auto& sig = sig_dec.first;
+        if (size >= sig.size() &&
+            std::memcmp(data, sig.data(), sig.size()) == 0) {
+            return sig_dec.second(data, size, image);
+        }
+    }
+    image.Clear();
+    utility::LogWarning(
+            "ReadImageFromMemory: unknown image format "
+            "(only PNG and JPG are supported).");
+    return false;
+}
+
+bool WriteImage(const std::string& filename,
+                const geometry::Image& image,
                 int quality /* = kOpen3DImageIODefaultQuality*/) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
@@ -95,7 +127,7 @@ bool WriteImage(const std::string &filename,
     return map_itr->second(filename, image.To(core::Device("CPU:0")), quality);
 }
 
-DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
+DepthNoiseSimulator::DepthNoiseSimulator(const std::string& noise_model_path) {
     // data = np.loadtxt(fname, comments='%', skiprows=5)
     const char comment_prefix = '%';
     const int skip_first_n_lines = 5;
@@ -105,7 +137,7 @@ DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
                           noise_model_path);
     }
     std::vector<float> data;
-    const char *line_buffer;
+    const char* line_buffer;
     for (int i = 0; i < skip_first_n_lines; ++i) {
         if (!(line_buffer = file.ReadLine())) {
             utility::LogError(
@@ -154,7 +186,7 @@ DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
     }
 }
 
-geometry::Image DepthNoiseSimulator::Simulate(const geometry::Image &im_src,
+geometry::Image DepthNoiseSimulator::Simulate(const geometry::Image& im_src,
                                               float depth_scale) {
     // Sanity checks.
     if (im_src.GetDtype() == core::Float32) {
@@ -175,8 +207,8 @@ geometry::Image DepthNoiseSimulator::Simulate(const geometry::Image &im_src,
     }
 
     core::Tensor im_src_tensor = im_src.AsTensor();
-    const core::Device &original_device = im_src_tensor.GetDevice();
-    const core::Dtype &original_dtype = im_src_tensor.GetDtype();
+    const core::Device& original_device = im_src_tensor.GetDevice();
+    const core::Dtype& original_dtype = im_src_tensor.GetDtype();
     int width = im_src.GetCols();
     int height = im_src.GetRows();
 

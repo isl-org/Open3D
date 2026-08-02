@@ -21,10 +21,11 @@
 namespace open3d {
 namespace tests {
 
-class OdometryPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Odometry,
-                         OdometryPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class OdometryPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Odometry,
+        OdometryPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
@@ -39,6 +40,9 @@ core::Tensor CreateIntrisicTensor() {
 
 TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Odometry/normals is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -106,6 +110,9 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Bilateral filter/normals is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -173,6 +180,9 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP() << "Sobel filter/Odometry is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }
@@ -240,6 +250,10 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) {
+        GTEST_SKIP()
+                << "Sobel filter/hybrid Odometry is not implemented on SYCL.";
+    }
     if (!t::geometry::Image::HAVE_IPP && device.IsCPU()) {
         return;
     }

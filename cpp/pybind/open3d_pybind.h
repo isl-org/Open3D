@@ -39,9 +39,9 @@
 #include "open3d/pipelines/registration/PoseGraph.h"
 #include "open3d/utility/Eigen.h"
 
-// We include the type caster for tensor here because it must be included in
-// every compilation unit.
-#include "pybind/core/tensor_type_caster.h"
+// Type casters must be included in every compilation unit that binds these
+// types.
+#include "pybind/core/type_caster.h"
 
 namespace py = pybind11;
 using namespace py::literals;

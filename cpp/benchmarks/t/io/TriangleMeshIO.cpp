@@ -17,7 +17,15 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-data::KnotMesh knot_data;
+namespace {
+
+const std::string& KnotMeshPath() {
+    static data::KnotMesh knot_data;
+    static const std::string path = knot_data.GetPath();
+    return path;
+}
+
+}  // namespace
 
 void IOReadLegacyTriangleMesh(benchmark::State& state,
                               const std::string& input_file_path) {
@@ -39,10 +47,10 @@ void IOReadTensorTriangleMesh(benchmark::State& state,
     }
 }
 
-BENCHMARK_CAPTURE(IOReadLegacyTriangleMesh, CPU, knot_data.GetPath())
+BENCHMARK_CAPTURE(IOReadLegacyTriangleMesh, CPU, KnotMeshPath())
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(IOReadTensorTriangleMesh, CPU, knot_data.GetPath())
+BENCHMARK_CAPTURE(IOReadTensorTriangleMesh, CPU, KnotMeshPath())
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry

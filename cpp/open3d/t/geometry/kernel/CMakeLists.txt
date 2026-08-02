@@ -10,6 +10,7 @@ target_sources(tgeometry_kernel PRIVATE
     PointCloudCPU.cpp
     Metrics.cpp
     MinimumOBB.cpp
+    MinimumOBE.cpp
     TriangleMesh.cpp
     TriangleMeshCPU.cpp
     Transform.cpp
@@ -17,6 +18,7 @@ target_sources(tgeometry_kernel PRIVATE
     UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
+    mikktspace.c
 )
 
 if (BUILD_CUDA_MODULE)
@@ -27,6 +29,16 @@ if (BUILD_CUDA_MODULE)
         TriangleMeshCUDA.cu
         TransformCUDA.cu
         VoxelBlockGridCUDA.cu
+    )
+endif()
+
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(tgeometry_kernel PRIVATE
+        ImageSYCL.cpp
+        PointCloudSYCL.cpp
+        TransformSYCL.cpp
+        TriangleMeshSYCL.cpp
+        VoxelBlockGridSYCL.cpp
     )
 endif()
 

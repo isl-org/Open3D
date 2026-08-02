@@ -3,12 +3,26 @@ From: Nir Azkiel <nir.azkiel@intel.com>
 Date: Tue, 28 May 2024 17:17:04 +0300
 Subject: [PATCH] fix mac apple silicon build
 
+This patch reorders the ARM architecture checks to handle arm64/aarch64
+before arm-* to fix Mac Apple Silicon builds.
+
+The patch changes the order from:
+  - if(arm-*) with neon flags
+  - elseif(aarch64-*) with strict-align flags
+To:
+  - if(arm64-* OR aarch64-*) with strict-align flags
+  - elseif(arm-*) with neon flags
+
+NOTE: This fix is already included in librealsense v2.57.4+, so this patch
+will be a no-op for v2.57.4 and later versions. The patch is kept for
+backward compatibility with older versions that may need it.
+
 ---
  CMake/unix_config.cmake | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/CMake/unix_config.cmake b/CMake/unix_config.cmake
-index 5a187c7c7a..89272b8ee1 100644
+index 434722e..c038809 100644
 --- a/CMake/unix_config.cmake
 +++ b/CMake/unix_config.cmake
 @@ -19,12 +19,12 @@ macro(os_set_flags)

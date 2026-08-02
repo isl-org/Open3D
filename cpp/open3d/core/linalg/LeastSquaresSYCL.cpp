@@ -10,8 +10,10 @@
 #include "oneapi/mkl.hpp"
 #include "open3d/core/Blob.h"
 #include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/linalg/LeastSquares.h"
 #include "open3d/core/linalg/LinalgUtils.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -23,6 +25,10 @@ void LeastSquaresSYCL(void* A_data,
                       int64_t k,
                       Dtype dtype,
                       const Device& device) {
+    // oneMKL's gels_batch does not support SYCL CPU.
+    if (sy::IsCPUDevice(device)) {
+        utility::LogError("LeastSquares is not supported on SYCL CPU.");
+    }
     using namespace oneapi::mkl;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
     int nrhs = k, lda = m, stride_a = lda * n, ldb = std::max(m, n),

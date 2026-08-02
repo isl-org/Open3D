@@ -30,6 +30,18 @@ struct ReadTriangleModelOptions {
     std::function<bool(double)> update_progress;
 };
 
+/// Read a TriangleMeshModel (multi-mesh, multi-material) from a file.
+/// Supported formats (via Assimp): fbx, gltf, glb, obj, stl, off,
+/// usd, usda, usdc, usdz.
+///
+/// USD import is experimental: only mesh geometry and PBR material import
+/// (base color, normal, metallic, roughness, occlusion textures, and related
+/// scalars) are supported. USD export, animations, lights, cameras, and other
+/// scene features are not supported.
+/// \param filename Path to the model file.
+/// \param model Output TriangleMeshModel.
+/// \param params Optional progress/cancel options.
+/// \return true on success.
 bool ReadTriangleModel(const std::string& filename,
                        visualization::rendering::TriangleMeshModel& model,
                        ReadTriangleModelOptions params = {});

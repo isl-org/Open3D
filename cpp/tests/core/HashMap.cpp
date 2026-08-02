@@ -14,6 +14,7 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/utility/FileSystem.h"
@@ -49,10 +50,11 @@ public:
     std::vector<V> vals_;
 };
 
-class HashMapPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(HashMap,
-                         HashMapPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class HashMapPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        HashMap,
+        HashMapPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(HashMapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
@@ -61,6 +63,8 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -91,6 +95,8 @@ TEST_P(HashMapPermuteDevices, Find) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -135,6 +141,8 @@ TEST_P(HashMapPermuteDevices, Insert) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -188,6 +196,8 @@ TEST_P(HashMapPermuteDevices, Erase) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -245,12 +255,57 @@ TEST_P(HashMapPermuteDevices, Erase) {
     }
 }
 
+// Regression test for a buffer-slot leak in SYCLHashBackend::Insert: when a
+// thread's CAS for an EMPTY/DELETED slot loses to a concurrent insert of the
+// *same* key, it must free the buffer slot it had already reserved and
+// published before restarting the probe (and likewise if kMaxOuterIter is
+// exhausted while a slot is published-but-unowned). Heavy key duplication
+// with a single Insert call reliably drives many concurrent same-key races.
+// With zero capacity slack (init_capacity == number of unique keys), even
+// one leaked slot means one fewer heap slot is available for the last
+// unique key's bulk-reserved index, so the test would report a smaller
+// Size() / fewer successful masks than expected if the leak is present.
+TEST_P(HashMapPermuteDevices, InsertNoCapacitySlack) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends;
+    if (device.IsCUDA()) {
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
+    } else {
+        backends.push_back(core::HashBackendType::TBB);
+    }
+
+    const int n = 20000;
+    const int slots = 2;
+    // No headroom: the buffer heap has exactly as many slots as there are
+    // unique keys, so any leaked slot is directly observable.
+    const int init_capacity = slots;
+
+    HashData<int, int> data(n, slots);
+    core::Tensor keys(data.keys_, {n}, core::Int32, device);
+    core::Tensor values(data.vals_, {n}, core::Int32, device);
+
+    for (auto backend : backends) {
+        core::HashMap hashmap(init_capacity, core::Int32, {1}, core::Int32, {1},
+                              device, backend);
+
+        core::Tensor buf_indices, masks;
+        hashmap.Insert(keys, values, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
+        EXPECT_EQ(hashmap.Size(), slots);
+    }
+}
+
 TEST_P(HashMapPermuteDevices, Reserve) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -305,6 +360,8 @@ TEST_P(HashMapPermuteDevices, Clear) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -383,6 +440,8 @@ TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -442,6 +501,8 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }
@@ -515,6 +576,8 @@ TEST_P(HashMapPermuteDevices, HashSet) {
     if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
     } else {
         backends.push_back(core::HashBackendType::TBB);
     }

@@ -19,6 +19,7 @@ namespace geometry {
 
 class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
+class OrientedBoundingEllipsoid;
 
 /// \class Geometry3D
 ///

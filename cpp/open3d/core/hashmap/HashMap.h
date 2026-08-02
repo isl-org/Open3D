@@ -19,6 +19,48 @@ class DeviceHashBackend;
 
 enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
+/// Tensor hash map (unique keys) on CPU, CUDA, or SYCL.
+///
+/// \section HashMapOverview Overview
+///
+/// Keys and values are stored in internal **buffers**. \ref Insert and \ref
+/// Find return per-input-row **buf_indices** and **masks**. Use buf_indices
+/// with \ref GetKeyTensor() and \ref GetValueTensors() (advanced indexing).
+/// Backend implementations differ; behavior below is the portable contract.
+///
+/// \section HashMapBufIndices Buffer indices (important for correct use)
+///
+/// | Property | Detail |
+/// |----------|--------|
+/// | Type | `Int32` in return tensors — cast to `Int64` before \ref
+/// Tensor::IndexGet | | Meaning | Valid **gather index** into key/value buffers
+/// for that input row | | Not guaranteed | Contiguous range `[0, Size())`
+/// across all returned indices | | SYCL caveat | Duplicate-key insert races can
+/// leave **holes** in the buffer (unused slots freed by the backend) | |
+/// CPU/CUDA | Often dense after pure inserts, but **do not rely** on density |
+///
+/// **Recommended patterns**
+/// - List all live entries: \ref GetActiveIndices() (length = \ref Size()).
+/// - First occurrence per key on insert: combine \c masks (true = new key).
+/// - Dense row ids `[0, num_unique)`: remap from unique insert slots (see
+///   `t::geometry::PointCloud::VoxelDownSample` on SYCL).
+///
+/// Example (keys for successful inserts only):
+/// \code
+/// auto [buf_i, mask] = map.Insert(keys, values);
+/// Tensor active_keys = map.GetKeyTensor().IndexGet(
+///         {buf_i.To(Int64).IndexGet({mask})});
+/// \endcode
+///
+/// \section HashMapBackends Backends (device-dependent)
+///
+/// | Device | Default backend |
+/// |--------|-----------------|
+/// | CPU | TBB |
+/// | CUDA | stdgpu (slab optional) |
+/// | SYCL | \ref SYCLHashBackend (see `SYCL/SYCLHashBackend.h`) |
+///
+/// Growth: call \ref Reserve to rehash when load factor requires it.
 class HashMap : public IsDevice {
 public:
     /// Initialize a hash map given a key and a value dtype and element shape.
@@ -48,13 +90,9 @@ public:
     void Reserve(int64_t capacity);
 
     /// Parallel insert arrays of keys and values in Tensors.
-    /// Return: output_buf_indices stores buffer indices that access buffer
-    /// tensors obtained from GetKeyTensor() and GetValueTensor() via advanced
-    /// indexing.
-    /// NOTE: output_buf_indices are stored in Int32. A conversion to
-    /// Int64 is required for further indexing.
-    /// Return: output_masks stores if the insertion is
-    /// a success or failure (key already exists).
+    /// Return: \p output_buf_indices — buffer gather indices (see class docs;
+    /// convert Int32 → Int64 for indexing). \p output_masks — true if this row
+    /// inserted a new key; false if the key was already present.
     std::pair<Tensor, Tensor> Insert(const Tensor& input_keys,
                                      const Tensor& input_values);
 
@@ -74,9 +112,8 @@ public:
     std::pair<Tensor, Tensor> Activate(const Tensor& input_keys);
 
     /// Parallel find an array of keys in Tensor.
-    /// Return: output_buf_indices, its role is the same as in Insert.
-    /// Return: output_masks stores if the finding is a success or failure (key
-    /// not found).
+    /// Return: \p output_buf_indices and \p output_masks (same semantics as
+    /// \ref Insert); false mask if key not found.
     std::pair<Tensor, Tensor> Find(const Tensor& input_keys);
 
     /// Parallel erase an array of keys in Tensor.
@@ -84,9 +121,9 @@ public:
     /// not found all already erased in another thread).
     Tensor Erase(const Tensor& input_keys);
 
-    /// Parallel collect all indices in the buffer corresponding to the active
-    /// entries in the hash map.
-    /// Return output_buf_indices, collected buffer indices.
+    /// Collect buffer indices for all active entries (length \ref Size()).
+    /// Indices are valid for \ref GetKeyTensor() / value buffers but may still
+    /// be non-contiguous in the underlying buffer on SYCL.
     Tensor GetActiveIndices() const;
 
     /// Same as Insert with a single value array, but takes output_buf_indices
