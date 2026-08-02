@@ -35,7 +35,7 @@
     },
     "embree": {
       "description": "Build with Intel Embree ray tracing support",
-      "dependencies": ["embree3"]
+      "dependencies": ["embree"]
     },
     "tests": {
       "description": "Build unit tests",

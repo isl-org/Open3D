@@ -108,6 +108,32 @@ else()
 endif()
 option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
 
+# When using vcpkg, prefer system dependencies (override per lib with
+# -DUSE_SYSTEM_<PKG>=OFF, e.g. if the vcpkg port version is unsuitable).
+# Cache defaults must be set before the USE_SYSTEM_* option() lines below.
+if(OPEN3D_USE_VCPKG)
+    set(USE_SYSTEM_ASSIMP ON CACHE BOOL "Use system pre-installed assimp")
+    set(USE_SYSTEM_EIGEN3 ON CACHE BOOL "Use system pre-installed eigen3")
+    set(USE_SYSTEM_FMT ON CACHE BOOL "Use system pre-installed fmt")
+    set(USE_SYSTEM_GLEW ON CACHE BOOL "Use system pre-installed glew")
+    set(USE_SYSTEM_GLFW ON CACHE BOOL "Use system pre-installed glfw")
+    set(USE_SYSTEM_JPEG ON CACHE BOOL "Use system pre-installed jpeg")
+    set(USE_SYSTEM_JSONCPP ON CACHE BOOL "Use system pre-installed jsoncpp")
+    set(USE_SYSTEM_MSGPACK ON CACHE BOOL "Use system pre-installed msgpack")
+    set(USE_SYSTEM_NANOFLANN ON CACHE BOOL "Use system pre-installed nanoflann")
+    set(USE_SYSTEM_PNG ON CACHE BOOL "Use system pre-installed png")
+    set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "Use system pre-installed qhullcpp")
+    set(USE_SYSTEM_TBB ON CACHE BOOL "Use system pre-installed TBB")
+    set(USE_SYSTEM_TINYGLTF ON CACHE BOOL "Use system pre-installed tinygltf")
+    set(USE_SYSTEM_TINYOBJLOADER ON CACHE BOOL "Use system pre-installed tinyobjloader")
+    set(USE_SYSTEM_ZEROMQ ON CACHE BOOL "Use system pre-installed ZeroMQ")
+    set(USE_SYSTEM_OPENSSL ON CACHE BOOL "Use system pre-installed OpenSSL")
+    set(USE_SYSTEM_CURL ON CACHE BOOL "Use system pre-installed curl")
+    set(USE_SYSTEM_EMBREE ON CACHE BOOL "Use system pre-installed Embree")
+    set(USE_SYSTEM_GOOGLETEST ON CACHE BOOL "Use system pre-installed Googletest")
+    message(STATUS "Open3D: vcpkg mode - default USE_SYSTEM_* ON (override with -DUSE_SYSTEM_<PKG>=OFF)")
+endif()
+
 # 3rd-party build options
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
@@ -166,42 +192,6 @@ option(WITH_MINIZIP               "Enable MiniZIP"                           OFF
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
 option(USE_SYSTEM_LIBREALSENSE    "Use system pre-installed librealsense"    OFF)
-
-# When using vcpkg, automatically prefer system dependencies that are available in vcpkg
-if(OPEN3D_USE_VCPKG)
-    # Core dependencies available in vcpkg
-    set(USE_SYSTEM_ASSIMP ON CACHE BOOL "vcpkg: Use system assimp" FORCE)
-    set(USE_SYSTEM_EIGEN3 ON CACHE BOOL "vcpkg: Use system eigen3" FORCE)
-    set(USE_SYSTEM_FMT ON CACHE BOOL "vcpkg: Use system fmt" FORCE)
-    set(USE_SYSTEM_GLEW ON CACHE BOOL "vcpkg: Use system glew" FORCE)
-    set(USE_SYSTEM_GLFW ON CACHE BOOL "vcpkg: Use system glfw" FORCE)
-    set(USE_SYSTEM_JPEG ON CACHE BOOL "vcpkg: Use system jpeg" FORCE)
-    set(USE_SYSTEM_JSONCPP ON CACHE BOOL "vcpkg: Use system jsoncpp" FORCE)
-    set(USE_SYSTEM_MSGPACK ON CACHE BOOL "vcpkg: Use system msgpack" FORCE)
-    set(USE_SYSTEM_NANOFLANN ON CACHE BOOL "vcpkg: Use system nanoflann" FORCE)
-    set(USE_SYSTEM_PNG ON CACHE BOOL "vcpkg: Use system png" FORCE)
-    set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "vcpkg: Use system qhull" FORCE)
-    set(USE_SYSTEM_TBB ON CACHE BOOL "vcpkg: Use system tbb" FORCE)
-    set(USE_SYSTEM_TINYGLTF ON CACHE BOOL "vcpkg: Use system tinygltf" FORCE)
-    set(USE_SYSTEM_TINYOBJLOADER ON CACHE BOOL "vcpkg: Use system tinyobjloader" FORCE)
-    set(USE_SYSTEM_ZEROMQ ON CACHE BOOL "vcpkg: Use system zeromq" FORCE)
-    set(USE_SYSTEM_OPENSSL ON CACHE BOOL "vcpkg: Use system openssl" FORCE)
-    set(USE_SYSTEM_CURL ON CACHE BOOL "vcpkg: Use system curl" FORCE)
-    # Optional dependencies
-    set(USE_SYSTEM_EMBREE ON CACHE BOOL "vcpkg: Use system embree" FORCE)
-    set(USE_SYSTEM_GOOGLETEST ON CACHE BOOL "vcpkg: Use system googletest" FORCE)
-    # Note: These are NOT in vcpkg or have compatibility issues:
-    # - USE_SYSTEM_FILAMENT: Filament not in vcpkg
-    # - USE_SYSTEM_VTK: Complex, has many features
-    # - USE_SYSTEM_CUTLASS: CUDA-specific, not in vcpkg
-    # - USE_SYSTEM_STDGPU: Not in vcpkg
-    # - USE_SYSTEM_LIBLZF: Not in vcpkg
-    # - USE_SYSTEM_IMGUI: Open3D may need specific version/patches
-    # - USE_SYSTEM_PYBIND11: Not needed when BUILD_PYTHON_MODULE=OFF
-    # - USE_SYSTEM_BLAS: Platform-specific handling needed
-    message(STATUS "Open3D: vcpkg mode - enabled USE_SYSTEM_* for vcpkg-available packages")
-endif()
-
 option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF)
 
 # ML library options
