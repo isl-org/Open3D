@@ -6,18 +6,16 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
 import pytest
 
 
-def _create_point_cloud(num_points=100):
-    """Helper to create a point cloud with normals."""
-    np.random.seed(42)  # Fixed seed for reproducible tests
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(np.random.rand(num_points, 3) - 0.5)
-    pcd.normals = o3d.utility.Vector3dVector(
-        np.random.rand(num_points, 3) - 0.5)
-    pcd.normalize_normals()
+def _create_point_cloud():
+    """Point cloud with reliable normals for Poisson reconstruction."""
+    dataset = o3d.data.DemoICPPointClouds()
+    pcd = o3d.io.read_point_cloud(dataset.paths[0])
+    pcd.estimate_normals(
+        search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1,
+                                                            max_nn=30))
     return pcd
 
 
@@ -84,7 +82,7 @@ def test_poisson_various_parameters(sample_point_cloud, params):
 
 def test_poisson_backward_compatibility():
     """Test that old API calls still work (backward compatibility)."""
-    pcd = _create_point_cloud(num_points=50)
+    pcd = _create_point_cloud()
 
     # Old-style call without new parameters
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
