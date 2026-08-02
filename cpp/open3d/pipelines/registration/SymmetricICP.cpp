@@ -7,85 +7,170 @@
 
 #include "open3d/pipelines/registration/SymmetricICP.h"
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
+
+#include <cmath>
+#include <cstddef>
+
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/pipelines/registration/SymmetricICPImpl.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {
 namespace registration {
+namespace {
+
+void ValidateSymmetricICPNormals(const geometry::PointCloud &source,
+                                 const geometry::PointCloud &target) {
+    if (!source.HasNormals() || !target.HasNormals()) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+}
+
+void ValidateSymmetricICPCorrespondences(const geometry::PointCloud &source,
+                                         const geometry::PointCloud &target,
+                                         const CorrespondenceSet &corres) {
+    for (const Eigen::Vector2i &correspondence : corres) {
+        if (correspondence[0] < 0 || correspondence[1] < 0 ||
+            static_cast<std::size_t>(correspondence[0]) >=
+                    source.points_.size() ||
+            static_cast<std::size_t>(correspondence[1]) >=
+                    target.points_.size()) {
+            utility::LogError(
+                    "SymmetricICP correspondence ({}, {}) is out of range for "
+                    "source size {} and target size {}.",
+                    correspondence[0], correspondence[1], source.points_.size(),
+                    target.points_.size());
+        }
+    }
+}
+
+Eigen::Vector3d GetSymmetricNormal(const Eigen::Vector3d &source_normal,
+                                   const Eigen::Vector3d &target_normal) {
+    if (source_normal.dot(target_normal) < 0.0) {
+        return target_normal - source_normal;
+    }
+    return target_normal + source_normal;
+}
+
+struct CorrespondenceSums {
+    Eigen::Vector3d source = Eigen::Vector3d::Zero();
+    Eigen::Vector3d target = Eigen::Vector3d::Zero();
+};
+
+struct NormalEquations {
+    Eigen::Matrix6d JTJ = Eigen::Matrix6d::Zero();
+    Eigen::Vector6d JTr = Eigen::Vector6d::Zero();
+};
+
+}  // namespace
 
 double TransformationEstimationSymmetric::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
+    ValidateSymmetricICPNormals(source, target);
+    ValidateSymmetricICPCorrespondences(source, target, corres);
+    if (corres.empty()) {
         return 0.0;
     }
+
     double err = 0.0;
     for (const auto &c : corres) {
-        const Eigen::Vector3d &vs = source.points_[c[0]];
-        const Eigen::Vector3d &vt = target.points_[c[1]];
-        const Eigen::Vector3d &ns = source.normals_[c[0]];
-        const Eigen::Vector3d &nt = target.normals_[c[1]];
-        Eigen::Vector3d d = vs - vt;
-        double r1 = d.dot(nt);
-        double r2 = d.dot(ns);
-        err += r1 * r1 + r2 * r2;
+        const Eigen::Vector3d &source_point = source.points_[c[0]];
+        const Eigen::Vector3d &target_point = target.points_[c[1]];
+        const Eigen::Vector3d normal = GetSymmetricNormal(
+                source.normals_[c[0]], target.normals_[c[1]]);
+        const double residual = (source_point - target_point).dot(normal);
+        err += residual * residual;
     }
-    return std::sqrt(err / (double)corres.size());
+    return std::sqrt(err / static_cast<double>(corres.size()));
 }
 
 Eigen::Matrix4d TransformationEstimationSymmetric::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !source.HasNormals()) {
+    ValidateSymmetricICPNormals(source, target);
+    ValidateSymmetricICPCorrespondences(source, target, corres);
+    if (corres.empty()) {
         return Eigen::Matrix4d::Identity();
     }
 
-    auto compute_jacobian_and_residual =
-            [&](int i,
-                std::vector<Eigen::Vector6d, utility::Vector6d_allocator> &J_r,
-                std::vector<double> &r, std::vector<double> &w) {
-                const Eigen::Vector3d &vs = source.points_[corres[i][0]];
-                const Eigen::Vector3d &vt = target.points_[corres[i][1]];
-                const Eigen::Vector3d &ns = source.normals_[corres[i][0]];
-                const Eigen::Vector3d &nt = target.normals_[corres[i][1]];
-                const Eigen::Vector3d d = vs - vt;
-
-                // Symmetric ICP always uses exactly 2 jacobians/residuals
-                // Ensure vectors have correct size (only resizes on first call)
-                if (J_r.size() != 2) {
-                    J_r.resize(2);
-                    r.resize(2);
-                    w.resize(2);
+    const CorrespondenceSums sums = tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, corres.size()),
+            CorrespondenceSums(),
+            [&](const tbb::blocked_range<std::size_t> &range,
+                CorrespondenceSums local) {
+                for (std::size_t i = range.begin(); i != range.end(); ++i) {
+                    local.source += source.points_[corres[i][0]];
+                    local.target += target.points_[corres[i][1]];
                 }
+                return local;
+            },
+            [](CorrespondenceSums lhs, const CorrespondenceSums &rhs) {
+                lhs.source += rhs.source;
+                lhs.target += rhs.target;
+                return lhs;
+            });
+    const double inverse_count = 1.0 / static_cast<double>(corres.size());
+    const Eigen::Vector3d source_mean = sums.source * inverse_count;
+    const Eigen::Vector3d target_mean = sums.target * inverse_count;
 
-                r[0] = d.dot(nt);
-                w[0] = kernel_->Weight(r[0]);
-                J_r[0].block<3, 1>(0, 0) = vs.cross(nt);
-                J_r[0].block<3, 1>(3, 0) = nt;
+    // Centering the correspondences decouples the symmetric rotation and
+    // translation system while the robust weight uses the raw residual.
+    const NormalEquations equations = tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(0, corres.size()),
+            NormalEquations(),
+            [&](const tbb::blocked_range<std::size_t> &range,
+                NormalEquations local) {
+                for (std::size_t i = range.begin(); i != range.end(); ++i) {
+                    const Eigen::Vector3d &source_point =
+                            source.points_[corres[i][0]];
+                    const Eigen::Vector3d &target_point =
+                            target.points_[corres[i][1]];
+                    const Eigen::Vector3d normal =
+                            GetSymmetricNormal(source.normals_[corres[i][0]],
+                                               target.normals_[corres[i][1]]);
+                    const Eigen::Vector3d source_centered =
+                            source_point - source_mean;
+                    const Eigen::Vector3d target_centered =
+                            target_point - target_mean;
+                    const double raw_residual =
+                            (source_point - target_point).dot(normal);
+                    const double residual =
+                            (source_centered - target_centered).dot(normal);
 
-                r[1] = d.dot(ns);
-                w[1] = kernel_->Weight(r[1]);
-                J_r[1].block<3, 1>(0, 0) = vs.cross(ns);
-                J_r[1].block<3, 1>(3, 0) = ns;
-            };
+                    Eigen::Vector6d jacobian;
+                    jacobian.head<3>() =
+                            (source_centered + target_centered).cross(normal);
+                    jacobian.tail<3>() = normal;
 
-    Eigen::Matrix6d JTJ;
-    Eigen::Vector6d JTr;
-    double r2;
-    std::tie(JTJ, JTr, r2) =
-            utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-                    compute_jacobian_and_residual, (int)corres.size());
+                    const double weight = kernel_->Weight(raw_residual);
+                    local.JTJ.noalias() +=
+                            weight * jacobian * jacobian.transpose();
+                    local.JTr.noalias() += weight * jacobian * residual;
+                }
+                return local;
+            },
+            [](NormalEquations lhs, const NormalEquations &rhs) {
+                lhs.JTJ += rhs.JTJ;
+                lhs.JTr += rhs.JTr;
+                return lhs;
+            });
 
-    bool is_success;
-    Eigen::Matrix4d extrinsic;
-    std::tie(is_success, extrinsic) =
-            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
-
-    return is_success ? extrinsic : Eigen::Matrix4d::Identity();
+    bool is_success = false;
+    Eigen::Vector6d pose;
+    std::tie(is_success, pose) =
+            utility::SolveLinearSystemPSD(equations.JTJ, -equations.JTr);
+    return is_success ? TransformSymmetricPoseToMatrix4d(pose, source_mean,
+                                                         target_mean)
+                      : Eigen::Matrix4d::Identity();
 }
 
 std::tuple<std::shared_ptr<const geometry::PointCloud>,
@@ -94,11 +179,7 @@ TransformationEstimationSymmetric::InitializePointCloudsForTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         double max_correspondence_distance) const {
-    if (!target.HasNormals() || !source.HasNormals()) {
-        utility::LogError(
-                "SymmetricICP requires both source and target to "
-                "have normals.");
-    }
+    ValidateSymmetricICPNormals(source, target);
     std::shared_ptr<const geometry::PointCloud> source_initialized_c(
             &source, [](const geometry::PointCloud *) {});
     std::shared_ptr<const geometry::PointCloud> target_initialized_c(
@@ -118,13 +199,6 @@ RegistrationResult RegistrationSymmetricICP(
         const Eigen::Matrix4d &init,
         const TransformationEstimationSymmetric &estimation,
         const ICPConvergenceCriteria &criteria) {
-    // Validate that both point clouds have normals
-    if (!source.HasNormals() || !target.HasNormals()) {
-        utility::LogError(
-                "SymmetricICP requires both source and target to have "
-                "normals.");
-    }
-
     return RegistrationICP(source, target, max_correspondence_distance, init,
                            estimation, criteria);
 }

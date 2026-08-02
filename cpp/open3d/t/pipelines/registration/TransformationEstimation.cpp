@@ -37,6 +37,67 @@ static void AssertValidCorrespondences(
     }
 }
 
+static void AssertValidSymmetricInputs(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target) {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    const core::Tensor &source_points = source.GetPointPositions();
+    const core::Tensor &target_points = target.GetPointPositions();
+    core::AssertTensorShape(source_points, {std::nullopt, 3});
+    core::AssertTensorShape(target_points, {std::nullopt, 3});
+    if (!source.GetPointAttr().Contains("normals") ||
+        !target.GetPointAttr().Contains("normals")) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+
+    const core::Tensor &source_normals = source.GetPointNormals();
+    const core::Tensor &target_normals = target.GetPointNormals();
+    if (source_normals.GetShape() != source_points.GetShape()) {
+        utility::LogError(
+                "Source normals shape {} must match source positions shape "
+                "{} for SymmetricICP.",
+                source_normals.GetShape().ToString(),
+                source_points.GetShape().ToString());
+    }
+    if (target_normals.GetShape() != target_points.GetShape()) {
+        utility::LogError(
+                "Target normals shape {} must match target positions shape "
+                "{} for SymmetricICP.",
+                target_normals.GetShape().ToString(),
+                target_points.GetShape().ToString());
+    }
+
+    const core::Dtype dtype = source_points.GetDtype();
+    const core::Device device = source_points.GetDevice();
+    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDtype(source_normals, dtype);
+    core::AssertTensorDtype(target_normals, dtype);
+    core::AssertTensorDevice(target_points, device);
+    core::AssertTensorDevice(source_normals, device);
+    core::AssertTensorDevice(target_normals, device);
+}
+
+static void AssertValidSymmetricCorrespondences(
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &source_points,
+        const core::Tensor &target_points) {
+    AssertValidCorrespondences(correspondence_indices, source_points);
+    const int64_t target_point_count = target_points.GetLength();
+    const core::Tensor invalid = correspondence_indices.Lt(-1).LogicalOr(
+            correspondence_indices.Ge(target_point_count));
+    if (invalid.Any().Item<bool>()) {
+        utility::LogError(
+                "SymmetricICP correspondences must be -1 or a target point "
+                "index in [0, {}), but an out-of-range value was found.",
+                target_point_count);
+    }
+}
+
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -169,26 +230,16 @@ double TransformationEstimationSymmetric::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const core::Tensor &correspondences) const {
-    if (!target.HasPointPositions() || !source.HasPointPositions()) {
-        utility::LogError("Source and/or Target pointcloud is empty.");
-    }
-    if (!target.HasPointNormals() || !source.HasPointNormals()) {
-        utility::LogError(
-                "SymmetricICP requires both source and target to have "
-                "normals.");
-    }
+    AssertValidSymmetricInputs(source, target);
 
-    core::AssertTensorDtype(target.GetPointPositions(),
-                            source.GetPointPositions().GetDtype());
-    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
-
-    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+    AssertValidSymmetricCorrespondences(correspondences,
+                                        source.GetPointPositions(),
+                                        target.GetPointPositions());
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
     core::Tensor neighbour_indices =
             correspondences.IndexGet({valid}).Reshape({-1});
 
-    // Check if there are any valid correspondences
     if (neighbour_indices.GetLength() == 0) {
         return 0.0;
     }
@@ -202,16 +253,20 @@ double TransformationEstimationSymmetric::ComputeRMSE(
     core::Tensor target_normals_indexed =
             target.GetPointNormals().IndexGet({neighbour_indices});
 
-    // Compute residuals for both point-to-plane terms
-    core::Tensor diff = source_points_indexed - target_points_indexed;
-    core::Tensor r1 = diff.Mul(target_normals_indexed).Sum({1});
-    core::Tensor r2 = diff.Mul(source_normals_indexed).Sum({1});
-
-    // Compute symmetric error
-    core::Tensor error_t = r1.Mul(r1) + r2.Mul(r2);
-    double error = error_t.Sum({0}).To(core::Float64).Item<double>();
-    return std::sqrt(error /
-                     static_cast<double>(neighbour_indices.GetLength()));
+    core::Tensor direction = source_normals_indexed.Mul(target_normals_indexed)
+                                     .Sum({1}, true)
+                                     .Ge(0)
+                                     .To(source_normals_indexed.GetDtype())
+                                     .Mul(2)
+                                     .Sub(1);
+    core::Tensor normal =
+            source_normals_indexed.Mul(direction) + target_normals_indexed;
+    core::Tensor residual = (source_points_indexed - target_points_indexed)
+                                    .Mul(normal)
+                                    .Sum({1});
+    const double mean_squared_error =
+            residual.Mul(residual).Mean({0}).To(core::Float64).Item<double>();
+    return std::sqrt(mean_squared_error);
 }
 
 core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
@@ -220,48 +275,16 @@ core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
         const core::Tensor &correspondences,
         const core::Tensor &current_transform,
         const std::size_t iteration) const {
-    if (!target.HasPointPositions() || !source.HasPointPositions()) {
-        utility::LogError("Source and/or Target pointcloud is empty.");
-    }
-    if (!target.HasPointNormals() || !source.HasPointNormals()) {
-        utility::LogError(
-                "SymmetricICP requires both source and target to have "
-                "normals.");
-    }
+    AssertValidSymmetricInputs(source, target);
 
-    const core::Device device = source.GetPointPositions().GetDevice();
-    core::AssertTensorDevice(target.GetPointPositions(), device);
+    AssertValidSymmetricCorrespondences(correspondences,
+                                        source.GetPointPositions(),
+                                        target.GetPointPositions());
 
-    const core::Dtype dtype = source.GetPointPositions().GetDtype();
-    core::AssertTensorDtypes(source.GetPointPositions(),
-                             {core::Float64, core::Float32});
-    core::AssertTensorDtype(target.GetPointPositions(),
-                            source.GetPointPositions().GetDtype());
-    core::AssertTensorDtype(target.GetPointNormals(),
-                            source.GetPointPositions().GetDtype());
-    core::AssertTensorDtype(source.GetPointNormals(),
-                            source.GetPointPositions().GetDtype());
-
-    AssertValidCorrespondences(correspondences, source.GetPointPositions());
-
-    // Check if there are any valid correspondences
-    core::Tensor valid = correspondences.Ne(-1);
-    if (valid.Any().Item<bool>() == false) {
-        // Return identity transformation if no valid correspondences
-        return core::Tensor::Eye(4, dtype, device);
-    }
-
-    // Get pose {6} of type Float64.
-    core::Tensor pose = pipelines::kernel::ComputePoseSymmetric(
+    return pipelines::kernel::ComputeTransformationSymmetric(
             source.GetPointPositions(), target.GetPointPositions(),
             source.GetPointNormals(), target.GetPointNormals(), correspondences,
             this->kernel_);
-
-    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
-    // device, from pose {6}.
-    (void)current_transform;
-    (void)iteration;
-    return pipelines::kernel::PoseToTransformation(pose);
 }
 
 double TransformationEstimationForColoredICP::ComputeRMSE(

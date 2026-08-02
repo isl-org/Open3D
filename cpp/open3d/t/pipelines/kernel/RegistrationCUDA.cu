@@ -236,6 +236,8 @@ __global__ void ComputePoseSymmetricKernelCUDA(
         const scalar_t *source_normals_ptr,
         const scalar_t *target_normals_ptr,
         const int64_t *correspondence_indices,
+        const scalar_t *source_mean_ptr,
+        const scalar_t *target_mean_ptr,
         const int n,
         scalar_t *global_sum,
         func_t GetWeightFromRobustKernel) {
@@ -247,31 +249,27 @@ __global__ void ComputePoseSymmetricKernelCUDA(
 
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (workload_idx < n) {
-        scalar_t J_ij[12] = {0};  // 6 for each term in symmetric ICP
-        scalar_t r1 = 0, r2 = 0;
+        scalar_t J_ij[6] = {0};
+        scalar_t centered_residual = 0;
+        scalar_t objective_residual = 0;
         const bool valid = GetJacobianSymmetric<scalar_t>(
                 workload_idx, source_points_ptr, target_points_ptr,
                 source_normals_ptr, target_normals_ptr, correspondence_indices,
-                J_ij, r1, r2);
+                source_mean_ptr, target_mean_ptr, J_ij, centered_residual,
+                objective_residual);
 
         if (valid) {
-            const scalar_t w1 = GetWeightFromRobustKernel(r1);
-            const scalar_t w2 = GetWeightFromRobustKernel(r2);
+            const scalar_t weight =
+                    GetWeightFromRobustKernel(objective_residual);
 
-            // Accumulate JtJ and Jtr for both terms
             int i = 0;
             for (int j = 0; j < 6; ++j) {
                 for (int k = 0; k <= j; ++k) {
-                    // Contribution from first term (source to target)
-                    local_sum[i] += J_ij[j] * w1 * J_ij[k];
-                    // Contribution from second term (target to source)
-                    local_sum[i] += J_ij[j + 6] * w2 * J_ij[k + 6];
-                    ++i;
+                    local_sum[i++] += J_ij[j] * weight * J_ij[k];
                 }
-                // Jtr contributions
-                local_sum[21 + j] += J_ij[j] * w1 * r1 + J_ij[j + 6] * w2 * r2;
+                local_sum[21 + j] += J_ij[j] * weight * centered_residual;
             }
-            local_sum[27] += r1 * r1 + r2 * r2;
+            local_sum[27] += objective_residual * objective_residual;
             local_sum[28] += 1;
         }
     }
@@ -293,6 +291,8 @@ void ComputePoseSymmetricCUDA(const core::Tensor &source_points,
                               const core::Tensor &source_normals,
                               const core::Tensor &target_normals,
                               const core::Tensor &correspondence_indices,
+                              const core::Tensor &source_mean,
+                              const core::Tensor &target_mean,
                               core::Tensor &pose,
                               float &residual,
                               int &inlier_count,
@@ -318,7 +318,9 @@ void ComputePoseSymmetricCUDA(const core::Tensor &source_points,
                             target_points.GetDataPtr<scalar_t>(),
                             source_normals.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
-                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            source_mean.GetDataPtr<scalar_t>(),
+                            target_mean.GetDataPtr<scalar_t>(), n,
                             global_sum_ptr, GetWeightFromRobustKernel);
                 });
     });

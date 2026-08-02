@@ -143,7 +143,21 @@ ICP(const geometry::PointCloud &source,
     const std::function<void(const std::unordered_map<std::string, core::Tensor>
                                      &)> &callback_after_iteration = nullptr);
 
-/// \brief Wrapper for symmetric ICP registration using symmetric objective.
+/// \brief Registers source to target with symmetric point-to-plane ICP.
+///
+/// For each correspondence in the current aligned frame, \f$p\f$ and
+/// \f$n_p\f$ denote the source point and normal, while \f$q\f$ and \f$n_q\f$
+/// denote the target point and normal. After aligning normal directions, the
+/// objective uses the single residual \f$(p-q)^T(n_p+n_q)\f$.
+/// \param source Source point cloud with normals.
+/// \param target Target point cloud with normals.
+/// \param max_correspondence_distance Maximum correspondence distance.
+/// \param init_source_to_target Initial source-to-target transformation.
+/// \param estimation Symmetric transformation estimator.
+/// \param criteria ICP convergence criteria.
+/// \return A RegistrationResult whose source-to-target transformation Tensor
+/// has shape {4, 4}, dtype Float64, and resides on the CPU device.
+/// \throw std::runtime_error If either point cloud lacks normals.
 RegistrationResult SymmetricICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

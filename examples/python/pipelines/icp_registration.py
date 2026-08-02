@@ -43,14 +43,12 @@ def point_to_plane_icp(source, target, threshold, trans_init):
 
 
 def symmetric_icp(source, target, threshold, trans_init):
-    print("Apply symmetric ICP")
-    reg_sym = o3d.pipelines.registration.registration_symmetric_icp(
+    source.estimate_normals()
+    target.estimate_normals()
+    result = o3d.pipelines.registration.registration_symmetric_icp(
         source, target, threshold, trans_init,
         o3d.pipelines.registration.TransformationEstimationSymmetric())
-    print(reg_sym)
-    print("Transformation is:")
-    print(reg_sym.transformation, "\n")
-    draw_registration_result(source, target, reg_sym.transformation)
+    draw_registration_result(source, target, result.transformation)
 
 
 if __name__ == "__main__":

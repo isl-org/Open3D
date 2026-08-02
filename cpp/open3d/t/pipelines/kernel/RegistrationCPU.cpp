@@ -8,6 +8,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <vector>
@@ -134,66 +135,52 @@ static void ComputePoseSymmetricKernelCPU(const scalar_t *source_points_ptr,
                                           const scalar_t *source_normals_ptr,
                                           const scalar_t *target_normals_ptr,
                                           const int64_t *correspondence_indices,
+                                          const scalar_t *source_mean_ptr,
+                                          const scalar_t *target_mean_ptr,
                                           const int n,
                                           scalar_t *global_sum,
                                           funct_t GetWeightFromRobustKernel) {
-    std::vector<scalar_t> A_1x29(29, 0.0);
-#ifdef _WIN32
-    std::vector<scalar_t> zeros_29(29, 0.0);
-    A_1x29 = tbb::parallel_reduce(
-            tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
+    using Reduction = std::array<scalar_t, 29>;
+    const Reduction A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), Reduction{},
+            [&](tbb::blocked_range<int> r, Reduction A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
-                    scalar_t J_ij[12] = {0};
-                    scalar_t r1 = 0, r2 = 0;
+                    scalar_t J_ij[6] = {0};
+                    scalar_t centered_residual = 0;
+                    scalar_t objective_residual = 0;
                     const bool valid = GetJacobianSymmetric<scalar_t>(
                             workload_idx, source_points_ptr, target_points_ptr,
                             source_normals_ptr, target_normals_ptr,
-                            correspondence_indices, J_ij, r1, r2);
+                            correspondence_indices, source_mean_ptr,
+                            target_mean_ptr, J_ij, centered_residual,
+                            objective_residual);
 
                     if (valid) {
-                        const scalar_t w1 = GetWeightFromRobustKernel(r1);
-                        const scalar_t w2 = GetWeightFromRobustKernel(r2);
+                        const scalar_t weight =
+                                GetWeightFromRobustKernel(objective_residual);
 
-                        // Accumulate JtJ and Jtr for both terms
                         int i = 0;
                         for (int j = 0; j < 6; ++j) {
                             for (int k = 0; k <= j; ++k) {
-                                // Contribution from first term (source to
-                                // target)
-                                A_reduction[i] += J_ij[j] * w1 * J_ij[k];
-                                // Contribution from second term (target to
-                                // source)
-                                A_reduction[i] +=
-                                        J_ij[j + 6] * w2 * J_ij[k + 6];
-                                ++i;
+                                A_reduction[i++] += J_ij[j] * weight * J_ij[k];
                             }
-                            // Jtr contributions
                             A_reduction[21 + j] +=
-                                    J_ij[j] * w1 * r1 + J_ij[j + 6] * w2 * r2;
+                                    J_ij[j] * weight * centered_residual;
                         }
-                        A_reduction[27] += r1 * r1 + r2 * r2;
+                        A_reduction[27] +=
+                                objective_residual * objective_residual;
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
-            [&](std::vector<scalar_t> a, std::vector<scalar_t> b) {
-                std::vector<scalar_t> result(29);
+            [](Reduction a, const Reduction &b) {
                 for (int j = 0; j < 29; ++j) {
-                    result[j] = a[j] + b[j];
+                    a[j] += b[j];
                 }
-                return result;
+                return a;
             });
-#endif
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -205,6 +192,8 @@ void ComputePoseSymmetricCPU(const core::Tensor &source_points,
                              const core::Tensor &source_normals,
                              const core::Tensor &target_normals,
                              const core::Tensor &correspondence_indices,
+                             const core::Tensor &source_mean,
+                             const core::Tensor &target_mean,
                              core::Tensor &pose,
                              float &residual,
                              int &inlier_count,
@@ -226,7 +215,9 @@ void ComputePoseSymmetricCPU(const core::Tensor &source_points,
                             target_points.GetDataPtr<scalar_t>(),
                             source_normals.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
-                            correspondence_indices.GetDataPtr<int64_t>(), n,
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            source_mean.GetDataPtr<scalar_t>(),
+                            target_mean.GetDataPtr<scalar_t>(), n,
                             global_sum_ptr, GetWeightFromRobustKernel);
                 });
     });

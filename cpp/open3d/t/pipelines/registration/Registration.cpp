@@ -152,6 +152,13 @@ static void AssertInputMultiScaleICP(
                 "TransformationEstimationPointToPlane require pre-computed "
                 "normal vectors for target PointCloud.");
     }
+    if (estimation.GetTransformationEstimationType() ==
+                TransformationEstimationType::SymmetricICP &&
+        (!source.HasPointNormals() || !target.HasPointNormals())) {
+        utility::LogError(
+                "SymmetricICP requires both source and target pointclouds to "
+                "have normals.");
+    }
 
     // ColoredICP requires pre-computed color_gradients for target points.
     if (estimation.GetTransformationEstimationType() ==

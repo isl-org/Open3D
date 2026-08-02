@@ -42,6 +42,8 @@ void ComputePoseSymmetricCPU(const core::Tensor &source_points,
                              const core::Tensor &source_normals,
                              const core::Tensor &target_normals,
                              const core::Tensor &correspondence_indices,
+                             const core::Tensor &source_mean,
+                             const core::Tensor &target_mean,
                              core::Tensor &pose,
                              float &residual,
                              int &inlier_count,
@@ -104,6 +106,8 @@ void ComputePoseSymmetricCUDA(const core::Tensor &source_points,
                               const core::Tensor &source_normals,
                               const core::Tensor &target_normals,
                               const core::Tensor &correspondence_indices,
+                              const core::Tensor &source_mean,
+                              const core::Tensor &target_mean,
                               core::Tensor &pose,
                               float &residual,
                               int &inlier_count,
@@ -184,6 +188,20 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
                                  const core::Dtype &dtype,
                                  const core::Device &device,
                                  const registration::RobustKernel &kernel);
+
+void ComputePoseSymmetricSYCL(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &source_normals,
+                              const core::Tensor &target_normals,
+                              const core::Tensor &correspondence_indices,
+                              const core::Tensor &source_mean,
+                              const core::Tensor &target_mean,
+                              core::Tensor &pose,
+                              float &residual,
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device,
+                              const registration::RobustKernel &kernel);
 
 void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                                const core::Tensor &source_colors,
@@ -286,9 +304,9 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
 
 /// \brief Computes Jacobian and residuals for symmetric ICP.
 ///
-/// Symmetric ICP minimizes both source-to-target and target-to-source
-/// point-to-plane distances. This function computes two Jacobians and two
-/// residuals for a single correspondence pair.
+/// The normal sum is sign-aligned per pair. The Jacobian and linear-system
+/// residual use centered points, while robust weighting uses the raw objective
+/// residual.
 ///
 /// \param workload_idx Index of the correspondence to process.
 /// \param source_points_ptr Pointer to source point positions (3N elements).
@@ -296,11 +314,11 @@ template bool GetJacobianPointToPlane(int64_t workload_idx,
 /// \param source_normals_ptr Pointer to source point normals (3N elements).
 /// \param target_normals_ptr Pointer to target point normals (3N elements).
 /// \param correspondence_indices Pointer to correspondence indices.
-/// \param J_ij Output array for Jacobians (must have space for 12 elements:
-///             elements 0-5 for Jacobian using target normal,
-///             elements 6-11 for Jacobian using source normal).
-/// \param r1 Output residual for source-to-target point-to-plane distance.
-/// \param r2 Output residual for target-to-source point-to-plane distance.
+/// \param source_mean_ptr Pointer to the selected source-pair mean.
+/// \param target_mean_ptr Pointer to the selected target-pair mean.
+/// \param J_ij Output array for the six-element Jacobian.
+/// \param centered_residual Output residual formed from centered points.
+/// \param objective_residual Output residual formed from raw points.
 /// \return true if correspondence is valid, false if correspondence is -1.
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianSymmetric(
@@ -310,9 +328,11 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianSymmetric(
         const scalar_t *source_normals_ptr,
         const scalar_t *target_normals_ptr,
         const int64_t *correspondence_indices,
+        const scalar_t *source_mean_ptr,
+        const scalar_t *target_mean_ptr,
         scalar_t *J_ij,
-        scalar_t &r1,
-        scalar_t &r2) {
+        scalar_t &centered_residual,
+        scalar_t &objective_residual) {
     if (correspondence_indices[workload_idx] == -1) {
         return false;
     }
@@ -326,34 +346,42 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianSymmetric(
     const scalar_t &tx = target_points_ptr[target_idx + 0];
     const scalar_t &ty = target_points_ptr[target_idx + 1];
     const scalar_t &tz = target_points_ptr[target_idx + 2];
-    const scalar_t &nx_s = source_normals_ptr[source_idx + 0];
-    const scalar_t &ny_s = source_normals_ptr[source_idx + 1];
-    const scalar_t &nz_s = source_normals_ptr[source_idx + 2];
-    const scalar_t &nx_t = target_normals_ptr[target_idx + 0];
-    const scalar_t &ny_t = target_normals_ptr[target_idx + 1];
-    const scalar_t &nz_t = target_normals_ptr[target_idx + 2];
+    const scalar_t normal_dot = source_normals_ptr[source_idx + 0] *
+                                        target_normals_ptr[target_idx + 0] +
+                                source_normals_ptr[source_idx + 1] *
+                                        target_normals_ptr[target_idx + 1] +
+                                source_normals_ptr[source_idx + 2] *
+                                        target_normals_ptr[target_idx + 2];
+    const scalar_t normal_sign =
+            normal_dot < scalar_t(0) ? scalar_t(-1) : scalar_t(1);
+    const scalar_t nx = target_normals_ptr[target_idx + 0] +
+                        normal_sign * source_normals_ptr[source_idx + 0];
+    const scalar_t ny = target_normals_ptr[target_idx + 1] +
+                        normal_sign * source_normals_ptr[source_idx + 1];
+    const scalar_t nz = target_normals_ptr[target_idx + 2] +
+                        normal_sign * source_normals_ptr[source_idx + 2];
 
-    // Symmetric ICP: minimize both source-to-target and target-to-source
-    // distances
-    r1 = (sx - tx) * nx_t + (sy - ty) * ny_t + (sz - tz) * nz_t;
-    r2 = (sx - tx) * nx_s + (sy - ty) * ny_s + (sz - tz) * nz_s;
+    const scalar_t sx_centered = sx - source_mean_ptr[0];
+    const scalar_t sy_centered = sy - source_mean_ptr[1];
+    const scalar_t sz_centered = sz - source_mean_ptr[2];
+    const scalar_t tx_centered = tx - target_mean_ptr[0];
+    const scalar_t ty_centered = ty - target_mean_ptr[1];
+    const scalar_t tz_centered = tz - target_mean_ptr[2];
 
-    // For symmetric ICP, we compute Jacobians for both terms
-    // First term (source to target plane)
-    J_ij[0] = nz_t * sy - ny_t * sz;
-    J_ij[1] = nx_t * sz - nz_t * sx;
-    J_ij[2] = ny_t * sx - nx_t * sy;
-    J_ij[3] = nx_t;
-    J_ij[4] = ny_t;
-    J_ij[5] = nz_t;
+    const scalar_t sum_x = sx_centered + tx_centered;
+    const scalar_t sum_y = sy_centered + ty_centered;
+    const scalar_t sum_z = sz_centered + tz_centered;
+    J_ij[0] = sum_y * nz - sum_z * ny;
+    J_ij[1] = sum_z * nx - sum_x * nz;
+    J_ij[2] = sum_x * ny - sum_y * nx;
+    J_ij[3] = nx;
+    J_ij[4] = ny;
+    J_ij[5] = nz;
 
-    // Second term (target to source plane)
-    J_ij[6] = nz_s * sy - ny_s * sz;
-    J_ij[7] = nx_s * sz - nz_s * sx;
-    J_ij[8] = ny_s * sx - nx_s * sy;
-    J_ij[9] = nx_s;
-    J_ij[10] = ny_s;
-    J_ij[11] = nz_s;
+    centered_residual = (sx_centered - tx_centered) * nx +
+                        (sy_centered - ty_centered) * ny +
+                        (sz_centered - tz_centered) * nz;
+    objective_residual = (sx - tx) * nx + (sy - ty) * ny + (sz - tz) * nz;
 
     return true;
 }
@@ -364,9 +392,11 @@ template bool GetJacobianSymmetric(int64_t workload_idx,
                                    const float *source_normals_ptr,
                                    const float *target_normals_ptr,
                                    const int64_t *correspondence_indices,
+                                   const float *source_mean_ptr,
+                                   const float *target_mean_ptr,
                                    float *J_ij,
-                                   float &r1,
-                                   float &r2);
+                                   float &centered_residual,
+                                   float &objective_residual);
 
 template bool GetJacobianSymmetric(int64_t workload_idx,
                                    const double *source_points_ptr,
@@ -374,9 +404,11 @@ template bool GetJacobianSymmetric(int64_t workload_idx,
                                    const double *source_normals_ptr,
                                    const double *target_normals_ptr,
                                    const int64_t *correspondence_indices,
+                                   const double *source_mean_ptr,
+                                   const double *target_mean_ptr,
                                    double *J_ij,
-                                   double &r1,
-                                   double &r2);
+                                   double &centered_residual,
+                                   double &objective_residual);
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline bool GetJacobianColoredICP(

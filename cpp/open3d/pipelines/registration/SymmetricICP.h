@@ -22,26 +22,55 @@ namespace registration {
 
 class RegistrationResult;
 
-/// \brief Transformation estimation for symmetric point-to-plane ICP.
+/// \brief Estimates a source-to-target transformation with symmetric ICP.
+///
+/// For each correspondence, \f$p\f$ is the source point and \f$q\f$ is the
+/// target point in the current aligned frame, with corresponding normals
+/// \f$n_p\f$ and \f$n_q\f$. After aligning the normal directions, the
+/// objective uses the single residual \f$(p-q)^T(n_p+n_q)\f$.
 class TransformationEstimationSymmetric : public TransformationEstimation {
 public:
-    ~TransformationEstimationSymmetric() override {};
+    ~TransformationEstimationSymmetric() override = default;
 
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
     };
+    /// \brief Constructs a symmetric transformation estimator.
+    /// \param kernel Robust kernel applied to the symmetric residual.
     explicit TransformationEstimationSymmetric(
             std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
         : kernel_(std::move(kernel)) {}
+
+    /// \brief Computes the symmetric point-to-plane RMSE.
+    /// \param source Source point cloud in the current aligned frame.
+    /// \param target Target point cloud in the current aligned frame.
+    /// \param corres Source-to-target correspondence indices.
+    /// \return The symmetric point-to-plane RMSE.
+    /// \throw std::runtime_error If either point cloud lacks normals or a
+    /// correspondence index is out of range.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
                        const CorrespondenceSet &corres) const override;
+
+    /// \brief Estimates a source-to-target transformation update.
+    /// \param source Source point cloud in the current aligned frame.
+    /// \param target Target point cloud in the current aligned frame.
+    /// \param corres Source-to-target correspondence indices.
+    /// \return The source-to-target transformation update.
+    /// \throw std::runtime_error If either point cloud lacks normals or a
+    /// correspondence index is out of range.
     Eigen::Matrix4d ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
+    /// \brief Validates and initializes point clouds for symmetric ICP.
+    /// \param source Source point cloud.
+    /// \param target Target point cloud.
+    /// \param max_correspondence_distance Maximum correspondence distance.
+    /// \return The initialized source and target point clouds.
+    /// \throw std::runtime_error If either point cloud lacks normals.
     std::tuple<std::shared_ptr<const geometry::PointCloud>,
                std::shared_ptr<const geometry::PointCloud>>
     InitializePointCloudsForTransformation(
@@ -54,10 +83,23 @@ public:
 
 private:
     const TransformationEstimationType type_ =
-            TransformationEstimationType::PointToPlane;
+            TransformationEstimationType::SymmetricICP;
 };
 
-/// \brief Function for symmetric ICP registration using point-to-plane error.
+/// \brief Registers source to target with symmetric point-to-plane ICP.
+///
+/// For each correspondence in the current aligned frame, \f$p\f$ and
+/// \f$n_p\f$ denote the source point and normal, while \f$q\f$ and \f$n_q\f$
+/// denote the target point and normal. After aligning normal directions, the
+/// objective uses the single residual \f$(p-q)^T(n_p+n_q)\f$.
+/// \param source Source point cloud with normals.
+/// \param target Target point cloud with normals.
+/// \param max_correspondence_distance Maximum correspondence distance.
+/// \param init Initial source-to-target transformation.
+/// \param estimation Symmetric transformation estimator.
+/// \param criteria ICP convergence criteria.
+/// \return The registration result with a source-to-target transformation.
+/// \throw std::runtime_error If either point cloud lacks normals.
 RegistrationResult RegistrationSymmetricICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

@@ -110,8 +110,9 @@ void pybind_registration_declarations(py::module &m) {
                PyTransformationEstimation<TransformationEstimationSymmetric>,
                TransformationEstimation>
             te_sym(m_registration, "TransformationEstimationSymmetric",
-                   "Class to estimate a transformation for symmetric "
-                   "point to plane distance.");
+                   "Class to estimate a source-to-target transformation with "
+                   "symmetric point-to-plane ICP. Both point clouds must "
+                   "have normals.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
@@ -745,16 +746,20 @@ must hold true for all edges.)");
     docstring::FunctionDocInject(m_registration, "registration_icp",
                                  map_shared_argument_docstrings);
 
+    auto map_symmetric_icp_argument_docstrings = map_shared_argument_docstrings;
+    map_symmetric_icp_argument_docstrings["estimation_method"] =
+            "Only ``TransformationEstimationSymmetric`` is supported.";
     m_registration.def(
             "registration_symmetric_icp", &RegistrationSymmetricICP,
             py::call_guard<py::gil_scoped_release>(),
-            "Function for symmetric ICP registration", "source"_a, "target"_a,
-            "max_correspondence_distance"_a,
+            "Register source to target with symmetric point-to-plane ICP. "
+            "Both point clouds must have normals.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
             "init"_a = Eigen::Matrix4d::Identity(),
             "estimation_method"_a = TransformationEstimationSymmetric(),
             "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m_registration, "registration_symmetric_icp",
-                                 map_shared_argument_docstrings);
+                                 map_symmetric_icp_argument_docstrings);
 
     m_registration.def("registration_colored_icp", &RegistrationColoredICP,
                        py::call_guard<py::gil_scoped_release>(),
