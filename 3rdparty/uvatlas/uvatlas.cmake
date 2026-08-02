@@ -4,9 +4,9 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_directxheaders
     PREFIX uvatlas
-    GIT_REPOSITORY https://github.com/microsoft/DirectX-Headers.git
-    GIT_TAG v1.606.3
-    GIT_SHALLOW TRUE
+    URL https://github.com/microsoft/DirectX-Headers/archive/v1.606.3/DirectX-Headers-v1.606.3.tar.gz
+    URL_HASH
+    SHA256=bf0183981e505336e918609374907c934b99eb61c0826d75a5649f41568abc4b
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/uvatlas"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -22,9 +22,9 @@ ExternalProject_Add(
 ExternalProject_Add(
     ext_directxmath
     PREFIX uvatlas
-    GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
-    GIT_TAG may2022
-    GIT_SHALLOW TRUE
+    URL https://github.com/microsoft/DirectXMath/archive/may2022/DirectXMath-may2022.tar.gz
+    URL_HASH
+    SHA256=b2c5b419ca2c567860f7c204c9c0890573e8a58c8d877473e4f3ba6b851ca4ce
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/uvatlas"
     UPDATE_COMMAND ""
     CMAKE_ARGS

@@ -13,6 +13,9 @@ namespace utility {
 /// Estimate the maximum number of threads to be used in a parallel region.
 int EstimateMaxThreads();
 
+/// Returns the thread ID in the current parallel region.
+int GetThreadNum();
+
 /// Returns true if in an parallel section.
 bool InParallel();
 

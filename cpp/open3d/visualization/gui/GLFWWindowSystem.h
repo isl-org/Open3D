@@ -48,6 +48,8 @@ public:
     Size GetWindowSize(OSWindow w) const override;
     void SetWindowSize(OSWindow w, int width, int height) override;
 
+    Size GetWindowFrameSize(OSWindow w) const override;
+
     Size GetWindowSizePixels(OSWindow w) const override;
     void SetWindowSizePixels(OSWindow w, const Size& size) override;
 
@@ -69,6 +71,9 @@ public:
                         rendering::FilamentRenderer* renderer) override;
 
     MenuBase* CreateOSMenu() override;
+
+    void SetClipboardText(OSWindow w, const char* text) override;
+    std::string GetClipboardText(OSWindow w) override;
 
 private:
     static void DrawCallback(GLFWwindow* window);

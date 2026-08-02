@@ -13,7 +13,8 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-class MenuImgui : public MenuBase {
+class MenuImgui : public MenuBase,
+                  public std::enable_shared_from_this<MenuImgui> {
 public:
     MenuImgui();
     virtual ~MenuImgui();
@@ -34,6 +35,9 @@ public:
     void InsertSeparator(int index) override;
 
     int GetNumberOfItems() const override;
+
+    std::shared_ptr<MenuBase> GetMenu(const char* name) override;
+    std::shared_ptr<MenuBase> GetMenu(ItemId item_id) override;
 
     bool IsEnabled(ItemId item_id) const override;
     void SetEnabled(ItemId item_id, bool enabled) override;

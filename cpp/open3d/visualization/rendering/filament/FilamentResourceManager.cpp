@@ -33,8 +33,7 @@
 #include <filament/Skybox.h>
 #include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <image/KtxBundle.h>
-#include <image/KtxUtility.h>
+#include <ktxreader/Ktx1Reader.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -106,8 +105,7 @@ template <class ResourceType>
 std::weak_ptr<ResourceType> FindResource(
         const REHandle_abstract& id,
         ResourcesContainer<ResourceType>& container) {
-    auto found = container.find(id);
-    if (found != container.end()) {
+    if (auto found = container.find(id); found != container.end()) {
         return found->second.ptr;
     }
 
@@ -120,16 +118,22 @@ void DestroyResource(const REHandle_abstract& id,
                      ResourcesContainer<ResourceType>& container) {
     auto found = container.find(id);
     if (found == container.end()) {
-        utility::LogError("Trying to destroy nonexistent resource ({})!", id);
+        utility::LogWarning("Trying to destroy nonexistent resource ({})!", id);
+        return;
+    }
+
+    if (found->second.use_count == 0) {
+        utility::LogWarning(
+                "Trying to destroy resource ({}) with zero use count. "
+                "Removing stale entry.",
+                id);
+        container.erase(found);
         return;
     }
 
     found->second.use_count -= 1;
     if (found->second.use_count == 0) {
         container.erase(found);
-    } else if (found->second.use_count < 0) {
-        utility::LogError("Negative use count for resource ({})!", id);
-        return;
     }
 }
 
@@ -149,14 +153,17 @@ std::intptr_t RetainImageForLoading(
     return id;
 }
 
-static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+void DeallocateBuffer(void* buffer,
+                      [[maybe_unused]] size_t size,
+                      [[maybe_unused]] void* user_ptr) {
     free(buffer);
 }
 
-void FreeRetainedImage(void* buffer, size_t size, void* user_ptr) {
+void FreeRetainedImage([[maybe_unused]] void* buffer,
+                       [[maybe_unused]] size_t size,
+                       void* user_ptr) {
     const auto id = reinterpret_cast<std::intptr_t>(user_ptr);
-    auto found = pending_images.find(id);
-    if (found != pending_images.end()) {
+    if (auto found = pending_images.find(id); found != pending_images.end()) {
         pending_images.erase(found);
     } else {
         utility::LogDebug(
@@ -318,8 +325,6 @@ TextureSettings GetSettingsFromImage(const t::geometry::Image& image,
 
 const MaterialHandle FilamentResourceManager::kDefaultLit =
         MaterialHandle::Next();
-const MaterialHandle FilamentResourceManager::kGaussianSplatShader =
-        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitWithTransparency =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLitSSR =
@@ -456,6 +461,9 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path,
 TextureHandle FilamentResourceManager::CreateTexture(
         const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
+    if (!img) {
+        return handle;
+    }
     auto hash = fnv1a_block_hash(img->data_.data(), img->data_.size());
     if (texture_cache_.count(hash) > 0) {
         handle = texture_cache_[hash];
@@ -559,7 +567,8 @@ TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
                            .levels(1)
                            .format(Texture::InternalFormat::RGBA16F)
                            .usage(Texture::Usage::COLOR_ATTACHMENT |
-                                  Texture::Usage::SAMPLEABLE)
+                                  Texture::Usage::SAMPLEABLE |
+                                  Texture::Usage::BLIT_SRC)
                            .build(engine_);
     TextureHandle handle;
     handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
@@ -581,6 +590,22 @@ TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
     return handle;
 }
 
+TextureHandle FilamentResourceManager::CreateImportedTexture(
+        std::uint32_t gl_handle, int width, int height, int format, int usage) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(static_cast<Texture::InternalFormat>(format))
+                           .usage(static_cast<Texture::Usage>(usage))
+                           .import(static_cast<intptr_t>(gl_handle))
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
 RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
         TextureHandle color, TextureHandle depth) {
     using namespace filament;
@@ -596,8 +621,31 @@ RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
     }
 
     auto rt = RenderTarget::Builder()
-                      .texture(RenderTarget::COLOR, color_tex.get())
-                      .texture(RenderTarget::DEPTH, depth_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::COLOR,
+                               color_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::DEPTH,
+                               depth_tex.get())
+                      .build(engine_);
+    handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
+    return handle;
+}
+
+RenderTargetHandle FilamentResourceManager::CreateColorOnlyRenderTarget(
+        TextureHandle color) {
+    using namespace filament;
+
+    RenderTargetHandle handle;
+    auto color_tex_weak = GetTexture(color);
+    auto color_tex = color_tex_weak.lock();
+    if (!color_tex) {
+        utility::LogWarning(
+                "CreateColorOnlyRenderTarget: invalid color texture.");
+        return handle;
+    }
+
+    auto rt = RenderTarget::Builder()
+                      .texture(RenderTarget::AttachmentPoint::COLOR,
+                               color_tex.get())
                       .build(engine_);
     handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;
@@ -615,11 +663,11 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
                                                &error_str)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
-            auto* ibl_ktx = new image::KtxBundle(
+            auto* ibl_ktx = new image::Ktx1Bundle(
                     reinterpret_cast<std::uint8_t*>(ibl_data.data()),
                     std::uint32_t(ibl_data.size()));
-            auto* ibl_texture =
-                    image::ktx::createTexture(&engine_, ibl_ktx, false);
+            auto* ibl_texture = ktxreader::Ktx1Reader::createTexture(
+                    &engine_, ibl_ktx, false);
 
             filament::math::float3 bands[9] = {};
             if (!ibl_ktx->getSphericalHarmonics(bands)) {
@@ -684,11 +732,11 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
                                                &error_str)) {
             using namespace filament;
             // will be destroyed later by image::ktx::createTexture
-            auto* sky_ktx = new image::KtxBundle(
+            auto* sky_ktx = new image::Ktx1Bundle(
                     reinterpret_cast<std::uint8_t*>(sky_data.data()),
                     std::uint32_t(sky_data.size()));
-            auto* sky_texture =
-                    image::ktx::createTexture(&engine_, sky_ktx, false);
+            auto* sky_texture = ktxreader::Ktx1Reader::createTexture(
+                    &engine_, sky_ktx, false);
 
             auto skybox = Skybox::Builder()
                                   .environment(sky_texture)
@@ -797,8 +845,14 @@ void FilamentResourceManager::DestroyAll() {
     texture_cache_.clear();
     material_instances_.clear();
     materials_.clear();
-    textures_.clear();
+    // Render targets must be destroyed BEFORE textures: a Filament RenderTarget
+    // holds references to its attachment Texture objects and accesses them
+    // during its deferred destroy command.  If textures were cleared first,
+    // Filament's FIFO deferred queue would free the textures first, and the
+    // subsequent render-target destroy would access freed texture state →
+    // crash in Engine::destroy().
     render_targets_.clear();
+    textures_.clear();
     vertex_buffers_.clear();
     index_buffers_.clear();
     ibls_.clear();
@@ -1019,28 +1073,6 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
-    const auto gaussian_path = resource_root + "/gaussianSplat.filamat";
-    auto gaussian_mat = LoadMaterialFromFile(gaussian_path, engine_);
-    gaussian_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
-                                      default_color);
-    gaussian_mat->setDefaultParameter("baseRoughness", 0.7f);
-    gaussian_mat->setDefaultParameter("reflectance", 0.5f);
-    gaussian_mat->setDefaultParameter("baseMetallic", 0.f);
-    gaussian_mat->setDefaultParameter("clearCoat", 0.f);
-    gaussian_mat->setDefaultParameter("clearCoatRoughness", 0.f);
-    gaussian_mat->setDefaultParameter("anisotropy", 0.f);
-    gaussian_mat->setDefaultParameter("pointSize", 3.f);
-    gaussian_mat->setDefaultParameter("albedo", texture, default_sampler);
-    gaussian_mat->setDefaultParameter("ao_rough_metalMap", texture,
-                                      default_sampler);
-    gaussian_mat->setDefaultParameter("normalMap", normal_map, default_sampler);
-    gaussian_mat->setDefaultParameter("reflectanceMap", texture,
-                                      default_sampler);
-
-    gaussian_mat->setDefaultParameter("anisotropyMap", texture,
-                                      default_sampler);
-    materials_[kGaussianSplatShader] = BoxResource(gaussian_mat, engine_);
-
     const auto lit_trans_path =
             resource_root + "/defaultLitTransparency.filamat";
     auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
@@ -1191,6 +1223,28 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultUnlitPolygonOffsetShader] =
             BoxResource(poffset_mat, engine_);
 }
+
+#if defined(__APPLE__)
+filament::Texture* BuildImportedMTLTextureFilament(filament::Engine& engine,
+                                                   std::uintptr_t mtl_texture,
+                                                   int width,
+                                                   int height,
+                                                   int format,
+                                                   int usage);
+
+TextureHandle FilamentResourceManager::CreateImportedMTLTexture(
+        std::uintptr_t mtl_texture,
+        int width,
+        int height,
+        int format,
+        int usage) {
+    filament::Texture* texture = BuildImportedMTLTextureFilament(
+            engine_, mtl_texture, width, height, format, usage);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+#endif  // defined(__APPLE__)
 
 }  // namespace rendering
 }  // namespace visualization

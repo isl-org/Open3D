@@ -111,7 +111,8 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
                     axis.value());
         }
 
-        return ConcatenateImpl(tensors, axis.value());
+        Tensor result = ConcatenateImpl(tensors, axis.value());
+        return result;
     }
 }
 

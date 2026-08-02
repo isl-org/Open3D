@@ -14,9 +14,11 @@ using namespace open3d;
 using namespace open3d::visualization::gui;
 using namespace open3d::visualization::rendering;
 
-// Headless rendering requires Open3D to be compiled with OSMesa support.
-// Add -DENABLE_HEADLESS_RENDERING=ON when you run CMake.
-static const bool kUseHeadless = false;
+// Headless rendering via the new (Filament) GUI stack; see
+// docs/tutorial/visualization/cpu_rendering.rst for EGL_PLATFORM=surfaceless
+// setup. This is independent of the legacy visualizer's EGL offscreen path
+// (open3d::visualization::visualizer::Visualizer).
+static const bool kUseHeadless [[maybe_unused]] = false;
 
 static const std::string kOutputFilename = "offscreen.png";
 
@@ -25,10 +27,7 @@ int main(int argc, const char *argv[]) {
     const int height = 480;
 
     auto &app = Application::GetInstance();
-    app.Initialize(argc, argv);
-    if (kUseHeadless) {
-        EngineInstance::EnableHeadless();
-    }
+    app.Initialize();
 
     auto *renderer =
             new FilamentRenderer(EngineInstance::GetInstance(), width, height,
