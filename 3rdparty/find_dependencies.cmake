@@ -945,6 +945,8 @@ if(NOT USE_SYSTEM_CURL)
         LIBRARIES    ${CURL_LIBRARIES}
         DEPENDS      ext_zlib ext_curl
     )
+    # Bundled libcurl is always static; system/vcpkg CURL::libcurl sets this.
+    target_compile_definitions(3rdparty_curl INTERFACE CURL_STATICLIB)
     if(APPLE)
         # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
         # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
