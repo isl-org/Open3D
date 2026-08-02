@@ -253,12 +253,16 @@ double TransformationEstimationSymmetric::ComputeRMSE(
     core::Tensor target_normals_indexed =
             target.GetPointNormals().IndexGet({neighbour_indices});
 
-    core::Tensor direction = source_normals_indexed.Mul(target_normals_indexed)
-                                     .Sum({1}, true)
-                                     .Ge(0)
-                                     .To(source_normals_indexed.GetDtype())
-                                     .Mul(2)
-                                     .Sub(1);
+    const core::Tensor normal_dot =
+            source_normals_indexed.Mul(target_normals_indexed).Sum({1}, true);
+    core::Tensor direction =
+            core::Tensor::Ones(normal_dot.GetShape(), normal_dot.GetDtype(),
+                               normal_dot.GetDevice());
+    // Avoid casting a boolean comparison to a number: ISPC may encode true as
+    // 0xff. Boolean indexing preserves the intended floating-point +/-1 sign.
+    direction.IndexSet({normal_dot.Lt(0)},
+                       core::Tensor::Full({}, -1, normal_dot.GetDtype(),
+                                          normal_dot.GetDevice()));
     core::Tensor normal =
             source_normals_indexed.Mul(direction) + target_normals_indexed;
     core::Tensor residual = (source_points_indexed - target_points_indexed)
