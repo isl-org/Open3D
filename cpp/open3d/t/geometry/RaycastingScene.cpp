@@ -19,6 +19,7 @@
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
+#include <cassert>
 #include <cstring>
 #include <tuple>
 #include <unsupported/Eigen/AlignedVector3>

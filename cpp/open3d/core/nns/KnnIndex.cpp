@@ -7,6 +7,8 @@
 
 #include "open3d/core/nns/KnnIndex.h"
 
+#include <cassert>
+
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
