@@ -1,5 +1,6 @@
 ## Main
 -   Add vcpkg support for easier dependency management (PR #7386)
+-   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
