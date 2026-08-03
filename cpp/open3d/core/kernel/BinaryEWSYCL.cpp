@@ -9,6 +9,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -144,8 +145,7 @@ void BinaryEWSYCL(const Tensor& lhs,
                     const scalar_t* lhs_ptr = lhs.GetDataPtr<scalar_t>();
                     const scalar_t* rhs_ptr = rhs.GetDataPtr<scalar_t>();
                     scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                        int64_t i = id[0];
+                    core::ParallelFor(queue, n, [=](int64_t i) {
                         dst_ptr[i] =
                                 static_cast<scalar_t>(BinaryEWBooleanResult(
                                         lhs_ptr[i], rhs_ptr[i], op_code));
@@ -166,8 +166,7 @@ void BinaryEWSYCL(const Tensor& lhs,
                     const scalar_t* lhs_ptr = lhs.GetDataPtr<scalar_t>();
                     const scalar_t* rhs_ptr = rhs.GetDataPtr<scalar_t>();
                     bool* dst_ptr = dst.GetDataPtr<bool>();
-                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                        int64_t i = id[0];
+                    core::ParallelFor(queue, n, [=](int64_t i) {
                         dst_ptr[i] = BinaryEWBooleanResult(lhs_ptr[i],
                                                            rhs_ptr[i], op_code);
                     });
@@ -194,8 +193,7 @@ void BinaryEWSYCL(const Tensor& lhs,
                 const scalar_t* lhs_ptr = lhs.GetDataPtr<scalar_t>();
                 const scalar_t* rhs_ptr = rhs.GetDataPtr<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                    int64_t i = id[0];
+                core::ParallelFor(queue, n, [=](int64_t i) {
                     dst_ptr[i] =
                             BinaryEWMaxMin(lhs_ptr[i], rhs_ptr[i], op_code);
                 });
@@ -223,8 +221,7 @@ void BinaryEWSYCL(const Tensor& lhs,
                 const scalar_t* lhs_ptr = lhs.GetDataPtr<scalar_t>();
                 const scalar_t* rhs_ptr = rhs.GetDataPtr<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                    int64_t i = id[0];
+                core::ParallelFor(queue, n, [=](int64_t i) {
                     dst_ptr[i] =
                             BinaryEWArithmetic(lhs_ptr[i], rhs_ptr[i], op_code);
                 });

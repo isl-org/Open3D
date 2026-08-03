@@ -93,26 +93,39 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 
 #if defined(SYCL_LANGUAGE_VERSION)
 
-/// Run a function in parallel on SYCL.
+/// Single real SYCL launch body: builds an nd_range from \p queue's
+/// preferred work-group size, submits with \p deps, and returns the
+/// completion event without blocking. Every other SYCL ParallelFor overload
+/// below (Device- or queue-based, blocking or not) forwards here -- this is
+/// the only place that computes an nd_range or calls queue.parallel_for.
+template <typename func_t>
+sycl::event ParallelForSYCLImpl_(sycl::queue& queue,
+                                 int64_t n,
+                                 const func_t& func,
+                                 const std::vector<sycl::event>& deps) {
+    if (n == 0) {
+        return sycl::event();
+    }
+    size_t wg = core::sy::PreferredWorkGroupSize(queue.get_device());
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
+    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
+        int64_t i = item.get_global_id(0);
+        if (i < n) {
+            func(i);
+        }
+    });
+}
+
+/// Run a function in parallel on SYCL (blocking).
 template <typename func_t>
 void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
     if (!device.IsSYCL()) {
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    if (n == 0) {
-        return;
-    }
     auto queue = core::sy::GetQueue(device);
-    size_t wg = core::sy::PreferredWorkGroupSize(device);
-    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
-    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
-    queue.parallel_for(nd_range, [=](sycl::nd_item<1> item) {
-             int64_t i = item.get_global_id(0);
-             if (i < n) {
-                 func(i);
-             }
-         }).wait_and_throw();
+    ParallelForSYCLImpl_(queue, n, func, {}).wait_and_throw();
 }
 
 /// SYCL-only: depends on \p deps before launching the kernel and returns its
@@ -129,19 +142,8 @@ sycl::event ParallelForSYCL_(const Device& device,
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    if (n == 0) {
-        return sycl::event();
-    }
     auto queue = core::sy::GetQueue(device);
-    size_t wg = core::sy::PreferredWorkGroupSize(device);
-    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
-    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
-    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
-        int64_t i = item.get_global_id(0);
-        if (i < n) {
-            func(i);
-        }
-    });
+    return ParallelForSYCLImpl_(queue, n, func, deps);
 }
 
 #endif
@@ -209,17 +211,7 @@ sycl::event ParallelFor(const Device& device,
 /// regardless of enumeration-order mismatches.
 template <typename func_t>
 void ParallelFor(sycl::queue& queue, int64_t n, const func_t& func) {
-    if (n == 0) return;
-    size_t max_wg =
-            queue.get_device()
-                    .get_info<sycl::info::device::max_work_group_size>();
-    size_t wg = std::min<size_t>(256, max_wg);
-    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
-    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
-    queue.parallel_for(nd_range, [=](sycl::nd_item<1> item) {
-             int64_t i = item.get_global_id(0);
-             if (i < n) func(i);
-         }).wait_and_throw();
+    ParallelForSYCLImpl_(queue, n, func, {}).wait_and_throw();
 }
 
 /// Non-blocking, event-dependency variant of the above.
@@ -228,17 +220,7 @@ sycl::event ParallelFor(sycl::queue& queue,
                         int64_t n,
                         const func_t& func,
                         const std::vector<sycl::event>& deps) {
-    if (n == 0) return sycl::event();
-    size_t max_wg =
-            queue.get_device()
-                    .get_info<sycl::info::device::max_work_group_size>();
-    size_t wg = std::min<size_t>(256, max_wg);
-    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
-    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
-    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
-        int64_t i = item.get_global_id(0);
-        if (i < n) func(i);
-    });
+    return ParallelForSYCLImpl_(queue, n, func, deps);
 }
 
 template <typename func_t>

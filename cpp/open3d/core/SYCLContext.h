@@ -52,6 +52,13 @@ struct SYCLDevice {
     /// memory.
     bool discrete_gpu = false;
     uint64_t global_mem_size = 0;  ///< Global memory size in bytes.
+    /// Local (SLM/shared) memory size in bytes available per work-group.
+    uint64_t local_mem_size = 0;
+    /// Slices * sub-slices-per-slice (same query CUTLASS's
+    /// kernel_hardware_info.h uses for `sm_count`), falling back to
+    /// `max_compute_units` if partition info is unavailable. Cached here so
+    /// hot paths (e.g. GEMM, PersistentReduce) don't re-query the device.
+    size_t compute_units = 0;
     /// Sub-group (SIMD/wave) widths natively supported by the device, e.g.
     /// {8, 16, 32} on discrete Arc GPUs vs {16, 32} on some integrated Xe
     /// GPUs.
@@ -99,6 +106,15 @@ public:
     /// called. Safe from Python atexit / normal runtime; avoid relying on C++
     /// static destruction alone under OpenCL CPU.
     static void Clear();
+
+#if defined(SYCL_LANGUAGE_VERSION)
+    /// Returns (and memoizes) `sm_count`-equivalent compute-unit count for an
+    /// arbitrary \p sycl_device -- keyed on the SYCL device itself (not an
+    /// Open3D Device), since callers such as GemmColumnMajorSYCL may receive
+    /// a queue/device from a foreign runtime (e.g. PyTorch's XPU queue) that
+    /// is not one of the registered Open3D SYCL devices. Thread-safe.
+    size_t GetComputeUnits(const sycl::device& sycl_device);
+#endif
 
 private:
     SYCLContext();

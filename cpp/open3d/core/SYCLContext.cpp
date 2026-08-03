@@ -9,7 +9,9 @@
 
 #include <algorithm>
 #include <map>
+#include <mutex>
 #include <sycl/sycl.hpp>
+#include <unordered_map>
 
 #include "open3d/utility/Logging.h"
 
@@ -22,6 +24,14 @@ open3d::core::sy::SYCLContext* g_sycl_context = nullptr;
 // thread_local (not a single scalar like CUDA's current-stream state) since
 // SYCL queues are always bound to a specific device.
 thread_local std::map<open3d::core::Device, sycl::queue> g_queue_overrides;
+
+// Memoized compute-unit counts for arbitrary (possibly foreign/PyTorch)
+// sycl::device instances. sycl::device is EqualityComparable/Hashable per
+// the SYCL 2020 spec (specializes std::hash), so it can be used directly as
+// an unordered_map key. Guarded by g_compute_units_mutex since
+// GetComputeUnits() may be called from ML op kernels on any thread.
+std::mutex g_compute_units_mutex;
+std::unordered_map<sycl::device, size_t> g_compute_units_cache;
 }  // namespace
 
 namespace open3d {
@@ -47,6 +57,28 @@ std::string GetDeviceTypeName(const sycl::device& device) {
         default:
             return "unknown";
     }
+}
+
+/// Compute-unit count matching what CUTLASS's
+/// KernelHardwareInfo::query_device_multiprocessor_count() uses for
+/// `sm_count` on Intel targets: gpu_slices * gpu_subslices_per_slice. Falls
+/// back to max_compute_units if the Intel-specific extension query throws
+/// (e.g. on the SYCL CPU device, or non-Intel GPUs).
+size_t QueryComputeUnits(const sycl::device& sycl_device) {
+    try {
+        const size_t slices =
+                sycl_device
+                        .get_info<sycl::ext::intel::info::device::gpu_slices>();
+        const size_t subslices_per_slice = sycl_device.get_info<
+                sycl::ext::intel::info::device::gpu_subslices_per_slice>();
+        if (slices > 0 && subslices_per_slice > 0) {
+            return slices * subslices_per_slice;
+        }
+    } catch (const sycl::exception&) {
+        // Extension unsupported on this device; fall through.
+    }
+    return static_cast<size_t>(
+            sycl_device.get_info<sycl::info::device::max_compute_units>());
 }
 
 /// Runtime state for one Open3D SYCL device (queue + cached POD properties).
@@ -93,10 +125,12 @@ DeviceEntry MakeDeviceEntry(const sycl::device& sycl_device) {
                 props.name);
     }
     props.global_mem_size = entry.sycl_device.get_info<sid::global_mem_size>();
+    props.local_mem_size = entry.sycl_device.get_info<sid::local_mem_size>();
     props.discrete_gpu =
             (props.device_type == "gpu") &&
             !entry.sycl_device.get_info<sid::host_unified_memory>();
     props.sub_group_sizes = entry.sycl_device.get_info<sid::sub_group_sizes>();
+    props.compute_units = QueryComputeUnits(entry.sycl_device);
     return entry;
 }
 
@@ -177,6 +211,17 @@ SYCLDevice SYCLContext::GetDeviceProperties(const Device& device) {
         return SYCLDevice{};
     }
     return it->second.properties;
+}
+
+size_t SYCLContext::GetComputeUnits(const sycl::device& sycl_device) {
+    std::lock_guard<std::mutex> lock(g_compute_units_mutex);
+    auto it = g_compute_units_cache.find(sycl_device);
+    if (it != g_compute_units_cache.end()) {
+        return it->second;
+    }
+    const size_t compute_units = QueryComputeUnits(sycl_device);
+    g_compute_units_cache.emplace(sycl_device, compute_units);
+    return compute_units;
 }
 
 SYCLContext::SYCLContext() : impl_(std::make_unique<Impl>()) {
