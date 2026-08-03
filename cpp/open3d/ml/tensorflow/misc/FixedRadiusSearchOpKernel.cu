@@ -44,13 +44,13 @@ public:
         // determine temp_size
         open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64_t>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
-                (int64_t*)points_row_splits.flat<int64>().data(),
+                (int64_t*)points_row_splits.flat<int64_t>().data(),
                 queries_row_splits.shape().dim_size(0),
-                (int64_t*)queries_row_splits.flat<int64>().data(),
+                (int64_t*)queries_row_splits.flat<int64_t>().data(),
                 hash_table_splits.flat<uint32_t>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
                 hash_table_cell_splits.flat<uint32_t>().data(),
@@ -67,13 +67,13 @@ public:
         // actually run the search
         open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
-                (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
+                (int64_t*)query_neighbors_row_splits.flat<int64_t>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
-                (int64_t*)points_row_splits.flat<int64>().data(),
+                (int64_t*)points_row_splits.flat<int64_t>().data(),
                 queries_row_splits.shape().dim_size(0),
-                (int64_t*)queries_row_splits.flat<int64>().data(),
+                (int64_t*)queries_row_splits.flat<int64_t>().data(),
                 hash_table_splits.flat<uint32_t>().data(),
                 hash_table_cell_splits.shape().dim_size(0),
                 hash_table_cell_splits.flat<uint32_t>().data(),

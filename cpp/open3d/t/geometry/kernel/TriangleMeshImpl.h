@@ -21,12 +21,19 @@ namespace geometry {
 namespace kernel {
 namespace trianglemesh {
 
-#ifndef __CUDACC__
-using std::isnan;
+#if defined(SYCL_LANGUAGE_VERSION)
+using sycl::isnan;
+#elif defined(__CUDACC__)
+using ::isnan;  // CUDA provides host/device isnan() in the global namespace.
+#else
+#include <cmath>
+using std::isnan;  // CPU only
 #endif
 
 #if defined(__CUDACC__)
 void NormalizeNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void NormalizeNormalsSYCL
 #else
 void NormalizeNormalsCPU
 #endif
@@ -43,7 +50,7 @@ void NormalizeNormalsCPU
                               scalar_t x = ptr[idx];
                               scalar_t y = ptr[idx + 1];
                               scalar_t z = ptr[idx + 2];
-                              if (isnan(x)) {
+                              if (trianglemesh::isnan(x)) {
                                   x = 0.0;
                                   y = 0.0;
                                   z = 1.0;
@@ -64,6 +71,8 @@ void NormalizeNormalsCPU
 
 #if defined(__CUDACC__)
 void ComputeTriangleNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeTriangleNormalsSYCL
 #else
 void ComputeTriangleNormalsCPU
 #endif
@@ -109,6 +118,8 @@ void ComputeTriangleNormalsCPU
 
 #if defined(__CUDACC__)
 void ComputeTriangleAreasCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeTriangleAreasSYCL
 #else
 void ComputeTriangleAreasCPU
 #endif

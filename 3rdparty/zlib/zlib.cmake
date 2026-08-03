@@ -32,6 +32,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_zlib INSTALL_DIR)
 set(ZLIB_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZLIB_LIB_DIR ${INSTALL_DIR}/lib)
+set(ZLIB_INSTALL_DIR ${INSTALL_DIR})
 if(MSVC)
     set(ZLIB_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
 else()

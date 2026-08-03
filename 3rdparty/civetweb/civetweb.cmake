@@ -1,5 +1,10 @@
 include(ExternalProject)
 
+if (WIN32)
+    set(CIVETWEB_CXX_FLAGS /EHsc)
+elseif(UNIX AND NOT APPLE)
+    set(CIVETWEB_CXX_FLAGS -D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>)
+endif()
 ExternalProject_Add(
     ext_civetweb
     PREFIX civetweb
@@ -19,7 +24,7 @@ ExternalProject_Add(
         -DCIVETWEB_DISABLE_CGI=ON
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-        -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}> $<$<PLATFORM_ID:Windows>:/EHsc>"
+        -DCMAKE_CXX_FLAGS=${CIVETWEB_CXX_FLAGS}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}civetweb${CMAKE_STATIC_LIBRARY_SUFFIX}

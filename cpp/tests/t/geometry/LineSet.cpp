@@ -277,7 +277,6 @@ TEST_P(LineSetPermuteDevices, GetMinBound_GetMaxBound_GetCenter) {
 
 TEST_P(LineSetPermuteDevices, Transform) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::LineSet lineset(device);
     core::Tensor transformation = core::Tensor::Init<float>(
@@ -334,7 +333,6 @@ TEST_P(LineSetPermuteDevices, Scale) {
 
 TEST_P(LineSetPermuteDevices, Rotate) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     t::geometry::LineSet lineset(device);
     core::Tensor rotation = core::Tensor::Init<float>(

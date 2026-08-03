@@ -14,6 +14,8 @@ endif()
 
 if (APPLE)  # homebrew does not package libidn2
     set(curl_cmake_extra_args -DUSE_APPLE_IDN=ON -DUSE_LIBIDN2=OFF -DUSE_NGHTTP2=OFF)
+else()
+    set(curl_cmake_extra_args -DUSE_NGHTTP2=OFF)
 endif()
 
 ExternalProject_Add(
@@ -31,6 +33,7 @@ ExternalProject_Add(
         -DBUILD_LIBCURL_DOCS=OFF
         -DBUILD_MISC_DOCS=OFF
         -DCURL_BROTLI=OFF
+        -DCURL_ZSTD=OFF
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
         -DCURL_DISABLE_IMAP=ON

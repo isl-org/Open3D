@@ -7,6 +7,7 @@
 
 #include "open3d/core/hashmap/HashBackendBuffer.h"
 
+#include "open3d/core/BlockCopyDispatch.h"
 #include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
@@ -16,10 +17,8 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
                                      int64_t key_dsize,
                                      std::vector<int64_t> value_dsizes,
                                      const Device &device) {
-    // First compute common bytesize divisor for fast copying values.
-    const std::vector<int64_t> kDivisors = {16, 12, 8, 4, 2, 1};
-
-    for (const auto &divisor : kDivisors) {
+    // Largest kBlockCopyDivisors entry dividing all value buffer sizes.
+    for (int64_t divisor : kBlockCopyDivisors) {
         bool valid = true;
         blocks_per_element_.clear();
         for (size_t i = 0; i < value_dsizes.size(); ++i) {
@@ -49,8 +48,9 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
         value_buffers_.push_back(value_buffer_i);
     }
 
-    // Heap top is device specific
-    if (device.IsCUDA()) {
+    // Heap top is device specific. CUDA and SYCL keep it in device memory; the
+    // CPU backend uses the std::atomic member of HeapTop instead.
+    if (device.IsCUDA() || device.IsSYCL()) {
         heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
     }
 
@@ -67,6 +67,11 @@ void HashBackendBuffer::ResetHeap() {
     } else if (device.IsCUDA()) {
         CUDA_CALL(CUDAResetHeap, heap);
         heap_top_.cuda.Fill<int>(0);
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        SYCLResetHeap(heap);
+        heap_top_.cuda.Fill<int>(0);
+#endif
     }
 }
 
@@ -101,7 +106,7 @@ HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {
 }
 
 int HashBackendBuffer::GetHeapTopIndex() const {
-    if (heap_.IsCUDA()) {
+    if (heap_.IsCUDA() || heap_.IsSYCL()) {
         return heap_top_.cuda[0].Item<int>();
     }
     return heap_top_.cpu.load();

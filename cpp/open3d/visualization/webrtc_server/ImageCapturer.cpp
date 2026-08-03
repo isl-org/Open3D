@@ -7,11 +7,14 @@
 
 #include "open3d/visualization/webrtc_server/ImageCapturer.h"
 
+#include <api/scoped_refptr.h>
+#include <api/video/color_space.h>
 #include <api/video/i420_buffer.h>
 #include <libyuv/convert.h>
 #include <libyuv/video_common.h>
 #include <media/base/video_broadcaster.h>
 #include <media/base/video_common.h>
+#include <rtc_base/time_utils.h>
 
 #include <memory>
 
@@ -50,21 +53,26 @@ void ImageCapturer::OnCaptureResult(
     int height = (int)frame->GetShape(0);
     int width = (int)frame->GetShape(1);
 
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+    webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
             webrtc::I420Buffer::Create(width, height);
 
-    // frame->data()
-    const int conversion_result = libyuv::ConvertToI420(
-            frame->GetDataPtr<uint8_t>(), 0, i420_buffer->MutableDataY(),
-            i420_buffer->StrideY(), i420_buffer->MutableDataU(),
-            i420_buffer->StrideU(), i420_buffer->MutableDataV(),
-            i420_buffer->StrideV(), 0, 0, width, height, i420_buffer->width(),
-            i420_buffer->height(), libyuv::kRotate0, ::libyuv::FOURCC_RAW);
+    // Use full-range ("J") conversion to match Open3D's full-range (0-255)
+    // RGB frames, and tag the color space so VP9 signals this in-band.
+    const int conversion_result = libyuv::RAWToJ420(
+            frame->GetDataPtr<uint8_t>(), width * 3,
+            i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+            i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+            i420_buffer->MutableDataV(), i420_buffer->StrideV(), width, height);
 
     if (conversion_result >= 0) {
         webrtc::VideoFrame video_frame(i420_buffer,
                                        webrtc::VideoRotation::kVideoRotation_0,
-                                       rtc::TimeMicros());
+                                       webrtc::TimeMicros());
+        video_frame.set_color_space(
+                webrtc::ColorSpace(webrtc::ColorSpace::PrimaryID::kSMPTE170M,
+                                   webrtc::ColorSpace::TransferID::kSMPTE170M,
+                                   webrtc::ColorSpace::MatrixID::kSMPTE170M,
+                                   webrtc::ColorSpace::RangeID::kFull));
         if ((height_ == 0) && (width_ == 0)) {
             broadcaster_.OnFrame(video_frame);
         } else {
@@ -77,13 +85,15 @@ void ImageCapturer::OnCaptureResult(
             }
             int stride_y = width;
             int stride_uv = (width + 1) / 2;
-            rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
+            webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
                     webrtc::I420Buffer::Create(width, height, stride_y,
                                                stride_uv, stride_uv);
             scaled_buffer->ScaleFrom(
                     *video_frame.video_frame_buffer()->ToI420());
-            webrtc::VideoFrame frame = webrtc::VideoFrame(
-                    scaled_buffer, webrtc::kVideoRotation_0, rtc::TimeMicros());
+            webrtc::VideoFrame frame =
+                    webrtc::VideoFrame(scaled_buffer, webrtc::kVideoRotation_0,
+                                       webrtc::TimeMicros());
+            frame.set_color_space(*video_frame.color_space());
 
             broadcaster_.OnFrame(frame);
         }
@@ -93,15 +103,15 @@ void ImageCapturer::OnCaptureResult(
     }
 }
 
-// Override rtc::VideoSourceInterface<webrtc::VideoFrame>.
+// Override webrtc::VideoSourceInterface<webrtc::VideoFrame>.
 void ImageCapturer::AddOrUpdateSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-        const rtc::VideoSinkWants& wants) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+        const webrtc::VideoSinkWants& wants) {
     broadcaster_.AddOrUpdateSink(sink, wants);
 }
 
 void ImageCapturer::RemoveSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
     broadcaster_.RemoveSink(sink);
 }
 

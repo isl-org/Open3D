@@ -7,6 +7,7 @@
 
 #include "open3d/utility/CPUInfo.h"
 
+#include <cassert>
 #include <fstream>
 #include <memory>
 #include <set>
