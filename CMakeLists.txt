@@ -34,6 +34,24 @@ if(APPLE)
     endif()
 endif()
 
+# Detect a direct vcpkg toolchain for automatic dependency management. Custom
+# toolchains that chain-load vcpkg can opt in with -DOPEN3D_USE_VCPKG=ON.
+set(_open3d_use_vcpkg_default OFF)
+if(DEFINED CMAKE_TOOLCHAIN_FILE)
+    cmake_path(GET CMAKE_TOOLCHAIN_FILE FILENAME _open3d_toolchain_filename)
+    if(_open3d_toolchain_filename STREQUAL "vcpkg.cmake")
+        set(_open3d_use_vcpkg_default ON)
+    endif()
+    unset(_open3d_toolchain_filename)
+endif()
+option(OPEN3D_USE_VCPKG
+    "Prefer vcpkg/system dependencies (auto-detected for a direct vcpkg toolchain)"
+    ${_open3d_use_vcpkg_default})
+unset(_open3d_use_vcpkg_default)
+if(OPEN3D_USE_VCPKG)
+    message(STATUS "Open3D: vcpkg mode enabled - preferring system dependencies")
+endif()
+
 include(CMakeDependentOption)
 
 # Open3D build options
@@ -97,6 +115,33 @@ else()
 endif()
 option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
 
+# When using vcpkg, prefer system dependencies (override per lib with
+# -DUSE_SYSTEM_<PKG>=OFF, e.g. if the vcpkg port version is unsuitable).
+# Cache defaults must be set before the USE_SYSTEM_* option() lines below.
+if(OPEN3D_USE_VCPKG)
+    set(USE_SYSTEM_ASSIMP ON CACHE BOOL "Use system pre-installed assimp")
+    set(USE_SYSTEM_EIGEN3 ON CACHE BOOL "Use system pre-installed eigen3")
+    set(USE_SYSTEM_FMT ON CACHE BOOL "Use system pre-installed fmt")
+    set(USE_SYSTEM_GLEW ON CACHE BOOL "Use system pre-installed glew")
+    set(USE_SYSTEM_GLFW ON CACHE BOOL "Use system pre-installed glfw")
+    set(USE_SYSTEM_JPEG ON CACHE BOOL "Use system pre-installed jpeg")
+    set(USE_SYSTEM_JSONCPP ON CACHE BOOL "Use system pre-installed jsoncpp")
+    set(USE_SYSTEM_MSGPACK ON CACHE BOOL "Use system pre-installed msgpack")
+    set(USE_SYSTEM_NANOFLANN ON CACHE BOOL "Use system pre-installed nanoflann")
+    set(USE_SYSTEM_PNG ON CACHE BOOL "Use system pre-installed png")
+    set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "Use system pre-installed qhullcpp")
+    set(USE_SYSTEM_TBB ON CACHE BOOL "Use system pre-installed TBB")
+    set(USE_SYSTEM_TINYGLTF ON CACHE BOOL "Use system pre-installed tinygltf")
+    set(USE_SYSTEM_TINYOBJLOADER ON CACHE BOOL "Use system pre-installed tinyobjloader")
+    set(USE_SYSTEM_VTK ON CACHE BOOL "Use system pre-installed VTK")
+    set(USE_SYSTEM_ZEROMQ ON CACHE BOOL "Use system pre-installed ZeroMQ")
+    set(USE_SYSTEM_OPENSSL ON CACHE BOOL "Use system pre-installed OpenSSL")
+    set(USE_SYSTEM_CURL ON CACHE BOOL "Use system pre-installed curl")
+    set(USE_SYSTEM_EMBREE ON CACHE BOOL "Use system pre-installed Embree")
+    set(USE_SYSTEM_GOOGLETEST ON CACHE BOOL "Use system pre-installed Googletest")
+    message(STATUS "Open3D: vcpkg mode - default USE_SYSTEM_* ON (override with -DUSE_SYSTEM_<PKG>=OFF)")
+endif()
+
 # 3rd-party build options
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
@@ -114,6 +159,7 @@ if (APPLE)
 else()
     option(USE_SYSTEM_CURL            "Use system pre-installed curl"        OFF)
 endif()
+option(USE_SYSTEM_CURL_STATIC     "Define CURL_STATICLIB for a static system curl" OFF)
 option(USE_SYSTEM_CUTLASS         "Use system pre-installed cutlass"         OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_EMBREE          "Use system pre-installed Embree"          OFF)
