@@ -9,6 +9,8 @@
 
 #include <Eigen/src/Core/Matrix.h>
 
+#include <cassert>
+
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/BoundingVolume.h"

@@ -34,9 +34,22 @@ TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="25.3"
 PROTOBUF_VER="6.31.1"
+# Node.js (Jupyter extension build on Linux Docker CI)
+NODEJS_VERSION="${NODEJS_VERSION:-v24.18.0}"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+# Open3D-ML/ml3d deps (scikit-learn, etc.) needed when stubgen imports open3d with
+# BUNDLE_OPEN3D_ML (wheel builds with OPEN3D_ML_ROOT and ML ops enabled).
+install_open3d_ml_python_requirements() {
+    if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements.txt" ]]; then
+        echo "OPEN3D_ML_ROOT not set or missing requirements.txt; skipping Open3D-ML pip deps"
+        return 0
+    fi
+    echo "Installing Open3D-ML Python requirements from ${OPEN3D_ML_ROOT}/requirements.txt"
+    python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
+}
 
 install_python_dependencies() {
 
@@ -92,11 +105,44 @@ install_python_dependencies() {
         # https://stackoverflow.com/a/72493690/1255535
         # https://github.com/protocolbuffers/protobuf/issues/10051
         python -m pip install -U protobuf=="$PROTOBUF_VER"
+        install_open3d_ml_python_requirements
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
         python -m pip cache purge 2>/dev/null || true
     fi
+}
+
+# Install Node.js and Yarn on Linux for BUILD_JUPYTER_EXTENSION. 
+# NodeSource apt is unreliable in CI.  macOS does not use this: CI wheels
+# disable the Jupyter extension; local macOS builds expect node/yarn on PATH
+# (typically brew install node; npm install -g yarn).
+install_nodejs_linux() {
+    if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+        echo "install_nodejs_linux is for Linux only (current OSTYPE=$OSTYPE)"
+        exit 1
+    fi
+
+    echo "Installing Node.js ${NODEJS_VERSION} and Yarn"
+    local arch node_arch tarball
+    arch="$(uname -m)"
+    case "$arch" in
+        x86_64) node_arch=linux-x64 ;;
+        aarch64) node_arch=linux-arm64 ;;
+        *)
+            echo "Unsupported architecture for Node.js install: ${arch}"
+            exit 1
+            ;;
+    esac
+
+    tarball="node-${NODEJS_VERSION}-${node_arch}.tar.xz"
+    # wget is available in CI Docker images; curl is not always installed.
+    wget -qO- "https://nodejs.org/dist/${NODEJS_VERSION}/${tarball}" \
+        | tar -xJ -C /usr/local --strip-components=1
+
+    npm install -g yarn
+    node --version
+    yarn --version
 }
 
 build_all() {
@@ -209,7 +255,7 @@ build_pip_package() {
     # '_Python3_*' (FindPython3 internals; not matched by 'Python3*') so a reused
     # build dir from another Python (e.g. macOS build-lib @ 3.12) does not break
     # Development.Module detection. Avoid --fresh: it wipes build objects.
-    cacheClear=(-U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*')
+    cacheClear=(-U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' -U 'Tensorflow*')
 
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
         # C++ core only: single configure with the requested device.

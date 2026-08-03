@@ -37,3 +37,9 @@ target_sources(benchmarks PRIVATE
 )
 target_link_libraries(benchmarks PRIVATE benchmark::benchmark)
 target_include_directories(benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+if (BUILD_SYCL_MODULE)
+    # benchmarks compiles its own SYCL device code above, so it needs the
+    # -fsycl link step.
+    target_link_libraries(benchmarks PRIVATE Open3D::3rdparty_sycl)
+endif()
