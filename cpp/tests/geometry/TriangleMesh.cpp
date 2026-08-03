@@ -1152,6 +1152,10 @@ TEST(TriangleMesh, SamplePointsPoissonDisk) {
             min_dist = std::min(min_dist, d);
         }
     }
+    // For 100 points on a triangle with area 0.5, the theoretical Poisson disk
+    // radius is r = 2*sqrt(area/n / (2*sqrt(3))) ≈ 0.057. After sample
+    // elimination the actual minimum distance should be a meaningful fraction
+    // of that. We just check it's not degenerate (> 0.01).
     EXPECT_GT(min_dist, 0.01);
 
     // With vertex colors and normals
