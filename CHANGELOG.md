@@ -1,4 +1,6 @@
 ## Main
+-   Add vcpkg support for easier dependency management (PR #7386)
+-   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add SYCL ML ops: continuous convolution and sparse convolution (forward/transpose/backprop-filter, sycl-tla GEMM-accelerated), voxelize, voxel pooling, invert neighbors list, reduce-subarrays-sum, and ragged-to-dense, plus contrib NMS, RoI pool, ball query, IoU (BEV + 3D), trilinear devoxelize, and three-interpolate, all exposed via the PyTorch XPU op library.
 -   Hybrid nearest-neighbor search on SYCL now supports the L1 and Linf metrics (previously L2-only), matching fixed-radius search and CUDA.
