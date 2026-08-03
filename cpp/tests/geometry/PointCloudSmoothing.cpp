@@ -8,7 +8,6 @@
 // cppcheck-suppress missingIncludeSystem
 #include <random>
 
-#include "Eigen/Eigenvalues"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
 #include "tests/Tests.h"
@@ -16,93 +15,9 @@
 namespace open3d {
 namespace tests {
 
-namespace {
-// Helper functions for point cloud smoothing tests
-Eigen::Vector3d ComputeCentroid(const std::vector<Eigen::Vector3d>& points,
-                                const std::vector<int>& indices) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-    if (indices.empty()) {
-        return centroid;
-    }
-
-    const int n_points = static_cast<int>(points.size());
-    int valid_count = 0;
-    for (int idx : indices) {
-        if (idx < 0 || idx >= n_points) {
-            continue;
-        }
-        centroid += points[idx];
-        ++valid_count;
-    }
-    if (valid_count > 0) {
-        centroid /= static_cast<double>(valid_count);
-    }
-    return centroid;
-}
-
-Eigen::Vector3d ComputeWeightedCentroid(const open3d::geometry::PointCloud& pcd,
-                                        const std::vector<int>& indices,
-                                        const std::vector<double>& weights) {
-    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
-
-    if (indices.size() != weights.size() || indices.empty()) {
-        return centroid;
-    }
-
-    double sum_w = 0.0;
-    const int n_points = static_cast<int>(pcd.points_.size());
-
-    for (size_t i = 0; i < indices.size(); ++i) {
-        int idx = indices[i];
-        if (idx < 0 || idx >= n_points) {
-            continue;
-        }
-
-        const double w = weights[i];
-        centroid += w * pcd.points_[idx];
-        sum_w += w;
-    }
-
-    if (sum_w > 0.0) {
-        centroid /= sum_w;
-    }
-
-    return centroid;
-}
-
-Eigen::Matrix3d ComputeWeightedCovariance(
-        const open3d::geometry::PointCloud& pcd,
-        const std::vector<int>& indices,
-        const std::vector<double>& weights,
-        const Eigen::Vector3d& centroid) {
-    Eigen::Matrix3d C = Eigen::Matrix3d::Zero();
-
-    if (indices.size() != weights.size() || indices.empty()) {
-        return C;
-    }
-
-    const int n_points = static_cast<int>(pcd.points_.size());
-
-    for (size_t i = 0; i < indices.size(); ++i) {
-        const int idx = indices[i];
-
-        if (idx < 0 || idx >= n_points) {
-            continue;
-        }
-
-        const Eigen::Vector3d diff = pcd.points_[idx] - centroid;
-        C.noalias() += weights[i] * diff * diff.transpose();
-    }
-
-    return C;
-}
-
-Eigen::Vector3d ProjectOntoPlane(const Eigen::Vector3d& p,
-                                 const Eigen::Vector3d& centroid,
-                                 const Eigen::Vector3d& normal) {
-    return p - normal * ((p - centroid).dot(normal));
-}
-}  // namespace
+// Inverse-distance Laplacian / Taubin on meshes is regression-tested with fixed
+// reference vertices in TriangleMesh.FilterSmoothLaplacian and
+// TriangleMesh.FilterSmoothTaubin (same ApplyIndexedLaplacianUpdate core).
 
 // A point cloud that is a plane with some noise.
 static geometry::PointCloud CreateNoisyPlane(size_t n_points = 100,
@@ -131,67 +46,6 @@ static double AveragePlaneDistance(const geometry::PointCloud& pcd) {
         total_dist += std::abs(point.z());
     }
     return total_dist / pcd.points_.size();
-}
-
-TEST(PointCloudSmoothingHelpers, ComputeCentroid) {
-    std::vector<Eigen::Vector3d> points = {
-            {0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {-1, -1, -1}};
-    std::vector<int> indices = {0, 1, 2};
-    Eigen::Vector3d centroid = ComputeCentroid(points, indices);
-    ExpectEQ(centroid, Eigen::Vector3d(1, 1, 1));
-}
-
-TEST(PointCloudSmoothingHelpers, ComputeCentroid_EmptyIndices) {
-    std::vector<Eigen::Vector3d> points = {{0, 0, 0}};
-    std::vector<int> indices;
-    Eigen::Vector3d centroid = ComputeCentroid(points, indices);
-    ExpectEQ(centroid, Eigen::Vector3d::Zero().eval());
-}
-
-TEST(PointCloudSmoothingHelpers, ComputeCentroid_InvalidIndices) {
-    std::vector<Eigen::Vector3d> points = {{1, 1, 1}};
-    std::vector<int> indices = {0, -1, 100};
-    // It should only average the valid index 0
-    Eigen::Vector3d centroid = ComputeCentroid(points, indices);
-    ExpectEQ(centroid, Eigen::Vector3d(1, 1, 1));
-}
-
-TEST(PointCloudSmoothingHelpers, ComputeWeightedCentroid) {
-    geometry::PointCloud pcd;
-    pcd.points_ = {{0, 0, 0}, {2, 2, 2}, {4, 4, 4}};
-    std::vector<int> indices = {0, 1, 2};
-    std::vector<double> weights = {1.0, 1.0, 1.0};
-    Eigen::Vector3d centroid = ComputeWeightedCentroid(pcd, indices, weights);
-    ExpectEQ(centroid, Eigen::Vector3d(2, 2, 2));
-
-    weights = {1.0, 0.5, 0.0};
-    centroid = ComputeWeightedCentroid(pcd, indices, weights);
-    ExpectEQ(centroid, ((Eigen::Vector3d(0, 0, 0) * 1.0 +
-                         Eigen::Vector3d(2, 2, 2) * 0.5) /
-                        1.5)
-                               .eval());
-}
-
-TEST(PointCloudSmoothingHelpers, ComputeWeightedCovariance) {
-    geometry::PointCloud pcd;
-    pcd.points_ = {{1, 0, 0}, {-1, 0, 0}};
-    std::vector<int> indices = {0, 1};
-    std::vector<double> weights = {1.0, 1.0};
-    Eigen::Vector3d centroid = {0, 0, 0};
-    Eigen::Matrix3d C =
-            ComputeWeightedCovariance(pcd, indices, weights, centroid);
-
-    Eigen::Matrix3d expected;
-    expected << 2, 0, 0, 0, 0, 0, 0, 0, 0;
-    ExpectEQ(C, expected);
-}
-
-TEST(PointCloudSmoothingHelpers, ProjectOntoPlane) {
-    Eigen::Vector3d p(1, 1, 1);
-    Eigen::Vector3d centroid(0, 0, 0);
-    Eigen::Vector3d normal(0, 0, 1);
-    Eigen::Vector3d projected = ProjectOntoPlane(p, centroid, normal);
-    ExpectEQ(projected, Eigen::Vector3d(1, 1, 0));
 }
 
 // A point cloud with a step edge.
@@ -238,6 +92,22 @@ static geometry::PointCloud CreateTwoPointLine() {
     return pcd;
 }
 
+// Unit-cube corner order: 000, 100, 010, 110, 001, 101, 011, 111.
+static geometry::PointCloud CreateUnitCubeCorners() {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
+                   {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}};
+    return pcd;
+}
+
+// This is a unit cube with a single displaced corner. The displacement makes
+// its full-neighborhood MLS covariance have a unique smallest eigenvector.
+static geometry::PointCloud CreatePerturbedUnitCubeCorners() {
+    auto pcd = CreateUnitCubeCorners();
+    pcd.points_[7].z() = 1.25;
+    return pcd;
+}
+
 static geometry::PointCloud CreateNoisyPlaneWithPerPointAttributes(
         size_t n_points = 100, double noise_std = 0.01) {
     geometry::PointCloud pcd = CreateNoisyPlane(n_points, noise_std);
@@ -273,16 +143,25 @@ TEST(PointCloudSmoothing, SmoothLaplacianExcludesSelfNeighbor) {
     ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
-TEST(PointCloudSmoothing,
-     SmoothLaplacianFixedNeighborhoodsExcludesSelfNeighbor) {
-    auto pcd = CreateTwoPointLine();
-    auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5, 1, true);
+TEST(PointCloudSmoothing, SmoothLaplacian_UnitCubeReference) {
+    auto pcd = CreateUnitCubeCorners();
+    const auto pcd_smoothed = pcd.SmoothLaplacian(1, 0.5, 7, true);
 
-    std::vector<Eigen::Vector3d> expected_points = {
-            {5.0, 0.0, 0.0},
-            {5.0, 0.0, 0.0},
+    // Every corner uses the other seven corners. For 000, their mean is
+    // (4/7, 4/7, 4/7), therefore 000 -> (2/7, 2/7, 2/7). The remaining
+    // values follow by cube symmetry.
+    const std::vector<Eigen::Vector3d> ref = {
+            {2.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+            {5.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+            {2.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+            {5.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+            {2.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+            {5.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+            {2.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0},
+            {5.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0},
     };
-    ExpectEQ(pcd_smoothed.points_, expected_points);
+    EXPECT_EQ(pcd_smoothed.points_.size(), pcd.points_.size());
+    ExpectEQ(pcd_smoothed.points_, ref, 1e-12);
 }
 
 TEST(PointCloudSmoothing, SmoothLaplacianEmpty) {
@@ -298,15 +177,20 @@ TEST(PointCloudSmoothing, SmoothLaplacianZeroIterations) {
     ExpectEQ(pcd.points_, pcd_smoothed.points_);
 }
 
-TEST(PointCloudSmoothing, SmoothLaplacianPreservesPerPointAttributes) {
+TEST(PointCloudSmoothing, SmoothLaplacianAndTaubinPreservePerPointAttributes) {
     auto pcd = CreateNoisyPlaneWithPerPointAttributes(80, 0.05);
-    auto pcd_smoothed = pcd.SmoothLaplacian(5, 0.5, 20, true);
-    auto pcd_smoothed_again = pcd.SmoothLaplacian(5, 0.5, 20, true);
+    const auto laplacian = pcd.SmoothLaplacian(5, 0.5, 20, true);
+    const auto laplacian_again = pcd.SmoothLaplacian(5, 0.5, 20, true);
+    const auto taubin = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
+    const auto taubin_again = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
 
-    EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
-    ExpectEQ(pcd.colors_, pcd_smoothed.colors_);
-    ExpectEQ(pcd.covariances_, pcd_smoothed.covariances_);
-    ExpectEQ(pcd_smoothed.points_, pcd_smoothed_again.points_);
+    for (const auto* smoothed : {&laplacian, &taubin}) {
+        EXPECT_EQ(pcd.points_.size(), smoothed->points_.size());
+        ExpectEQ(pcd.colors_, smoothed->colors_);
+        ExpectEQ(pcd.covariances_, smoothed->covariances_);
+    }
+    ExpectEQ(laplacian.points_, laplacian_again.points_);
+    ExpectEQ(taubin.points_, taubin_again.points_);
 }
 
 TEST(PointCloudSmoothing, SmoothTaubin) {
@@ -331,15 +215,25 @@ TEST(PointCloudSmoothing, SmoothTaubinExcludesSelfNeighbor) {
     ExpectEQ(pcd_smoothed.points_, expected_points);
 }
 
-TEST(PointCloudSmoothing, SmoothTaubinFixedNeighborhoodsExcludesSelfNeighbor) {
-    auto pcd = CreateTwoPointLine();
-    auto pcd_smoothed = pcd.SmoothTaubin(1, 0.5, -0.5, 1, true);
+TEST(PointCloudSmoothing, SmoothTaubin_UnitCubeReference) {
+    auto pcd = CreateUnitCubeCorners();
+    const auto pcd_smoothed = pcd.SmoothTaubin(1, 0.5, -0.53, 7, true);
 
-    std::vector<Eigen::Vector3d> expected_points = {
-            {5.0, 0.0, 0.0},
-            {5.0, 0.0, 0.0},
+    // A full-cube uniform-neighborhood pass scales displacement from the
+    // center by (1 - 8 * factor / 7). The lambda and mu passes thus scale by
+    // (3/7) * (1 + 4.24/7) = 0.688163265306..., giving these coordinates.
+    const std::vector<Eigen::Vector3d> ref = {
+            {0.155918367347, 0.155918367347, 0.155918367347},
+            {0.844081632653, 0.155918367347, 0.155918367347},
+            {0.155918367347, 0.844081632653, 0.155918367347},
+            {0.844081632653, 0.844081632653, 0.155918367347},
+            {0.155918367347, 0.155918367347, 0.844081632653},
+            {0.844081632653, 0.155918367347, 0.844081632653},
+            {0.155918367347, 0.844081632653, 0.844081632653},
+            {0.844081632653, 0.844081632653, 0.844081632653},
     };
-    ExpectEQ(pcd_smoothed.points_, expected_points);
+    EXPECT_EQ(pcd_smoothed.points_.size(), pcd.points_.size());
+    ExpectEQ(pcd_smoothed.points_, ref, 1e-12);
 }
 
 TEST(PointCloudSmoothing, SmoothTaubinEmpty) {
@@ -355,17 +249,6 @@ TEST(PointCloudSmoothing, SmoothTaubinZeroIterations) {
     ExpectEQ(pcd.points_, pcd_smoothed.points_);
 }
 
-TEST(PointCloudSmoothing, SmoothTaubinPreservesPerPointAttributes) {
-    auto pcd = CreateNoisyPlaneWithPerPointAttributes(80, 0.05);
-    auto pcd_smoothed = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
-    auto pcd_smoothed_again = pcd.SmoothTaubin(5, 0.5, -0.53, 20, true);
-
-    EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
-    ExpectEQ(pcd.colors_, pcd_smoothed.colors_);
-    ExpectEQ(pcd.covariances_, pcd_smoothed.covariances_);
-    ExpectEQ(pcd_smoothed.points_, pcd_smoothed_again.points_);
-}
-
 TEST(PointCloudSmoothing, SmoothMLS_KNN) {
     auto pcd = CreateNoisyPlane(100, 0.1);
     double initial_noise = AveragePlaneDistance(pcd);
@@ -375,6 +258,27 @@ TEST(PointCloudSmoothing, SmoothMLS_KNN) {
 
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     EXPECT_LT(final_noise, initial_noise);
+}
+
+TEST(PointCloudSmoothing, SmoothMLS_PerturbedUnitCubeReference) {
+    auto pcd = CreatePerturbedUnitCubeCorners();
+    const auto pcd_smoothed = pcd.SmoothMLS(geometry::KDTreeSearchParamKNN(8));
+
+    // KNN-only MLS uses uniform weights. The displaced 111 corner makes the
+    // covariance non-degenerate; weighted PCA followed by plane projection
+    // gives the following hand-derived tangent-plane projections.
+    const std::vector<Eigen::Vector3d> ref = {
+            {0.270923615903, 0.270923615903, -0.175601750345},
+            {0.857719411863, -0.142280588137, 0.092220533208},
+            {-0.142280588137, 0.857719411863, 0.092220533208},
+            {0.444515207823, 0.444515207823, 0.360042816760},
+            {0.538745899455, 0.538745899455, 0.650806657735},
+            {1.125541695415, 0.125541695415, 0.918628941287},
+            {0.125541695415, 1.125541695415, 0.918628941287},
+            {0.779293062264, 0.779293062264, 1.393053326860},
+    };
+    EXPECT_EQ(pcd_smoothed.points_.size(), pcd.points_.size());
+    ExpectEQ(pcd_smoothed.points_, ref, 1e-9);
 }
 
 TEST(PointCloudSmoothing, SmoothMLS_Radius) {
@@ -468,6 +372,30 @@ TEST(PointCloudSmoothing, SmoothBilateral) {
 
     EXPECT_EQ(pcd.points_.size(), pcd_smoothed.points_.size());
     EXPECT_LT(final_noise, initial_noise);
+}
+
+TEST(PointCloudSmoothing, SmoothBilateral_UnitCubeReference) {
+    auto pcd = CreateUnitCubeCorners();
+    pcd.normals_ = {
+            {-1, -1, -1}, {1, -1, -1}, {-1, 1, -1}, {1, 1, -1},
+            {-1, -1, 1},  {1, -1, 1},  {-1, 1, 1},  {1, 1, 1},
+    };
+
+    const auto pcd_smoothed =
+            pcd.SmoothBilateral(geometry::KDTreeSearchParamKNN(8), 1.0, 1.0);
+
+    // At 000, neighbors at Hamming distance h have aggregate weight
+    // C(3,h) exp(-h/2 - h^2/6). Their weighted coordinate is
+    // 0.298085265092; cube symmetry supplies the other corners.
+    constexpr double low = 0.298085265092;
+    constexpr double high = 1.0 - low;
+    const std::vector<Eigen::Vector3d> ref = {
+            {low, low, low},   {high, low, low},   {low, high, low},
+            {high, high, low}, {low, low, high},   {high, low, high},
+            {low, high, high}, {high, high, high},
+    };
+    EXPECT_EQ(pcd_smoothed.points_.size(), pcd.points_.size());
+    ExpectEQ(pcd_smoothed.points_, ref, 1e-9);
 }
 
 TEST(PointCloudSmoothing, SmoothBilateral_PreservesEdges) {

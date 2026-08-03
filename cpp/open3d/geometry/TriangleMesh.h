@@ -177,11 +177,14 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
-    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
-    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
-    /// the neighbour based on the inverse distance (closer neighbours have
-    /// higher weight),
+    /// Related to Vollmer et al., "Improved Laplacian Smoothing of Noisy
+    /// Surface Meshes", 1999. Implementation: one explicit pass per iteration
+    /// over mesh adjacency neighbors with inverse-distance weights
+    /// \f$w_n = 1 / (\|v_i - v_n\| + 10^{-12})\f$ and update
+    /// \f$v_o = v_i + \lambda (\sum_{n \in N} w_n v_n / \sum_{n \in N} w_n -
+    /// v_i)\f$. Differs from that reference in the weighting scheme and in
+    /// applying the same rule to vertex positions, normals, and/or colors
+    /// (FilterScope) rather than positions only.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -191,11 +194,13 @@ public:
             double lambda_filter,
             FilterScope scope = FilterScope::All) const;
 
-    /// \brief Function to smooth triangle mesh using method of Taubin,
-    /// "Curve and Surface Smoothing Without Shrinkage", 1995.
-    /// Applies in each iteration two times FilterSmoothLaplacian, first
-    /// with lambda_filter and second with mu as smoothing parameter.
-    /// This method avoids shrinkage of the triangle mesh.
+    /// \brief Function to smooth triangle mesh using method of Taubin.
+    ///
+    /// Taubin, "Curve and Surface Smoothing Without Shrinkage", 1995. Each
+    /// iteration applies two Laplacian passes (FilterSmoothLaplacian) with
+    /// factors `lambda_filter` then `mu` (typically negative). Differs from the
+    /// paper in using triangle adjacency, inverse-distance Laplacian weights,
+    /// and optional smoothing of normals/colors (FilterScope).
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.

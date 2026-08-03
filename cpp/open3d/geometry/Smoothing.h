@@ -19,7 +19,10 @@ namespace open3d {
 namespace geometry {
 namespace smoothing {
 
-// Applies one Laplacian-style pass that preserves 1:1 point indexing.
+// Shared explicit Laplacian update used by mesh and point-cloud smoothers.
+// For each index i: x_i' = x_i + factor * (sum_j w_ij x_j / sum_j w_ij - x_i).
+// Neighbors and weights are supplied by the caller; vertices with no neighbors
+// are unchanged.
 template <typename ForEachNeighborFunc, typename ComputeWeightFunc>
 void ApplyIndexedLaplacianUpdate(
         const std::vector<Eigen::Vector3d> &reference_positions,

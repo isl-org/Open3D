@@ -203,12 +203,33 @@ public:
                                      bool invert = false) const;
 
     /// \brief Smooth point cloud using weighted Moving Least Squares (MLS).
+    ///
+    /// Inspired by Alexa et al., "Computing and Rendering Point Set Surfaces",
+    /// 2003. For each point: find neighbors via `search_param`; if fewer than
+    /// three neighbors, keep the input point. Otherwise use Gaussian weights
+    /// \f$w_j = \exp(-d_j^2 / h^2)\f$ with \f$h\f$ = search radius (if
+    /// radius is unset, weights are uniform), weighted centroid and covariance,
+    /// plane normal from the smallest-variance eigenvector, and project the
+    /// point onto that plane. Input normals are updated when present and
+    /// re-oriented globally at the end. Does not build a full point-set surface
+    /// or resample/redistribute points as in the reference.
+    ///
     /// \param search_param KDTree search parameters for neighborhood search.
     /// \return Smoothed point cloud.
     PointCloud SmoothMLS(const KDTreeSearchParam& search_param =
                                  KDTreeSearchParamHybrid(0.05, 30)) const;
 
     /// \brief Smooth point cloud using Laplacian smoothing.
+    ///
+    /// Graph Laplacian flow on a k-NN neighborhood (related to Pauly et al.,
+    /// "Spectral Processing of Point-Sampled Geometry", 2001). Each iteration
+    /// applies \f$x_i' = x_i + \lambda (\bar{x}_i - x_i)\f$ with
+    /// \f$\bar{x}_i\f$ the uniform average over k nearest neighbors (excluding
+    /// self). Optional `use_fixed_neighborhoods` freezes the k-NN graph from
+    /// the initial positions. Differs from the reference: no spectral/eigen
+    /// analysis, uniform neighbor weights, and k-NN instead of a mesh or
+    /// epsilon graph.
+    ///
     /// \param iterations Number of smoothing iterations.
     /// \param lambda     Smoothing factor in (0, 1).
     /// \param use_fixed_neighborhoods If true, reuse the initial k-NN graph
@@ -221,6 +242,12 @@ public:
 
     /// \brief Smooth point cloud using Taubin smoothing (Laplacian + inverse
     /// Laplacian).
+    ///
+    /// Taubin, "Curve and Surface Smoothing Without Shrinkage", 1995. Each
+    /// iteration runs SmoothLaplacian-style passes with `lambda` then `mu` on
+    /// the k-NN graph. Differs from the paper: point-cloud k-NN graph with
+    /// uniform weights instead of a mesh Laplacian.
+    ///
     /// \param iterations Number of smoothing iterations.
     /// \param lambda     Positive smoothing factor.
     /// \param mu         Negative smoothing factor (typically around -0.53).
@@ -234,6 +261,17 @@ public:
                             bool use_fixed_neighborhoods = false) const;
 
     /// \brief Smooth point cloud using bilateral filtering.
+    ///
+    /// Related to Jones et al., "Non-Iterative, Feature-Preserving Mesh
+    /// Smoothing", 2003. For each point with more than one neighbor, weights
+    /// are \f$w_k = \exp(-d_k^2 / 2\sigma_s^2) \exp(-((p_i - p_k) \cdot
+    /// \hat{n}_i)^2 / 2\sigma_r^2)\f$ and the new position is the weighted
+    /// average of neighbor positions. Normals are estimated when missing.
+    /// Differs from the reference: operates on unstructured points (not a
+    /// mesh), moves positions toward a weighted centroid rather than mesh
+    /// fairing, and leaves points with \f$\le 1\f$ neighbor or zero-length
+    /// normals unchanged.
+    ///
     /// \param search_param KDTree search parameters for neighborhood search.
     /// \param sigma_s      Spatial Gaussian sigma.
     /// \param sigma_r      Range Gaussian sigma.

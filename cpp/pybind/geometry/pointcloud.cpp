@@ -150,22 +150,48 @@ Returns:
                  "normals exist",
                  "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
-            .def("smooth_mls", &PointCloud::SmoothMLS,
-                 "Smooth point cloud using weighted Moving Least Squares "
-                 "(MLS).",
+            .def("smooth_mls", &PointCloud::SmoothMLS, R"doc(
+Smooth point cloud using a local tangent-plane projection (MLS-style).
+
+For each point, neighbors are queried with ``search_param``. If there are
+fewer than three neighbors, the point is unchanged. Otherwise Gaussian weights
+``exp(-d^2 / h^2)`` are used (``h`` = search radius; if only KNN is used,
+weights are uniform), a weighted plane is fit via PCA, and the point is
+projected onto that plane. Related to Alexa et al., *Computing and Rendering
+Point Set Surfaces*, 2003; this function does not build a full point-set
+surface or resample points as in that paper.
+)doc",
                  "search_param"_a = KDTreeSearchParamHybrid(0.05, 30))
-            .def("smooth_laplacian", &PointCloud::SmoothLaplacian,
-                 "Smooth point cloud using Laplacian smoothing.",
+            .def("smooth_laplacian", &PointCloud::SmoothLaplacian, R"doc(
+Laplacian smoothing on a k-nearest-neighbor graph.
+
+Each iteration updates ``x_i <- x_i + lambda * (mean(neighbors) - x_i)`` with
+uniform weights over ``knn`` nearest neighbors (excluding self). Optional
+``use_fixed_neighborhoods`` reuses the k-NN graph from the initial positions.
+Related to Pauly et al., *Spectral Processing of Point-Sampled Geometry*, 2001;
+this is an explicit uniform graph Laplacian, not a spectral operator.
+)doc",
                  "iterations"_a = 10, "lambda_"_a = 0.5, "knn"_a = 20,
                  py::arg_v("use_fixed_neighborhoods", false, "False"))
-            .def("smooth_taubin", &PointCloud::SmoothTaubin,
-                 "Smooth point cloud using Taubin smoothing (Laplacian + "
-                 "inverse Laplacian).",
+            .def("smooth_taubin", &PointCloud::SmoothTaubin, R"doc(
+Taubin smoothing: two Laplacian passes per iteration (``lambda`` then ``mu``).
+
+Uses the same k-NN Laplacian as :func:`smooth_laplacian`. Related to Taubin,
+*Curve and Surface Smoothing Without Shrinkage*, 1995; differs in using a
+point-cloud k-NN graph with uniform weights.
+)doc",
                  "iterations"_a = 10, "lambda_"_a = 0.5, "mu"_a = -0.53,
                  "knn"_a = 20,
                  py::arg_v("use_fixed_neighborhoods", false, "False"))
-            .def("smooth_bilateral", &PointCloud::SmoothBilateral,
-                 "Smooth point cloud using bilateral filtering.",
+            .def("smooth_bilateral", &PointCloud::SmoothBilateral, R"doc(
+Bilateral smoothing using spatial and normal-direction range weights.
+
+For each point, ``w_k = exp(-d_k^2 / 2 sigma_s^2) * exp(-((p_i - p_k) . n_i)^2 /
+2 sigma_r^2)`` and the new position is the weighted average of neighbors.
+Normals are estimated if missing. Related to Jones et al.,
+*Non-Iterative, Feature-Preserving Mesh Smoothing*, 2003; applied here to
+unstructured points with a weighted centroid update.
+)doc",
                  "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
                  "sigma_s"_a = 0.05, "sigma_r"_a = 0.05)
             .def("orient_normals_to_align_with_direction",
