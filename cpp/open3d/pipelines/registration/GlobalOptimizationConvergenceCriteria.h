@@ -81,9 +81,9 @@ public:
     /// increments.
     /// \param min_right_term Minimum right term value.
     /// \param min_residual Minimum residual value.
-    /// \param max_iteration_lm Maximum iteration number for Levenberg Marquardt method.
-    /// \param upper_scale_factor Upper scale factor value.
-    /// \param lower_scale_factor Lower scale factor value.
+    /// \param max_iteration_lm Maximum iteration number for Levenberg Marquardt
+    /// method. \param upper_scale_factor Upper scale factor value. \param
+    /// lower_scale_factor Lower scale factor value.
     GlobalOptimizationConvergenceCriteria(
             int max_iteration = 100,
             double min_relative_increment = 1e-6,
