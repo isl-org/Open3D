@@ -66,7 +66,10 @@ inline void BallQuerySYCL(sycl::queue& queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(size_t(b) * m * wg),
                                   sycl::range<1>(wg)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: new_xyz/xyz/idx are 3 distinct, never-aliasing
+                // pointers, so this kernel can safely take the no-alias
+                // hint.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / m);
                     const int pt_idx = static_cast<int>(group_id % m);

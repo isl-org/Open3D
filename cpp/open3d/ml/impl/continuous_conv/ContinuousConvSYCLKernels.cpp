@@ -36,7 +36,9 @@ sycl::event MultiplyColumnsSYCL(sycl::queue& queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(num_groups * kBlockSize),
                                   sycl::range<1>(kBlockSize)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: col_major_matrix and vector are distinct,
+                // never-aliasing raw pointers.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t idx = item.get_global_id(0);
                     if (idx >= n) return;
                     const size_t col = idx / rows;
@@ -61,7 +63,9 @@ sycl::event MultiplyAndCopyColumnsSYCL(sycl::queue& queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(num_groups * kBlockSize),
                                   sycl::range<1>(kBlockSize)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: out_ptr/col_major_matrix/vector are distinct,
+                // never-aliasing raw pointers.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t idx = item.get_global_id(0);
                     if (idx >= n) return;
                     const size_t col = idx / rows;
@@ -150,7 +154,11 @@ sycl::event FillColumnKernelSYCL(sycl::queue& queue,
                 sycl::nd_range<1>(
                         sycl::range<1>(num_columns * kFillColumnWGSize),
                         sycl::range<1>(kFillColumnWGSize)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: this kernel takes many distinct, never-
+                // aliasing raw pointer args (columns/positions/extents/
+                // neighbor arrays/etc.), so it can safely take the
+                // no-alias hint.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const TIndex out_idx =
                             begin_idx + static_cast<TIndex>(item.get_group(0));
                     if (out_idx >= end_idx) return;
@@ -331,7 +339,10 @@ sycl::event FillColumnTransposeKernelSYCL(
                 sycl::nd_range<1>(
                         sycl::range<1>(num_columns * kFillColumnWGSize),
                         sycl::range<1>(kFillColumnWGSize)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: this kernel takes many distinct, never-
+                // aliasing raw pointer args, so it can safely take the
+                // no-alias hint.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const TIndex out_idx =
                             begin_idx + static_cast<TIndex>(item.get_group(0));
                     if (out_idx >= end_idx) return;

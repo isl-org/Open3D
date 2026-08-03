@@ -203,6 +203,18 @@ inline void ComputeVoxelPerBatchSYCL(sycl::queue& queue,
     });
 }
 
+// Item 7b.4 note: this file's kernels are launched via core::ParallelFor
+// (int64_t-index lambda, not a sycl::item/nd_item lambda), so
+// [[intel::kernel_args_restrict]] cannot be added at these call sites the
+// way it was for other ml/ kernels this session -- it would need to be added
+// inside ParallelForSYCLImpl_'s own lambda in ParallelFor.h to cover every
+// core::ParallelFor caller at once. Also, ComputeStartIdxSYCL's `points_count`
+// parameter is sometimes an alias of `unique_hashes_count` at the call site
+// (see the caller's points_count_is_alias branch below) and other kernels
+// here read that same aliased buffer through a different name across
+// separate ParallelFor calls, so per-kernel no-alias attributes would need
+// per-call-site auditing beyond this item's scope regardless.
+
 /// Computes the starting index and clamped point count for each valid voxel,
 /// used when the number of voxels exceeds max_voxels. Ports
 /// ComputeStartIdxKernel. Depends on \p deps and returns its completion

@@ -55,33 +55,34 @@ namespace contrib {
 
 /// Checks whether point (x, y, z) lies inside the rotated 3D box centered
 /// at (cx, cy=bottom_y-h/2, cz) with size (h, w, l) and heading \p angle.
-/// Shared by the CPU/CUDA/SYCL roi_pool launchers.
-OPEN3D_HOST_DEVICE inline int pt_in_box3d(float x,
-                                          float y,
-                                          float z,
-                                          float cx,
-                                          float bottom_y,
-                                          float cz,
-                                          float h,
-                                          float w,
-                                          float l,
-                                          float angle,
-                                          float max_dis) {
+/// Shared by the CPU/CUDA/SYCL roi_pool launchers. Returns bool (not the
+/// original PointRCNN int) since callers only ever store it into an int
+/// flag array or test it for truthiness; bool->int conversion is well
+/// defined (true/false -> 1/0) so all three backends are unaffected.
+OPEN3D_HOST_DEVICE inline bool pt_in_box3d(float x,
+                                           float y,
+                                           float z,
+                                           float cx,
+                                           float bottom_y,
+                                           float cz,
+                                           float h,
+                                           float w,
+                                           float l,
+                                           float angle,
+                                           float max_dis) {
     float x_rot, z_rot, cosa, sina, cy;
-    int in_flag;
     cy = bottom_y - h / 2.0;
     if ((fabsf(x - cx) > max_dis) || (fabsf(y - cy) > h / 2.0) ||
         (fabsf(z - cz) > max_dis)) {
-        return 0;
+        return false;
     }
     cosa = cos(angle);
     sina = sin(angle);
     x_rot = (x - cx) * cosa + (z - cz) * (-sina);
     z_rot = (x - cx) * sina + (z - cz) * cosa;
 
-    in_flag = (x_rot >= -l / 2.0) & (x_rot <= l / 2.0) & (z_rot >= -w / 2.0) &
-              (z_rot <= w / 2.0);
-    return in_flag;
+    return (x_rot >= -l / 2.0) & (x_rot <= l / 2.0) & (z_rot >= -w / 2.0) &
+           (z_rot <= w / 2.0);
 }
 
 #ifdef BUILD_CUDA_MODULE

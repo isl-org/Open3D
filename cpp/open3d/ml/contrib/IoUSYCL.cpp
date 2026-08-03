@@ -11,6 +11,7 @@
 // bare sycl::range, for better occupancy control.
 
 #include "open3d/core/ParallelFor.h"
+#include "open3d/core/SYCLContext.h"
 #include "open3d/ml/contrib/IoU.h"
 #include "open3d/ml/contrib/IoUImpl.h"
 
@@ -18,7 +19,7 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-void IoUBevSYCLKernel(const core::Device &device,
+void IoUBevSYCLKernel(sycl::queue &queue,
                       const float *boxes_a,
                       const float *boxes_b,
                       float *iou,
@@ -28,7 +29,7 @@ void IoUBevSYCLKernel(const core::Device &device,
     if (n == 0) {
         return;
     }
-    core::ParallelFor(device, n, [=](int64_t idx64) {
+    core::ParallelFor(queue, n, [=](int64_t idx64) {
         const int idx = static_cast<int>(idx64);
         const int idx_a = idx / num_b;
         const int idx_b = idx % num_b;
@@ -38,7 +39,7 @@ void IoUBevSYCLKernel(const core::Device &device,
     });
 }
 
-void IoU3dSYCLKernel(const core::Device &device,
+void IoU3dSYCLKernel(sycl::queue &queue,
                      const float *boxes_a,
                      const float *boxes_b,
                      float *iou,
@@ -48,7 +49,7 @@ void IoU3dSYCLKernel(const core::Device &device,
     if (n == 0) {
         return;
     }
-    core::ParallelFor(device, n, [=](int64_t idx64) {
+    core::ParallelFor(queue, n, [=](int64_t idx64) {
         const int idx = static_cast<int>(idx64);
         const int idx_a = idx / num_b;
         const int idx_b = idx % num_b;
@@ -56,6 +57,31 @@ void IoU3dSYCLKernel(const core::Device &device,
         const float *box_b = boxes_b + idx_b * 7;
         iou[idx_a * num_b + idx_b] = IoU3DWithCenterAndSize(box_a, box_b);
     });
+}
+
+// core::Device overloads: resolve to SYCLContext's default queue here (this
+// TU IS -fsycl-compiled) and forward, so non-SYCL-compiled callers (the
+// pybind bindings in iou.cpp) never need to spell sycl::queue themselves.
+void IoUBevSYCLKernel(const core::Device &device,
+                      const float *boxes_a,
+                      const float *boxes_b,
+                      float *iou,
+                      int num_a,
+                      int num_b) {
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    IoUBevSYCLKernel(queue, boxes_a, boxes_b, iou, num_a, num_b);
+}
+
+void IoU3dSYCLKernel(const core::Device &device,
+                     const float *boxes_a,
+                     const float *boxes_b,
+                     float *iou,
+                     int num_a,
+                     int num_b) {
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    IoU3dSYCLKernel(queue, boxes_a, boxes_b, iou, num_a, num_b);
 }
 
 }  // namespace contrib

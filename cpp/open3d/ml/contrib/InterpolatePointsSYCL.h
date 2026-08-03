@@ -69,7 +69,10 @@ inline void ThreeNNSYCL(sycl::queue& queue,
                 sycl::nd_range<1>(
                         sycl::range<1>(static_cast<size_t>(b) * n * wg),
                         sycl::range<1>(wg)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: unknown/known/dist2/idx are 4 distinct, never-
+                // aliasing pointers, so this kernel can safely take the
+                // no-alias hint.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / n);
                     const int pt_idx = static_cast<int>(group_id % n);

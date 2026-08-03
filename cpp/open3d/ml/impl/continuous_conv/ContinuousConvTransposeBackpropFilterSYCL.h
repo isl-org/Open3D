@@ -112,10 +112,14 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
                       num_cols_per_run * spatial_filter_size * in_channels;
 
     // if we cannot process all data at once we need multiple runs. Every
-    // chunk's GEMM accumulates into the same filter_backprop buffer, so
-    // chunks are serialized by GemmColumnMajorSYCL's internal blocking (see
-    // the analogous comment in SparseConvTransposeBackpropFilterSYCL.h).
+    // chunk's GEMM accumulates (beta=1) into the same filter_backprop
+    // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM event
+    // (GemmColumnMajorSYCL no longer blocks -- see GemmSYCL.h). FillColumn
+    // and (when present) MultiplyAndCopyColumnsSYCL also depend on the
+    // previous GEMM since they reuse the `columns`/`gradient` scratch that
+    // GEMM was still reading.
     size_t num_runs = DivUp(num_out, num_cols_per_run);
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -128,7 +132,9 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
                     queue, out_channels, num_cols_this_run, gradient,
                     out_features_gradient +
                             (run_i * num_cols_per_run * out_channels),
-                    out_importance + (run_i * num_cols_per_run));
+                    out_importance + (run_i * num_cols_per_run),
+                    run_i == 0 ? std::vector<sycl::event>{}
+                               : std::vector<sycl::event>{prev_gemm_event});
         } else {
             gradient = const_cast<TFeat*>(
                     out_features_gradient +
@@ -146,7 +152,7 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0
                         ? std::vector<sycl::event>{filter_backprop_fill_event}
-                        : std::vector<sycl::event>{});
+                        : std::vector<sycl::event>{prev_gemm_event});
 
         // C is MxN
         // B is KxN
@@ -166,8 +172,8 @@ void CConvTransposeBackpropFilterSYCL(sycl::queue& queue,
         // GEMM reads both `gradient` (written by MultiplyAndCopyColumnsSYCL,
         // when out_importance is set) and `columns` (written by
         // FillColumnTransposeSYCL), so it depends on both events.
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::RowMajor>(
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::RowMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 out_importance ? std::vector<sycl::event>{fill_column_event,
                                                           gradient_ready_event}

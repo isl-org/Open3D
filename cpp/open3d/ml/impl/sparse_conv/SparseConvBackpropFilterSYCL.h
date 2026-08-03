@@ -98,13 +98,11 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
 
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     // Every chunk's GEMM accumulates (beta=1) into the SAME filter_backprop
-    // buffer, so chunks must run strictly sequentially regardless of event
-    // dependencies; GemmColumnMajorSYCL blocking internally before returning
-    // (see GemmSYCL.h) guarantees this. Only the first chunk needs to depend
-    // on filter_backprop_fill_event -- later chunks' FillColumn calls don't
-    // touch filter_backprop at all (they only fill the reused `columns`
-    // scratch, which the same queue's prior GEMM has already finished
-    // reading by the time the next FillColumn's kernel runs).
+    // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM completion
+    // event (GemmColumnMajorSYCL no longer blocks -- see GemmSYCL.h). Chunk
+    // N+1's FillColumn also depends on it, since it reuses the same
+    // `columns` scratch buffer that the previous GEMM was still reading.
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -119,7 +117,7 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
                 neighbors_row_splits, num_kernel_elements, normalize,
                 run_i == 0
                         ? std::vector<sycl::event>{filter_backprop_fill_event}
-                        : std::vector<sycl::event>{});
+                        : std::vector<sycl::event>{prev_gemm_event});
 
         // C(MxN) = A(MxK) * B(KxN); A=gradient (col-major), B=columns
         // (row-major), C=filter_backprop (col-major).
@@ -136,8 +134,11 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
         float* C = filter_backprop;
         const int ldc = m;
 
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::RowMajor>(
+        // fill_column_event already transitively depends on prev_gemm_event
+        // (see above), so this is sufficient to also order this GEMM after
+        // the previous one's accumulation into filter_backprop.
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::RowMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
     }

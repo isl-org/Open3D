@@ -112,6 +112,7 @@ void CConvTransposeComputeFeaturesSYCL(
     // if we cannot process all data at once we need multiple runs. See
     // ContinuousConvSYCL.h for the event-dependency reasoning.
     size_t num_runs = DivUp(num_out, num_cols_per_run);
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -128,7 +129,7 @@ void CConvTransposeComputeFeaturesSYCL(
                 interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                           : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{prev_gemm_event});
 
         // C is MxN
         // B is KxN
@@ -145,17 +146,18 @@ void CConvTransposeComputeFeaturesSYCL(
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         const int ldc = m;
 
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::ColumnMajor>(
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
     }
 
     if (out_importance) {
-        // GemmColumnMajorSYCL above blocks internally, so out_features is
-        // already fully written by the time we get here.
+        // Must depend on the last chunk's GEMM: GemmColumnMajorSYCL no
+        // longer blocks (see GemmSYCL.h), and this in-place scale reads/
+        // writes the same out_features region that GEMM just wrote.
         MultiplyColumnsSYCL(queue, out_channels, num_out, out_features,
-                            out_importance);
+                            out_importance, {prev_gemm_event});
     }
 }
 

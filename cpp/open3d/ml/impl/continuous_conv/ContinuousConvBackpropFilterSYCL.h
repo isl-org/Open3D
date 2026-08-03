@@ -107,11 +107,13 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
     TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs. Every
-    // chunk's GEMM accumulates into the same filter_backprop buffer, so
-    // chunks are serialized by GemmColumnMajorSYCL's internal blocking (see
-    // the analogous comment in SparseConvBackpropFilterSYCL.h). Only the
-    // first chunk needs to depend on filter_backprop_fill_event.
+    // chunk's GEMM accumulates (beta=1) into the same filter_backprop
+    // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM event, not
+    // just on its own FillColumn (GemmColumnMajorSYCL no longer blocks --
+    // see GemmSYCL.h). FillColumn also depends on the previous GEMM since it
+    // reuses the `columns` scratch buffer that GEMM was still reading.
     size_t num_runs = DivUp(num_out, num_cols_per_run);
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -127,7 +129,7 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0
                         ? std::vector<sycl::event>{filter_backprop_fill_event}
-                        : std::vector<sycl::event>{});
+                        : std::vector<sycl::event>{prev_gemm_event});
 
         // C is MxN
         // B is KxN
@@ -145,8 +147,12 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
         float* C = filter_backprop;
         const int ldc = m;
 
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::RowMajor>(
+        // fill_column_event already transitively depends on prev_gemm_event
+        // (see above), so depending on it alone is sufficient to also
+        // order this GEMM after the previous one's accumulation into
+        // filter_backprop.
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::RowMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
     }

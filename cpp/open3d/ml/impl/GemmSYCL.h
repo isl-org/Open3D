@@ -43,41 +43,48 @@ namespace impl {
 /// silent fallback.
 ///
 /// \p allow_tf32 selects the Intel XMX TF32 path; false selects the
-/// device-agnostic IEEE float32 path. \p deps lists events the GEMM must wait
-/// on before reading its operands. Blocks until the GEMM completes.
+/// device-agnostic IEEE float32 path (also used as a fallback if the
+/// requested shape cannot use the TF32 path -- see GemmSYCL.cpp). \p deps
+/// lists events the GEMM must wait on before reading its operands.
+///
+/// Does NOT block: returns a completion event the caller must depend on
+/// before reading/writing any of A/B/C, since sycl-tla's `run()` exposes no
+/// per-kernel event (see GemmSYCL.cpp for why the returned event is a
+/// barrier over all prior submits on \p queue, not a tighter one).
 ///
 /// Throws std::runtime_error if no supported tile configuration can implement
 /// the requested problem shape.
 ///
 /// \code
 /// // Accumulate a chunk's contribution into filter_backprop (B row-major):
-/// GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-///                     cutlass::layout::RowMajor>(
-///         queue, out_channels, spatial_filter_size * in_channels,
-///         num_cols_this_run, /*alpha*/ 1.f, out_features_gradient, lda,
-///         columns, ldb, /*beta*/ 1.f, filter_backprop, ldc, allow_tf32,
-///         {fill_column_event});
+/// sycl::event gemm_event =
+///         GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+///                             cutlass::layout::RowMajor>(
+///                 queue, out_channels, spatial_filter_size * in_channels,
+///                 num_cols_this_run, /*alpha*/ 1.f, out_features_gradient,
+///                 lda, columns, ldb, /*beta*/ 1.f, filter_backprop, ldc,
+///                 allow_tf32, {fill_column_event});
 /// \endcode
 template <class LayoutA = cutlass::layout::ColumnMajor,
           class LayoutB = cutlass::layout::ColumnMajor>
-void GemmColumnMajorSYCL(sycl::queue& queue,
-                         int m,
-                         int n,
-                         int k,
-                         float alpha,
-                         const float* A,
-                         int64_t lda,
-                         const float* B,
-                         int64_t ldb,
-                         float beta,
-                         float* C,
-                         int64_t ldc,
-                         bool allow_tf32 = false,
-                         const std::vector<sycl::event>& deps = {});
+sycl::event GemmColumnMajorSYCL(sycl::queue& queue,
+                                int m,
+                                int n,
+                                int k,
+                                float alpha,
+                                const float* A,
+                                int64_t lda,
+                                const float* B,
+                                int64_t ldb,
+                                float beta,
+                                float* C,
+                                int64_t ldc,
+                                bool allow_tf32 = false,
+                                const std::vector<sycl::event>& deps = {});
 
 // Explicit instantiation declarations; definitions live in GemmSYCL.cpp.
-extern template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                                         cutlass::layout::ColumnMajor>(
+extern template sycl::event
+GemmColumnMajorSYCL<cutlass::layout::ColumnMajor, cutlass::layout::ColumnMajor>(
         sycl::queue&,
         int,
         int,
@@ -93,8 +100,8 @@ extern template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
         bool,
         const std::vector<sycl::event>&);
 
-extern template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                                         cutlass::layout::RowMajor>(
+extern template sycl::event
+GemmColumnMajorSYCL<cutlass::layout::ColumnMajor, cutlass::layout::RowMajor>(
         sycl::queue&,
         int,
         int,

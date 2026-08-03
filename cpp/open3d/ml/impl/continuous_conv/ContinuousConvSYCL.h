@@ -110,12 +110,13 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
     // this is the pointer to the patch matrix
     TFeat* columns = (TFeat*)mem_columns.first;
 
-    // if we cannot process all data at once we need multiple runs. Each
-    // chunk's GEMM depends on that chunk's FillColumn event (via
-    // GemmColumnMajorSYCL's internal barrier, see GemmSYCL.h);
-    // GemmColumnMajorSYCL blocks before returning, so chunks are naturally
-    // serialized without an explicit inter-chunk dependency.
+    // if we cannot process all data at once we need multiple runs. Since
+    // GemmColumnMajorSYCL no longer blocks, chunk N+1's FillColumn (which
+    // overwrites the shared `columns` scratch buffer) must explicitly depend
+    // on chunk N's GEMM event -- otherwise FillColumn could start
+    // overwriting `columns` while the previous GEMM is still reading it.
     const size_t num_runs = DivUp(num_out, num_cols_per_run);
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -131,7 +132,7 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
                 filter_dims, interpolation, coordinate_mapping, align_corners,
                 individual_extent, isotropic_extent, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                           : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{prev_gemm_event});
 
         // C is MxN
         // B is KxN
@@ -148,8 +149,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         const int ldc = m;
 
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::ColumnMajor>(
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
     }

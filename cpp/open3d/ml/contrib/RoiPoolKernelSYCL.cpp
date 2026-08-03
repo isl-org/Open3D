@@ -8,7 +8,12 @@
 // SYCL implementation of RoiPool — ports RoiPoolKernel.cu's 3-kernel
 // pipeline (assign_pts_to_box3d -> get_pooled_idx -> roipool3d_forward),
 // reusing the shared pt_in_box3d from RoiPoolKernel.h. pts_assign / pts_idx
-// are USM device temporaries, mirroring the CUDA cudaMalloc scratch buffers.
+// are kernel-private scratch (never touched by PyTorch, oneDPL, or
+// sycl-tla), so they are backed by sycl::buffer rather than
+// malloc_device/free: the buffer destructor blocks until its last reader
+// completes and releases the memory, which is exactly the lifetime this
+// scratch needs and removes the free-before-last-kernel-completes hazard a
+// manual USM free would risk.
 //
 // Kernel 2 (get_pooled_idx) uses one work-group per (batch, box); work-items
 // grid-stride over pts_num in parallel and use an
@@ -46,17 +51,27 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                            const float *pts_feature,
                            float *pooled_features,
                            int *pooled_empty_flag) {
-    int *pts_assign = sycl::malloc_device<int>(
-            static_cast<size_t>(batch_size) * pts_num * boxes_num, queue);
+    // pts_assign is a per-(batch, point, box) inside/outside flag (0 or 1,
+    // matching the CUDA int layout, not a packed bitmask -- pts_num is
+    // typically in the thousands and boxes_num in the tens, so the O(1)
+    // per-element cost dominates over the O(8x) memory-traffic saving a
+    // bitmask would give; not worth the added indexing complexity here).
+    sycl::buffer<int, 1> pts_assign_buf{sycl::range<1>(
+            static_cast<size_t>(batch_size) * pts_num * boxes_num)};
 
     // Kernel 1: for every (batch, point, box) triple, record whether the
     // point lies inside the box.
-    sycl::event event1 = queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
+        sycl::accessor pts_assign_acc(pts_assign_buf, cgh, sycl::write_only,
+                                      sycl::no_init);
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
                                static_cast<size_t>(pts_num),
                                static_cast<size_t>(boxes_num)),
-                [=](sycl::item<3> item) {
+                // Item 7b.4: xyz and boxes3d are distinct, never-aliasing
+                // raw pointers, so this kernel can safely take the
+                // no-alias hint.
+                [=](sycl::item<3> item) [[intel::kernel_args_restrict]] {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int pt_idx = static_cast<int>(item.get_id(1));
                     const int box_idx = static_cast<int>(item.get_id(2));
@@ -66,7 +81,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                     const int box_offset = bs_idx * boxes_num * 7 + box_idx * 7;
                     const int pt_offset = bs_idx * pts_num * 3 + pt_idx * 3;
 
-                    pts_assign[assign_idx] = pt_in_box3d(
+                    pts_assign_acc[assign_idx] = pt_in_box3d(
                             xyz[pt_offset], xyz[pt_offset + 1],
                             xyz[pt_offset + 2], boxes3d[box_offset],
                             boxes3d[box_offset + 1], boxes3d[box_offset + 2],
@@ -76,23 +91,30 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                 });
     });
 
-    int *pts_idx = sycl::malloc_device<int>(
-            static_cast<size_t>(batch_size) * boxes_num * sampled_pts_num,
-            queue);
+    sycl::buffer<int, 1> pts_idx_buf{sycl::range<1>(
+            static_cast<size_t>(batch_size) * boxes_num * sampled_pts_num)};
 
     // Kernel 2: for every (batch, box), collect up to sampled_pts_num
     // assigned point indices via a work-group-cooperative parallel scan
     // (see file header), then pad (duplicate modulo cnt) if fewer than
     // sampled_pts_num points were assigned; flag boxes with zero points.
+    // depends_on(event1) is not needed: the SYCL runtime tracks the
+    // pts_assign_buf read-after-write dependency automatically from the
+    // accessors below. pooled_empty_flag is raw USM (owned by the caller),
+    // so kernel 3's read of it still needs an explicit event dependency.
     const size_t wg2 = kGetPooledIdxWGSize;
     sycl::event event2 = queue.submit([&](sycl::handler &cgh) {
-        cgh.depends_on(event1);
+        sycl::accessor pts_assign_acc(pts_assign_buf, cgh, sycl::read_only);
+        sycl::accessor pts_idx_acc(pts_idx_buf, cgh);
         cgh.parallel_for(
                 sycl::nd_range<1>(
                         sycl::range<1>(static_cast<size_t>(batch_size) *
                                        boxes_num * wg2),
                         sycl::range<1>(wg2)),
-                [=](sycl::nd_item<1> item) {
+                // Item 7b.4: pooled_empty_flag is the only raw pointer this
+                // kernel touches (pts_assign/pts_idx go through accessors),
+                // so the no-alias hint is safe here too.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / boxes_num);
                     const int boxes_idx =
@@ -100,17 +122,20 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                     const size_t lid = item.get_local_id(0);
                     auto group = item.get_group();
 
-                    const int *const assign_base =
-                            pts_assign + bs_idx * pts_num * boxes_num +
+                    const size_t assign_base =
+                            static_cast<size_t>(bs_idx) * pts_num * boxes_num +
                             boxes_idx;
-                    int *const idx_out = pts_idx +
-                                         bs_idx * boxes_num * sampled_pts_num +
-                                         boxes_idx * sampled_pts_num;
+                    const size_t idx_out_base =
+                            static_cast<size_t>(bs_idx) * boxes_num *
+                                    sampled_pts_num +
+                            static_cast<size_t>(boxes_idx) * sampled_pts_num;
 
                     int local_count = 0;
                     for (int k = static_cast<int>(lid); k < pts_num;
                          k += static_cast<int>(wg2)) {
-                        if (assign_base[k * boxes_num]) ++local_count;
+                        if (pts_assign_acc[assign_base +
+                                           static_cast<size_t>(k) * boxes_num])
+                            ++local_count;
                     }
 
                     const int base_slot = sycl::exclusive_scan_over_group(
@@ -128,8 +153,10 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                     for (int k = static_cast<int>(lid);
                          k < pts_num && slot < sampled_pts_num;
                          k += static_cast<int>(wg2)) {
-                        if (assign_base[k * boxes_num]) {
-                            idx_out[slot] = k;
+                        if (pts_assign_acc[assign_base +
+                                           static_cast<size_t>(k) *
+                                                   boxes_num]) {
+                            pts_idx_acc[idx_out_base + slot] = k;
                             ++slot;
                         }
                     }
@@ -146,7 +173,8 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                     if (lid == 0 && total_count < sampled_pts_num) {
                         for (int k = total_count; k < sampled_pts_num; ++k) {
                             const int duplicate_idx = k % total_count;
-                            idx_out[k] = idx_out[duplicate_idx];
+                            pts_idx_acc[idx_out_base + k] =
+                                    pts_idx_acc[idx_out_base + duplicate_idx];
                         }
                     }
                 });
@@ -154,13 +182,21 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
 
     // Kernel 3: gather xyz + features for each sampled point into the
     // output tensor; boxes with no assigned points are left as zeros.
-    sycl::event event3 = queue.submit([&](sycl::handler &cgh) {
+    // Needs an explicit dependency on event2 because pooled_empty_flag is
+    // raw USM (its RAW hazard is not runtime-tracked); pts_idx_buf's
+    // dependency is tracked automatically via the accessor below.
+    queue.submit([&](sycl::handler &cgh) {
         cgh.depends_on(event2);
+        sycl::accessor pts_idx_acc(pts_idx_buf, cgh, sycl::read_only);
         cgh.parallel_for(
                 sycl::range<3>(static_cast<size_t>(batch_size),
                                static_cast<size_t>(boxes_num),
                                static_cast<size_t>(sampled_pts_num)),
-                [=](sycl::item<3> item) {
+                // Item 7b.4: xyz/pts_feature/pooled_features/
+                // pooled_empty_flag are distinct, never-aliasing raw
+                // pointers, so this kernel can safely take the no-alias
+                // hint.
+                [=](sycl::item<3> item) [[intel::kernel_args_restrict]] {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int box_idx = static_cast<int>(item.get_id(1));
                     const int sample_pt_idx = static_cast<int>(item.get_id(2));
@@ -172,7 +208,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                     const int temp_idx = bs_idx * boxes_num * sampled_pts_num +
                                          box_idx * sampled_pts_num +
                                          sample_pt_idx;
-                    const int src_pt_idx = pts_idx[temp_idx];
+                    const int src_pt_idx = pts_idx_acc[temp_idx];
                     const int dst_feature_offset =
                             temp_idx * (3 + feature_in_len);
 
@@ -189,13 +225,12 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                 });
     });
 
-    // pts_assign/pts_idx are USM scratch owned by this call; free them once
-    // kernel 3 (the last reader of both) has completed. This is the one
-    // blocking wait in the pipeline -- it exists to bound the scratch
-    // buffers' lifetime, not as a lazy default between device-only stages.
-    event3.wait();
-    sycl::free(pts_assign, queue);
-    sycl::free(pts_idx, queue);
+    // pts_assign_buf/pts_idx_buf go out of scope here; their destructors
+    // block until the last kernel reading them (event2 / kernel 3) has
+    // completed, then release the memory -- this is the one blocking point
+    // in the pipeline, matching the previous USM design's event3.wait(),
+    // but without a separate sycl::free() that could race a still-in-flight
+    // kernel.
 }
 
 }  // namespace contrib

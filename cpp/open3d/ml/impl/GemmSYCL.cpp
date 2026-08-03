@@ -59,6 +59,10 @@
 // parameter (see plan §9 hyperparameter tuning); the defaults below are
 // portable, safe choices and are not Xe3-specific tuned.
 
+// open3d/utility/Logging.h (via fmt) must be included before any cutlass/cute
+// header: cute/util/print.hpp #defines a function-like `printf` macro that
+// breaks fmt's own `printf()` declaration in fmt/printf.h if fmt is parsed
+// afterwards.
 #include "open3d/ml/impl/GemmSYCL.h"
 
 #include <cutlass/gemm/device/gemm_universal.h>
@@ -71,10 +75,14 @@
 #include <cutlass/epilogue/collective/collective_builder.hpp>
 #include <cutlass/gemm/collective/collective_builder.hpp>
 #include <cutlass/util/packed_stride.hpp>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <sycl/sycl.hpp>
 #include <vector>
+
+#include "open3d/core/SYCLContext.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace ml {
@@ -131,8 +139,12 @@ auto MakeStrideB(int64_t ld) {
 /// sycl-tla, producing a RowMajor (M x N) output D (D may alias C).
 /// A is (M x K, LayoutA), B is (K x N, LayoutB). GEMM element type is
 /// cutlass::tfloat32_t (see file header); accumulation/output stay `float`.
+/// Returns {status, completion_event}; does not block. The event is a
+/// barrier over all commands previously submitted to `queue` (see
+/// GemmColumnMajorSYCL's doc comment for why sycl-tla leaves no tighter
+/// option).
 template <class TileShape, class LayoutA, class LayoutB>
-cutlass::Status RunGemmXmxTf32RowMajorOutput(
+std::pair<cutlass::Status, sycl::event> RunGemmXmxTf32RowMajorOutput(
         sycl::queue& queue,
         int m,
         int n,
@@ -158,8 +170,10 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(
     using LayoutC = cutlass::layout::RowMajor;
     using LayoutD = cutlass::layout::RowMajor;
 
-    // Alignment is expressed in elements; tfloat32_t/float are both 4 bytes,
-    // and DPAS requires natural alignment for its data type.
+    // Alignment is expressed in elements, not bytes: sycl-tla requires the
+    // operand's contiguous extent to be aligned to 128 bits (see
+    // `xe_mma.hpp`'s `copy_alignment_bits`); with 4-byte tfloat32_t/float
+    // elements, 128 bits / 32 bits = 4 elements.
     constexpr int AlignmentA = 4;
     constexpr int AlignmentB = 4;
     constexpr int AlignmentC = 4;
@@ -206,9 +220,9 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(
     StrideD stride_D = cute::make_stride(ldd, cute::Int<1>{}, int64_t(0));
 
     cutlass::KernelHardwareInfo hw_info;
-    hw_info.sm_count =
-            cutlass::KernelHardwareInfo::query_device_multiprocessor_count(
-                    hw_info.device_id);
+    hw_info.sm_count = static_cast<int>(
+            open3d::core::sy::SYCLContext::GetInstance().GetComputeUnits(
+                    queue.get_device()));
 
     typename Gemm::GemmKernel::Arguments arguments{
             cutlass::gemm::GemmUniversalMode::kGemm,
@@ -228,12 +242,12 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(
     auto status = gemm_op.can_implement(arguments);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        return status;
+        return {status, sycl::event()};
     }
     status = gemm_op.initialize(arguments, workspace, &queue);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        return status;
+        return {status, sycl::event()};
     }
     // sycl-tla's GemmUniversalAdapter::run() takes only a sycl::queue*, with
     // no event-dependency parameter, so an explicit barrier is needed to
@@ -244,19 +258,33 @@ cutlass::Status RunGemmXmxTf32RowMajorOutput(
     }
     status = gemm_op.run(&queue);
     // sycl-tla's GemmUniversalAdapter::run() returns only a cutlass::Status,
-    // not a sycl::event, so there is no completion event this function could
-    // return for a caller to chain via depends_on() -- unlike the rest of
-    // this codebase's event-based synchronization, this wait is a genuine
-    // library-API-boundary necessity, not a lazy default between
-    // Open3D-owned device-only stages.
-    queue.wait_and_throw();
-    if (workspace) sycl::free(workspace, queue);
-    return status;
+    // not a sycl::event, so there is no per-kernel completion event to
+    // return directly. A no-arg submit_barrier() is a correct (if coarser)
+    // substitute: on this in-order queue it completes only after every
+    // command submitted so far -- including the GEMM just launched -- has
+    // finished, so a caller chaining depends_on({done}) is still correctly
+    // serialized after this GEMM. This lets the function return without
+    // blocking the host thread here.
+    sycl::event done = queue.ext_oneapi_submit_barrier();
+    if (workspace) {
+        // Free the scratch workspace only once the GEMM (and hence all its
+        // reads of it) has completed; never free while a kernel may still
+        // be running (see Phase 2 buffer-lifetime rule).
+        queue.submit([&](sycl::handler& cgh) {
+            cgh.depends_on(done);
+            cgh.host_task(
+                    [workspace, &queue]() { sycl::free(workspace, queue); });
+        });
+    }
+    return {status, done};
 }
 
-/// Runs IEEE float32 GEMM through sycl-tla's device-agnostic path.
+/// Runs IEEE float32 GEMM through sycl-tla's device-agnostic path. Returns
+/// {status, completion_event}; does not block (see
+/// RunGemmXmxTf32RowMajorOutput above for the barrier/workspace-free
+/// rationale).
 template <class TileShape, class LayoutA, class LayoutB>
-cutlass::Status RunGemmIeeeFp32RowMajorOutput(
+std::pair<cutlass::Status, sycl::event> RunGemmIeeeFp32RowMajorOutput(
         sycl::queue& queue,
         int m,
         int n,
@@ -325,9 +353,9 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
     StrideD stride_D = cute::make_stride(ldd, cute::Int<1>{}, int64_t(0));
 
     cutlass::KernelHardwareInfo hw_info;
-    hw_info.sm_count =
-            cutlass::KernelHardwareInfo::query_device_multiprocessor_count(
-                    hw_info.device_id);
+    hw_info.sm_count = static_cast<int>(
+            open3d::core::sy::SYCLContext::GetInstance().GetComputeUnits(
+                    queue.get_device()));
 
     typename Gemm::GemmKernel::Arguments arguments{
             cutlass::gemm::GemmUniversalMode::kGemm,
@@ -346,12 +374,12 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
     auto status = gemm_op.can_implement(arguments);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        return status;
+        return {status, sycl::event()};
     }
     status = gemm_op.initialize(arguments, workspace, &queue);
     if (status != cutlass::Status::kSuccess) {
         if (workspace) sycl::free(workspace, queue);
-        return status;
+        return {status, sycl::event()};
     }
     // See the analogous comment in RunGemmXmxTf32RowMajorOutput above: an
     // explicit barrier is needed since run() has no event-dependency param.
@@ -359,54 +387,30 @@ cutlass::Status RunGemmIeeeFp32RowMajorOutput(
         queue.ext_oneapi_submit_barrier(deps);
     }
     status = gemm_op.run(&queue);
-    // See the analogous comment in RunGemmXmxTf32RowMajorOutput above: no
-    // completion event is available from sycl-tla's run() to chain via
-    // depends_on(), so this wait is a genuine library boundary, not a lazy
-    // default.
-    queue.wait_and_throw();
-    if (workspace) sycl::free(workspace, queue);
-    return status;
+    // See the analogous comment in RunGemmXmxTf32RowMajorOutput above: a
+    // no-arg submit_barrier() stands in for sycl-tla's missing per-kernel
+    // completion event, letting this function return without blocking here.
+    sycl::event done = queue.ext_oneapi_submit_barrier();
+    if (workspace) {
+        queue.submit([&](sycl::handler& cgh) {
+            cgh.depends_on(done);
+            cgh.host_task(
+                    [workspace, &queue]() { sycl::free(workspace, queue); });
+        });
+    }
+    return {status, done};
 }
 
-/// Collective (work-group) tile shapes. A 256x256 tile only pays off when
-/// both M and N are large enough to fill it; the small per-chunk GEMMs
-/// typical of the conv ops (~32 output columns per run, see
-/// SparseConvSYCL.h/ContinuousConvSYCL.h) should start at SmallTile directly
-/// instead of paying for a rejected (or under-filled, if it happens to
-/// succeed) probe against the bigger tiles first.
-using LargeTile = cute::Shape<cute::_256, cute::_256, cute::_32>;
-using MediumTile = cute::Shape<cute::_64, cute::_64, cute::_16>;
-using SmallTile = cute::Shape<cute::_16, cute::_16, cute::_8>;
+/// Collective (work-group) tile shape. Small per-chunk GEMMs are typical of
+/// the conv ops (~32 output columns per run, see
+/// SparseConvSYCL.h/ContinuousConvSYCL.h), and `can_implement`'s outcome does
+/// not depend on the tile shape (verified against sycl-tla's tile scheduler
+/// and epilogue/mainloop `can_implement` overloads -- partial edge tiles are
+/// always predicated, not rejected), so a single tile per precision path is
+/// sufficient; there is no correctness reason to probe multiple tiles.
+using Tile = cute::Shape<cute::_16, cute::_16, cute::_8>;
 
-/// Coarse GEMM problem-size class used to pick the starting collective tile
-/// shape before falling back to other tiles via `can_implement`.
-enum class GemmTileClass { kLarge, kMedium, kSmall };
-
-// Best-guess specialization constants for the GemmTileClass thresholds,
-// evaluated on the caller-facing (un-swapped) m/n/k. Tune these thresholds
-// on target Intel GPU hardware later.
-constexpr int kGemmLargeTileMinMN = 256;
-constexpr int kGemmLargeTileMinK = 32;
-constexpr int kGemmMediumTileMinMN = 64;
-constexpr int kGemmMediumTileMinK = 16;
-
-/// Returns the tile try-order, best fit for the problem size first. The
-/// remaining tiles are correctness fallbacks for when `can_implement`
-/// rejects the preferred tile, so every tile stays reachable.
-std::array<GemmTileClass, 3> TileTryOrder(int m, int n, int k) {
-    using T = GemmTileClass;
-    if (m >= kGemmLargeTileMinMN && n >= kGemmLargeTileMinMN &&
-        k >= kGemmLargeTileMinK) {
-        return {T::kLarge, T::kMedium, T::kSmall};
-    }
-    if (m >= kGemmMediumTileMinMN && n >= kGemmMediumTileMinMN &&
-        k >= kGemmMediumTileMinK) {
-        return {T::kMedium, T::kLarge, T::kSmall};
-    }
-    return {T::kSmall, T::kMedium, T::kLarge};
-}
-
-/// GEMM arguments bundled to keep the tile dispatch below readable. Holds
+/// GEMM arguments bundled to keep the dispatch below readable. Holds
 /// references/pointers to caller-owned data; scoped to a single
 /// GemmColumnMajorSYCL call.
 struct GemmArgs {
@@ -425,63 +429,44 @@ struct GemmArgs {
     const std::vector<sycl::event>& deps;
 };
 
-/// Runs the TF32/XMX path with the requested tile.
+/// Runs the TF32/XMX path.
 template <class LayoutA, class LayoutB>
-cutlass::Status RunTf32(GemmTileClass tile, const GemmArgs& a) {
-    switch (tile) {
-        case GemmTileClass::kLarge:
-            return RunGemmXmxTf32RowMajorOutput<LargeTile, LayoutA, LayoutB>(
-                    a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb,
-                    a.beta, a.C, a.ldc, a.D, a.ldd, a.deps);
-        case GemmTileClass::kMedium:
-            return RunGemmXmxTf32RowMajorOutput<MediumTile, LayoutA, LayoutB>(
-                    a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb,
-                    a.beta, a.C, a.ldc, a.D, a.ldd, a.deps);
-        case GemmTileClass::kSmall:
-            return RunGemmXmxTf32RowMajorOutput<SmallTile, LayoutA, LayoutB>(
-                    a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb,
-                    a.beta, a.C, a.ldc, a.D, a.ldd, a.deps);
-    }
-    return cutlass::Status::kErrorNotSupported;
+std::pair<cutlass::Status, sycl::event> RunTf32(const GemmArgs& a) {
+    return RunGemmXmxTf32RowMajorOutput<Tile, LayoutA, LayoutB>(
+            a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta,
+            a.C, a.ldc, a.D, a.ldd, a.deps);
 }
 
-/// Runs the IEEE fp32 path with the requested tile. LargeTile is not
-/// instantiated here (the SIMT path gains nothing from it), so kLarge is
-/// reported unsupported and the caller moves on to the next tile.
+/// Runs the IEEE fp32 path.
 template <class LayoutA, class LayoutB>
-cutlass::Status RunIeee(GemmTileClass tile, const GemmArgs& a) {
-    switch (tile) {
-        case GemmTileClass::kMedium:
-            return RunGemmIeeeFp32RowMajorOutput<MediumTile, LayoutA, LayoutB>(
-                    a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb,
-                    a.beta, a.C, a.ldc, a.D, a.ldd, a.deps);
-        case GemmTileClass::kSmall:
-            return RunGemmIeeeFp32RowMajorOutput<SmallTile, LayoutA, LayoutB>(
-                    a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb,
-                    a.beta, a.C, a.ldc, a.D, a.ldd, a.deps);
-        case GemmTileClass::kLarge:
-            return cutlass::Status::kErrorNotSupported;
-    }
-    return cutlass::Status::kErrorNotSupported;
+std::pair<cutlass::Status, sycl::event> RunIeee(const GemmArgs& a) {
+    return RunGemmIeeeFp32RowMajorOutput<Tile, LayoutA, LayoutB>(
+            a.queue, a.m, a.n, a.k, a.alpha, a.A, a.lda, a.B, a.ldb, a.beta,
+            a.C, a.ldc, a.D, a.ldd, a.deps);
 }
+
+/// True if `value` is a multiple of the sycl-tla 128-bit (4-fp32-element)
+/// alignment requirement checked by the TF32/XMX path's `can_implement`
+/// (see the AlignmentA/B/C/D comment in RunGemmXmxTf32RowMajorOutput above).
+bool IsTf32Aligned(int64_t value) { return value % 4 == 0; }
 
 }  // namespace sycl_gemm_detail
 
 template <class LayoutA, class LayoutB>
-void GemmColumnMajorSYCL(sycl::queue& queue,
-                         int m,
-                         int n,
-                         int k,
-                         float alpha,
-                         const float* A,
-                         int64_t lda,
-                         const float* B,
-                         int64_t ldb,
-                         float beta,
-                         float* C,
-                         int64_t ldc,
-                         bool allow_tf32,
-                         const std::vector<sycl::event>& deps) {
+sycl::event GemmColumnMajorSYCL(sycl::queue& queue,
+                                int m,
+                                int n,
+                                int k,
+                                float alpha,
+                                const float* A,
+                                int64_t lda,
+                                const float* B,
+                                int64_t ldb,
+                                float beta,
+                                float* C,
+                                int64_t ldc,
+                                bool allow_tf32,
+                                const std::vector<sycl::event>& deps) {
     using namespace sycl_gemm_detail;
     // D_colmajor(M,N) = A*B  <=>  D_rowmajor(N,M) = B^T * A^T (same memory,
     // ld=ldc; see the file header). Swap the operands, swap M/N and transpose
@@ -491,35 +476,51 @@ void GemmColumnMajorSYCL(sycl::queue& queue,
 
     const GemmArgs args{queue, n,    m, k,   alpha, B,   ldb, A,
                         lda,   beta, C, ldc, C,     ldc, deps};
-    const std::array<GemmTileClass, 3> order = TileTryOrder(m, n, k);
 
-    cutlass::Status status = cutlass::Status::kErrorNotSupported;
+    // TF32/XMX requires every contiguous operand extent (lda, ldb, ldc, and
+    // m/n/k themselves -- the un-swapped, caller-facing values) to be a
+    // multiple of 4 elements (see AlignmentA/B/C/D above); anything else
+    // silently fails `can_implement`, so check up front and fall back to the
+    // IEEE fp32 path with a warning rather than relying on that failure.
+    if (allow_tf32 &&
+        !(IsTf32Aligned(lda) && IsTf32Aligned(ldb) && IsTf32Aligned(ldc) &&
+          IsTf32Aligned(m) && IsTf32Aligned(n) && IsTf32Aligned(k))) {
+        static std::once_flag warned_once;
+        std::call_once(warned_once, [&]() {
+            utility::LogWarning(
+                    "GemmSYCL: allow_tf32 was requested, but the operand "
+                    "shape/strides (m={}, n={}, k={}, lda={}, ldb={}, "
+                    "ldc={}) are not all multiples of 4 elements, which the "
+                    "TF32/XMX path requires. Falling back to the IEEE fp32 "
+                    "path for this and all other unaligned problem shapes.",
+                    m, n, k, lda, ldb, ldc);
+        });
+        allow_tf32 = false;
+    }
+
+    std::pair<cutlass::Status, sycl::event> result{
+            cutlass::Status::kErrorNotSupported, sycl::event()};
     if (allow_tf32) {
-        for (GemmTileClass tile : order) {
-            status = RunTf32<SwappedLayoutA, SwappedLayoutB>(tile, args);
-            if (status == cutlass::Status::kSuccess) break;
-        }
+        result = RunTf32<SwappedLayoutA, SwappedLayoutB>(args);
     }
-    if (status != cutlass::Status::kSuccess) {
-        for (GemmTileClass tile : order) {
-            status = RunIeee<SwappedLayoutA, SwappedLayoutB>(tile, args);
-            if (status == cutlass::Status::kSuccess) break;
-        }
+    if (result.first != cutlass::Status::kSuccess) {
+        result = RunIeee<SwappedLayoutA, SwappedLayoutB>(args);
     }
-    if (status != cutlass::Status::kSuccess) {
+    if (result.first != cutlass::Status::kSuccess) {
         std::ostringstream msg;
         msg << "GemmSYCL: sycl-tla GEMM cannot implement problem m=" << m
             << ", n=" << n << ", k=" << k << ", lda=" << lda << ", ldb=" << ldb
             << ", ldc=" << ldc << (allow_tf32 ? " (TF32 XMX)" : " (IEEE fp32)");
         throw std::runtime_error(msg.str());
     }
+    return result.second;
 }
 
 // The only two layout combinations used by Open3D's conv ops: forward ops
 // pass both operands column-major (ContinuousConv.cuh), backprop-filter ops
 // pass A column-major and B row-major (ContinuousConvBackpropFilter.cuh).
-template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                                  cutlass::layout::ColumnMajor>(
+template sycl::event
+GemmColumnMajorSYCL<cutlass::layout::ColumnMajor, cutlass::layout::ColumnMajor>(
         sycl::queue&,
         int,
         int,
@@ -535,8 +536,8 @@ template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
         bool,
         const std::vector<sycl::event>&);
 
-template void GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                                  cutlass::layout::RowMajor>(
+template sycl::event
+GemmColumnMajorSYCL<cutlass::layout::ColumnMajor, cutlass::layout::RowMajor>(
         sycl::queue&,
         int,
         int,

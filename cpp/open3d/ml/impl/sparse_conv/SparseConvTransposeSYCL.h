@@ -102,8 +102,11 @@ void SparseConvTransposeComputeFeaturesSYCL(
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     // See SparseConvSYCL.h for the event-dependency reasoning: each chunk's
     // GEMM depends on that chunk's FillColumnTranspose event (via
-    // GemmColumnMajorSYCL's internal barrier); GemmColumnMajorSYCL blocks
-    // before returning, so chunks are naturally serialized.
+    // GemmColumnMajorSYCL's internal barrier); GemmColumnMajorSYCL does not
+    // block, so the NEXT chunk's FillColumnTranspose -- which reuses the
+    // same `columns` scratch buffer -- must explicitly depend on the
+    // previous chunk's GEMM event.
+    sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);
         const TIndex end_idx = TIndex(
@@ -118,7 +121,7 @@ void SparseConvTransposeComputeFeaturesSYCL(
                 neighbors_kernel_index, neighbors_importance,
                 neighbors_row_splits, num_kernel_elements, normalize,
                 run_i == 0 ? std::vector<sycl::event>{out_features_fill_event}
-                           : std::vector<sycl::event>{});
+                           : std::vector<sycl::event>{prev_gemm_event});
 
         // C(MxN) = A(MxK) * B(KxN); A=filter, B=columns, C=out_features
         // (all column-major).
@@ -134,17 +137,18 @@ void SparseConvTransposeComputeFeaturesSYCL(
         float* C = out_features + run_i * num_cols_per_run * out_channels;
         const int ldc = m;
 
-        GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
-                            cutlass::layout::ColumnMajor>(
+        prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
+                                              cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
     }
 
     if (out_importance) {
-        // GemmColumnMajorSYCL above blocks internally, so out_features is
-        // already fully written by the time we get here.
+        // Must depend on the last chunk's GEMM: GemmColumnMajorSYCL no
+        // longer blocks (see GemmSYCL.h), and this in-place scale reads/
+        // writes the same out_features region that GEMM just wrote.
         MultiplyColumnsSYCL(queue, out_channels, num_out, out_features,
-                            out_importance);
+                            out_importance, {prev_gemm_event});
     }
 }
 

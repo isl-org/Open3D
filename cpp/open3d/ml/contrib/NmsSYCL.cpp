@@ -21,6 +21,16 @@
 // data_ptr() of a device torch::Tensor). The whole op, including this
 // reduction, stays on device; only the small `count` result (needed on the
 // host to know the output tensor's shape) is copied back.
+//
+// `mask`/`remv`/`count` are kernel-private scratch (never touched by
+// PyTorch or oneDPL), so they are backed by sycl::buffer rather than
+// malloc_device/free -- the buffer destructor blocks until its last reader
+// completes and releases the memory, giving the correct lifetime without a
+// manual sycl::free() that could otherwise race a still-in-flight kernel.
+// `sort_indices` must stay raw USM: it is sorted in place by
+// oneapi::dpl::execution's device policy (which requires USM/shared
+// pointers, not sycl::buffer), and is also read by the mask kernel and the
+// final single_task.
 
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
@@ -47,30 +57,45 @@ int NmsSYCLKernel(sycl::queue &queue,
     // Rank `scores` in descending order entirely on device: fill
     // sort_indices with 0..n-1, then stable_sort it by score via oneDPL
     // (mirrors Nms.cu's thrust::sequence + thrust::stable_sort_by_key).
-    // stable_sort has no non-blocking oneDPL async equivalent.
+    // stable_sort has no non-blocking oneDPL async equivalent, and the
+    // device policy does not inherit a queue's pending work when the queue
+    // is out-of-order (as PyTorch's XPU queue can be), so an explicit
+    // barrier -- not a wait() -- makes the iota visible to it without
+    // stalling the host.
     int64_t *sort_indices = sycl::malloc_device<int64_t>(n, queue);
-    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-             sort_indices[id[0]] = static_cast<int64_t>(id[0]);
-         }).wait();
+    sycl::event iota_event = queue.parallel_for(
+            sycl::range<1>(n),
+            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
+                sort_indices[id[0]] = static_cast<int64_t>(id[0]);
+            });
+    queue.ext_oneapi_submit_barrier({iota_event});
 
     auto policy = oneapi::dpl::execution::make_device_policy(queue);
     std::stable_sort(
             policy, sort_indices, sort_indices + n,
             [scores](int64_t i, int64_t j) { return scores[i] > scores[j]; });
 
-    uint64_t *mask = sycl::malloc_device<uint64_t>(
-            static_cast<size_t>(n) * num_block_cols, queue);
+    // mask/remv/count are kernel-private scratch (never touched by PyTorch
+    // or oneDPL), so they are backed by sycl::buffer rather than
+    // malloc_device/free (see file header).
+    sycl::buffer<uint64_t, 1> mask_buf{
+            sycl::range<1>(static_cast<size_t>(n) * num_block_cols)};
 
     const size_t num_groups =
             static_cast<size_t>(num_block_rows) * num_block_cols;
     const sycl::range<1> global(num_groups * NMS_BLOCK_SIZE);
     const sycl::range<1> local(NMS_BLOCK_SIZE);
 
-    sycl::event mask_event = queue.submit([&](sycl::handler &cgh) {
+    queue.submit([&](sycl::handler &cgh) {
         sycl::local_accessor<float, 1> block_boxes(NMS_BLOCK_SIZE * 5, cgh);
+        sycl::accessor mask_acc(mask_buf, cgh, sycl::write_only, sycl::no_init);
 
         cgh.parallel_for(
-                sycl::nd_range<1>(global, local), [=](sycl::nd_item<1> item) {
+                sycl::nd_range<1>(global, local),
+                // Item 7b.4: boxes and sort_indices are distinct, never-
+                // aliasing raw pointers, so this kernel can safely take the
+                // no-alias hint.
+                [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const int group_id = static_cast<int>(item.get_group(0));
                     const int block_row_idx = group_id / num_block_cols;
                     const int block_col_idx = group_id % num_block_cols;
@@ -114,7 +139,7 @@ int NmsSYCLKernel(sycl::queue &queue,
                             }
                             dst_idx++;
                         }
-                        mask[src_idx * num_block_cols + block_col_idx] = t;
+                        mask_acc[src_idx * num_block_cols + block_col_idx] = t;
                     }
                 });
     });
@@ -124,28 +149,31 @@ int NmsSYCLKernel(sycl::queue &queue,
     // `keep_indices_out` (no separate device allocation/free for the result,
     // and no device->host copy of the result data -- only the final count,
     // a single int, needs to reach the host).
-    uint64_t *remv = sycl::malloc_device<uint64_t>(num_block_cols, queue);
-    int *count_dev = sycl::malloc_device<int>(1, queue);
+    sycl::buffer<uint64_t, 1> remv_buf{sycl::range<1>(num_block_cols)};
+    sycl::buffer<int, 1> count_buf{sycl::range<1>(1)};
 
-    sycl::event keep_event = queue.submit([&](sycl::handler &cgh) {
-        cgh.depends_on(mask_event);
+    queue.submit([&](sycl::handler &cgh) {
+        sycl::accessor mask_acc(mask_buf, cgh, sycl::read_only);
+        sycl::accessor remv_acc(remv_buf, cgh, sycl::write_only, sycl::no_init);
+        sycl::accessor count_acc(count_buf, cgh, sycl::write_only,
+                                 sycl::no_init);
         cgh.single_task([=]() {
-            *count_dev = NmsGreedyKeepCore(mask, sort_indices, n, remv,
-                                           keep_indices_out);
+            count_acc[0] = NmsGreedyKeepCore(&mask_acc[0], sort_indices, n,
+                                             &remv_acc[0], keep_indices_out);
         });
     });
 
-    // Reading `count` back to the host is a genuine synchronization point
-    // (PyTorch needs the tensor shape on the host); wait only on this read.
-    int count = 0;
-    queue.memcpy(&count, count_dev, sizeof(int), keep_event).wait();
+    // Reading `count` back to the host via a host_accessor is a genuine
+    // synchronization point (PyTorch needs the tensor shape on the host);
+    // it blocks until the single_task above (count_buf's only writer) has
+    // completed, replacing the previous explicit memcpy + wait().
+    sycl::host_accessor count_acc(count_buf, sycl::read_only);
+    const int count = count_acc[0];
 
-    sycl::free(mask, queue);
+    // sort_indices is raw USM (see file header); the host_accessor read
+    // above blocks on the single_task, whose sort_indices read happens
+    // after the stable_sort above, so freeing it here is safe.
     sycl::free(sort_indices, queue);
-    sycl::free(remv, queue);
-    // @AGENT: Won't this sycl::free automatically wait for the previous memcpy
-    // to finish?
-    sycl::free(count_dev, queue);
 
     return count;
 }
