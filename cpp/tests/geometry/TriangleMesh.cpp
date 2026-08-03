@@ -12,6 +12,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Random.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -1127,6 +1128,7 @@ TEST(TriangleMesh, SamplePointsPoissonDisk) {
     mesh_simple.triangles_ = triangles;
 
     size_t n_points = 100;
+    utility::random::Seed(0);
     auto pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
     EXPECT_EQ(pcd->points_.size(), n_points);
     EXPECT_TRUE(pcd->colors_.size() == 0);
@@ -1150,15 +1152,14 @@ TEST(TriangleMesh, SamplePointsPoissonDisk) {
             min_dist = std::min(min_dist, d);
         }
     }
-    // The exact minimum distance depends on RNG and implementation details.
-    // Check only that the samples are not coincident.
-    EXPECT_GT(min_dist, 1e-8);
+    EXPECT_GT(min_dist, 0.01);
 
     // With vertex colors and normals
     std::vector<Eigen::Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
     std::vector<Eigen::Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
     mesh_simple.vertex_colors_ = colors;
     mesh_simple.vertex_normals_ = normals;
+    utility::random::Seed(0);
     pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
     EXPECT_EQ(pcd->points_.size(), n_points);
     EXPECT_EQ(pcd->colors_.size(), n_points);
@@ -1170,6 +1171,7 @@ TEST(TriangleMesh, SamplePointsPoissonDisk) {
     }
 
     // With triangle normals
+    utility::random::Seed(0);
     pcd = mesh_simple.SamplePointsPoissonDisk(n_points, 5, nullptr, true);
     EXPECT_EQ(pcd->points_.size(), n_points);
     EXPECT_EQ(pcd->normals_.size(), n_points);
