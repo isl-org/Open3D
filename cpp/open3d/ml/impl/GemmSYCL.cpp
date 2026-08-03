@@ -81,6 +81,12 @@
 #include <sycl/sycl.hpp>
 #include <vector>
 
+// sycl-tla's print header defines printf globally for device code. Do not let
+// that macro rewrite fmt or Open3D logging declarations below.
+#ifdef printf
+#undef printf
+#endif
+
 #include "open3d/core/SYCLContext.h"
 #include "open3d/utility/Logging.h"
 

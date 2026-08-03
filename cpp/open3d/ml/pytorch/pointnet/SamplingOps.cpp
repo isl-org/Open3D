@@ -63,7 +63,7 @@ torch::Tensor furthest_point_sampling(torch::Tensor points,
 #else
         TORCH_CHECK(false,
                     "furthest_point_sampling was not compiled with CUDA "
-                    "support")
+                    "support");
 #endif
     } else if (points.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
@@ -72,11 +72,11 @@ torch::Tensor furthest_point_sampling(torch::Tensor points,
 #else
         TORCH_CHECK(false,
                     "furthest_point_sampling was not compiled with SYCL "
-                    "support")
+                    "support");
 #endif
     } else {
         TORCH_CHECK(false, "furthest_point_sampling does not support " +
-                                   points.toString() + " as input")
+                                   points.toString() + " as input");
     }
 
     return out;

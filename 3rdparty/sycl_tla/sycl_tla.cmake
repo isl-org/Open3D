@@ -5,8 +5,6 @@ include(ExternalProject)
 # Track sycl-tla main while validating the device-agnostic float32 GEMM path.
 # Used by the SYCL ML ops path (BUILD_SYCL_MODULE=ON) for future Intel GPU
 # support. Actual CUDA→SYCL kernel porting is handled separately.
-# @AGENT: Update patch command to work in Windows. Use the common cmake script
-# from 3rdparty/librealsense/apply_patch.cmake
 # @AGENT: Use zip download from github instead of a shallow git clone.
 ExternalProject_Add(
     ext_sycl_tla
@@ -17,9 +15,10 @@ ExternalProject_Add(
     UPDATE_DISCONNECTED TRUE
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/sycl_tla"
     PATCH_COMMAND
-        /bin/bash ${CMAKE_CURRENT_LIST_DIR}/apply_patch.sh
-        ${CMAKE_CURRENT_LIST_DIR}/0001-fix-oneapi-2025.3-ieee-gemm.patch
-        <SOURCE_DIR>
+        ${CMAKE_COMMAND}
+        -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/0001-fix-oneapi-2025.3-ieee-gemm.patch
+        -DSOURCE_DIR=<SOURCE_DIR>
+        -P ${CMAKE_CURRENT_LIST_DIR}/../librealsense/apply_patch.cmake
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""

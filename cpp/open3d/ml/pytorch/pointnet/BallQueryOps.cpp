@@ -60,18 +60,18 @@ torch::Tensor ball_query(torch::Tensor xyz,
         ball_query_launcher(batch_size, pts_num, ball_num, radius, nsample,
                             center_data, xyz_data, idx);
 #else
-        TORCH_CHECK(false, "ball_query was not compiled with CUDA support")
+        TORCH_CHECK(false, "ball_query was not compiled with CUDA support");
 #endif
     } else if (xyz.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
         ball_query_launcher_sycl(batch_size, pts_num, ball_num, radius, nsample,
                                  center_data, xyz_data, idx);
 #else
-        TORCH_CHECK(false, "ball_query was not compiled with SYCL support")
+        TORCH_CHECK(false, "ball_query was not compiled with SYCL support");
 #endif
     } else {
         TORCH_CHECK(false, "ball_query does not support " + xyz.toString() +
-                                   " as input")
+                                   " as input");
     }
     return out;
 }

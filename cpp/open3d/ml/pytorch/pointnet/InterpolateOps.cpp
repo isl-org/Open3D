@@ -68,18 +68,18 @@ std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
         three_nn_launcher(batch_size, pts_num_out, pts_num_in, pts_out, pts_in,
                           dist2, idx);
 #else
-        TORCH_CHECK(false, "three_nn was not compiled with CUDA support")
+        TORCH_CHECK(false, "three_nn was not compiled with CUDA support");
 #endif
     } else if (data_pts.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
         three_nn_launcher_sycl(batch_size, pts_num_out, pts_num_in, pts_out,
                                pts_in, dist2, idx);
 #else
-        TORCH_CHECK(false, "three_nn was not compiled with SYCL support")
+        TORCH_CHECK(false, "three_nn was not compiled with SYCL support");
 #endif
     } else {
         TORCH_CHECK(false, "three_nn does not support " + data_pts.toString() +
-                                   " as input")
+                                   " as input");
     }
 
     return std::tuple<torch::Tensor, torch::Tensor>(out_dist2, out_idx);
@@ -109,7 +109,7 @@ torch::Tensor three_interpolate(torch::Tensor points,
                                    weights_data, out_data);
 #else
         TORCH_CHECK(false,
-                    "three_interpolate was not compiled with CUDA support")
+                    "three_interpolate was not compiled with CUDA support");
 #endif
     } else if (points.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
@@ -117,11 +117,11 @@ torch::Tensor three_interpolate(torch::Tensor points,
                                         idx_data, weights_data, out_data);
 #else
         TORCH_CHECK(false,
-                    "three_interpolate was not compiled with SYCL support")
+                    "three_interpolate was not compiled with SYCL support");
 #endif
     } else {
         TORCH_CHECK(false, "three_interpolate does not support " +
-                                   points.toString() + " as input")
+                                   points.toString() + " as input");
     }
 
     return out;
@@ -153,7 +153,7 @@ torch::Tensor three_interpolate_grad(torch::Tensor grad_out,
 #else
         TORCH_CHECK(false,
                     "three_interpolate_grad was not compiled with CUDA "
-                    "support")
+                    "support");
 #endif
     } else if (grad_out.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
@@ -162,11 +162,11 @@ torch::Tensor three_interpolate_grad(torch::Tensor grad_out,
 #else
         TORCH_CHECK(false,
                     "three_interpolate_grad was not compiled with SYCL "
-                    "support")
+                    "support");
 #endif
     } else {
         TORCH_CHECK(false, "three_interpolate_grad does not support " +
-                                   grad_out.toString() + " as input")
+                                   grad_out.toString() + " as input");
     }
 
     return out;
