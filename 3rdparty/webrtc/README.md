@@ -13,12 +13,46 @@ webrtc_download.cmake # Used by Open3D CMake. Consume pre-compiled WebRTC. (Meth
 webrtc_build.cmake    # Used by Open3D CMake. Build and consume WebRTC.    (Method 2)
 
 # Other files
-0001-xxx.patch x3     # Git patch for -DBUILD_WEBRTC_FROM_SOURCE=ON.       (Method 1 Prepare-Phase & Method 2)
+000*.patch            # Git patches applied before building WebRTC.        (Method 1 Prepare-Phase & Method 2)
+apply_webrtc_patches.sh # Applies the patches to the WebRTC checkout.      (Method 1 Prepare-Phase & Method 2)
 CMakeLists.txt        # Used by `webrtc_build.sh` to compile WebRTC.       (Method 1 Prepare-Phase)
 Dockerfile.webrtc     # Calls `webrtc_build.sh` to compile WebRTC.         (Method 1 Prepare-Phase)
 webrtc_build.sh       # Used by `Dockerfile.webrtc`.                       (Method 1 Prepare-Phase)
-webrtc_common.cmake   # Specifies Common WebRTC targets.                   (Method 1 Prepare-Phase)
+webrtc_common.cmake   # Specifies Common WebRTC targets and gn args.       (Method 1 Prepare-Phase)
 ```
+
+## Patches
+
+Applied by `apply_webrtc_patches.sh` via plain `git apply` (each is skipped
+without error if it does not apply cleanly to the pinned WebRTC commit, e.g.
+because it was already applied or the fix has landed upstream):
+
+```
+0001-src-enable-rtc_use_cxx11_abi-option.patch             # -> src (GCC C++11 ABI)
+0001-build-enable-rtc_use_cxx11_abi-option.patch           # -> src/build (GCC C++11 ABI)
+0001-third_party-enable-rtc_use_cxx11_abi-option.patch     # -> src/third_party (GCC C++11 ABI)
+0002-src-fix-nullptr_t-with-libstdcxx.patch                # -> src (GCC nullptr_t with libstdc++)
+
+0004-call-payload_type_picker-gcc-flat_tree.patch          # -> src (GCC flat_tree ordering)
+0005-build-win-dynamic-crt.patch                           # -> src/build (Windows /MD[d] runtime)
+0006-third_party-protobuf-disable-constinit-on-apple.patch # -> third_party (macOS constinit, port_def.inc)
+0007-p2p-fix-gcc-cxx20-network-changes-meaning.patch        # -> src (GCC C++20 Network() name lookup)
+0008-pc-fix-gcc-payload-type-ambiguous-conversion.patch     # -> src (GCC PayloadType->int ambiguity)
+0009-third_party-protobuf-port-cc-disable-constinit-on-apple.patch # -> third_party (macOS constinit, port.cc)
+```
+
+`0005-build-win-dynamic-crt.patch` adds a `rtc_win_dynamic_crt` gn arg so a
+non-component (static) Windows build can use the dynamic MSVC runtime
+(`/MD[d]`). This lets Open3D ship a static `libwebrtc` for both
+`STATIC_WINDOWS_RUNTIME=ON` (`/MT[d]`) and `OFF` (`/MD[d]`).
+
+`0006` and `0009` both touch files under `third_party/protobuf`, which is a
+plain subdirectory of the `third_party` checkout, not a git repository root
+of its own. They are applied with `third_party` (not `third_party/protobuf`)
+as the working directory and use `protobuf/`-prefixed paths accordingly --
+see the comment on `apply_one()` in `apply_webrtc_patches.sh` for why this
+matters (`git apply` run from a non-root subdirectory can silently no-op
+instead of applying or erroring).
 
 ## Method 1
 

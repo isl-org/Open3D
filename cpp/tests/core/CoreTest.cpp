@@ -8,6 +8,7 @@
 #include "tests/core/CoreTest.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 #include "open3d/core/CUDAUtils.h"
@@ -24,6 +25,34 @@ void PrintTo(const Dtype &dtype, std::ostream *os) { *os << dtype.ToString(); }
 }  // namespace core
 
 namespace tests {
+
+namespace {
+
+// GitHub Actions runners have no SYCL GPU, only the SYCL CPU fallback device
+// (untested on developer machines). Exercise it in CI so SYCL code paths
+// still get coverage, but keep skipping it in local/interactive runs.
+bool IsCIEnvironment() { return std::getenv("CI") != nullptr; }
+
+std::vector<core::Device> GetSYCLDevicesForTesting() {
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
+
+    // A real SYCL GPU is available: keep existing behavior of testing only
+    // the first (GPU) device, skipping the CPU fallback.
+    if (sycl_devices.size() > 1) {
+        sycl_devices.resize(1);
+        return sycl_devices;
+    }
+
+    // Only the CPU fallback is available. Use it in CI, skip it otherwise.
+    if (IsCIEnvironment() && sycl_devices.size() == 1) {
+        return sycl_devices;
+    }
+
+    return {};
+}
+
+}  // namespace
 
 std::vector<core::Dtype> PermuteDtypesWithBool::TestCases() {
     return {
@@ -57,15 +86,8 @@ std::vector<core::Device> PermuteDevices::TestCases() {
 
 std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> devices = PermuteDevices::TestCases();
-    std::vector<core::Device> sycl_devices =
-            core::Device::GetAvailableSYCLDevices();
-    // Skip the last SYCL device - this is the CPU fallback and support is
-    // untested.
-    if (sycl_devices.size() > 1) {
-        devices.push_back(sycl_devices[0]);
-        // devices.insert(devices.end(), sycl_devices.begin(),
-        // sycl_devices.end());
-    }
+    std::vector<core::Device> sycl_devices = GetSYCLDevicesForTesting();
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
     return devices;
 }
 
@@ -104,21 +126,15 @@ PermuteDevicePairsWithSYCL::TestCases() {
             core::Device::GetAvailableCPUDevices();
     std::vector<core::Device> cuda_devices =
             core::Device::GetAvailableCUDADevices();
-    std::vector<core::Device> sycl_devices =
-            core::Device::GetAvailableSYCLDevices();
+    std::vector<core::Device> sycl_devices = GetSYCLDevicesForTesting();
 
     cpu_devices.resize(std::min(static_cast<size_t>(2), cpu_devices.size()));
     cuda_devices.resize(std::min(static_cast<size_t>(2), cuda_devices.size()));
-    sycl_devices.resize(std::min(static_cast<size_t>(2), sycl_devices.size()));
 
     std::vector<core::Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
-    // Skip the last SYCL device - this is the CPU fallback
-    if (sycl_devices.size() > 1) {
-        devices.insert(devices.end(), sycl_devices.begin(),
-                       sycl_devices.end() - 1);
-    }
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
 
     // Self-pairs and cross pairs (bidirectional).
     std::vector<std::pair<core::Device, core::Device>> device_pairs;

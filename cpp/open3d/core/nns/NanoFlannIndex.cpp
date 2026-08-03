@@ -7,6 +7,8 @@
 
 #include "open3d/core/nns/NanoFlannIndex.h"
 
+#include <cassert>
+
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NanoFlannImpl.h"

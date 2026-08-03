@@ -91,6 +91,13 @@ To get the latest features in Open3D, install the
 To compile Open3D from source, refer to
 [compiling from source](https://www.open3d.org/docs/release/compilation.html).
 
+Release artifacts (Python wheels and C++ binaries) include signed
+[SLSA](https://slsa.dev) build-provenance attestations (GitHub Artifact
+Attestations), aligned with [OpenSSF](https://openssf.org) supply-chain
+guidance. See
+[Getting started — supply chain attestations](https://www.open3d.org/docs/latest/getting_started.html#supply-chain-attestations)
+for verification with the GitHub CLI.
+
 ## C++ quick start
 
 Checkout the following links to get started with Open3D C++ API

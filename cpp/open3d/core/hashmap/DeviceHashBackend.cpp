@@ -7,6 +7,7 @@
 
 #include "open3d/core/hashmap/DeviceHashBackend.h"
 
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -30,6 +31,13 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
 #if defined(BUILD_CUDA_MODULE)
     else if (device.IsCUDA()) {
         return CreateCUDAHashBackend(init_capacity, key_dtype,
+                                     key_element_shape, value_dtypes,
+                                     value_element_shapes, device, backend);
+    }
+#endif
+#if defined(BUILD_SYCL_MODULE)
+    else if (device.IsSYCL()) {
+        return CreateSYCLHashBackend(init_capacity, key_dtype,
                                      key_element_shape, value_dtypes,
                                      value_element_shapes, device, backend);
     }

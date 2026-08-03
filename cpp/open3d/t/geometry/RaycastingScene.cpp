@@ -19,6 +19,7 @@
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Core>
+#include <cassert>
 #include <cstring>
 #include <tuple>
 #include <unsupported/Eigen/AlignedVector3>
@@ -78,9 +79,12 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
         unsigned int ray_id = ray.id;
         GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
         auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
+
+        // Count distinct surface hits. SYCL refreshes tfar reliably, but not
+        // primID for successive candidates; geomID also separates geometry
+        // hits while deduplicating adjacent triangles sharing the same tfar.
         if (prev_gpIDtfar.geomID != hit.geomID ||
-            (prev_gpIDtfar.primID != hit.primID &&
-             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            prev_gpIDtfar.ray_tfar != ray.tfar) {
             ++(intersections[ray_id]);
             previous_geom_prim_ID_tfar[ray_id] = gpID;
         }
@@ -144,8 +148,7 @@ void ListIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
         GeomPrimID gpID = {hit.geomID, hit.primID, ray.tfar};
         auto& prev_gpIDtfar = previous_geom_prim_ID_tfar[ray_id];
         if (prev_gpIDtfar.geomID != hit.geomID ||
-            (prev_gpIDtfar.primID != hit.primID &&
-             prev_gpIDtfar.ray_tfar != ray.tfar)) {
+            prev_gpIDtfar.ray_tfar != ray.tfar) {
             size_t idx = cumsum[ray_id] + track_intersections[ray_id];
             ray_ids[idx] = ray_id;
             geometry_ids[idx] = hit.geomID;

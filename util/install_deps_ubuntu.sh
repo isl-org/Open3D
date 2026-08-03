@@ -27,10 +27,12 @@ deps=(
     libc++abi-dev
     libsdl2-dev
     libxi-dev
+    # Compute shaders
+    glslang-tools
     # ML
     libtbb-dev
-    # Headless rendering
-    libosmesa6-dev
+    # Headless / offscreen GPU rendering (EGL)
+    libegl1-mesa-dev
     # RealSense
     libudev-dev
     libusb-1.0-0-dev

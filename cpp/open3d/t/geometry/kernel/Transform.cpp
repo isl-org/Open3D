@@ -31,6 +31,12 @@ void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
     } else if (points.IsCUDA()) {
         CUDA_CALL(TransformPointsCUDA, transformation_contiguous,
                   points_contiguous);
+    } else if (points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TransformPointsSYCL(transformation_contiguous, points_contiguous);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -53,6 +59,12 @@ void TransformNormals(const core::Tensor& transformation,
     } else if (normals.IsCUDA()) {
         CUDA_CALL(TransformNormalsCUDA, transformation_contiguous,
                   normals_contiguous);
+    } else if (normals.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        TransformNormalsSYCL(transformation_contiguous, normals_contiguous);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -78,6 +90,12 @@ void RotatePoints(const core::Tensor& R,
     } else if (points.IsCUDA()) {
         CUDA_CALL(RotatePointsCUDA, R_contiguous, points_contiguous,
                   center_contiguous);
+    } else if (points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        RotatePointsSYCL(R_contiguous, points_contiguous, center_contiguous);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -97,6 +115,12 @@ void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
         RotateNormalsCPU(R_contiguous, normals_contiguous);
     } else if (normals.IsCUDA()) {
         CUDA_CALL(RotateNormalsCUDA, R_contiguous, normals_contiguous);
+    } else if (normals.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        RotateNormalsSYCL(R_contiguous, normals_contiguous);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }

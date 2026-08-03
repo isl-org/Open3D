@@ -57,10 +57,9 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-jammy                   : CUDA CI, 2-jammy, developer mode
-    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
-    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
-    5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    2-noble                   : CUDA CI, 2-noble, developer mode
+    3-ml-shared-noble-release : CUDA CI, 3-ml-shared-noble (cxx11_abi), release mode
+    3-ml-shared-noble         : CUDA CI, 3-ml-shared-noble (cxx11_abi), developer mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
@@ -105,13 +104,13 @@ openblas_export_env() {
     if [[ "amd64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
-        export BASE_IMAGE=ubuntu:22.04
+        export BASE_IMAGE=${BASE_IMAGE:-ubuntu:22.04}
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
-        export BASE_IMAGE=arm64v8/ubuntu:22.04
+        export BASE_IMAGE=${BASE_IMAGE:-arm64v8/ubuntu:22.04}
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION}
     else
@@ -153,6 +152,12 @@ openblas_export_env() {
     export BUILD_PYTORCH_OPS=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_SYCL_MODULE=OFF
+    
+    if [[ "core" =~ ^($options)$ ]]; then
+       export BUILD_PYTHON_MODULE=OFF
+    else
+       export BUILD_PYTHON_MODULE=ON
+    fi
 }
 
 openblas_build() {
@@ -165,18 +170,23 @@ openblas_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+        --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.openblas .
     popd
 
-    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -c "cp /*.whl /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/*.whl"
+    if [ "$BUILD_PYTHON_MODULE" != "OFF" ]; then
+        docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+            bash -c "cp /*.whl /opt/mount \
+                && chown $(id -u):$(id -g) /opt/mount/*.whl"
+    fi
 }
 
 cuda_wheel_build() {
-    BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
+    BASE_IMAGE="${BASE_IMAGE:-nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04}"
     CCACHE_TAR_NAME=open3d-ubuntu-2204-cuda-ci-ccache
+    DOCKER_TAG="open3d-ci:wheel"
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
@@ -199,10 +209,54 @@ cuda_wheel_build() {
     else
         DEVELOPER_BUILD=OFF
     fi
-    echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
-    echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
-    echo "[cuda_wheel_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:?'env var must be set.'}"
-    echo "[cuda_wheel_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:?'env var must be set.'}"
+
+    # build-lib: produce CPU/CUDA devel packages + viewer + tests bundle
+    # (no Python wheel). Otherwise build wheels (from devel tars when present).
+    local OPEN3D_BUILD_MODE=wheel
+    local OPEN3D_CPU_DEVEL_TAR=""
+    local OPEN3D_CUDA_DEVEL_TAR=""
+    if [[ "build-lib" =~ ^($options)$ ]]; then
+        OPEN3D_BUILD_MODE=lib
+        BUILD_PYTHON_MODULE=OFF
+        # ML ops belong in the wheel stage (Python/Torch/TF ABI).
+        BUILD_PYTORCH_OPS=OFF
+        BUILD_TENSORFLOW_OPS=OFF
+    else
+        BUILD_PYTHON_MODULE=ON
+        # Pick up devel tars from OPEN3D_ARTIFACTS_DIR or ./open3d-artifacts.
+        # When CI already downloaded into open3d-artifacts/, skip the no-op cp
+        # (cp -a same-file fails with exit 1 under set -e).
+        local artifacts_src="${OPEN3D_ARTIFACTS_DIR:-${HOST_OPEN3D_ROOT}/open3d-artifacts}"
+        mkdir -p "${HOST_OPEN3D_ROOT}/open3d-artifacts"
+        if [[ -d "${artifacts_src}" ]]; then
+            shopt -s nullglob
+            OPEN3D_CPU_DEVEL_TAR=""
+            OPEN3D_CUDA_DEVEL_TAR=""
+            local artifacts_dst="${HOST_OPEN3D_ROOT}/open3d-artifacts"
+            local artifacts_src_resolved artifacts_dst_resolved
+            artifacts_src_resolved="$(cd "${artifacts_src}" && pwd -P)"
+            artifacts_dst_resolved="$(cd "${artifacts_dst}" && pwd -P)"
+            for f in "${artifacts_src}"/open3d-devel-*.tar.xz; do
+                local base
+                base="$(basename "$f")"
+                if [[ "${base}" == *"-cuda-"* ]]; then
+                    OPEN3D_CUDA_DEVEL_TAR="${base}"
+                else
+                    OPEN3D_CPU_DEVEL_TAR="${base}"
+                fi
+                if [[ "${artifacts_src_resolved}" != "${artifacts_dst_resolved}" ]]; then
+                    cp -a "$f" "${artifacts_dst}/"
+                fi
+            done
+            shopt -u nullglob
+        fi
+        echo "[cuda_wheel_build()] CPU devel tar: ${OPEN3D_CPU_DEVEL_TAR:-<none>}"
+        echo "[cuda_wheel_build()] CUDA devel tar: ${OPEN3D_CUDA_DEVEL_TAR:-<none>}"
+    fi
+
+    # Docker COPY requires the path to exist in the build context.
+    mkdir -p "${HOST_OPEN3D_ROOT}/open3d-artifacts"
+    touch "${HOST_OPEN3D_ROOT}/open3d-artifacts/.keep"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -213,17 +267,29 @@ cuda_wheel_build() {
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
+        --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+        --build-arg OPEN3D_CPU_DEVEL_TAR="${OPEN3D_CPU_DEVEL_TAR}" \
+        --build-arg OPEN3D_CUDA_DEVEL_TAR="${OPEN3D_CUDA_DEVEL_TAR}" \
         --build-arg CI="${CI:-}" \
-        -t open3d-ci:wheel \
+        -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.wheel .
     popd
 
-    python_package_dir=/root/Open3D/build/lib/python_package
-    docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
+    if [[ "${OPEN3D_BUILD_MODE}" = "lib" ]]; then
+        docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+            bash -c "cp -a /open3d-artifacts/open3d-* /opt/mount/ \
+                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount/ \
+                && chown -R $(id -u):$(id -g) /opt/mount/open3d-* \
+                && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
+    else
+        python_package_dir=/root/Open3D/build/lib/python_package
+        docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
+            bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
+                && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
+                && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
+    fi
 }
 
 ci_build() {
@@ -263,12 +329,12 @@ ci_build() {
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 
-2-jammy_export_env() {
-    export DOCKER_TAG=open3d-ci:2-jammy
+2-noble_export_env() {
+    export DOCKER_TAG=open3d-ci:2-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-2-jammy
+    export CCACHE_TAR_NAME=open3d-ci-2-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
@@ -278,12 +344,12 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-jammy_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
+3-ml-shared-noble_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
@@ -293,33 +359,18 @@ ci_build() {
     export BUILD_SYCL_MODULE=OFF
 }
 
-3-ml-shared-jammy-release_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-jammy
+3-ml-shared-noble-release_export_env() {
+    export DOCKER_TAG=open3d-ci:3-ml-shared-noble
 
     export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-jammy
+    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-noble
     export PYTHON_VERSION=3.10
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
-    export BUILD_SYCL_MODULE=OFF
-}
-
-5-ml-noble_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-noble
-
-    export BASE_IMAGE=nvidia/cuda:${CUDA_VERSION_LATEST}-devel-ubuntu22.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-noble
-    export PYTHON_VERSION=3.12
-    export BUILD_SHARED_LIBS=OFF
-    export BUILD_CUDA_MODULE=ON
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
     export BUILD_SYCL_MODULE=OFF
 }
 
@@ -359,7 +410,10 @@ cpu-shared-ml_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.10
+    # Keep in sync with the "Set up Python" step for the build-docs job in
+    # .github/workflows/ubuntu.yml, which installs this wheel and therefore
+    # needs a matching interpreter version.
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -374,7 +428,8 @@ cpu-shared-ml-release_export_env() {
     export BASE_IMAGE=ubuntu:22.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.10
+    # See cpu-shared-ml_export_env() above: must match build-docs' Python.
+    export PYTHON_VERSION=3.12
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -386,17 +441,33 @@ cpu-shared-ml-release_export_env() {
 sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
+    options="$(echo "$@" | tr ' ' '|')"
+
+    # Matches e.g. "py3.10" as passed by the SYCL workflow (py${{
+    # matrix.python_version }}, where python_version is dotted, e.g. "3.10").
+    if [[ "$options" =~ py3\.(7|8|9|10|11|12|13|14) ]]; then
+        PYTHON_VERSION=${BASH_REMATCH[0]#py}
+        export BUILD_PYTHON_MODULE=ON
+    fi
+
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-22.04
-    export BASE_IMAGE=intel/cpp-essentials:2025.3.1-0-devel-ubuntu22.04
+    export BASE_IMAGE=${BASE_IMAGE:-intel/cpp-essentials:2025.3.1-0-devel-ubuntu22.04}
     export DEVELOPER_BUILD=${DEVELOPER_BUILD:-ON}
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=${PYTHON_VERSION:-3.12}
     export BUILD_SHARED_LIBS=ON
+    
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=ON
+
+    if [[ "build-lib" =~ ^($options)$ ]]; then
+        export PACKAGE=ON
+    else
+        export PACKAGE=OFF
+    fi
+
     export BUILD_SYCL_MODULE=ON
 
     export IGC_EnableDPEmulation=1       # Enable float64 emulation during compilation
@@ -426,7 +497,7 @@ sycl-static_export_env() {
 }
 
 function main() {
-    if [[ "$#" -ne 1 ]]; then
+    if [[ "$#" -lt 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
         print_usage_and_exit_docker_build
     fi
@@ -536,7 +607,8 @@ function main() {
 
     # SYCL CI
     sycl-shared)
-        sycl-shared_export_env
+        shift
+        sycl-shared_export_env "$@"
         ci_build
         ;;
     sycl-static)
@@ -546,51 +618,57 @@ function main() {
 
     # CUDA wheels
     cuda_wheel_py310_dev)
-        cuda_wheel_build py310 dev
+        shift
+        cuda_wheel_build py310 dev "$@"
         ;;
     cuda_wheel_py311_dev)
-        cuda_wheel_build py311 dev
+        shift
+        cuda_wheel_build py311 dev "$@"
         ;;
     cuda_wheel_py312_dev)
-        cuda_wheel_build py312 dev
+        shift
+        cuda_wheel_build py312 dev "$@"
         ;;
     cuda_wheel_py313_dev)
-        cuda_wheel_build py313 dev
+        shift
+        cuda_wheel_build py313 dev "$@"
         ;;
     cuda_wheel_py314_dev)
-        cuda_wheel_build py314 dev
+        shift
+        cuda_wheel_build py314 dev "$@"
         ;;
     cuda_wheel_py310)
-        cuda_wheel_build py310
+        shift
+        cuda_wheel_build py310 "$@"
         ;;
     cuda_wheel_py311)
-        cuda_wheel_build py311
+        shift
+        cuda_wheel_build py311 "$@"
         ;;
     cuda_wheel_py312)
-        cuda_wheel_build py312
+        shift
+        cuda_wheel_build py312 "$@"
         ;;
     cuda_wheel_py313)
-        cuda_wheel_build py313
+        shift
+        cuda_wheel_build py313 "$@"
         ;;
     cuda_wheel_py314)
-        cuda_wheel_build py314
+        shift
+        cuda_wheel_build py314 "$@"
         ;;
 
     # ML CIs
-    2-jammy)
-        2-jammy_export_env
+    2-noble)
+        2-noble_export_env
         ci_build
         ;;
-    3-ml-shared-jammy-release)
-        3-ml-shared-jammy-release_export_env
+    3-ml-shared-noble-release)
+        3-ml-shared-noble-release_export_env
         ci_build
         ;;
-    3-ml-shared-jammy)
-        3-ml-shared-jammy_export_env
-        ci_build
-        ;;
-    5-ml-noble)
-        5-ml-noble_export_env
+    3-ml-shared-noble)
+        3-ml-shared-noble_export_env
         ci_build
         ;;
     *)

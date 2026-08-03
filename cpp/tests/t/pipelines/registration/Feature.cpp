@@ -9,6 +9,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -20,13 +21,16 @@
 namespace open3d {
 namespace tests {
 
-class FeaturePermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Feature,
-                         FeaturePermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class FeaturePermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Feature,
+        FeaturePermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(FeaturePermuteDevices, SelectByIndex) {
     core::Device device = GetParam();
+    // HybridSearch (used by ComputeFPFHFeature) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     open3d::geometry::PointCloud pcd_legacy;
     data::BunnyMesh bunny;
@@ -61,6 +65,8 @@ TEST_P(FeaturePermuteDevices, SelectByIndex) {
 
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
     core::Device device = GetParam();
+    // HybridSearch segfaults on SYCL CPU for large datasets.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     open3d::geometry::PointCloud pcd_legacy;
     data::BunnyMesh byunny;
@@ -109,6 +115,8 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
 
 TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
     core::Device device = GetParam();
+    // HybridSearch (used by ComputeFPFHFeature) is unsupported on SYCL CPU.
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const float kVoxelSize = 0.05f;
     const float kFPFHRadius = kVoxelSize * 5;

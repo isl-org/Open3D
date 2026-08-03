@@ -50,10 +50,9 @@ OPTION:
     sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
-    2-jammy                   : CUDA CI, 2-jammy, developer mode
-    3-ml-shared-jammy-release : CUDA CI, 3-ml-shared-jammy (cxx11_abi), release mode
-    3-ml-shared-jammy         : CUDA CI, 3-ml-shared-jammy (cxx11_abi), developer mode
-    5-ml-noble                : CUDA CI, 5-ml-noble, developer mode
+    2-noble                   : CUDA CI, 2-noble, developer mode
+    3-ml-shared-noble-release : CUDA CI, 3-ml-shared-noble (cxx11_abi), release mode
+    3-ml-shared-noble         : CUDA CI, 3-ml-shared-noble (cxx11_abi), developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -122,6 +121,9 @@ cpp_python_linking_uninstall_test() {
     fi
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
         docker_run="${docker_run} --device=/dev/dri"
+        if [ -n "${CI:-}" ]; then
+            docker_run="${docker_run} --env CI=${CI}"
+        fi
     fi
 
     # Config-dependent argument: pytest_args
@@ -134,10 +136,21 @@ cpp_python_linking_uninstall_test() {
 
     # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
-        cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-    "
+    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        # SYCL CPU tests can time out due to kernel compilation time;
+        # shard across NPROC processes with GNU parallel to speed this up.
+        echo "[cpp_python_linking_uninstall_test()] Running sharded gtests with GNU parallel."
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
+            cd build \
+         && seq 0 $((${NPROC} - 1)) | parallel -k --jobs ${NPROC} --halt soon,fail=1 \
+            'GTEST_TOTAL_SHARDS=${NPROC} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum*' \
+        "
+    else
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
+            cd build \
+         && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+        "
+    fi
     restart_docker_daemon_if_on_gcloud
 
     # Python test
@@ -348,23 +361,18 @@ sycl-static)
     ;;
 
     # ML CIs
-2-jammy)
-    2-jammy_export_env
+2-noble)
+    2-noble_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-jammy-release)
-    3-ml-shared-jammy-release_export_env
+3-ml-shared-noble-release)
+    3-ml-shared-noble-release_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;
-3-ml-shared-jammy)
-    3-ml-shared-jammy_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-5-ml-noble)
-    5-ml-noble_export_env
+3-ml-shared-noble)
+    3-ml-shared-noble_export_env
     ci_print_env
     cpp_python_linking_uninstall_test
     ;;

@@ -63,7 +63,7 @@ A C++ library for performing fast approximate nearest neighbor searches in high
 dimensional spaces
 http://www.cs.ubc.ca/research/flann/
 --------------------------------------------------------------------------------
-GLEW                        2.1.0                                    MIT License
+GLEW                        2.3.1                                    MIT License
 A cross-platform open-source C/C++ extension loading library
 http://glew.sourceforge.net/
 --------------------------------------------------------------------------------

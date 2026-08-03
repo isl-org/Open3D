@@ -277,21 +277,12 @@ void pybind_sensor_definitions(py::module &m) {
                         "Query all connected RealSense cameras for their "
                         "capabilities.")
             .def("init_sensor",
-                 py::overload_cast<const RGBDSensorConfig &, size_t,
-                                   const std::string &>(
-                         &RealSenseSensor::InitSensor),
-                 py::call_guard<py::gil_scoped_release>(),
-                 "sensor_config"_a = RealSenseSensorConfig{},
-                 "sensor_index"_a = 0, "filename"_a = "",
-                 "Configure sensor with custom settings. If this is skipped, "
-                 "default settings will be used. You can enable recording to a "
-                 "bag file by specifying a filename.")
-            .def("init_sensor",
                  py::overload_cast<const RealSenseSensorConfig &, size_t,
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
                  py::call_guard<py::gil_scoped_release>(),
-                 "sensor_config"_a = RealSenseSensorConfig{},
+                 py::arg_v("sensor_config", RealSenseSensorConfig{},
+                           "open3d.t.io.RealSenseSensorConfig()"),
                  "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
                  "default settings will be used. You can enable recording to a "

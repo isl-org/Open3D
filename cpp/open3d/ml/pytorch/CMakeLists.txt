@@ -122,7 +122,8 @@ if (MSVC)
     target_compile_options(open3d_torch_ops PRIVATE /utf-8)
 endif()
 
-# Set output directory according to architecture (cpu/cuda)
+# Set output directory according to architecture (cpu/cuda) so a CUDA wheel can
+# bundle both the CPU- and CUDA-linked ops (loaded by device at runtime).
 get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
 set(TORCH_OPS_ARCH_DIR
     "${TORCH_OPS_DIR}/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")

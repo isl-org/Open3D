@@ -25,8 +25,15 @@ namespace geometry {
 
 // This file is just used to load the `point cloud` data. So, format of this
 // file is not important.
-data::PLYPointCloud pointcloud_ply_data;
-static const std::string input_path_pcd = pointcloud_ply_data.GetPath();
+namespace {
+
+const std::string& InputPathPcd() {
+    static data::PLYPointCloud pointcloud_ply_data;
+    static const std::string path = pointcloud_ply_data.GetPath();
+    return path;
+}
+
+}  // namespace
 
 void IOWriteLegacyPointCloud(benchmark::State& state,
                              const std::string& input_file_path,
@@ -96,7 +103,7 @@ void IOReadTensorPointCloud(benchmark::State& state,
 #define ENUM_BM_IO_EXTENSION_FORMAT(EXTENSION_NAME, FILE_NAME, FORMAT_NAME,    \
                                     ASCII, COMPRESSED)                         \
     BENCHMARK_CAPTURE(IOWriteLegacyPointCloud, EXTENSION_NAME##_##FORMAT_NAME, \
-                      input_path_pcd,                                          \
+                      InputPathPcd(),                                          \
                       std::string("tensor_") + std::string(FILE_NAME), ASCII,  \
                       COMPRESSED)                                              \
             ->Unit(benchmark::kMillisecond);                                   \
@@ -104,7 +111,7 @@ void IOReadTensorPointCloud(benchmark::State& state,
                       std::string("tensor_") + std::string(FILE_NAME))         \
             ->Unit(benchmark::kMillisecond);                                   \
     BENCHMARK_CAPTURE(IOWriteTensorPointCloud, EXTENSION_NAME##_##FORMAT_NAME, \
-                      input_path_pcd,                                          \
+                      InputPathPcd(),                                          \
                       std::string("legacy_") + std::string(FILE_NAME), ASCII,  \
                       COMPRESSED)                                              \
             ->Unit(benchmark::kMillisecond);                                   \

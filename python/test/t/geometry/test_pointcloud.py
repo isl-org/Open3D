@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
     dtype = o3c.float32
 
@@ -46,7 +46,7 @@ def test_constructor_and_accessors(device):
     assert pcd.point.positions.allclose(o3c.Tensor([[1, 2, 3]], dtype, device))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_from_legacy(device):
     dtype = o3c.float32
 
@@ -63,7 +63,7 @@ def test_from_legacy(device):
         o3c.Tensor([[6, 7, 8], [9, 10, 11]], dtype, device))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_to_legacy(device):
     dtype = o3c.float32
 
@@ -78,7 +78,7 @@ def test_to_legacy(device):
                                np.array([[6, 7, 8], [9, 10, 11]]))
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
 def test_member_functions(device):
     dtype = o3c.float32
 
@@ -180,7 +180,7 @@ def test_extrude_linear():
     assert ans.line.indices.shape == (1, 2)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     pcd = o3d.t.geometry.PointCloud(device)
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -214,3 +214,127 @@ def test_metrics():
         metrics.cpu().numpy(),
         (0.22436734, np.sqrt(3) / 10, 100. / 8, 400. / 8, 700. / 8, 100.),
         rtol=1e-6)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_project_to_depth_image(device):
+    """Project point cloud to depth image; check shape and non-empty depth."""
+    dtype = o3c.float32
+    width, height = 8, 8
+    # Points in front of camera (z > 0): (0, 0, 1) and (0.1, 0.1, 1) project
+    # with intrinsics fx=fy=10, cx=cy=4 to pixel (4,4) and (5,5) approx.
+    positions = o3c.Tensor([[0.0, 0.0, 1.0], [0.1, 0.1, 1.0]], dtype, device)
+    pcd = o3d.t.geometry.PointCloud(positions)
+    intrinsics = o3c.Tensor([[10.0, 0, 4.0], [0, 10.0, 4.0], [0, 0, 1.0]],
+                            o3c.float64)
+    extrinsics = o3c.Tensor(np.eye(4), o3c.float64)
+
+    depth_img = pcd.project_to_depth_image(width,
+                                           height,
+                                           intrinsics,
+                                           extrinsics,
+                                           depth_scale=1.0,
+                                           depth_max=10.0)
+
+    depth_tensor = depth_img.as_tensor()
+    assert depth_tensor.shape == (height, width, 1)
+    depth_np = depth_tensor.cpu().numpy()
+    assert depth_np.shape == (height, width, 1)
+    # At least one pixel should have depth (points project into image)
+    assert np.any(depth_np > 0)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_project_to_rgbd_image(device):
+    """Project colored point cloud to RGBD image; check shapes and content."""
+    dtype = o3c.float32
+    width, height = 8, 8
+    positions = o3c.Tensor([[0.0, 0.0, 1.0], [0.1, 0.0, 1.0], [0.0, 0.1, 1.0]],
+                           dtype, device)
+    colors = o3c.Tensor([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+                        dtype, device)
+    pcd = o3d.t.geometry.PointCloud(positions)
+    pcd.point.colors = colors
+    pcd = pcd.to(device)
+    intrinsics = o3c.Tensor([[10.0, 0, 4.0], [0, 10.0, 4.0], [0, 0, 1.0]],
+                            o3c.float64)
+    extrinsics = o3c.Tensor(np.eye(4), o3c.float64)
+
+    rgbd = pcd.project_to_rgbd_image(width,
+                                     height,
+                                     intrinsics,
+                                     extrinsics,
+                                     depth_scale=1.0,
+                                     depth_max=10.0)
+
+    assert rgbd.depth.as_tensor().shape == (height, width, 1)
+    assert rgbd.color.as_tensor().shape == (height, width, 3)
+    depth_np = rgbd.depth.as_tensor().cpu().numpy()
+    color_np = rgbd.color.as_tensor().cpu().numpy()
+    assert np.any(depth_np > 0), "depth should have at least one hit"
+    # Where depth > 0, color should not be all zeros (no black-artifact pixels)
+    hit_mask = (depth_np.squeeze(-1) > 0).astype(bool)
+    hit_colors = color_np[hit_mask]
+    assert hit_colors.size > 0
+    assert np.any(hit_colors > 0), "projected pixels should have non-zero color"
+
+
+@pytest.mark.parametrize(
+    "accel_device",
+    list_devices(enable_cpu=False) or [None],
+    ids=lambda d: "no_accelerator" if d is None else str(d),
+)
+def test_project_to_rgbd_image_cpu_accelerator_consistent(accel_device):
+    """RGBD projection on CPU should match CUDA or SYCL when built and available."""
+    if accel_device is None:
+        pytest.skip("No CUDA or SYCL device available")
+
+    width, height = 16, 16
+    np.random.seed(42)
+    n = 50
+    positions_np = np.random.randn(n, 3).astype(np.float32) * 0.2
+    positions_np[:, 2] = 1.0 + np.abs(positions_np[:, 2])  # z in [1, ~2]
+    colors_np = np.random.rand(n, 3).astype(np.float32)
+    intrinsics = o3c.Tensor([[20.0, 0, 8.0], [0, 20.0, 8.0], [0, 0, 1.0]],
+                            o3c.float64)
+    extrinsics = o3c.Tensor(np.eye(4), o3c.float64)
+
+    pcd_cpu = o3d.t.geometry.PointCloud(o3c.Tensor(positions_np))
+    pcd_cpu.point.colors = o3c.Tensor(colors_np)
+    rgbd_cpu = pcd_cpu.project_to_rgbd_image(width,
+                                             height,
+                                             intrinsics,
+                                             extrinsics,
+                                             depth_scale=1.0,
+                                             depth_max=5.0)
+    depth_cpu = rgbd_cpu.depth.as_tensor().cpu().numpy()
+    color_cpu = rgbd_cpu.color.as_tensor().cpu().numpy()
+
+    pcd_accel = pcd_cpu.to(accel_device)
+    num_accel_runs = 5
+    depth_accel_ref = None
+    color_accel_ref = None
+    for _ in range(num_accel_runs):
+        rgbd_accel = pcd_accel.project_to_rgbd_image(width,
+                                                     height,
+                                                     intrinsics,
+                                                     extrinsics,
+                                                     depth_scale=1.0,
+                                                     depth_max=5.0)
+        depth_accel = rgbd_accel.depth.as_tensor().cpu().numpy()
+        color_accel = rgbd_accel.color.as_tensor().cpu().numpy()
+        if depth_accel_ref is None:
+            depth_accel_ref = depth_accel
+            color_accel_ref = color_accel
+        else:
+            np.testing.assert_allclose(depth_accel_ref,
+                                       depth_accel,
+                                       rtol=1e-5,
+                                       atol=1e-5)
+            np.testing.assert_allclose(color_accel_ref,
+                                       color_accel,
+                                       rtol=1e-5,
+                                       atol=1e-5)
+
+    np.testing.assert_allclose(depth_cpu, depth_accel_ref, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(color_cpu, color_accel_ref, rtol=1e-5, atol=1e-5)
