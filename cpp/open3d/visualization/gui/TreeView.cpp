@@ -436,11 +436,7 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
         }
 
         int flags = ImGuiTreeNodeFlags_AllowItemOverlap;
-        bool expanded = item.expanded.value_or(true);
 
-        if (expanded) {
-            flags |= ImGuiTreeNodeFlags_DefaultOpen;
-        }
         if (impl_->can_select_parents_) {
             flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
             flags |= ImGuiTreeNodeFlags_OpenOnArrow;
@@ -486,6 +482,8 @@ Widget::DrawResult TreeView::Draw(const DrawContext &context) {
                 new_selection = &item;
             }
         };
+
+        ImGui::SetNextItemOpen(item.expanded.value_or(true));
 
         bool open = ImGui::TreeNodeEx(item.id_string.c_str(), flags, "%s", "");
         item.expanded = open;
