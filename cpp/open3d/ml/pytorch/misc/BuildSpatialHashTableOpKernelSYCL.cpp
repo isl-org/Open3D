@@ -33,6 +33,11 @@ void BuildSpatialHashTableSYCL(const torch::Tensor& points,
     const int64_t* row_splits_ptr = points_row_splits.data_ptr<int64_t>();
     const int batch_size = static_cast<int>(points_row_splits.size(0)) - 1;
 
+    // Non-blocking: hash_table_index/hash_table_cell_splits are output
+    // tensors owned by PyTorch's XPU caching allocator, which is
+    // queue-ordered (see the Phase 3.2 GemmSYCL discussion) -- any further
+    // consumption on this or another stream is correctly ordered without an
+    // explicit host wait here.
     open3d::core::nns::BuildSpatialHashTableSYCLRaw<T>(
             queue, points.data_ptr<T>(), T(1) / T(2 * radius), batch_size,
             row_splits_ptr, hash_table_splits.data(),

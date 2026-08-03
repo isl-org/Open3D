@@ -54,6 +54,7 @@
 #include <sycl/sycl.hpp>
 #include <type_traits>
 
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
@@ -194,10 +195,14 @@ void UpdateTopKFromTile(sycl::queue& queue,
                         TIndex* best_idx_ptr,
                         bool use_threshold,
                         T threshold) {
+    const size_t wg = core::sy::PreferredWorkGroupSize(queue.get_device());
+    const size_t global_size =
+            ((static_cast<size_t>(num_queries) + wg - 1) / wg) * wg;
     queue.parallel_for(
-            sycl::range<1>(num_queries),
-            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                const int64_t q = id[0];
+            sycl::nd_range<1>(sycl::range<1>(global_size), sycl::range<1>(wg)),
+            [=](sycl::nd_item<1> it) [[intel::kernel_args_restrict]] {
+                const int64_t q = it.get_global_id(0);
+                if (q >= num_queries) return;
                 const T* qrow = neg2qp_ptr + q * distance_stride;
                 T* qd = best_dist_ptr + q * K;
                 TIndex* qi = best_idx_ptr + q * K;
@@ -254,29 +259,32 @@ void FinalizeTopK(sycl::queue& queue,
                   TIndex* out_idx_ptr,
                   int64_t actual_k,
                   const T* query_norms_ptr) {
-    queue.parallel_for(sycl::range<1>(num_queries),
-                       [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                           const int64_t q = id[0];
-                           T d[K];
-                           TIndex idx[K];
-                           for (int i = 0; i < K; ++i) {
-                               d[i] = running_dist_ptr[q * K + i];
-                               idx[i] = running_idx_ptr[q * K + i];
-                           }
-                           HeapSort<T, TIndex, K>(d, idx);
+    const size_t wg = core::sy::PreferredWorkGroupSize(queue.get_device());
+    const size_t global_size =
+            ((static_cast<size_t>(num_queries) + wg - 1) / wg) * wg;
+    queue.parallel_for(
+            sycl::nd_range<1>(sycl::range<1>(global_size), sycl::range<1>(wg)),
+            [=](sycl::nd_item<1> it) [[intel::kernel_args_restrict]] {
+                const int64_t q = it.get_global_id(0);
+                if (q >= num_queries) return;
+                T d[K];
+                TIndex idx[K];
+                for (int i = 0; i < K; ++i) {
+                    d[i] = running_dist_ptr[q * K + i];
+                    idx[i] = running_idx_ptr[q * K + i];
+                }
+                HeapSort<T, TIndex, K>(d, idx);
 
-                           const T qnorm =
-                                   query_norms_ptr ? query_norms_ptr[q] : T(0);
-                           T* qout_d = out_dist_ptr + q * actual_k;
-                           TIndex* qout_i = out_idx_ptr + q * actual_k;
-                           for (int64_t i = 0; i < actual_k; ++i) {
-                               T dist = d[i];
-                               if (query_norms_ptr)
-                                   dist = sycl::fmax(T(0), dist + qnorm);
-                               qout_d[i] = dist;
-                               qout_i[i] = idx[i];
-                           }
-                       });
+                const T qnorm = query_norms_ptr ? query_norms_ptr[q] : T(0);
+                T* qout_d = out_dist_ptr + q * actual_k;
+                TIndex* qout_i = out_idx_ptr + q * actual_k;
+                for (int64_t i = 0; i < actual_k; ++i) {
+                    T dist = d[i];
+                    if (query_norms_ptr) dist = sycl::fmax(T(0), dist + qnorm);
+                    qout_d[i] = dist;
+                    qout_i[i] = idx[i];
+                }
+            });
 }
 
 /// @}
@@ -801,10 +809,14 @@ void SelectTopKQueriesHeap(sycl::queue& queue,
     const T inf = std::numeric_limits<T>::max();
     const int64_t actual_knn = std::min(knn, num_points);
 
+    const size_t wg = core::sy::PreferredWorkGroupSize(queue.get_device());
+    const size_t global_size =
+            ((static_cast<size_t>(num_queries) + wg - 1) / wg) * wg;
     queue.parallel_for(
-            sycl::range<1>(num_queries),
-            [=](sycl::id<1> id) [[intel::kernel_args_restrict]] {
-                const int64_t q = id[0];
+            sycl::nd_range<1>(sycl::range<1>(global_size), sycl::range<1>(wg)),
+            [=](sycl::nd_item<1> it) [[intel::kernel_args_restrict]] {
+                const int64_t q = it.get_global_id(0);
+                if (q >= num_queries) return;
                 const T* qd = distances_ptr + q * distance_query_stride;
                 TIndex* qout_i = out_indices_ptr + q * out_query_stride;
                 T* qout_d = out_distances_ptr + q * out_query_stride;

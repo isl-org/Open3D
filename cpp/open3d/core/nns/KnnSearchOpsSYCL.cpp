@@ -692,9 +692,13 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     queue.wait_and_throw();
 
     if (sort && total_neighbors > 0) {
+        // Tensor-API boundary: wait here rather than propagating the event,
+        // matching FixedRadiusSearchSYCL's synchronous contract (same
+        // reasoning as BuildSpatialHashTableSYCL above it).
         SortNeighborsByDistanceSYCL<T, TIndex>(
                 device, neighbors_index_ptr, neighbors_distance_ptr,
-                row_splits_ptr, num_queries, total_neighbors);
+                row_splits_ptr, num_queries, total_neighbors)
+                .wait_and_throw();
     }
 
     neighbors_index = output_allocator.NeighborsIndex();
@@ -708,6 +712,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 // corner-adjacent hash bins per query counts all in-radius neighbors while
 // keeping a running top-max_knn (see WriteNeighborsHybridSYCL in
 // FixedRadiusSearchSYCLImpl.h, including its final per-query bubble sort).
+// Supports L1, L2, and Linf, matching CUDA's WriteNeighborsHybridKernel.
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -723,13 +728,13 @@ void HybridSearchSYCL(const Tensor& points,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance,
                       int64_t /*tile_bytes*/) {
-    if (metric != Metric::L2) {
-        utility::LogError("SYCL hybrid search only supports L2 metric.");
-    }
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const T radius_t = static_cast<T>(radius);
-    const T threshold = radius_t * radius_t;  // L2: compare squared distances.
+    // L2 compares/returns SQUARED distances; L1/Linf use the metric distance
+    // directly (see FixedRadiusThreshold above and IsNeighbor in
+    // FixedRadiusSearchSYCLImpl.h).
+    const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
     sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
@@ -768,7 +773,7 @@ void HybridSearchSYCL(const Tensor& points,
                 neighbors_count_ptr + query_begin, hash_index_ptr,
                 cell_splits_i, hash_table_size, queries_ptr + 3 * query_begin,
                 query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
-                threshold, max_knn);
+                metric, threshold, max_knn);
     }
     queue.wait_and_throw();
 

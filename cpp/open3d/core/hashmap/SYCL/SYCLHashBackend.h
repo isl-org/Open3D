@@ -211,6 +211,18 @@ public:
     /// No-op; use \ref HashMap::Reserve for capacity growth.
     void Reserve(int64_t capacity) override {}
 
+    // Insert/Find/Erase stay void (not sycl::event) because they override
+    // DeviceHashBackend's pure-virtual signature, shared verbatim with the
+    // CPU (TBB) and CUDA backends -- changing it would break that common
+    // interface for no gain, since HashMap's own callers (Insert/Find/Erase
+    // in HashMap.cpp) always need the result synchronously anyway (output
+    // buffers are read back into Tensors immediately). Each of the 3 kernels
+    // below still ends in one wait_and_throw(), which is genuinely required:
+    // Insert's DeviceFree() leak-recovery path and the atomic counters it
+    // updates are read by Size()/GetNonEmptyCount() right after by callers
+    // that assume Insert() has fully completed. What WAS removed is the one
+    // avoidable *intermediate* host wait inside Insert (the heap_top_
+    // memcpy), now chained as a device-side kernel dependency instead.
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
@@ -360,11 +372,30 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     // established, corrupting the free list (observed as extra/duplicate
     // buf_indices ending up marked valid).
     const int prev_heap_top = this->buffer_->GetHeapTopIndex();
-    {
-        const int new_heap_top = prev_heap_top + static_cast<int>(count);
-        queue_.memcpy(buffer_accessor_.heap_top_, &new_heap_top, sizeof(int))
-                .wait();
+    const int new_heap_top = prev_heap_top + static_cast<int>(count);
+    // Item 7: HashMap::Insert/Activate (HashMap.cpp:151-181) always Reserve()
+    // first, so prev_heap_top + count > capacity_ here is a programming
+    // error, not a runtime condition -- catch it loudly instead of silently
+    // dropping the over-capacity keys. Without this check, dropped keys are
+    // undetectable: mask=false is indistinguishable from "duplicate key",
+    // and output_buf_indices=0 is itself a *valid* buf_index. LogError
+    // throws, so no clamp is needed below. CUDA's SlabHashBackend.h:233 has
+    // the same unclamped `prev_heap_top + count`; left as a follow-up issue
+    // there, not fixed here (out of scope for this PR).
+    if (new_heap_top > static_cast<int>(this->capacity_)) {
+        utility::LogError(
+                "SYCL hashmap Insert: prev_heap_top ({}) + count ({}) = {} "
+                "exceeds capacity ({}). This indicates a missing Reserve() "
+                "call before Insert/Activate.",
+                prev_heap_top, count, new_heap_top, this->capacity_);
     }
+    // Chain as a kernel dependency instead of a host wait() here: the
+    // insert_kernel below (via its DeviceFree() leak-recovery path) does an
+    // atomic fetch_sub on *heap_top_, so it must not run until this memcpy
+    // lands, but nothing needs the new value host-side, so a device-side
+    // dependency is sufficient and avoids a host round trip.
+    sycl::event heap_top_event = queue_.memcpy(buffer_accessor_.heap_top_,
+                                               &new_heap_top, sizeof(int));
 
     SYCLHashBackendBufferAccessor accessor = buffer_accessor_;
     uint64_t* slot_data = slot_data_;
@@ -564,6 +595,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     const int64_t wg_size = wg_size_;
     const int64_t global_size = ((count + wg_size - 1) / wg_size) * wg_size;
     queue_.submit([&](sycl::handler& cgh) {
+              cgh.depends_on(heap_top_event);
               cgh.parallel_for(sycl::nd_range<1>(global_size, wg_size),
                                insert_kernel);
           }).wait_and_throw();
