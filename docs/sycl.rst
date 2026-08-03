@@ -51,7 +51,7 @@ types.
    * - ``core::nns`` (KNN / fixed-radius / hybrid)
      - Yes
      - Yes
-     - Yes (see tests vs CPU)
+     - Yes, incl. L1/L2/Linf metrics for fixed-radius and hybrid search
    * - ``t::geometry::TriangleMesh`` normals / areas
      - Yes
      - Yes
@@ -69,6 +69,24 @@ types.
      - Most
      - Partial (unproject, normals, NNS-based ops; some methods still CPU-only)
 
+Known numerical differences vs. CPU/CUDA
+-----------------------------------------
+
+* **RoiPool point selection:** when more than ``sampled_pts_num`` points fall
+  inside a box, the SYCL backend keeps a different (work-group-strided)
+  subset of point indices than CPU/CUDA, which keep the lowest indices. Both
+  are valid samples of the box interior, so downstream results (e.g. pooled
+  features) may differ numerically between backends for such boxes. The
+  count of pooled points and ``pooled_empty_flag`` are identical across
+  backends.
+* **Convolution ops with** ``allow_tf32=True``: the continuous- and
+  sparse-convolution SYCL kernels only accelerate the GEMM step with Intel
+  Xe XMX tensor operations (TF32-equivalent precision) when every operand's
+  leading dimension and channel-count extents are divisible by 4 (a
+  128-bit/4-element alignment requirement of the underlying GEMM library).
+  If this alignment check fails, Open3D logs a one-time warning and falls
+  back to the IEEE float32 path automatically; results remain correct in
+  both cases, only the acceleration is skipped.
 
 In addition, HW accelerated raycasting queries in
 :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
@@ -204,5 +222,5 @@ information about building for specific hardware.
 if you want to use different settings (e.g. AOT compilation for a specific
 device, or build a wheel for a different Python version), you can update the
 ``docker_build.sh`` script, or build directly on host after installing the
-``intel-basekit`` or ``intel-cpp-essentials`` Debian packages from the Intel
-OneAPI repository.
+``intel-oneapi-toolkit`` or ``intel-deep-learning-essentials`` Debian packages
+from the Intel OneAPI repository.
