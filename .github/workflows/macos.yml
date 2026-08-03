@@ -171,7 +171,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -284,7 +284,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:

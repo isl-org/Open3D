@@ -29,7 +29,7 @@ BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE:-ON}
 # CUDA: see docker/docker_build.sh
 # ML
 TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.10"
+TORCH_VER="2.13"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="25.3"

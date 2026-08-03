@@ -1746,7 +1746,16 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     # 1. oneMKL
     # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
-    set(MKL_LINK static)
+    # oneAPI >= 2026.0 dropped the static SYCL MKL libraries (libmkl_sycl*.a),
+    # and the shared replacements resolve the CPU MKL routines they call
+    # (cblas_*_64) at load time from a *shared* CPU MKL in the process. So a
+    # Linux/macOS SYCL build links all of MKL dynamically; CPU-only oneAPI
+    # builds and Windows (which has import libraries) keep the static link.
+    if(BUILD_SYCL_MODULE AND NOT WIN32)
+        set(MKL_LINK dynamic)
+    else()
+        set(MKL_LINK static)
+    endif()
     find_package(MKL REQUIRED)
     # oneAPI MKL's lib layout differs by platform: Linux nests libs under an
     # "intel64" subdirectory, while Windows (verified with oneAPI 2025.3)
@@ -1757,16 +1766,35 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
     endif()
 
-    set(MKL_SYCL_LIBS)
+    # Libraries linked statically by open3d_import_3rdparty_library, and (on
+    # Linux/macOS SYCL builds) the shared libraries linked by absolute path
+    # afterwards. Of the SYCL domains, only the ones Open3D calls are linked
+    # (blas: Matmul/AddMM, lapack: LU/SVD/Solve/Inverse/LeastSquares) instead of
+    # the libmkl_sycl.so umbrella, which is a linker script covering all domains
+    # and would add DT_NEEDED entries for domains (vm, stats, data_fitting) that
+    # the oneMKL pip packages do not ship.
+    set(MKL_STATIC_LIBS mkl_intel_ilp64 mkl_tbb_thread mkl_core)
+    set(MKL_SHARED_LIBRARIES)
     if(BUILD_SYCL_MODULE)
         if(WIN32)
-            set(MKL_SYCL_LIBS
+            list(PREPEND MKL_STATIC_LIBS
                 $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
                 $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
                 $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
             )
         else()
-            set(MKL_SYCL_LIBS mkl_sycl)
+            set(MKL_STATIC_LIBS)
+            foreach(mkl_lib IN ITEMS mkl_sycl_blas mkl_sycl_lapack
+                                     mkl_intel_ilp64 mkl_tbb_thread mkl_core)
+                find_library(MKL_${mkl_lib}_LIBRARY
+                    NAMES ${mkl_lib}
+                    PATHS ${MKL_LIB_DIR}
+                    NO_DEFAULT_PATH
+                    REQUIRED
+                )
+                list(APPEND MKL_SHARED_LIBRARIES ${MKL_${mkl_lib}_LIBRARY})
+                mark_as_advanced(MKL_${mkl_lib}_LIBRARY)
+            endforeach()
         endif()
     endif()
 
@@ -1775,7 +1803,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_LIB_DIR}
-        LIBRARIES    ${MKL_SYCL_LIBS} mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    ${MKL_STATIC_LIBS}
     )
     if (BUILD_SYCL_MODULE)
     # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
@@ -1790,7 +1818,8 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenCL")
             endif()
         else()
-            target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+            target_link_libraries(3rdparty_mkl INTERFACE
+                ${MKL_SHARED_LIBRARIES} OpenCL)
         endif()
     endif()
     # MKL definitions

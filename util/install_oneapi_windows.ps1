@@ -1,10 +1,13 @@
 #Requires -RunAsAdministrator
-# Install Intel oneAPI C++ essentials for Windows SYCL (xpu) CI builds.
-# URLs from oneapi-src/oneapi-ci @ 0804a4c (2025.3.0).
+# Install the Intel oneAPI Toolkit for Windows SYCL (xpu) CI builds.
+# intel-oneapi-base-toolkit is EOL; Intel merged Base/HPC toolkits into a
+# single oneAPI Toolkit installer starting with the 2026.0 release. Pin to
+# the exact oneAPI version (2026.0.0) that PyTorch's +xpu wheels are built
+# against.
 # Uses setvars.bat for icx; enables VS 2022 integration for cmake -T Intel DPC++.
 $ErrorActionPreference = 'Stop'
 
-$ONEAPI_BASEKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372.exe"
+$ONEAPI_TOOLKIT_URL = "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/bae85ab1-cfcd-4251-8d42-a0c27949ea33/intel-oneapi-toolkit-2026.0.0.193_offline.exe"
 $ONEAPI_WIN_BASE_COMPONENTS = @(
     "intel.oneapi.win.cpp-dpcpp-common",
     "intel.oneapi.win.tbb.devel",
@@ -19,9 +22,9 @@ New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 Push-Location $WorkDir
 try {
     Write-Host "Downloading OneAPI webimage..."
-    curl.exe -L --output webimage.exe --url $ONEAPI_BASEKIT_URL --retry 5 --retry-delay 5 --fail
+    curl.exe -L --output webimage.exe --url $ONEAPI_TOOLKIT_URL --retry 5 --retry-delay 5 --fail
     if ($LASTEXITCODE -ne 0) {
-        throw "OneAPI download failed (curl exit $LASTEXITCODE): $ONEAPI_BASEKIT_URL"
+        throw "OneAPI download failed (curl exit $LASTEXITCODE): $ONEAPI_TOOLKIT_URL"
     }
 
     Write-Host "Extracting OneAPI webimage..."
