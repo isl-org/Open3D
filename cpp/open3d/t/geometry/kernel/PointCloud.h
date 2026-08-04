@@ -235,6 +235,36 @@ void EstimateColorGradientsUsingRadiusSearchCPU(const core::Tensor& points,
                                                 core::Tensor& color_gradient,
                                                 const double& radius);
 
+void SmoothLaplacianCPU(const core::Tensor& points,
+                        core::Tensor& smoothed_points,
+                        size_t iterations,
+                        double lambda,
+                        int max_nn,
+                        bool use_fixed_neighborhoods);
+
+void SmoothTaubinCPU(const core::Tensor& points,
+                     core::Tensor& smoothed_points,
+                     size_t iterations,
+                     double lambda,
+                     double mu,
+                     int max_nn,
+                     bool use_fixed_neighborhoods);
+
+void SmoothMLSCPU(const core::Tensor& points,
+                  core::Tensor& smoothed_points,
+                  core::Tensor& normals,
+                  bool update_normals,
+                  double radius,
+                  int max_nn);
+
+void SmoothBilateralCPU(const core::Tensor& points,
+                        const core::Tensor& normals,
+                        core::Tensor& smoothed_points,
+                        double radius,
+                        int max_nn,
+                        double sigma_s,
+                        double sigma_r);
+
 #ifdef BUILD_SYCL_MODULE
 /// SYCL hybrid-search color gradients (radius + max_nn cap).
 void EstimateColorGradientsUsingHybridSearchSYCL(const core::Tensor& points,
@@ -295,6 +325,36 @@ void EstimateColorGradientsUsingRadiusSearchCUDA(const core::Tensor& points,
                                                  const core::Tensor& colors,
                                                  core::Tensor& color_gradient,
                                                  const double& radius);
+
+void SmoothLaplacianCUDA(const core::Tensor& points,
+                         core::Tensor& smoothed_points,
+                         size_t iterations,
+                         double lambda,
+                         int max_nn,
+                         bool use_fixed_neighborhoods);
+
+void SmoothTaubinCUDA(const core::Tensor& points,
+                      core::Tensor& smoothed_points,
+                      size_t iterations,
+                      double lambda,
+                      double mu,
+                      int max_nn,
+                      bool use_fixed_neighborhoods);
+
+void SmoothMLSCUDA(const core::Tensor& points,
+                   core::Tensor& smoothed_points,
+                   core::Tensor& normals,
+                   bool update_normals,
+                   double radius,
+                   int max_nn);
+
+void SmoothBilateralCUDA(const core::Tensor& points,
+                         const core::Tensor& normals,
+                         core::Tensor& smoothed_points,
+                         double radius,
+                         int max_nn,
+                         double sigma_s,
+                         double sigma_r);
 #endif
 
 #ifdef BUILD_SYCL_MODULE
@@ -318,6 +378,36 @@ void EstimateCovariancesUsingRadiusSearchSYCL(const core::Tensor& points,
 void EstimateNormalsFromCovariancesSYCL(const core::Tensor& covariances,
                                         core::Tensor& normals,
                                         const bool has_normals);
+
+void SmoothLaplacianSYCL(const core::Tensor& points,
+                         core::Tensor& smoothed_points,
+                         size_t iterations,
+                         double lambda,
+                         int max_nn,
+                         bool use_fixed_neighborhoods);
+
+void SmoothTaubinSYCL(const core::Tensor& points,
+                      core::Tensor& smoothed_points,
+                      size_t iterations,
+                      double lambda,
+                      double mu,
+                      int max_nn,
+                      bool use_fixed_neighborhoods);
+
+void SmoothMLSSYCL(const core::Tensor& points,
+                   core::Tensor& smoothed_points,
+                   core::Tensor& normals,
+                   bool update_normals,
+                   double radius,
+                   int max_nn);
+
+void SmoothBilateralSYCL(const core::Tensor& points,
+                         const core::Tensor& normals,
+                         core::Tensor& smoothed_points,
+                         double radius,
+                         int max_nn,
+                         double sigma_s,
+                         double sigma_r);
 #endif
 
 }  // namespace pointcloud
