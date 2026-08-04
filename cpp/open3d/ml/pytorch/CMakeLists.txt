@@ -209,12 +209,11 @@ set_target_properties(open3d_torch_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
-# Set BUILD_RPATH to find tbb. We don't install through cmake.
-if (APPLE)
-    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
-elseif (UNIX)
-    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
-endif()
+# Note: BUILD_RPATH/INSTALL_RPATH are already set by open3d_set_global_properties()
+# above, matching libOpen3D/pybind. This lets open3d_torch_ops (and the SYCL/oneAPI
+# runtime DSOs it needs, e.g. libsycl.so, libsvml.so) resolve against the same
+# Python virtual env lib/ folder that libOpen3D and pybind use, instead of only
+# the narrower "$ORIGIN/.." (used to just find TBB) that used to be set here.
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
