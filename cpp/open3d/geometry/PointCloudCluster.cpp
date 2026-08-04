@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include <Eigen/Dense>
-#include <unordered_set>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -58,18 +57,24 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
         labels[idx] = cluster_label;
         ++progress_bar;
 
-        std::vector<int> nbs_next(nbs[idx].begin() + 1, nbs[idx].end());
+        // BFS/DFS expansion from the seed point: push all neighbors of idx as
+        // the initial work-list, then iteratively pop, label unlabeled points,
+        // and push their neighbors if they are core points. Duplicates are
+        // harmlessly skipped by the labels[nb] >= 0 check.
+        std::vector<int> nbs_next(nbs[idx].begin(), nbs[idx].end());
 
         while (!nbs_next.empty()) {
             int nb = nbs_next.back();
             nbs_next.pop_back();
 
-            if (labels[nb] >= 0) {
+            // Skip the seed point and already-labeled neighbors.
+            if (nb == int(idx) || labels[nb] >= 0) {
                 continue;
             }
             labels[nb] = cluster_label;
             ++progress_bar;
 
+            // Expand from core points.
             if (nbs[nb].size() >= min_points) {
                 for (int qnb : nbs[nb]) {
                     if (labels[qnb] < 0) {
