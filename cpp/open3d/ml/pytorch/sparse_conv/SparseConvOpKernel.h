@@ -21,6 +21,7 @@ void SparseConvCPU(const torch::Tensor& filters,
                    const torch::Tensor& neighbors_row_splits,
                    const bool normalize,
                    const int64_t max_temp_mem_MB,
+                   const bool allow_tf32,
                    torch::Tensor& out_features);
 
 #ifdef BUILD_CUDA_MODULE
@@ -34,6 +35,7 @@ void SparseConvCUDA(const torch::Tensor& filters,
                     const torch::Tensor& neighbors_row_splits,
                     const bool normalize,
                     const int64_t max_temp_mem_MB,
+                    const bool allow_tf32,
                     torch::Tensor& out_features);
 #endif
 

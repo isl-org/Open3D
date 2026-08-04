@@ -17,6 +17,7 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/ml/ShapeChecking.h"
+#include "open3d/utility/Logging.h"
 
 // Macros for checking tensor properties
 #define CHECK_CUDA(x)                                         \
@@ -143,6 +144,46 @@ inline torch::Tensor CreateTempTensor(const int64_t size,
         *ptr = tensor.data_ptr<uint8_t>();
     }
     return tensor;
+}
+
+// allow_tf32 (Intel XMX/NVIDIA tensor-core reduced-precision GEMM) is only
+// implemented for the SYCL conv-op backend; CPU and CUDA always compute in
+// full precision regardless of this flag. Call once from each CPU/CUDA conv
+// op's entry point to warn the user their request is silently ignored there.
+inline void WarnIfTF32NotSupported(bool allow_tf32) {
+    if (allow_tf32) {
+        open3d::utility::LogWarning(
+                "allow_tf32 is not supported on this backend; computing in "
+                "full float32 precision instead.");
+    }
+}
+
+// Runs the shared SYCL conv-op two-pass temp-memory pattern: call `run_fn`
+// once with temp==nullptr to query the required size, allocate a temp
+// tensor sized by max_temp_mem_MB, then call `run_fn` again to actually run
+// the op. `run_fn` is `(void* temp, size_t& temp_size, size_t&
+// max_temp_size) -> void` and is expected to forward these straight to the
+// underlying `*ComputeFeaturesSYCL` function. Factoring out this pattern
+// avoids duplicating each op's full (15-20 argument) call site twice.
+template <class Fn>
+inline void RunSYCLWithTempMemory(const torch::Device& device,
+                                  int64_t max_temp_mem_MB,
+                                  Fn&& run_fn) {
+    void* temp_ptr = nullptr;
+    size_t temp_size = 0;
+    size_t max_temp_size = 0;
+
+    // determine temp_size
+    run_fn(temp_ptr, temp_size, max_temp_size);
+
+    temp_size = std::max(
+            std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
+            temp_size);
+
+    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
+
+    // actually run the operation
+    run_fn(temp_ptr, temp_size, max_temp_size);
 }
 
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(

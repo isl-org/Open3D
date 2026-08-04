@@ -138,12 +138,6 @@ public:
             inp_features, inp_neighbors_index, inp_neighbors_importance_sum, \
             inp_neighbors_row_splits, neighbors_index, neighbors_importance, \
             neighbors_row_splits, align_corners, coordinate_mapping,         \
-            normalize, interpolation, max_temp_mem_MB, out_features
-#define SYCL_FN_PARAMETERS                                                   \
-    filters, out_positions, out_importance, extents, offset, inp_positions,  \
-            inp_features, inp_neighbors_index, inp_neighbors_importance_sum, \
-            inp_neighbors_row_splits, neighbors_index, neighbors_importance, \
-            neighbors_row_splits, align_corners, coordinate_mapping,         \
             normalize, interpolation, max_temp_mem_MB, allow_tf32,           \
             out_features
 
@@ -153,13 +147,6 @@ public:
         CompareTorchDtype<index_t>(index_dtype)) {         \
         fn<feat_t, out_t, real_t, index_t>(FN_PARAMETERS); \
         return out_features;                               \
-    }
-#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn)           \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                \
-        CompareTorchDtype<real_t>(real_dtype) &&                \
-        CompareTorchDtype<index_t>(index_dtype)) {              \
-        fn<feat_t, out_t, real_t, index_t>(SYCL_FN_PARAMETERS); \
-        return out_features;                                    \
     }
 
         if (inp_features.is_cuda()) {
@@ -172,8 +159,7 @@ public:
 #endif
         } else if (inp_features.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-            CALL_SYCL(float, float, float, int32_t,
-                      ::ContinuousConvTransposeSYCL)
+            CALL(float, float, float, int32_t, ::ContinuousConvTransposeSYCL)
 #else
             TORCH_CHECK(false,
                         "ContinuousConvTranspose was not compiled with SYCL "
@@ -183,9 +169,7 @@ public:
             CALL(float, float, float, int32_t, ::ContinuousConvTransposeCPU)
         }
 #undef FN_PARAMETERS
-#undef SYCL_FN_PARAMETERS
 #undef CALL
-#undef CALL_SYCL
 
         TORCH_CHECK(false, "ContinuousConv does not support " +
                                    inp_features.toString() +
@@ -239,43 +223,7 @@ public:
         torch::Tensor filters_backprop;
         torch::Tensor inp_features_backprop;
 
-#define CALL(feat_t, out_t, real_t, index_t, fn_suffix)                       \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                              \
-        CompareTorchDtype<real_t>(real_dtype) &&                              \
-        CompareTorchDtype<index_t>(index_dtype)) {                            \
-        filters_backprop = torch::empty(                                      \
-                filters.sizes(), torch::dtype(real_dtype).device(device));    \
-        ContinuousConvTransposeBackpropFilter##fn_suffix<feat_t, out_t,       \
-                                                         real_t, index_t>(    \
-                filters, out_positions, out_importance, extents, offset,      \
-                inp_positions, inp_features, inp_neighbors_importance_sum,    \
-                inp_neighbors_row_splits, neighbors_index,                    \
-                neighbors_importance, neighbors_row_splits,                   \
-                out_features_gradient, align_corners, coordinate_mapping,     \
-                normalize, interpolation, max_temp_mem_MB, filters_backprop); \
-                                                                              \
-        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,         \
-                inv_neighbors_importance;                                     \
-        std::tie(inv_neighbors_index, _inv_neighbors_row_splits,              \
-                 inv_neighbors_importance) =                                  \
-                InvertNeighborsList(inp_positions.size(0), neighbors_index,   \
-                                    neighbors_row_splits,                     \
-                                    neighbors_importance);                    \
-        inp_features_backprop =                                               \
-                torch::ones(inp_features.sizes(),                             \
-                            torch::dtype(real_dtype).device(device));         \
-        auto filters_transposed = filters.transpose(3, 4).contiguous();       \
-                                                                              \
-        ContinuousConv##fn_suffix<feat_t, out_t, real_t, index_t>(            \
-                filters_transposed, inp_positions, extents, offset,           \
-                out_positions, out_features_gradient, out_importance,         \
-                inv_neighbors_index, inv_neighbors_importance,                \
-                inp_neighbors_row_splits, align_corners, coordinate_mapping,  \
-                normalize, interpolation, max_temp_mem_MB,                    \
-                inp_features_backprop);                                       \
-        dispatch_success = true;                                              \
-    }
-#define CALL_SYCL(feat_t, out_t, real_t, index_t, fn_suffix)                 \
+#define CALL(feat_t, out_t, real_t, index_t, fn_suffix)                      \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&                             \
         CompareTorchDtype<real_t>(real_dtype) &&                             \
         CompareTorchDtype<index_t>(index_dtype)) {                           \
@@ -324,7 +272,7 @@ public:
 #endif
         } else if (inp_features.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-            CALL_SYCL(float, float, float, int32_t, SYCL)
+            CALL(float, float, float, int32_t, SYCL)
 #else
             TORCH_CHECK(false,
                         "ContinuousConvTranspose backward was not compiled "
@@ -339,8 +287,7 @@ public:
                             " as input for inp_features and " +
                             neighbors_index.toString() +
                             " as input for neighbors_index")
-
-#undef CALL_SYCL
+#undef CALL
 
         return {filters_backprop,
                 Variable(),

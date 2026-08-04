@@ -32,6 +32,7 @@ void ContinuousConvTransposeCPU(
         const bool normalize,
         const open3d::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& out_features);
 
 #ifdef BUILD_CUDA_MODULE
@@ -55,6 +56,7 @@ void ContinuousConvTransposeCUDA(
         const bool normalize,
         const open3d::ml::impl::InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& out_features);
 #endif
 

@@ -440,10 +440,9 @@ sycl::event FillColumnTransposeKernelSYCL(
                                 interp_weights, interp_indices, x, y, z,
                                 filter_size_x, filter_size_y, filter_size_z);
 
-                        TFeat infeat = 0;
                         for (int ic = static_cast<int>(lid); ic < in_channels;
                              ic += static_cast<int>(lsize)) {
-                            infeat =
+                            TFeat infeat =
                                     inp_features[size_t(inp_idx) * in_channels +
                                                  ic];
                             if (neighbor_importance)

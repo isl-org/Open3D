@@ -46,7 +46,7 @@ def test_roi_pool(ml):
     xyz = values0  # [batch, pts_num, 3]
     boxes3d = values1  # [batch, boxes_num, 7]: cx, bottom_y, cz, h, w, l, angle
     pts_feature = values2  # [batch, pts_num, feature_in_len]
-    batch, pts_num, _ = xyz.shape
+    batch, _, _ = xyz.shape
     _, boxes_num, _ = boxes3d.shape
     max_dis = 10.0
 

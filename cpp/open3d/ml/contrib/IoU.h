@@ -8,18 +8,21 @@
 #pragma once
 
 #ifdef BUILD_SYCL_MODULE
-// IoUBevSYCLKernel/IoU3dSYCLKernel take a real sycl::queue&, so any TU that
-// sees this declaration needs the full SYCL runtime type (matches the
-// pattern already used in Nms.h/NmsSYCLKernel). NOTE: unlike Nms.h, this
-// header ALSO declares a core::Device overload below (see its comment) --
-// do NOT additionally include SYCLContext.h in any TU that also sees this
-// real <sycl/sycl.hpp> include: SYCLContext.h forward-declares `namespace
-// sycl { class queue; }` for non-SYCL-compiled TUs, which is a genuine
-// ambiguous-symbol error against sycl.hpp's real `sycl::_V1::queue` (visible
-// unqualified via sycl's inline namespace) -- this is why the Device
-// overload below resolves its queue inside -fsycl-compiled IoUSYCL.cpp
-// instead of at the (non-SYCL) pybind call site.
+// IoUBevSYCLKernel/IoU3dSYCLKernel take a sycl::queue&, but only the
+// -fsycl-compiled TU that defines them (IoUSYCL.cpp) needs the complete
+// type; a reference parameter only needs a declaration to be seen. All other
+// consumers (IoU.cpp, IoU.cu, and pybind's iou.cpp, none built with -fsycl,
+// so none have the oneAPI SYCL include path on their command line) only ever
+// call the core::Device overload below and never need a complete
+// sycl::queue. Mirror SYCLContext.h's own pattern: include the real runtime
+// header only when actually SYCL-compiled, else forward-declare.
+#if defined(SYCL_LANGUAGE_VERSION)
 #include <sycl/sycl.hpp>
+#else
+namespace sycl {
+class queue;
+}
+#endif
 #endif
 
 #include "open3d/core/Device.h"

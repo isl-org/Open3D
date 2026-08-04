@@ -108,11 +108,6 @@ public:
     filters, out_importance, inp_features, inp_neighbors_importance_sum,       \
             inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
             neighbors_importance, neighbors_row_splits, normalize,             \
-            max_temp_mem_MB, out_features
-#define SYCL_FN_PARAMETERS                                                     \
-    filters, out_importance, inp_features, inp_neighbors_importance_sum,       \
-            inp_neighbors_row_splits, neighbors_index, neighbors_kernel_index, \
-            neighbors_importance, neighbors_row_splits, normalize,             \
             max_temp_mem_MB, allow_tf32, out_features
 
 #define CALL(feat_t, out_t, index_t, kernel_index_t, fn)           \
@@ -121,13 +116,6 @@ public:
         CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {   \
         fn<feat_t, out_t, index_t, kernel_index_t>(FN_PARAMETERS); \
         return out_features;                                       \
-    }
-#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn)           \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                        \
-        CompareTorchDtype<index_t>(index_dtype) &&                      \
-        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {        \
-        fn<feat_t, out_t, index_t, kernel_index_t>(SYCL_FN_PARAMETERS); \
-        return out_features;                                            \
     }
 
         if (inp_features.is_cuda()) {
@@ -140,7 +128,7 @@ public:
 #endif
         } else if (inp_features.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-            CALL_SYCL(float, float, int32_t, uint8_t, ::SparseConvTransposeSYCL)
+            CALL(float, float, int32_t, uint8_t, ::SparseConvTransposeSYCL)
 #else
             TORCH_CHECK(false,
                         "SparseConvTranspose was not compiled with SYCL "
@@ -150,9 +138,7 @@ public:
             CALL(float, float, int32_t, uint8_t, ::SparseConvTransposeCPU)
         }
 #undef FN_PARAMETERS
-#undef SYCL_FN_PARAMETERS
 #undef CALL
-#undef CALL_SYCL
 
         TORCH_CHECK(false, "SparseConv does not support " +
                                    inp_features.toString() +
@@ -193,48 +179,6 @@ public:
         torch::Tensor inp_features_backprop;
 
 #define CALL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)                \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
-        CompareTorchDtype<index_t>(index_dtype) &&                             \
-        CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {               \
-        filters_backprop = torch::empty(                                       \
-                filters.sizes(), torch::dtype(feat_dtype).device(device));     \
-        SparseConvTransposeBackpropFilter##fn_suffix<feat_t, out_t, index_t,   \
-                                                     kernel_index_t>(          \
-                filters, out_importance, inp_features,                         \
-                inp_neighbors_importance_sum, inp_neighbors_row_splits,        \
-                neighbors_index, neighbors_kernel_index, neighbors_importance, \
-                neighbors_row_splits, out_features_gradient, normalize,        \
-                max_temp_mem_MB, filters_backprop);                            \
-                                                                               \
-        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,          \
-                inv_neighbors_importance, inv_arange;                          \
-        torch::Tensor arange =                                                 \
-                torch::arange(neighbors_index.size(0), torch::device(device)); \
-        std::tie(inv_neighbors_index, _inv_neighbors_row_splits, inv_arange) = \
-                InvertNeighborsList(inp_features.size(0), neighbors_index,     \
-                                    neighbors_row_splits, arange);             \
-        torch::Tensor inv_neighbors_kernel_index =                             \
-                neighbors_kernel_index.index({inv_arange}).contiguous();       \
-        if (neighbors_importance.size(0) > 0) {                                \
-            inv_neighbors_importance =                                         \
-                    neighbors_importance.index({inv_arange}).contiguous();     \
-        } else {                                                               \
-            inv_neighbors_importance = torch::empty(                           \
-                    {0}, torch::dtype(feat_dtype).device(device));             \
-        }                                                                      \
-        inp_features_backprop =                                                \
-                torch::ones(inp_features.sizes(),                              \
-                            torch::dtype(feat_dtype).device(device));          \
-        auto filters_transposed = filters.transpose(-2, -1).contiguous();      \
-                                                                               \
-        SparseConv##fn_suffix<feat_t, out_t, index_t, kernel_index_t>(         \
-                filters_transposed, out_features_gradient, out_importance,     \
-                inv_neighbors_index, inv_neighbors_kernel_index,               \
-                inv_neighbors_importance, inp_neighbors_row_splits, normalize, \
-                max_temp_mem_MB, inp_features_backprop);                       \
-        dispatch_success = true;                                               \
-    }
-#define CALL_SYCL(feat_t, out_t, index_t, kernel_index_t, fn_suffix)           \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
         CompareTorchDtype<index_t>(index_dtype) &&                             \
         CompareTorchDtype<kernel_index_t>(kernel_index_dtype)) {               \
@@ -288,7 +232,7 @@ public:
 #endif
         } else if (inp_features.is_xpu()) {
 #ifdef BUILD_SYCL_MODULE
-            CALL_SYCL(float, float, int32_t, uint8_t, SYCL)
+            CALL(float, float, int32_t, uint8_t, SYCL)
 #else
             TORCH_CHECK(false,
                         "SparseConvTranspose backward was not compiled "
@@ -303,8 +247,7 @@ public:
                             " as input for inp_features and " +
                             neighbors_index.toString() +
                             " as input for neighbors_index")
-
-#undef CALL_SYCL
+#undef CALL
 
         return {filters_backprop, Variable(), inp_features_backprop,
                 Variable(),       Variable(), Variable(),

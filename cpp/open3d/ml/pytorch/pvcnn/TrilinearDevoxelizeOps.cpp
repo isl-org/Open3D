@@ -41,10 +41,10 @@ std::vector<at::Tensor> trilinear_devoxelize_forward(
         const bool is_training,
         const at::Tensor coords,
         const at::Tensor features) {
-        TORCH_CHECK(features.is_cuda() || features.is_xpu(),
-                                "features must be a CUDA or XPU tensor");
-        TORCH_CHECK(coords.is_cuda() || coords.is_xpu(),
-                                "coords must be a CUDA or XPU tensor");
+    TORCH_CHECK(features.is_cuda() || features.is_xpu(),
+                "features must be a CUDA or XPU tensor");
+    TORCH_CHECK(coords.is_cuda() || coords.is_xpu(),
+                "coords must be a CUDA or XPU tensor");
     CHECK_CONTIGUOUS(features);
     CHECK_CONTIGUOUS(coords);
     CHECK_TYPE(features, kFloat32);
@@ -120,12 +120,12 @@ at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
                                          const at::Tensor indices,
                                          const at::Tensor weights,
                                          const int64_t r) {
-        TORCH_CHECK(grad_y.is_cuda() || grad_y.is_xpu(),
-                                "grad_y must be a CUDA or XPU tensor");
-        TORCH_CHECK(weights.is_cuda() || weights.is_xpu(),
-                                "weights must be a CUDA or XPU tensor");
-        TORCH_CHECK(indices.is_cuda() || indices.is_xpu(),
-                                "indices must be a CUDA or XPU tensor");
+    TORCH_CHECK(grad_y.is_cuda() || grad_y.is_xpu(),
+                "grad_y must be a CUDA or XPU tensor");
+    TORCH_CHECK(weights.is_cuda() || weights.is_xpu(),
+                "weights must be a CUDA or XPU tensor");
+    TORCH_CHECK(indices.is_cuda() || indices.is_xpu(),
+                "indices must be a CUDA or XPU tensor");
     CHECK_CONTIGUOUS(grad_y);
     CHECK_CONTIGUOUS(weights);
     CHECK_CONTIGUOUS(indices);

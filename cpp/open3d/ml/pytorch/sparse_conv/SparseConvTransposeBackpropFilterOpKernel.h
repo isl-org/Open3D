@@ -25,6 +25,7 @@ void SparseConvTransposeBackpropFilterCPU(
         const torch::Tensor& out_features_gradient,
         const bool normalize,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop);
 
 #ifdef BUILD_CUDA_MODULE
@@ -42,6 +43,7 @@ void SparseConvTransposeBackpropFilterCUDA(
         const torch::Tensor& out_features_gradient,
         const bool normalize,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop);
 #endif
 

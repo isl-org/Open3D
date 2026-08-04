@@ -1014,27 +1014,14 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-# @AGENT: Make the comment below brief (<6 lines)
-# curl and openssl (BoringSSL) are mutually referential static archives: curl
-# needs OpenSSL symbols and, depending on how the final link line gets
-# flattened by CMake (e.g. when Open3D itself is a shared library and must
-# fully resolve all symbols at build time), they can end up in an order where
-# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
-# in a GNU ld archive group on UNIX (non-Apple) to ensure GNU ld rescans this
-# group of libraries until all symbols resolve, regardless of order. Use the
-# short "-Wl,-(" / "-Wl,-)" alias rather than "-Wl,--start-group" /
-# "-Wl,--end-group": the latter are also used verbatim by MKL's GROUPED
-# import (see open3d_import_3rdparty_library's GROUPED option below), and
-# CMake's link-line deduplication collapses repeated identical literal flag
-# strings across the whole dependency graph, emptying both groups and
-# stranding MKL's libraries outside their own grouping (undefined mkl_*
-# symbols at link time). We avoid CMake's modern LINK_GROUP RESCAN generator
-# expression here because it produces developer warnings when applied to
-# INTERFACE library targets (which Open3D::3rdparty_curl/openssl are).
-# The parentheses are backslash-escaped because CMake/Ninja invokes the link
-# command via "/bin/sh -c" without shell-quoting raw linker flag strings, and
-# bare "(" / ")" are shell metacharacters that would otherwise cause a shell
-# syntax error at link time.
+# curl and openssl (BoringSSL) are mutually-referential static archives, so a
+# single left-to-right ld scan can fail depending on final link order. Wrap
+# them in a GNU ld archive group (UNIX non-Apple) to force rescanning. Use the
+# short "-Wl,-(" / "-Wl,-)" alias, not "--start-group"/"--end-group", since
+# CMake's link-line deduplication would otherwise collapse those with MKL's
+# identical GROUPED markers below, breaking both groups. Parens are escaped
+# because the link command runs via "/bin/sh -c" and "(" / ")" are shell
+# metacharacters.
 if(UNIX AND NOT APPLE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
         "-Wl,-\\("

@@ -39,51 +39,32 @@ void SparseConvTransposeSYCL(const torch::Tensor& filters,
 
     auto device = filters.device();
 
-    void* temp_ptr = nullptr;
-    size_t temp_size = 0;
-    size_t max_temp_size = 0;
-
-    // determine temp_size
-    SparseConvTransposeComputeFeaturesSYCL<TFeat, TOut, TIndex, TKernelIndex>(
-            queue, temp_ptr, temp_size, max_temp_size, texture_alignment,
-            out_features.data_ptr<TOut>(), filter_dims,
-            filters.data_ptr<TFeat>(), neighbors_row_splits.size(0) - 1,
-            out_importance.size(0) ? out_importance.data_ptr<TFeat>() : nullptr,
-            inp_features.size(0), inp_features.data_ptr<TFeat>(),
-            inp_neighbors_importance_sum.size(0)
-                    ? inp_neighbors_importance_sum.data_ptr<TFeat>()
-                    : nullptr,
-            inp_neighbors_row_splits.data_ptr<int64_t>(),
-            neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
-            neighbors_kernel_index.data_ptr<TKernelIndex>(),
-            neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TFeat>()
-                    : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), normalize, allow_tf32);
-
-    temp_size = std::max(
-            std::min(size_t(max_temp_mem_MB) * 1024 * 1024, max_temp_size),
-            temp_size);
-
-    auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
-
-    // actually run the operation
-    SparseConvTransposeComputeFeaturesSYCL<TFeat, TOut, TIndex, TKernelIndex>(
-            queue, temp_ptr, temp_size, max_temp_size, texture_alignment,
-            out_features.data_ptr<TOut>(), filter_dims,
-            filters.data_ptr<TFeat>(), neighbors_row_splits.size(0) - 1,
-            out_importance.size(0) ? out_importance.data_ptr<TFeat>() : nullptr,
-            inp_features.size(0), inp_features.data_ptr<TFeat>(),
-            inp_neighbors_importance_sum.size(0)
-                    ? inp_neighbors_importance_sum.data_ptr<TFeat>()
-                    : nullptr,
-            inp_neighbors_row_splits.data_ptr<int64_t>(),
-            neighbors_index.size(0), neighbors_index.data_ptr<TIndex>(),
-            neighbors_kernel_index.data_ptr<TKernelIndex>(),
-            neighbors_importance.size(0)
-                    ? neighbors_importance.data_ptr<TFeat>()
-                    : nullptr,
-            neighbors_row_splits.data_ptr<int64_t>(), normalize, allow_tf32);
+    RunSYCLWithTempMemory(
+            device, max_temp_mem_MB,
+            [&](void* temp_ptr, size_t& temp_size, size_t& max_temp_size) {
+                SparseConvTransposeComputeFeaturesSYCL<TFeat, TOut, TIndex,
+                                                       TKernelIndex>(
+                        queue, temp_ptr, temp_size, max_temp_size,
+                        texture_alignment, out_features.data_ptr<TOut>(),
+                        filter_dims, filters.data_ptr<TFeat>(),
+                        neighbors_row_splits.size(0) - 1,
+                        out_importance.size(0)
+                                ? out_importance.data_ptr<TFeat>()
+                                : nullptr,
+                        inp_features.size(0), inp_features.data_ptr<TFeat>(),
+                        inp_neighbors_importance_sum.size(0)
+                                ? inp_neighbors_importance_sum.data_ptr<TFeat>()
+                                : nullptr,
+                        inp_neighbors_row_splits.data_ptr<int64_t>(),
+                        neighbors_index.size(0),
+                        neighbors_index.data_ptr<TIndex>(),
+                        neighbors_kernel_index.data_ptr<TKernelIndex>(),
+                        neighbors_importance.size(0)
+                                ? neighbors_importance.data_ptr<TFeat>()
+                                : nullptr,
+                        neighbors_row_splits.data_ptr<int64_t>(), normalize,
+                        allow_tf32);
+            });
 }
 #define INSTANTIATE(TFeat, TOut, TIndex, TKernelIndex)                         \
     template void SparseConvTransposeSYCL<TFeat, TOut, TIndex, TKernelIndex>(  \

@@ -42,7 +42,7 @@ def test_query_pts(ml):
     # and (b) the number of *distinct* candidate indices returned equals
     # min(sample, true in-range neighbor count) -- i.e. as many distinct
     # in-range neighbors as fit, with the rest being valid duplicate padding.
-    batch, num_candidates, _ = values0.shape
+    batch, _, _ = values0.shape
     _, num_queries, _ = values1.shape
     ans = ans.reshape(batch, num_queries, sample)
     radius2 = radius * radius

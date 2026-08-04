@@ -81,8 +81,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> Voxelize(
         CALL(double, VoxelizeCPU)
     }
 
-        TORCH_CHECK(false, "Voxelize does not support " + points.toString() +
-                                                           " as input for values");
+    TORCH_CHECK(false, "Voxelize does not support " + points.toString() +
+                               " as input for values");
     return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor,
                       torch::Tensor>();
 }
