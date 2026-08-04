@@ -57,6 +57,7 @@ target_sources(open3d_tf_ops PRIVATE
 target_sources(open3d_tf_ops PRIVATE
     pointnet/BallQueryOps.cpp
     pointnet/InterpolateOps.cpp
+    pointnet/RoiPoolOpKernelCPU.cpp
     pointnet/RoiPoolOps.cpp
     pointnet/SamplingOps.cpp
     pvcnn/TrilinearDevoxelizeOps.cpp
@@ -71,6 +72,7 @@ target_sources(open3d_tf_ops PRIVATE
     ../contrib/Cloud.cpp
     ../contrib/GridSubsampling.cpp
     ../contrib/Nms.cpp
+    ../contrib/RoiPool.cpp
 )
 
 if (BUILD_CUDA_MODULE)
