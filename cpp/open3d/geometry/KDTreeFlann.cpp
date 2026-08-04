@@ -115,7 +115,8 @@ template <typename T>
 int KDTreeFlann::SearchRadius(const T &query,
                               double radius,
                               std::vector<int> &indices,
-                              std::vector<double> &distance2) const {
+                              std::vector<double> &distance2,
+                              bool sorted) const {
     // This is optimized code for heavily repeated search.
     // Since max_nn is not given, we let flann to do its own memory management.
     // Other flann::Index::radiusSearch() implementations lose performance due
@@ -126,7 +127,7 @@ int KDTreeFlann::SearchRadius(const T &query,
     std::vector<nanoflann::ResultItem<Eigen::Index, double>> indices_dists;
     int k = nanoflann_index_->index_->radiusSearch(
             query.data(), radius * radius, indices_dists,
-            nanoflann::SearchParameters(0.0));
+            nanoflann::SearchParameters(0.0, sorted));
     indices.resize(k);
     distance2.resize(k);
     for (int i = 0; i < k; ++i) {
@@ -187,7 +188,8 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         double radius,
         std::vector<int> &indices,
-        std::vector<double> &distance2) const;
+        std::vector<double> &distance2,
+        bool sorted) const;
 template int KDTreeFlann::SearchHybrid<Eigen::Vector3d>(
         const Eigen::Vector3d &query,
         double radius,
@@ -209,7 +211,8 @@ template int KDTreeFlann::SearchRadius<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         double radius,
         std::vector<int> &indices,
-        std::vector<double> &distance2) const;
+        std::vector<double> &distance2,
+        bool sorted) const;
 template int KDTreeFlann::SearchHybrid<Eigen::VectorXd>(
         const Eigen::VectorXd &query,
         double radius,
