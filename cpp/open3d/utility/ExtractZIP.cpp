@@ -12,7 +12,11 @@
 
 #include <errno.h>
 #include <stdio.h>
+#if __has_include(<minizip/unzip.h>)
+#include <minizip/unzip.h>
+#else
 #include <unzip.h>
+#endif
 
 #include <iostream>
 #include <string>

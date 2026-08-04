@@ -56,6 +56,39 @@ Cloning Open3D
 
     git clone https://github.com/isl-org/Open3D
 
+Using vcpkg dependencies
+------------------------
+
+The repository contains a ``vcpkg.json`` manifest for the C++ dependencies.
+Configure with the vcpkg toolchain to install the manifest dependencies and
+prefer them over Open3D's bundled copies:
+
+On Linux, first install the host build and graphics packages with
+``util/install_deps_ubuntu.sh`` (or their distribution equivalents).
+
+.. code-block:: bash
+
+    cmake -S . -B build \
+        -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DBUILD_PYTHON_MODULE=OFF \
+        -DBUILD_GUI=OFF
+    cmake --build build --config Release
+
+A custom toolchain that includes vcpkg cannot be detected from its filename;
+add ``-DOPEN3D_USE_VCPKG=ON`` in that case. Individual dependencies can still
+use the bundled copy with ``-DUSE_SYSTEM_<PACKAGE>=OFF``.
+
+The ``tests`` and ``minizip`` manifest features install their dependencies but
+do not change Open3D build options. Pair them with the corresponding CMake
+options, for example
+``-DVCPKG_MANIFEST_FEATURES="tests;minizip" -DBUILD_UNIT_TESTS=ON
+-DWITH_MINIZIP=ON``. CUDA also requires a separately installed CUDA toolkit
+and ``-DBUILD_CUDA_MODULE=ON``.
+
+When using a static system libcurl outside vcpkg, pass
+``-DUSE_SYSTEM_CURL_STATIC=ON`` so consumers compile with
+``CURL_STATICLIB``. vcpkg's curl port supplies this configuration itself.
+
 .. _compilation_unix:
 
 Ubuntu/macOS
