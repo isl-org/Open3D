@@ -196,10 +196,16 @@ RegistrationResult RegistrationICP(
 /// compare-exchange loses a race against another thread (which refreshes
 /// `prev_val`), and stops once another thread has already stored a value <=
 /// `val`.
+///
+/// Relaxed ordering is sufficient: `min_val` is only an optimization hint (the
+/// RANSAC iteration bound) and does not publish any other data, so no
+/// happens-before relationship with surrounding accesses is required.
 template <typename T>
 void atomic_min(std::atomic<T>& min_val, const T& val) noexcept {
-    T prev_val = min_val.load();
-    while (prev_val > val && !min_val.compare_exchange_weak(prev_val, val)) {
+    T prev_val = min_val.load(std::memory_order_relaxed);
+    while (prev_val > val && !min_val.compare_exchange_weak(
+                                     prev_val, val, std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
     }
 }
 

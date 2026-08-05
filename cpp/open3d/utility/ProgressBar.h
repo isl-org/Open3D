@@ -15,6 +15,11 @@
 namespace open3d {
 namespace utility {
 
+/// Single-threaded progress bar.
+///
+/// \warning Not thread safe. Incrementing it from several threads races on
+/// current_count_ and on the terminal output. Use TBBProgressBar inside a
+/// parallel region, or hold a mutex across the increment.
 class ProgressBar {
 public:
     ProgressBar(std::size_t expected_count,

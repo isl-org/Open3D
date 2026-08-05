@@ -29,11 +29,22 @@ int EstimateMaxThreads() {
 }
 
 std::size_t& DefaultGrainSizeTBB() noexcept {
-    static std::size_t GrainSize = 256;
+    // Used for 1D loops whose body is expensive (a KDTree query, an
+    // Eigen solve, ...), i.e. roughly a microsecond or more per item.
+    // A range shorter than the grain size is never split, so the grain also
+    // sets the smallest problem that can use all cores: with 64, a loop is
+    // fully parallel from ~64*num_threads items. Measured on a 20-core
+    // machine, 64 matches 256 for large inputs and is up to ~2x faster for
+    // inputs of a few thousand items, where 256 leaves most cores idle.
+    static std::size_t GrainSize = 64;
     return GrainSize;
 }
 
 std::size_t& DefaultGrainSizeTBB2D() noexcept {
+    // Used for 2D/3D blocked ranges and for element-wise kernels
+    // (core::ParallelFor), where each item is only a few flops. These loops
+    // are usually memory bound, so the grain only needs to be large enough to
+    // amortize the task overhead.
     static std::size_t GrainSize = 32;
     return GrainSize;
 }
