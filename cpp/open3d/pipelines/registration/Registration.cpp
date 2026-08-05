@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -153,45 +153,34 @@ RegistrationResult RegistrationICP(
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::PointToPlane ||
-         estimation.GetTransformationEstimationType() ==
-                 TransformationEstimationType::ColoredICP) &&
-        (!target.HasNormals())) {
-        utility::LogError(
-                "TransformationEstimationPointToPlane and "
-                "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors for target PointCloud.");
-    }
-    if ((estimation.GetTransformationEstimationType() ==
-         TransformationEstimationType::GeneralizedICP) &&
-        (!target.HasCovariances() || !source.HasCovariances())) {
-        utility::LogError(
-                "TransformationEstimationForGeneralizedICP require "
-                "pre-computed per point covariances matrices for source and "
-                "target PointCloud.");
-    }
+
+    auto [source_initialized_c, target_initialized_c] =
+            estimation.InitializePointCloudsForTransformation(
+                    source, target, max_correspondence_distance);
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
-    kdtree.SetGeometry(target);
-    geometry::PointCloud pcd = source;
+    const geometry::PointCloud& target_initialized = *target_initialized_c;
+    kdtree.SetGeometry(target_initialized);
+    geometry::PointCloud pcd(*source_initialized_c);
+
     if (!init.isIdentity()) {
         pcd.Transform(init);
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, target_initialized, kdtree, max_correspondence_distance,
+            transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
-                pcd, target, result.correspondence_set_);
+                pcd, target_initialized, result.correspondence_set_);
         transformation = update * transformation;
         pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
+                pcd, target_initialized, kdtree, max_correspondence_distance,
                 transformation);
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
@@ -203,11 +192,15 @@ RegistrationResult RegistrationICP(
     return result;
 }
 
+/// Atomically store `val` into `min_val` if it is smaller. Retries while the
+/// compare-exchange loses a race against another thread (which refreshes
+/// `prev_val`), and stops once another thread has already stored a value <=
+/// `val`.
 template <typename T>
 void atomic_min(std::atomic<T>& min_val, const T& val) noexcept {
-    T prev_val = min_val;
-    while (prev_val > val && min_val.compare_exchange_weak(prev_val, val))
-        ;
+    T prev_val = min_val.load();
+    while (prev_val > val && !min_val.compare_exchange_weak(prev_val, val)) {
+    }
 }
 
 struct RANSACCorrespondenceReduction {
@@ -270,7 +263,9 @@ struct RANSACCorrespondenceReduction {
           rand_gen(o.rand_gen),
           max_distance(o.max_distance),
           ransac_n(o.ransac_n),
-          log_confidence(o.log_confidence) {}
+          log_confidence(o.log_confidence),
+          // Must be sized here too: operator() indexes ransac_corres directly.
+          ransac_corres(o.ransac_n) {}
 
     void operator()(const tbb::blocked_range<int>& range) {
         int est_k_local = est_k_global;
@@ -311,8 +306,10 @@ struct RANSACCorrespondenceReduction {
                     // Update exit condition if necessary.
                     // If confidence is 1.0, then it is safely inf, we always
                     // consume all the iterations.
-                    double est_k_local_d = log_confidence /
-                        std::log(1.0 - std::pow(corres_inlier_ratio, ransac_n));
+                    double est_k_local_d =
+                            log_confidence /
+                            std::log(1.0 -
+                                     std::pow(corres_inlier_ratio, ransac_n));
                     if (est_k_local_d < 0) {
                         est_k_local_d = est_k_local;
                     }

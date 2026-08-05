@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -60,7 +60,16 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     X = B.T().Clone();
     void *B_data = X.GetDataPtr();
 
-    if (device.IsCUDA()) {
+    if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        Tensor ipiv = Tensor::Empty({n}, core::Int64, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
+        SolveSYCL(A_data, B_data, ipiv_data, n, k, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         Tensor ipiv = Tensor::Empty({n}, core::Int32, device);

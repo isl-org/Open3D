@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -250,6 +250,23 @@ transformation as :math:`P = R(P) + t`)");
     line_set.def("get_oriented_bounding_box", &LineSet::GetOrientedBoundingBox,
                  "Create an oriented bounding box from point attribute "
                  "'positions'.");
+    line_set.def_static(
+            "create_from_oriented_bounding_ellipsoid",
+            &LineSet::CreateFromOrientedBoundingEllipsoid, "ellipsoid"_a,
+            "resolution"_a = 20, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
+            R"(Create a wireframe LineSet representing the surface of an OrientedBoundingEllipsoid.
+
+Args:
+    ellipsoid (open3d.t.geometry.OrientedBoundingEllipsoid): The oriented
+        bounding ellipsoid.
+    resolution (int): Resolution of the generated ellipsoid wireframe.
+    float_dtype (open3d.core.Dtype): Float32 or Float64, for point attributes.
+    int_dtype (open3d.core.Dtype): Int32 or Int64, for line indices.
+    device (open3d.core.Device): The device for the returned line set.
+
+Returns:
+    open3d.t.geometry.LineSet: Wireframe line set of the ellipsoid.)");
     line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a,
                  "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
                  "capping"_a = true,
@@ -257,12 +274,9 @@ transformation as :math:`P = R(P) + t`)");
 
 Args:
     angle (float): The rotation angle in degree.
-
     axis (open3d.core.Tensor): The rotation axis.
-
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
-
     translation (float): The translation along the rotation axis.
 
 Returns:
@@ -270,7 +284,6 @@ Returns:
 
 
 Example:
-
     This code generates a spring from a single line::
 
         import open3d as o3d
@@ -286,9 +299,7 @@ Example:
                  R"(Sweeps the line set along a direction vector.
 
 Args:
-
     vector (open3d.core.Tensor): The direction vector.
-
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:
@@ -296,8 +307,8 @@ Returns:
 
 
 Example:
-
     This code generates an L-shaped mesh::
+
         import open3d as o3d
 
         lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
@@ -312,7 +323,10 @@ Example:
     line_set.def_static(
             "create_camera_visualization", &LineSet::CreateCameraVisualization,
             "view_width_px"_a, "view_height_px"_a, "intrinsic"_a, "extrinsic"_a,
-            "scale"_a = 1.f, "color"_a = core::Tensor({}, core::Float32),
+            "scale"_a = 1.f,
+            py::arg_v(
+                    "color", core::Tensor({}, core::Float32),
+                    "open3d.core.Tensor([], dtype=open3d.core.Dtype.Float32)"),
             R"(Factory function to create a LineSet from intrinsic and extrinsic
 matrices. Camera reference frame is shown with XYZ axes in RGB.
 
@@ -326,7 +340,7 @@ Args:
 
 Example:
 
-    Draw a purple camera frame with XYZ axes in RGB.
+    Draw a purple camera frame with XYZ axes in RGB::
 
         import open3d.core as o3c
         from open3d.t.geometry import LineSet

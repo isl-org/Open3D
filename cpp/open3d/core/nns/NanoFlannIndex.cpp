@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/nns/NanoFlannIndex.h"
+
+#include <cassert>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
@@ -19,7 +21,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-NanoFlannIndex::NanoFlannIndex(){};
+NanoFlannIndex::NanoFlannIndex() {};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
@@ -30,7 +32,7 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, index_dtype);
 };
 
-NanoFlannIndex::~NanoFlannIndex(){};
+NanoFlannIndex::~NanoFlannIndex() {};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
                                    const Dtype &index_dtype) {
@@ -62,7 +64,7 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
     core::AssertTensorDevice(query_points, device);
     core::AssertTensorDtype(query_points, dtype);
-    core::AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    core::AssertTensorShape(query_points, {std::nullopt, GetDimension()});
 
     if (knn <= 0) {
         utility::LogError("knn should be larger than 0.");
@@ -108,7 +110,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape(0);
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
     AssertTensorShape(radii, {num_query_points});
 
     // Check if the radii has negative values.
@@ -162,7 +164,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
 
     AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
         utility::LogError("max_knn should be larger than 0.");

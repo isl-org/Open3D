@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -121,6 +121,11 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             queries_row_splits = queries.row_splits
             queries = queries.values
 
+        if isinstance(radius, tf.Tensor):
+            radius_ = tf.cast(radius, points.dtype)
+        else:
+            radius_ = radius
+
         if points_row_splits is None:
             points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
                                         dtype=tf.int64)
@@ -131,7 +136,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             table = ops.build_spatial_hash_table(
                 max_hash_table_size=self.max_hash_table_size,
                 points=points,
-                radius=radius,
+                radius=radius_,
                 points_row_splits=points_row_splits,
                 hash_table_size_factor=hash_table_size_factor)
         else:
@@ -142,7 +147,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             metric=self.metric,
             points=points,
             queries=queries,
-            radius=radius,
+            radius=radius_,
             points_row_splits=points_row_splits,
             queries_row_splits=queries_row_splits,
             hash_table_splits=table.hash_table_splits,

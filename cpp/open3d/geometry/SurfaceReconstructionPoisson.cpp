@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -39,21 +39,24 @@
 
 namespace open3d {
 namespace geometry {
-namespace poisson {
+namespace {
 
 // The order of the B-Spline used to splat in data for color interpolation
-static const int DATA_DEGREE = 0;
+constexpr int DATA_DEGREE = 0;
+// Default pull factor for color/auxiliary data interpolation (PoissonRecon
+// --data default)
+constexpr float DEFAULT_DATAX = 32.f;
 // The order of the B-Spline used to splat in the weights for density estimation
-static const int WEIGHT_DEGREE = 2;
+constexpr int WEIGHT_DEGREE = 2;
 // The order of the B-Spline used to splat in the normals for constructing the
 // Laplacian constraints
-static const int NORMAL_DEGREE = 2;
+constexpr int NORMAL_DEGREE = 2;
 // The default finite-element degree
-static const int DEFAULT_FEM_DEGREE = 1;
+constexpr int DEFAULT_FEM_DEGREE = 1;
 // The default finite-element boundary type
-static const BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
+constexpr BoundaryType DEFAULT_FEM_BOUNDARY = BOUNDARY_NEUMANN;
 // The dimension of the system
-static const int DIMENSION = 3;
+constexpr int DIMENSION = 3;
 
 class Open3DData {
 public:
@@ -400,6 +403,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
              float width,
              float scale,
              bool linear_fit,
+             int full_depth,
+             float samples_per_node,
+             float point_weight,
              UIntPack<FEMSigs...>) {
     static const int Dim = sizeof...(FEMSigs);
     typedef UIntPack<FEMSigs...> Sigs;
@@ -417,17 +423,16 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     XForm<Real, Dim + 1> xForm, iXForm;
     xForm = XForm<Real, Dim + 1>::Identity();
 
-    float datax = 32.f;
+    // Keep other internal parameters hardcoded.
+    // confidence and exact_interpolation have been removed.
+    // full_depth, samples_per_node, and point_weight are now passed as
+    // function arguments.
     int base_depth = 0;
     int base_v_cycles = 1;
-    float confidence = 0.f;
-    float point_weight = 2.f * DEFAULT_FEM_DEGREE;
     float confidence_bias = 0.f;
-    float samples_per_node = 1.5f;
     float cg_solver_accuracy = 1e-3f;
-    int full_depth = 5;
     int iters = 8;
-    bool exact_interpolation = false;
+    float datax = DEFAULT_DATAX;
 
     double startTime = Time();
     Real isoValue = 0;
@@ -463,31 +468,16 @@ void Execute(const open3d::geometry::PointCloud& pcd,
         pointStream.xform_ = &xForm;
 
         {
-            auto ProcessDataWithConfidence = [&](const Point<Real, Dim>& p,
-                                                 Open3DData& d) {
-                Real l = (Real)d.normal_.norm();
-                if (!l || l != l) return (Real)-1.;
-                return (Real)pow(l, confidence);
-            };
             auto ProcessData = [](const Point<Real, Dim>& p, Open3DData& d) {
                 Real l = (Real)d.normal_.norm();
                 if (!l || l != l) return (Real)-1.;
                 d.normal_ /= l;
                 return (Real)1.;
             };
-            if (confidence > 0) {
-                pointCount = FEMTreeInitializer<Dim, Real>::template Initialize<
-                        Open3DData>(tree.spaceRoot(), pointStream, depth,
-                                    samples, sampleData, true,
-                                    tree.nodeAllocators[0], tree.initializer(),
-                                    ProcessDataWithConfidence);
-            } else {
-                pointCount = FEMTreeInitializer<Dim, Real>::template Initialize<
-                        Open3DData>(tree.spaceRoot(), pointStream, depth,
-                                    samples, sampleData, true,
-                                    tree.nodeAllocators[0], tree.initializer(),
-                                    ProcessData);
-            }
+            pointCount = FEMTreeInitializer<Dim, Real>::template Initialize<
+                    Open3DData>(tree.spaceRoot(), pointStream, depth, samples,
+                                sampleData, true, tree.nodeAllocators[0],
+                                tree.initializer(), ProcessData);
         }
         iXForm = xForm.inverse();
 
@@ -614,28 +604,17 @@ void Execute(const open3d::geometry::PointCloud& pcd,
         // Add the interpolation constraints
         if (point_weight > 0) {
             profiler.start();
-            if (exact_interpolation) {
-                iInfo = FEMTree<Dim, Real>::
-                        template InitializeExactPointInterpolationInfo<Real, 0>(
-                                tree, samples,
-                                ConstraintDual<Dim, Real>(
-                                        targetValue,
-                                        (Real)point_weight * pointWeightSum),
-                                SystemDual<Dim, Real>((Real)point_weight *
-                                                      pointWeightSum),
-                                true, false);
-            } else {
-                iInfo = FEMTree<Dim, Real>::
-                        template InitializeApproximatePointInterpolationInfo<
-                                Real, 0>(
-                                tree, samples,
-                                ConstraintDual<Dim, Real>(
-                                        targetValue,
-                                        (Real)point_weight * pointWeightSum),
-                                SystemDual<Dim, Real>((Real)point_weight *
-                                                      pointWeightSum),
-                                true, 1);
-            }
+            // Use approximate interpolation (always)
+            iInfo = FEMTree<Dim, Real>::
+                    template InitializeApproximatePointInterpolationInfo<Real,
+                                                                         0>(
+                            tree, samples,
+                            ConstraintDual<Dim, Real>(
+                                    targetValue,
+                                    (Real)point_weight * pointWeightSum),
+                            SystemDual<Dim, Real>((Real)point_weight *
+                                                  pointWeightSum),
+                            true, 1);
             tree.addInterpolationConstraints(constraints, solveDepth, *iInfo);
             profiler.dumpOutput("#Set point constraints:");
         }
@@ -713,7 +692,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
                       Time() - startTime, FEMTree<Dim, Real>::MaxMemoryUsage());
 }
 
-}  // namespace poisson
+}  // namespace
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
 TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
@@ -721,11 +700,14 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           float width,
                                           float scale,
                                           bool linear_fit,
-                                          int n_threads) {
-    static const BoundaryType BType = poisson::DEFAULT_FEM_BOUNDARY;
-    typedef IsotropicUIntPack<
-            poisson::DIMENSION,
-            FEMDegreeAndBType</* Degree */ 1, BType>::Signature>
+                                          int n_threads,
+                                          int full_depth,
+                                          float samples_per_node,
+                                          float point_weight) {
+    static const BoundaryType BType = DEFAULT_FEM_BOUNDARY;
+    typedef IsotropicUIntPack<DIMENSION,
+                              FEMDegreeAndBType</* Degree */ DEFAULT_FEM_DEGREE,
+                                                BType>::Signature>
             FEMSigs;
 
     if (!pcd.HasNormals()) {
@@ -736,18 +718,16 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
         n_threads = (int)std::thread::hardware_concurrency();
     }
 
-#ifdef _OPENMP
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP,
-                     n_threads);
-#else
+    // PoissonRecon has its own thread pool. Use its std::thread backend: Open3D
+    // is not built with OpenMP, so its OPEN_MP backend is unavailable.
     ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL,
                      n_threads);
-#endif
 
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;
-    poisson::Execute<float>(pcd, mesh, densities, static_cast<int>(depth),
-                            width, scale, linear_fit, FEMSigs());
+    Execute<float>(pcd, mesh, densities, static_cast<int>(depth), width, scale,
+                   linear_fit, full_depth, samples_per_node, point_weight,
+                   FEMSigs());
 
     ThreadPool::Terminate();
 

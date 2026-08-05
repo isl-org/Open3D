@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -58,6 +58,14 @@ void ReductionCPU(const Tensor& src,
                   const SizeVector& dims,
                   bool keepdim,
                   ReductionOpCode op_code);
+
+#ifdef BUILD_SYCL_MODULE
+void ReductionSYCL(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keepdim,
+                   ReductionOpCode op_code);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void ReductionCUDA(const Tensor& src,

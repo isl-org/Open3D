@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2023 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2024 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #ifdef __APPLE__
@@ -46,6 +27,7 @@ using namespace open3d::visualization::gui;
 
 class Open3DVisualizer : public open3d::visualization::GuiVisualizer {
     using Super = GuiVisualizer;
+
 public:
     Open3DVisualizer()
         : open3d::visualization::GuiVisualizer("Open3D", WIDTH, HEIGHT) {
@@ -68,55 +50,62 @@ protected:
                 // This will set the users personal default to use Open3D for
                 // the file types below. THIS SHOULD ONLY BE CALLED
                 // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
-                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.open3d.Open3D";
+                CFStringRef open3dBundleId =
+                        (__bridge CFStringRef) @"com.isl-org.open3d.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.gl-transmission-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.gl-transmission-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.gl-binary-transmission-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.gl-binary-transmission-"
+                                               @"format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.geometry-definition-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.geometry-definition-"
+                                               @"format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.object-file-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.object-file-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.point-cloud-library-file",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.point-cloud-library-"
+                                               @"file",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.polygon-file-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.polygon-file-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.3d-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.3d-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.standard-tesselated-geometry-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.standard-tesselated-"
+                                               @"geometry-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyz-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyz-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyzn-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyzn-points-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef)@"public.xyzrgb-points-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.xyzrgb-points-format",
+                        kLSRolesAll, open3dBundleId);
 
                 this->CloseDialog();
             });
 
             auto vert = std::make_shared<Vert>(0, Margins(em));
             vert->AddChild(std::make_shared<Label>(
-                "This will make Open3D the default application for the "
-                "following file types:"));
+                    "This will make Open3D the default application for the "
+                    "following file types:"));
             vert->AddFixed(em);
             auto table = std::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
             table->AddChild(std::make_shared<Label>("Mesh:"));
-            table->AddChild(std::make_shared<Label>(".gltf, .glb, .obj, .off, .ply, .stl"));
+            table->AddChild(std::make_shared<Label>(
+                    ".gltf, .glb, .obj, .off, .ply, .stl"));
             table->AddChild(std::make_shared<Label>("Point clouds:"));
-            table->AddChild(std::make_shared<Label>(".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
+            table->AddChild(std::make_shared<Label>(
+                    ".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
             vert->AddChild(table);
             vert->AddFixed(em);
             auto buttons = std::make_shared<Horiz>(0.5 * em);
@@ -148,11 +137,10 @@ static void LoadAndCreateWindow(const char *path) {
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @end
 
-@interface AppDelegate ()
-{
+@interface AppDelegate () {
     bool open_empty_window_;
 }
-@property (retain) NSTimer *timer;
+@property(retain) NSTimer *timer;
 @end
 
 @implementation AppDelegate
@@ -201,7 +189,7 @@ int main(int argc, const char *argv[]) {
         open3d::utility::filesystem::ChangeWorkingDirectory(homedir);
     }
 
-    Application::GetInstance().Initialize(argc, argv);
+    Application::GetInstance().Initialize();
 
     // Note: if NSApp is created (which happens in +sharedApplication)
     //       then GLFW will use our NSApp with our delegate instead of its
@@ -230,4 +218,4 @@ int main(int argc, const char *argv[]) {
     // ----
 }
 
-#endif // __APPLE__
+#endif  // __APPLE__

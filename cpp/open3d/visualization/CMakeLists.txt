@@ -1,6 +1,11 @@
 open3d_ispc_add_library(visualization OBJECT)
 
-target_sources(visualization PRIVATE
+open3d_ispc_add_library(visualization_impl OBJECT)
+set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden)
+# filament uses C++20 designated initializers
+set_property(TARGET visualization_impl visualization PROPERTY CXX_STANDARD 20)
+
+target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp
     shader/ImageMaskShader.cpp
     shader/ImageShader.cpp
@@ -24,6 +29,12 @@ target_sources(visualization PRIVATE
     utility/SelectionPolygon.cpp
     utility/SelectionPolygonVolume.cpp
 )
+
+if (UNIX AND NOT APPLE)
+    target_sources(visualization PRIVATE
+        visualizer/EGLOffscreenContext.cpp
+    )
+endif()
 
 target_sources(visualization PRIVATE
     visualizer/RenderOption.cpp
@@ -62,14 +73,17 @@ if (BUILD_GUI)
         rendering/Renderer.cpp
         rendering/RendererHandle.cpp
         rendering/RotationInteractorLogic.cpp
+        rendering/filament/FilamentEngine.cpp
+        rendering/filament/FilamentRenderer.cpp
     )
 
-    target_sources(visualization PRIVATE
+    target_sources(visualization_impl PRIVATE
         rendering/filament/FilamentCamera.cpp
-        rendering/filament/FilamentEngine.cpp
+        rendering/gaussian_splat/GaussianSplatRenderer.cpp
+        rendering/gaussian_splat/GaussianSplatDataPacking.cpp
+        rendering/gaussian_splat/GaussianSplatPassRunner.cpp
         rendering/filament/FilamentEntitiesMods.cpp
         rendering/filament/FilamentGeometryBuffersBuilder.cpp
-        rendering/filament/FilamentRenderer.cpp
         rendering/filament/FilamentRenderToBuffer.cpp
         rendering/filament/FilamentResourceManager.cpp
         rendering/filament/FilamentScene.cpp
@@ -78,6 +92,33 @@ if (BUILD_GUI)
         rendering/filament/PointCloudBuffers.cpp
         rendering/filament/TriangleMeshBuffers.cpp
     )
+
+    if (APPLE)
+        target_sources(visualization_impl PRIVATE
+            rendering/gaussian_splat/ComputeGPUMetal.mm
+            rendering/gaussian_splat/GaussianSplatMetalBackend.mm
+            rendering/filament/FilamentNativeInterop.mm
+            rendering/filament/FilamentResourceManagerApple.mm
+        )
+        set(O3D_GS_METAL_ARC_SOURCES
+            rendering/gaussian_splat/ComputeGPUMetal.mm
+            rendering/gaussian_splat/GaussianSplatMetalBackend.mm
+            rendering/filament/FilamentResourceManagerApple.mm
+        )
+        set_source_files_properties(${O3D_GS_METAL_ARC_SOURCES}
+            PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    else()
+        target_sources(visualization_impl PRIVATE
+            rendering/gaussian_splat/ComputeGPUVulkan.cpp
+            rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
+        )
+        # visualization_impl is an OBJECT library; add_dependencies ensures
+        # correct build order with ext_vkmemalloc/ext_vmahpp across all
+        # generators.
+        add_dependencies(visualization_impl ext_vkmemalloc ext_vmahpp)
+    endif()
 
     target_sources(visualization PRIVATE
         utility/Draw.cpp
@@ -131,13 +172,18 @@ open3d_add_encoded_shader(shader
 # Source group for Visual Studio
 add_source_group(shader/glsl)
 
-add_dependencies(visualization shader)
+add_dependencies(visualization_impl shader)
 
 
 open3d_show_and_abort_on_warning(visualization)
 open3d_set_global_properties(visualization)
 open3d_set_open3d_lib_properties(visualization)
 open3d_link_3rdparty_libraries(visualization)
+
+open3d_show_and_abort_on_warning(visualization_impl)
+open3d_set_global_properties(visualization_impl)
+open3d_set_open3d_lib_properties(visualization_impl)
+open3d_link_3rdparty_libraries(visualization_impl)
 
 # export GUI_RESOURCE_DIR to parent scope
 if (BUILD_GUI)

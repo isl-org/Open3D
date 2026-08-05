@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -31,7 +31,8 @@ def load_fountain_dataset():
 def test_color_map():
     """
     Hard-coded values are from the 0.12 release. We expect the values to match
-    exactly when OMP_NUM_THREADS=1. If more threads are used, there could be
+    exactly when Open3D runs single-threaded (see
+    o3d.utility.set_max_threads(1)). If more threads are used, there could be
     some small numerical differences.
     """
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)

@@ -17,19 +17,28 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-# Folder structure is base_dir/{cpu|cuda}/{pybind*.so|open3d_{torch|tf}_ops.so},
-# so copy base_dir directly to ${PYTHON_PACKAGE_DST_DIR}/open3d
+# pybind and libOpen3D are copied flat into open3d/. The ML ops
+# (open3d_{torch,tf}_ops) are built into base_dir/{cpu,cuda} subdirs; copy every
+# arch subdir that exists so a CUDA wheel bundles both the CPU- and CUDA-linked
+# ops (open3d/cpu and open3d/cuda), selected by device at runtime.
 foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
     get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
-    get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
-    get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
-    foreach(ARCH cpu cuda)
-        if(IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
-            file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
-                "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}"
-                FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
-        endif()
-    endforeach()
+    get_filename_component(COMPILED_MODULE_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
+    get_filename_component(COMPILED_MODULE_PARENT ${COMPILED_MODULE_DIR} NAME)
+    if(COMPILED_MODULE_PARENT STREQUAL "cpu" OR COMPILED_MODULE_PARENT STREQUAL "cuda")
+        get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_DIR} DIRECTORY)
+        foreach(ARCH cpu cuda)
+            if(EXISTS "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}")
+                file(COPY "${COMPILED_MODULE_BASE_DIR}/${ARCH}/${COMPILED_MODULE_NAME}"
+                     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}/"
+                     FOLLOW_SYMLINK_CHAIN)
+            endif()
+        endforeach()
+    else()
+        file(COPY ${COMPILED_MODULE_PATH}
+             DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
+             FOLLOW_SYMLINK_CHAIN)
+    endif()
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
@@ -77,6 +86,7 @@ if (BUNDLE_OPEN3D_ML)
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
 endif()
 
+set(requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt)
 # Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
     if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
@@ -113,16 +123,22 @@ if (BUILD_JUPYTER_EXTENSION)
                             "npm install -g yarn.")
     endif()
 
-    # Append requirements_jupyter_install.txt to requirements.txt
-    # These will be installed when `pip install open3d`.
-    execute_process(COMMAND ${CMAKE_COMMAND} -E cat
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
-        OUTPUT_VARIABLE ALL_REQUIREMENTS
-    )
-    # The double-quote "" is important as it keeps the semicolons.
-    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
+    list(APPEND requirement_files 
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt)
 endif()
+
+if (BUILD_SYCL_MODULE)
+    list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt)
+endif()
+
+if (BUILD_CUDA_MODULE AND WIN32)
+    list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt)
+endif()
+
+# These will be installed when the user does `pip install open3d`.
+ execute_process(COMMAND ${CMAKE_COMMAND} -E cat ${requirement_files}
+        OUTPUT_FILE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt
+    )
 
 if (BUILD_GUI)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
@@ -136,3 +152,60 @@ file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+
+# Generate typing stub files (.pyi) and py.typed marker file.
+if(WITH_STUBGEN)
+    if(NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python3_EXECUTABLE is required when WITH_STUBGEN is ON")
+    endif()
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        list(APPEND PYBIND11_STUBGEN_FLAGS "--exit-code")
+    endif()
+    set(PYBIND11_STUBGEN_FATAL_FLAGS "")
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    # stubgen imports open3d, which loads Open3D.dll on Windows. CUDA/SYCL wheels
+    # need the same pip runtimes as end users (see open3d/__init__.py) before import.
+    # Reuse the current build environment's Python (${Python3_EXECUTABLE}) rather
+    # than a `pybind11-stubgen` console script that may resolve to a different
+    # interpreter.
+    if(WIN32 AND BUILD_CUDA_MODULE)
+        message(STATUS "Installing Windows CUDA pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUILD_SYCL_MODULE)
+        message(STATUS "Installing SYCL pip runtimes for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND
+       EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+        message(STATUS "Installing Open3D-ML pip requirements for stubgen...")
+        execute_process(
+            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
+                    "${OPEN3D_ML_ROOT}/requirements.txt"
+            COMMAND_ECHO STDOUT
+            ${PYBIND11_STUBGEN_FATAL_FLAGS}
+        )
+    endif()
+    message(STATUS "Generating typing stubs...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env
+                "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
+                ${Python3_EXECUTABLE} -m pybind11_stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
+                ${PYBIND11_STUBGEN_FLAGS}
+        COMMAND_ECHO STDOUT
+        ${PYBIND11_STUBGEN_FATAL_FLAGS}
+    )
+    file(WRITE "${PYTHON_PACKAGE_DST_DIR}/open3d/py.typed" "")
+endif()

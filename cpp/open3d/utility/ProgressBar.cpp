@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -10,12 +10,6 @@
 #include <fmt/printf.h>
 
 #include "open3d/utility/Logging.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#include <tbb/tbb.h>
 
 namespace open3d {
 namespace utility {
@@ -40,7 +34,7 @@ void ProgressBar::Reset(std::size_t expected_count,
 }
 
 ProgressBar& ProgressBar::operator+=(std::size_t n) {
-    SetCurrentCount(current_count_ + 1);
+    SetCurrentCount(current_count_ + n);
     return *this;
 }
 
@@ -69,29 +63,6 @@ void ProgressBar::UpdateBar() {
             fflush(stdout);
         }
     }
-}
-
-OMPProgressBar::OMPProgressBar(std::size_t expected_count,
-                               std::string progress_info,
-                               bool active)
-    : ProgressBar(expected_count, std::move(progress_info), active) {}
-
-ProgressBar& OMPProgressBar::operator+=(std::size_t n) {
-    // Ref: https://stackoverflow.com/a/44555438
-#ifdef _OPENMP
-    int number_of_threads = omp_get_num_threads();
-    int thread_id = omp_get_thread_num();
-    if (number_of_threads > 1) {
-        if (thread_id == 0) {
-            SetCurrentCount(current_count_ + number_of_threads * n);
-        }
-    } else {
-        SetCurrentCount(current_count_ + n);
-    }
-#else
-    SetCurrentCount(current_count_ + n);
-#endif
-    return *this;
 }
 
 TBBProgressBar::TBBProgressBar(std::size_t expected_count,

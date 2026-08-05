@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -143,7 +143,7 @@ bool WritePointCloudToTXT(const std::string &filename,
                 utility::filesystem::GetFileExtensionInLowerCase(filename);
         const core::Tensor &points = pointcloud.GetPointPositions();
 
-        if (!points.GetShape().IsCompatible({utility::nullopt, 3})) {
+        if (!points.GetShape().IsCompatible({std::nullopt, 3})) {
             utility::LogWarning(
                     "Write TXT failed: Shape of points is {}, but it should "
                     "be Nx3.",

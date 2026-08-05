@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <memory>
 
 #include "open3d/visualization/rendering/MaterialModifier.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
@@ -52,6 +54,8 @@ public:
     ErrorCallback error_callback_;
 };
 
+enum class RenderingType { kDefault, kOpenGL, kVulkan, kMetal };
+
 class Renderer {
 public:
     virtual ~Renderer() = default;
@@ -74,6 +78,11 @@ public:
     virtual void EndFrame() = 0;
 
     virtual void SetOnAfterDraw(std::function<void()> callback) = 0;
+
+    /// Returns whether the most recent BeginFrame() accepted a swap-chain
+    /// frame (Filament \c beginFrame returned true). Used for diagnostics;
+    /// defaults to false for backends that do not track this.
+    virtual bool LastBeginFrameSubmitted() const { return false; }
 
     virtual MaterialHandle AddMaterial(const ResourceLoadRequest& request) = 0;
     virtual MaterialInstanceHandle AddMaterialInstance(
@@ -107,6 +116,9 @@ public:
     virtual void RemoveSkybox(const SkyboxHandle& id) = 0;
 
     virtual std::shared_ptr<RenderToBuffer> CreateBufferRenderer() = 0;
+
+    /// Return if the rendering backend is OpenGL, Vulkan or Metal.
+    virtual RenderingType GetBackendType() = 0;
 
     void RenderToImage(
             View* view,

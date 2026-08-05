@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,18 +12,24 @@
 #include <tbb/spin_mutex.h>
 #endif
 
-#include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
-#include "open3d/core/MemoryManager.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/Dispatch.h"
+#ifndef __CUDACC__
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
+#endif
+#if defined(SYCL_LANGUAGE_VERSION)
+#include "open3d/core/hashmap/SYCL/SYCLHashBackend.h"
+#endif
+#if defined(__CUDACC__)
+#include "open3d/core/hashmap/CUDA/StdGPUHashBackend.h"
+#endif
 #include "open3d/t/geometry/Utility.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -36,6 +42,8 @@ using ArrayIndexer = TArrayIndexer<index_t>;
 
 #if defined(__CUDACC__)
 void GetVoxelCoordinatesAndFlattenedIndicesCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetVoxelCoordinatesAndFlattenedIndicesSYCL
 #else
 void GetVoxelCoordinatesAndFlattenedIndicesCPU
 #endif
@@ -147,6 +155,8 @@ template <typename input_depth_t,
           typename color_t>
 #if defined(__CUDACC__)
 void IntegrateCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void IntegrateSYCL
 #else
 void IntegrateCPU
 #endif
@@ -299,6 +309,8 @@ void IntegrateCPU
 
 #if defined(__CUDACC__)
 void EstimateRangeCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateRangeSYCL
 #else
 void EstimateRangeCPU
 #endif
@@ -341,7 +353,7 @@ void EstimateRangeCPU
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
     TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
@@ -350,7 +362,11 @@ void EstimateRangeCPU
     std::atomic<int>* count_ptr = &count_atomic;
 #endif
 
-#if !defined(__CUDACC__)
+#if defined(__CUDACC__)
+#elif defined(SYCL_LANGUAGE_VERSION)
+    using sycl::max;
+    using sycl::min;
+#else
     using std::max;
     using std::min;
 #endif
@@ -438,7 +454,7 @@ void EstimateRangeCPU
                     }
                 }
             });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     int needed_frag_count = count[0].Item<int>();
 #else
     int needed_frag_count = (*count_ptr).load();
@@ -472,7 +488,7 @@ void EstimateRangeCPU
     tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");
 #define LOCAL_LAMBDA_CAPTURE =, &estimate_range_mutex
 #else
-#defined LOCAL_LAMBDA_CAPTURE =
+#define LOCAL_LAMBDA_CAPTURE =
 #endif
     // Pass 1: iterate over rendering fragment array, fill-in range
     core::ParallelFor(
@@ -500,6 +516,17 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
+#elif defined(SYCL_LANGUAGE_VERSION)
+                sycl::atomic_ref<float, sycl::memory_order::acq_rel,
+                                 sycl::memory_scope::device,
+                                 sycl::access::address_space::global_space>(
+                        range_ptr[0])
+                        .fetch_min(z_min);
+                sycl::atomic_ref<float, sycl::memory_order::acq_rel,
+                                 sycl::memory_scope::device,
+                                 sycl::access::address_space::global_space>(
+                        range_ptr[1])
+                        .fetch_max(z_max);
 #else
                 {
                     tbb::spin_mutex::scoped_lock lock(estimate_range_mutex);
@@ -547,6 +574,8 @@ struct MiniVecCache {
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void RayCastCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void RayCastSYCL
 #else
 void RayCastCPU
 #endif
@@ -580,6 +609,16 @@ void RayCastCPU
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
     }
     auto hashmap_impl = cuda_hashmap->GetImpl();
+#elif defined(SYCL_LANGUAGE_VERSION)
+    auto sycl_hashmap =
+            std::dynamic_pointer_cast<core::SYCLHashBackend<Key, Hash, Eq>>(
+                    device_hashmap);
+    if (sycl_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: SYCL raycasting requires the SYCL "
+                "hash backend.");
+    }
+    auto sycl_hash_lookup = sycl_hashmap->GetDeviceLookup();
 #else
     auto cpu_hashmap =
             std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
@@ -690,6 +729,9 @@ void RayCastCPU
 #ifndef __CUDACC__
     using std::max;
     using std::sqrt;
+#elif defined(SYCL_LANGUAGE_VERSION)
+    using sycl::max;
+    using sycl::sqrt;
 #endif
 
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
@@ -714,9 +756,19 @@ void RayCastCPU
 
                 index_t block_buf_idx = cache.Check(key[0], key[1], key[2]);
                 if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                     auto iter = hashmap_impl.find(key);
                     if (iter == hashmap_impl.end()) return -1;
                     block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                    core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                    if (bi == static_cast<core::buf_index_t>(-1)) return -1;
+                    block_buf_idx = static_cast<index_t>(bi);
+#else
+                    auto iter = hashmap_impl.find(key);
+                    if (iter == hashmap_impl.end()) return -1;
+                    block_buf_idx = iter->second;
+#endif
                     cache.Update(key[0], key[1], key[2], block_buf_idx);
                 }
 
@@ -741,9 +793,19 @@ void RayCastCPU
             Key key(x_b, y_b, z_b);
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                 auto iter = hashmap_impl.find(key);
                 if (iter == hashmap_impl.end()) return -1;
                 block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                if (bi == static_cast<core::buf_index_t>(-1)) return -1;
+                block_buf_idx = static_cast<index_t>(bi);
+#else
+                auto iter = hashmap_impl.find(key);
+                if (iter == hashmap_impl.end()) return -1;
+                block_buf_idx = iter->second;
+#endif
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
 
@@ -940,9 +1002,19 @@ void RayCastCPU
 
             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
             if (block_buf_idx < 0) {
+#if defined(__CUDACC__)
                 auto iter = hashmap_impl.find(key);
                 if (iter == hashmap_impl.end()) return;
                 block_buf_idx = iter->second;
+#elif defined(SYCL_LANGUAGE_VERSION)
+                core::buf_index_t bi = sycl_hash_lookup.Find(key);
+                if (bi == static_cast<core::buf_index_t>(-1)) return;
+                block_buf_idx = static_cast<index_t>(bi);
+#else
+                auto iter = hashmap_impl.find(key);
+                if (iter == hashmap_impl.end()) return;
+                block_buf_idx = iter->second;
+#endif
                 cache.Update(x_b, y_b, z_b, block_buf_idx);
             }
 
@@ -1028,7 +1100,7 @@ void RayCastCPU
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
                                       normal_ptr[2] * normal_ptr[2]);
-                    norm = std::max(norm, EPSILON);
+                    norm = max(norm, EPSILON);
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,
@@ -1046,6 +1118,8 @@ void RayCastCPU
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void ExtractPointCloudCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ExtractPointCloudSYCL
 #else
 void ExtractPointCloudCPU
 #endif
@@ -1097,7 +1171,7 @@ void ExtractPointCloudCPU
     index_t n = n_blocks * resolution3;
 
     // Output
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<index_t>{0}, {1}, core::Int32,
                        block_keys.GetDevice());
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1151,7 +1225,7 @@ void ExtractPointCloudCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
         valid_size = count[0].Item<index_t>();
         count[0] = 0;
 #else
@@ -1240,9 +1314,11 @@ void ExtractPointCloudCPU
 
                 index_t idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
                 if (idx >= valid_size) {
+#if defined(__CUDACC__)
                     printf("Point cloud size larger than "
                            "estimated, please increase the "
                            "estimation!\n");
+#endif
                     return;
                 }
 
@@ -1286,7 +1362,7 @@ void ExtractPointCloudCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     index_t total_count = count.Item<index_t>();
 #else
     index_t total_count = (*count_ptr).load();
@@ -1303,6 +1379,8 @@ void ExtractPointCloudCPU
 template <typename tsdf_t, typename weight_t, typename color_t>
 #if defined(__CUDACC__)
 void ExtractTriangleMeshCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ExtractTriangleMeshSYCL
 #else
 void ExtractTriangleMeshCPU
 #endif
@@ -1446,7 +1524,7 @@ void ExtractTriangleMeshCPU
     });
 
     // Pass 1: determine valid number of vertices (if not preset)
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<index_t>{0}, {}, core::Int32, device);
 
     index_t* count_ptr = count.GetDataPtr<index_t>();
@@ -1485,7 +1563,7 @@ void ExtractTriangleMeshCPU
             }
         });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
         vertex_count = count.Item<index_t>();
 #else
         vertex_count = (*count_ptr).load();
@@ -1507,7 +1585,7 @@ void ExtractTriangleMeshCPU
     ArrayIndexer block_keys_indexer(block_keys, 1);
     ArrayIndexer vertex_indexer(vertices, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1580,8 +1658,10 @@ void ExtractTriangleMeshCPU
             index_t linear_idx_e =
                     GetLinearIdx(xv + (e == 0), yv + (e == 1), zv + (e == 2),
                                  workload_block_idx);
-            OPEN3D_ASSERT(linear_idx_e > 0 &&
-                          "Internal error: GetVoxelAt returns nullptr.");
+            // DeviceGetLinearIdx returns -1 when the neighbour block is not
+            // allocated; 0 is a valid linear index.
+            OPEN3D_ASSERT_MSG(linear_idx_e >= 0,
+                              "Internal error: GetVoxelAt returns nullptr.");
             float tsdf_e = tsdf_base_ptr[linear_idx_e];
             float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);
 
@@ -1632,7 +1712,7 @@ void ExtractTriangleMeshCPU
     triangles = core::Tensor({triangle_count, 3}, core::Int32, device);
     ArrayIndexer triangle_indexer(triangles, 1);
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     count = core::Tensor(std::vector<index_t>{0}, {}, core::Int32, device);
     count_ptr = count.GetDataPtr<index_t>();
 #else
@@ -1690,7 +1770,7 @@ void ExtractTriangleMeshCPU
         }
     });
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     triangle_count = count.Item<index_t>();
 #else
     triangle_count = (*count_ptr).load();

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ void Material::SetDefaultProperties() {
     SetTransmission(1.f);
     SetAbsorptionColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
     SetAbsorptionDistance(1.f);
-    SetEmissiveColor(Eigen::Vector4f(1.f, 1.f, 1.f, 1.f));
+    SetEmissiveColor(Eigen::Vector4f(0.f, 0.f, 0.f, 1.f));
     SetPointSize(3.f);
     SetLineWidth(1.f);
 }

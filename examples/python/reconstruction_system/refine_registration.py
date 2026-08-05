@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -169,11 +169,12 @@ def make_posegraph_for_refined_scene(ply_file_names, config):
             matching_result(s, t, edge.transformation)
 
     if config["python_multi_threading"] is True:
-        os.environ['OMP_NUM_THREADS'] = '1'
         max_workers = max(
             1, min(multiprocessing.cpu_count() - 1, len(pose_graph.edges)))
         mp_context = multiprocessing.get_context('spawn')
-        with mp_context.Pool(processes=max_workers) as pool:
+        # Run Open3D single-threaded per worker to avoid CPU oversubscription.
+        with mp_context.Pool(processes=max_workers,
+                             initializer=limit_open3d_threads) as pool:
             args = [(ply_file_names, v.s, v.t, v.transformation, config)
                     for k, v in matching_results.items()]
             results = pool.starmap(register_point_cloud_pair, args)

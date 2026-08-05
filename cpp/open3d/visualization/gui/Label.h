@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -35,6 +35,10 @@ public:
                            const Constraints& constraints) const override;
 
     DrawResult Draw(const DrawContext& context) override;
+
+    /// Draws text in \c GetFrame() using ImGui's foreground draw list so the
+    /// label does not require an \c ImGui::Begin host window (internal HUD).
+    void DrawOverlay(const DrawContext& context) const;
 
 private:
     struct Impl;

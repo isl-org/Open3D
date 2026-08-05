@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 /* Furthest point sampling
@@ -30,6 +30,6 @@ REGISTER_OP("Open3DFurthestPointSampling")
             ::tensorflow::shape_inference::ShapeHandle output =
                     c->MakeShape({c->Dim(dims1, 0), npoint});
             c->set_output(0, output);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc( TODO )doc");

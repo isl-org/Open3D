@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,6 +9,7 @@
 #include <tbb/parallel_reduce.h>
 
 #include <limits>
+#include <utility>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -117,7 +118,10 @@ private:
             return;
         }
         scalar_t& dst = *reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
-        dst = tbb::parallel_reduce(
+        // Deterministic reduce: the split of the range does not depend on the
+        // number of participating threads, so floating point results are
+        // reproducible run-to-run and independent of machine load.
+        dst = tbb::parallel_deterministic_reduce(
                 tbb::blocked_range<int64_t>(0, num_workloads,
                                             utility::DefaultGrainSizeTBB()),
                 identity,
@@ -192,49 +196,87 @@ public:
         // elements. We need to keep track of the indices within each
         // sub-iteration.
         int64_t num_output_elements = indexer_.NumOutputElements();
+        if (num_output_elements <= 1) {
+            LaunchArgReductionKernelTwoPass(indexer_, reduce_func, identity);
+        } else {
+            LaunchArgReductionParallelDim(indexer_, reduce_func, identity);
+        }
+    }
 
+    /// Parallelize over output elements; each output element's reduction runs
+    /// serially. Used when there are enough outputs to keep all threads busy.
+    template <typename scalar_t, typename func_t>
+    static void LaunchArgReductionParallelDim(const Indexer& indexer,
+                                              func_t reduce_func,
+                                              scalar_t identity) {
+        const int64_t num_output_elements = indexer.NumOutputElements();
         tbb::parallel_for(
-                tbb::blocked_range<int64_t>(0, num_output_elements, 1),
+                tbb::blocked_range<int64_t>(0, num_output_elements,
+                                            utility::DefaultGrainSizeTBB()),
                 [&](const tbb::blocked_range<int64_t>& range) {
                     for (int64_t output_idx = range.begin();
                          output_idx < range.end(); ++output_idx) {
                         // sub_indexer.NumWorkloads() == ipo.
-                        // sub_indexer's workload_idx is indexer_'s ipo_idx.
+                        // sub_indexer's workload_idx is indexer's ipo_idx.
                         Indexer sub_indexer =
-                                indexer_.GetPerOutputIndexer(output_idx);
-                        using result_t = std::pair<int64_t, scalar_t>;
-                        result_t val_idx{-1, identity};
-                        val_idx = tbb::parallel_deterministic_reduce(
-                                tbb::blocked_range<int64_t>(
-                                        0, sub_indexer.NumWorkloads(),
-                                        utility::DefaultGrainSizeTBB()),
-                                val_idx,
-                                [&](const tbb::blocked_range<int64_t>& range,
-                                    result_t so_far) {
-                                    for (int64_t workload_idx = range.begin();
-                                         workload_idx < range.end();
-                                         ++workload_idx) {
-                                        scalar_t& src_val =
-                                                *reinterpret_cast<scalar_t*>(
-                                                        sub_indexer.GetInputPtr(
-                                                                0,
-                                                                workload_idx));
-                                        so_far = reduce_func(
-                                                workload_idx, src_val,
-                                                std::get<0>(so_far),
-                                                std::get<1>(so_far));
-                                    }
-                                    return so_far;
-                                },
-                                [&reduce_func](result_t a, result_t b) {
-                                    return reduce_func(
-                                            std::get<0>(a), std::get<1>(a),
-                                            std::get<0>(b), std::get<1>(b));
-                                });
-                        *reinterpret_cast<int64_t*>(sub_indexer.GetOutputPtr(
-                                0)) = std::get<0>(val_idx);
+                                indexer.GetPerOutputIndexer(output_idx);
+                        int64_t dst_idx = 0;
+                        scalar_t dst_val = identity;
+                        for (int64_t workload_idx = 0;
+                             workload_idx < sub_indexer.NumWorkloads();
+                             ++workload_idx) {
+                            scalar_t* src_val = reinterpret_cast<scalar_t*>(
+                                    sub_indexer.GetInputPtr(0, workload_idx));
+                            std::tie(dst_idx, dst_val) = reduce_func(
+                                    workload_idx, *src_val, dst_idx, dst_val);
+                        }
+                        *reinterpret_cast<int64_t*>(
+                                sub_indexer.GetOutputPtr(0)) = dst_idx;
                     }
                 });
+    }
+
+    /// Create num_threads workers to compute partial arg reductions
+    /// and then reduce to the final results.
+    /// This only applies to arg reduction op with one output.
+    template <typename scalar_t, typename func_t>
+    static void LaunchArgReductionKernelTwoPass(const Indexer& indexer,
+                                                func_t reduce_func,
+                                                scalar_t identity) {
+        if (indexer.NumOutputElements() > 1) {
+            utility::LogError(
+                    "Internal error: two-pass arg reduction only works for "
+                    "single-output arg reduction ops.");
+        }
+        const int64_t num_workloads = indexer.NumWorkloads();
+        if (num_workloads == 0) {
+            return;
+        }
+        // (index, value) pairs are combined so that the winning index travels
+        // with its value across range splits. Deterministic reduce keeps the
+        // result independent of the number of participating threads.
+        using result_t = std::pair<int64_t, scalar_t>;
+        const result_t val_idx = tbb::parallel_deterministic_reduce(
+                tbb::blocked_range<int64_t>(0, num_workloads,
+                                            utility::DefaultGrainSizeTBB()),
+                result_t{0, identity},
+                [&](const tbb::blocked_range<int64_t>& range, result_t so_far) {
+                    for (int64_t workload_idx = range.begin();
+                         workload_idx < range.end(); ++workload_idx) {
+                        scalar_t* src_val = reinterpret_cast<scalar_t*>(
+                                indexer.GetInputPtr(0, workload_idx));
+                        so_far = reduce_func(workload_idx, *src_val,
+                                             so_far.first, so_far.second);
+                    }
+                    return so_far;
+                },
+                // reduce_func keeps its second argument on ties, so pass the
+                // right half first to make ties resolve to the lower index.
+                [&reduce_func](const result_t& lhs, const result_t& rhs) {
+                    return reduce_func(rhs.first, rhs.second, lhs.first,
+                                       lhs.second);
+                });
+        *reinterpret_cast<int64_t*>(indexer.GetOutputPtr(0)) = val_idx.first;
     }
 
 private:

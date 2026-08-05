@@ -1,0 +1,12 @@
+diff --git a/src/backend.h b/src/backend.h
+index ae756ef8c..b28c569e7 100644
+--- a/src/backend.h
++++ b/src/backend.h
+@@ -10,6 +10,7 @@
+ #include "platform/frame-object.h"
+ 
+ #include <memory>
++#include <chrono>
+ #include <vector>
+ #include <string>
+ 

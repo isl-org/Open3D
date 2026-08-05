@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@
 /// core::AssertTensorShape(tensor, {100, 3});
 ///
 /// Example: check that the tensor has shape {N, 3}
-/// core::AssertTensorShape(tensor, {utility::nullopt, 3});
+/// core::AssertTensorShape(tensor, {std::nullopt, 3});
 #define AssertTensorShape(tensor, ...)                                     \
     tensor_check::AssertTensorShape_(                                      \
             __FILE__, __LINE__, static_cast<const char*>(OPEN3D_FUNCTION), \

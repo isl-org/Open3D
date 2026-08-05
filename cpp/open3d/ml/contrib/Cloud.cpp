@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // Source code from: https://github.com/HuguesTHOMAS/KPConv.
@@ -53,7 +53,9 @@ namespace open3d {
 namespace ml {
 namespace contrib {
 
-static_assert(std::is_pod<PointXYZ>(), "PointXYZ class must be a POD type.");
+static_assert(std::is_standard_layout<PointXYZ>::value &&
+                      std::is_trivial<PointXYZ>::value,
+              "PointXYZ class must be a StandardLayout and TrivialType type.");
 
 // Getters
 // *******

@@ -40,12 +40,15 @@ ExternalProject_Add(
 ExternalProject_Get_Property(external_open3d INSTALL_DIR)
 add_library(Open3DHelper INTERFACE)
 add_dependencies(Open3DHelper external_open3d)
-target_compile_features(Open3DHelper INTERFACE cxx_std_14)
+target_compile_features(Open3DHelper INTERFACE cxx_std_17)
 target_compile_definitions(Open3DHelper INTERFACE _GLIBCXX_USE_CXX11_ABI=$<BOOL:${GLIBCXX_USE_CXX11_ABI}>)
 target_include_directories(Open3DHelper INTERFACE "${INSTALL_DIR}/include" "${INSTALL_DIR}/include/open3d/3rdparty")
 target_link_directories(Open3DHelper INTERFACE "${INSTALL_DIR}/lib")
 target_link_libraries(Open3DHelper INTERFACE Open3D)
 add_library(Open3D::Open3D ALIAS Open3DHelper)
+if (MSVC)
+    add_compile_options(/utf-8)  # fmt 12+ requires /utf-8 with MSVC
+endif()
 
 add_executable(Draw)
 target_sources(Draw PRIVATE Draw.cpp)

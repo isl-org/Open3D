@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ std::string ViewControlWithCustomAnimation::GetStatusString() const {
         if (view_trajectory_.view_status_.empty()) {
             buffer = "empty trajectory";
         } else {
-            buffer = fmt::format(buffer, "#{} frame ({} in total{})",
+            buffer = fmt::format("#{} frame ({} in total{})",
                                  (unsigned int)CurrentFrame() + 1,
                                  (unsigned int)view_trajectory_.NumOfFrames(),
                                  view_trajectory_.is_loop_ ? ", looped" : "");

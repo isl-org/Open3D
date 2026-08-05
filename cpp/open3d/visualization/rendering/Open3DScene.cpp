@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -410,9 +410,11 @@ void Open3DScene::UpdateMaterial(const MaterialRecord& mat) {
 
 void Open3DScene::UpdateModelMaterial(const std::string& name,
                                       const TriangleMeshModel& model) {
+    // Re-apply per-submesh materials in place. This avoids removing and
+    // re-adding the geometry, which would reset the model's transform and
+    // visibility state.
     auto scene = renderer_.GetScene(scene_);
-    scene->RemoveGeometry(name);
-    scene->AddGeometry(name, model);
+    scene->OverrideMaterial(name, model);
 }
 
 std::vector<std::string> Open3DScene::GetGeometries() {

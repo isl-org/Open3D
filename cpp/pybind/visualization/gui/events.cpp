@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,36 +16,36 @@ namespace visualization {
 namespace gui {
 
 void pybind_gui_events_declarations(py::module& m_gui) {
-    py::enum_<MouseButton> buttons(
-            m_gui, "MouseButton", "Mouse button identifiers", py::arithmetic());
-    buttons.value("NONE", MouseButton::NONE)
+    py::native_enum<MouseButton>(m_gui, "MouseButton", "enum.IntFlag",
+                                 "Mouse button identifiers")
+            .value("NONE", MouseButton::NONE)
             .value("LEFT", MouseButton::LEFT)
             .value("MIDDLE", MouseButton::MIDDLE)
             .value("RIGHT", MouseButton::RIGHT)
             .value("BUTTON4", MouseButton::BUTTON4)
             .value("BUTTON5", MouseButton::BUTTON5)
-            .export_values();
-    py::enum_<KeyModifier> key_mod(
-            m_gui, "KeyModifier", "Key modifier identifiers", py::arithmetic());
-    key_mod.value("NONE", KeyModifier::NONE)
+            .finalize();
+    py::native_enum<KeyModifier>(m_gui, "KeyModifier", "enum.IntFlag",
+                                 "Key modifier identifiers")
+            .value("NONE", KeyModifier::NONE)
             .value("SHIFT", KeyModifier::SHIFT)
             .value("CTRL", KeyModifier::CTRL)
             .value("ALT", KeyModifier::ALT)
             .value("META", KeyModifier::META)
-            .export_values();
+            .finalize();
     py::class_<MouseEvent> mouse_event(m_gui, "MouseEvent",
                                        "Object that stores mouse events");
-    py::enum_<MouseEvent::Type> mouse_event_type(mouse_event, "Type",
-                                                 py::arithmetic());
-    mouse_event_type.value("MOVE", MouseEvent::Type::MOVE)
+    py::native_enum<MouseEvent::Type>(mouse_event, "Type", "enum.Enum",
+                                      "Mouse event type.")
+            .value("MOVE", MouseEvent::Type::MOVE)
             .value("BUTTON_DOWN", MouseEvent::Type::BUTTON_DOWN)
             .value("DRAG", MouseEvent::Type::DRAG)
             .value("BUTTON_UP", MouseEvent::Type::BUTTON_UP)
             .value("WHEEL", MouseEvent::Type::WHEEL)
-            .export_values();
-    py::enum_<KeyName> key_name(m_gui, "KeyName",
-                                "Names of keys. Used by KeyEvent.key");
-    key_name.value("NONE", KeyName::KEY_NONE)
+            .finalize();
+    py::native_enum<KeyName>(m_gui, "KeyName", "enum.IntEnum",
+                             "Names of keys. Used by KeyEvent.key")
+            .value("NONE", KeyName::KEY_NONE)
             .value("BACKSPACE", KeyName::KEY_BACKSPACE)
             .value("TAB", KeyName::KEY_TAB)
             .value("ENTER", KeyName::KEY_ENTER)
@@ -149,14 +149,14 @@ void pybind_gui_events_declarations(py::module& m_gui) {
             .value("F11", KeyName::KEY_F11)
             .value("F12", KeyName::KEY_F12)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
-            .export_values();
+            .finalize();
     py::class_<KeyEvent> key_event(m_gui, "KeyEvent",
                                    "Object that stores key events");
-    py::enum_<KeyEvent::Type> key_event_type(key_event, "Type",
-                                             py::arithmetic());
-    key_event_type.value("DOWN", KeyEvent::Type::DOWN)
+    py::native_enum<KeyEvent::Type>(key_event, "Type", "enum.Enum",
+                                    "Key event type.")
+            .value("DOWN", KeyEvent::Type::DOWN)
             .value("UP", KeyEvent::Type::UP)
-            .export_values();
+            .finalize();
 }
 void pybind_gui_events_definitions(py::module& m_gui) {
     auto mouse_event =

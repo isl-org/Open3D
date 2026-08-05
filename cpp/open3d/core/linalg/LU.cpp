@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,9 +16,9 @@ namespace open3d {
 namespace core {
 
 // Get column permutation tensor from ipiv (swapping index array).
-static core::Tensor GetColPermutation(const Tensor& ipiv,
-                                      int number_of_indices,
-                                      int number_of_rows) {
+static Tensor GetColPermutation(const Tensor& ipiv,
+                                int number_of_indices,
+                                int number_of_rows) {
     Tensor full_ipiv =
             Tensor::Arange(0, number_of_rows, 1, core::Int32, Device("CPU:0"));
     Tensor ipiv_cpu = ipiv.To(Device("CPU:0"), core::Int32, /*copy=*/false);
@@ -42,14 +42,14 @@ static void OutputToPLU(const Tensor& output,
                         const Tensor& ipiv,
                         const bool permute_l) {
     int n = output.GetShape()[0];
-    core::Device device = output.GetDevice();
+    Device device = output.GetDevice();
 
     // Get upper and lower matrix from output matrix.
     Triul(output, upper, lower, 0);
     // Get column permutation vector from pivot indices vector.
     Tensor col_permutation = GetColPermutation(ipiv, ipiv.GetShape()[0], n);
     // Creating "Permutation Matrix (P in P.A = L.U)".
-    permutation = core::Tensor::Eye(n, output.GetDtype(), device)
+    permutation = Tensor::Eye(n, output.GetDtype(), device)
                           .IndexGet({col_permutation});
     // Calculating P in A = P.L.U. [P.Inverse() = P.T()].
     permutation = permutation.T().Contiguous();
@@ -88,13 +88,21 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     // elements as U, (diagonal elements of L are unity), and ipiv array,
     // which has the pivot indices (for 1 <= i <= min(M,N), row i of the
     // matrix was interchanged with row IPIV(i).
+    int64_t ipiv_len = std::min(rows, cols);
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
-        int64_t ipiv_len = std::min(rows, cols);
-        ipiv = core::Tensor::Empty({ipiv_len}, core::Int32, device);
+        ipiv = Tensor::Empty({ipiv_len}, core::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCUDA(A_data, ipiv_data, rows, cols, dtype, device);
+#else
+        utility::LogInfo("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ipiv = Tensor::Empty({ipiv_len}, core::Int64, device);
+        void* ipiv_data = ipiv.GetDataPtr();
+        LUSYCL(A_data, ipiv_data, rows, cols, dtype, device);
 #else
         utility::LogInfo("Unimplemented device.");
 #endif
@@ -107,9 +115,7 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
-
-        int64_t ipiv_len = std::min(rows, cols);
-        ipiv = core::Tensor::Empty({ipiv_len}, ipiv_dtype, device);
+        ipiv = Tensor::Empty({ipiv_len}, ipiv_dtype, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCPU(A_data, ipiv_data, rows, cols, dtype, device);
     }
@@ -125,7 +131,7 @@ void LU(const Tensor& A,
     AssertTensorDtypes(A, {Float32, Float64});
 
     // Get output matrix and ipiv.
-    core::Tensor ipiv, output;
+    Tensor ipiv, output;
     LUIpiv(A, ipiv, output);
 
     // Decompose output in P, L, U matrix form.

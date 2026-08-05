@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,6 +9,7 @@
 
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
+#include <tbb/concurrent_vector.h>
 #include <tbb/parallel_for.h>
 
 #include <iostream>
@@ -261,6 +262,11 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
 
+    // Collect voxels in parallel into a concurrent container, then insert them
+    // serially: voxel_grid->voxels_ is a std::unordered_map and cannot be
+    // written to concurrently.
+    tbb::concurrent_vector<std::pair<Eigen::Vector3i, geometry::Voxel>>
+            found_voxels;
     tbb::parallel_for(
             tbb::blocked_range3d<int>(
                     0, resolution_, utility::DefaultGrainSizeTBB2D(), 0,
@@ -278,17 +284,19 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                             const float f = voxels_[ind].tsdf_;
                             if (w != 0.0f && f < 0.98f && f >= -0.98f) {
                                 double c = (f + 1.0) * 0.5;
-                                Eigen::Vector3d color =
-                                        Eigen::Vector3d(c, c, c);
-                                Eigen::Vector3i index =
-                                        Eigen::Vector3i(x, y, z);
-                                voxel_grid->voxels_[index] =
-                                        geometry::Voxel(index, color);
+                                Eigen::Vector3d color(c, c, c);
+                                Eigen::Vector3i index(x, y, z);
+                                found_voxels.emplace_back(
+                                        index, geometry::Voxel(index, color));
                             }
                         }
                     }
                 }
             });
+
+    voxel_grid->voxels_.reserve(found_voxels.size());
+    voxel_grid->voxels_.insert(found_voxels.begin(), found_voxels.end());
+
     return voxel_grid;
 }
 

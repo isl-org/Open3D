@@ -1,13 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Tests the reference python implementation of the sparse conv"""
 
 import open3d as o3d
 import numpy as np
+
 np.set_printoptions(linewidth=600)
 np.set_printoptions(threshold=np.inf)
 import pytest
@@ -89,9 +90,15 @@ def test_compare_to_conv3d(ml, dtype, kernel_size, out_channels, in_channels,
     if ml.module.__name__ == 'torch':
         sparse_conv.to(ml.device)
 
-    y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
-                      inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, inp_importance)
+    y = mltest.run_op(ml,
+                      ml.device,
+                      True,
+                      sparse_conv,
+                      inp_features,
+                      inp_positions * voxel_size,
+                      out_positions * voxel_size,
+                      voxel_size=voxel_size,
+                      inp_importance=inp_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -210,9 +217,15 @@ def test_compare_to_conv3d_batches(ml, dtype, kernel_size, out_channels,
     inp_features = tf.RaggedTensor.from_row_splits(
         values=inp_features, row_splits=inp_positions_row_splits)
 
-    y = mltest.run_op(ml, ml.device, True, sparse_conv, inp_features,
-                      inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, inp_importance)
+    y = mltest.run_op(ml,
+                      ml.device,
+                      True,
+                      sparse_conv,
+                      inp_features,
+                      inp_positions * voxel_size,
+                      out_positions * voxel_size,
+                      voxel_size=voxel_size,
+                      inp_importance=inp_importance)
     for idx in range(batch_size):
         inp_pos = inp_positions[idx].numpy()
         inp_feat = inp_features[idx].numpy()
@@ -336,9 +349,15 @@ def test_compare_to_conv3dtranspose(ml, dtype, kernel_size, out_channels,
     if ml.module.__name__ == 'torch':
         sparse_conv_transpose.to(ml.device)
 
-    y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
-                      inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, out_importance)
+    y = mltest.run_op(ml,
+                      ml.device,
+                      True,
+                      sparse_conv_transpose,
+                      inp_features,
+                      inp_positions * voxel_size,
+                      out_positions * voxel_size,
+                      voxel_size=voxel_size,
+                      out_importance=out_importance)
 
     # Compare the output to a standard 3d conv
     # store features in a volume to use standard 3d convs
@@ -463,9 +482,15 @@ def test_compare_to_conv3dtranspose_batches(ml, dtype, kernel_size,
     inp_features = tf.RaggedTensor.from_row_splits(
         values=inp_features, row_splits=inp_positions_row_splits)
 
-    y = mltest.run_op(ml, ml.device, True, sparse_conv_transpose, inp_features,
-                      inp_positions * voxel_size, out_positions * voxel_size,
-                      voxel_size, out_importance)
+    y = mltest.run_op(ml,
+                      ml.device,
+                      True,
+                      sparse_conv_transpose,
+                      inp_features,
+                      inp_positions * voxel_size,
+                      out_positions * voxel_size,
+                      voxel_size=voxel_size,
+                      out_importance=out_importance)
     for idx in range(batch_size):
         inp_pos = inp_positions[idx].numpy()
         inp_feat = inp_features[idx].numpy()

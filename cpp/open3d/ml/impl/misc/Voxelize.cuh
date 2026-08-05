@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -473,11 +473,7 @@ __global__ void CopyPointIndicesKernel(
         begin_out = prefix_sum_out[linear_idx - 1];
     }
     int64_t end_out = prefix_sum_out[linear_idx];
-
-    int64_t num_points = end_out - begin_out;
-
     int64_t in_idx = prefix_sum_in[linear_idx];
-
     for (int64_t out_idx = begin_out; out_idx < end_out; ++out_idx, ++in_idx) {
         out[out_idx] = point_indices[in_idx];
     }

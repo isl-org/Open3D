@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -122,6 +122,7 @@ void Renderer::RenderToDepthImage(
                 // they do it again.)
                 float* pixels = (float*)image->data_.data();
                 int n_pixels = image->width_ * image->height_;
+
                 if (z_in_view_space) {
                     for (int i = 0; i < n_pixels; ++i) {
                         if (pixels[i] == 0.f) {

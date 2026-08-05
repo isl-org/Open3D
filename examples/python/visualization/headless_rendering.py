@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -78,11 +78,9 @@ def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
 
 
 if __name__ == "__main__":
-    if not o3d._build_config['ENABLE_HEADLESS_RENDERING']:
-        print("Headless rendering is not enabled. "
-              "Please rebuild Open3D with ENABLE_HEADLESS_RENDERING=ON")
-        exit(1)
-
+    # No special build flag is needed: on Linux, Visualizer automatically
+    # falls back to a GPU-accelerated offscreen EGL context when no
+    # DISPLAY/WAYLAND_DISPLAY is available.
     sample_data = o3d.data.DemoCustomVisualization()
     pcd = o3d.io.read_point_cloud(sample_data.point_cloud_path)
     print("Customized visualization playing a camera trajectory. "

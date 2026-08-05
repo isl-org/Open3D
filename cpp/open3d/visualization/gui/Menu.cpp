@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -68,6 +68,14 @@ void Menu::InsertMenu(int index,
 void Menu::InsertSeparator(int index) { impl_->menu->InsertSeparator(index); }
 
 int Menu::GetNumberOfItems() const { return impl_->menu->GetNumberOfItems(); }
+
+std::shared_ptr<MenuBase> Menu::GetMenu(const char* name) {
+    return impl_->menu->GetMenu(name);
+}
+
+std::shared_ptr<MenuBase> Menu::GetMenu(ItemId item_id) {
+    return impl_->menu->GetMenu(item_id);
+}
 
 bool Menu::IsEnabled(ItemId item_id) const {
     return impl_->menu->IsEnabled(item_id);

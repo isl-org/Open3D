@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -111,7 +111,40 @@ void ColorizeDepthCUDA(const core::Tensor &src,
                        float scale,
                        float min_value,
                        float max_value);
+#endif
 
+#ifdef BUILD_SYCL_MODULE
+void ToSYCL(const core::Tensor &src,
+            core::Tensor &dst,
+            double scale,
+            double offset);
+
+void ClipTransformSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float scale,
+                       float min_value,
+                       float max_value,
+                       float clip_fill = 0.0f);
+
+void PyrDownDepthSYCL(const core::Tensor &src,
+                      core::Tensor &dst,
+                      float diff_threshold,
+                      float invalid_fill);
+
+void CreateVertexMapSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         const core::Tensor &intrinsics,
+                         float invalid_fill);
+
+void CreateNormalMapSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         float invalid_fill);
+
+void ColorizeDepthSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float scale,
+                       float min_value,
+                       float max_value);
 #endif
 }  // namespace image
 }  // namespace kernel

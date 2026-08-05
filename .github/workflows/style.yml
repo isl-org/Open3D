@@ -24,10 +24,10 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.12'
       - name: Install dependencies
         run: |
-          pip install -U clang-format~=10.0.0 yapf==0.30.0 nbformat
+          pip install -U -r python/requirements_style.txt
       - name: Run style check
         run: |
           python util/check_style.py

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ Image &Image::Reset(int64_t rows,
 
 Image Image::To(core::Dtype dtype,
                 bool copy /*= false*/,
-                utility::optional<double> scale_ /* = utility::nullopt */,
+                std::optional<double> scale_ /* = std::nullopt */,
                 double offset /* = 0.0 */) const {
     if (dtype == GetDtype() && !scale_.has_value() && offset == 0.0) {
         return copy ? Image(data_.Clone()) : *this;
@@ -134,20 +134,30 @@ Image Image::RGBToGray() const {
     };
 
     Image dst_im;
-    dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
-                                       GetDevice());
     if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
+        dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
+                                           GetDtype(), GetDevice());
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
     } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
+        dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1},
+                                           GetDtype(), GetDevice());
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
     } else {
-        utility::LogError(
-                "RGBToGray with data type {} on device {} is not implemented!",
-                GetDtype().ToString(), GetDevice().ToString());
+        auto R = data_.Slice(2, 0, 1).To(core::Float32);
+        auto G = data_.Slice(2, 1, 2).To(core::Float32);
+        auto B = data_.Slice(2, 2, 3).To(core::Float32);
+        auto gray = R * 0.299f + G * 0.587f + B * 0.114f;
+        if (GetDtype() == core::UInt8) {
+            dst_im.data_ = gray.Round().Clip_(0, 255).To(core::UInt8);
+        } else if (GetDtype() == core::UInt16) {
+            dst_im.data_ = gray.Round().Clip_(0, 65535).To(core::UInt16);
+        } else {
+            dst_im.data_ = gray.To(GetDtype());
+        }
     }
     return dst_im;
 }
@@ -155,6 +165,12 @@ Image Image::RGBToGray() const {
 Image Image::Resize(float sampling_rate, InterpType interp_type) const {
     if (sampling_rate == 1.0f) {
         return *this;
+    }
+    if (GetDtype() == core::Bool) {  // Resize via UInt8
+        return Image(Image(data_.ReinterpretCast(core::UInt8))
+                             .Resize(sampling_rate, interp_type)
+                             .AsTensor()
+                             .ReinterpretCast(core::Bool));
     }
 
     static const dtype_channels_pairs npp_supported{

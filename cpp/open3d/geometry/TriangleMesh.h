@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -116,7 +116,7 @@ public:
     /// needed.
     TriangleMesh &ComputeAdjacencyList();
 
-    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// \brief Function that removes duplicated vertices, i.e., vertices that
     /// have identical coordinates.
     TriangleMesh &RemoveDuplicatedVertices();
 
@@ -177,11 +177,14 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
-    /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
-    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
-    /// the neighbour based on the inverse distance (closer neighbours have
-    /// higher weight),
+    /// Related to Vollmer et al., "Improved Laplacian Smoothing of Noisy
+    /// Surface Meshes", 1999. Implementation: one explicit pass per iteration
+    /// over mesh adjacency neighbors with inverse-distance weights
+    /// \f$w_n = 1 / (\|v_i - v_n\| + 10^{-12})\f$ and update
+    /// \f$v_o = v_i + \lambda (\sum_{n \in N} w_n v_n / \sum_{n \in N} w_n -
+    /// v_i)\f$. Differs from that reference in the weighting scheme and in
+    /// applying the same rule to vertex positions, normals, and/or colors
+    /// (FilterScope) rather than positions only.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -191,11 +194,13 @@ public:
             double lambda_filter,
             FilterScope scope = FilterScope::All) const;
 
-    /// \brief Function to smooth triangle mesh using method of Taubin,
-    /// "Curve and Surface Smoothing Without Shrinkage", 1995.
-    /// Applies in each iteration two times FilterSmoothLaplacian, first
-    /// with lambda_filter and second with mu as smoothing parameter.
-    /// This method avoids shrinkage of the triangle mesh.
+    /// \brief Function to smooth triangle mesh using method of Taubin.
+    ///
+    /// Taubin, "Curve and Surface Smoothing Without Shrinkage", 1995. Each
+    /// iteration applies two Laplacian passes (FilterSmoothLaplacian) with
+    /// factors `lambda_filter` then `mu` (typically negative). Differs from the
+    /// paper in using triangle adjacency, inverse-distance Laplacian weights,
+    /// and optional smoothing of normals/colors (FilterScope).
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -547,20 +552,39 @@ public:
     /// estimate the positions of iso-vertices.
     /// \param n_threads Number of threads used for reconstruction. Set to -1 to
     /// automatically determine it.
+    /// \param full_depth Minimum depth for density estimation (default: 5).
+    /// Below this depth, the octree is complete (fully subdivided).
+    /// Higher values provide more stability in sparse regions but consume more
+    /// memory.
+    /// Recommended range: 3-7. Use higher values (6-7) if your point cloud has
+    /// sparse regions.
+    /// \param samples_per_node Minimum number of sample points per octree node
+    /// (default: 1.5). Controls adaptive octree refinement based on local point
+    /// density. Lower values (e.g., 1.0) allow finer subdivision and capture
+    /// more detail but may increase noise. Higher values (e.g., 3.0) suppress
+    /// noise but may lose fine details. Recommended range: 1.0-3.0.
+    /// \param point_weight Importance of point interpolation constraints
+    /// (default: 2.0). Controls the trade-off between data fidelity and surface
+    /// smoothness. Higher values (e.g., 10.0) prioritize fitting input points
+    /// exactly, resulting in surfaces closer to the data. Lower values produce
+    /// smoother surfaces. Recommended range: 2.0-10.0.
     /// \return The estimated TriangleMesh, and per vertex density values that
-    /// can be used to to trim the mesh.
+    /// can be used to trim the mesh.
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
     CreateFromPointCloudPoisson(const PointCloud &pcd,
                                 size_t depth = 8,
                                 float width = 0.0f,
                                 float scale = 1.1f,
                                 bool linear_fit = false,
-                                int n_threads = -1);
+                                int n_threads = -1,
+                                int full_depth = 5,
+                                float samples_per_node = 1.5f,
+                                float point_weight = 2.0f);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateTetrahedron(
             double radius = 1.0, bool create_uv_map = false);
@@ -568,7 +592,7 @@ public:
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateOctahedron(
             double radius = 1.0, bool create_uv_map = false);
@@ -587,6 +611,18 @@ public:
     static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &obox,
             const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            bool create_uv_map = false);
+
+    /// Factory function to create solid mesh from an OrientedBoundingEllipsoid.
+    /// \param obel OrientedBoundingEllipsoid object to create a mesh of
+    /// \param scale scale factor along each direction of
+    /// OrientedBoundingEllipsoid
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &obel,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            int resolution = 20,
             bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
@@ -616,6 +652,20 @@ public:
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateSphere(
             double radius = 1.0,
+            int resolution = 20,
+            bool create_uv_map = false);
+
+    /// Factory function to create an ellipsoid mesh (TriangleMeshFactory.cpp)
+    /// The ellipsoid will be centered at (0, 0, 0).
+    /// \param radius_x defines first radii of the ellipsoid.
+    /// \param radius_y defines second radii of the ellipsoid.
+    /// \param radius_z defines third radii of the ellipsoid.
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateEllipsoid(
+            double radius_x = 1.0,
+            double radius_y = 1.0,
+            double radius_z = 1.0,
             int resolution = 20,
             bool create_uv_map = false);
 
@@ -735,17 +785,6 @@ public:
 protected:
     // Forward child class type to avoid indirect nonvirtual base
     TriangleMesh(Geometry::GeometryType type) : MeshBase(type) {}
-
-    void FilterSmoothLaplacianHelper(
-            std::shared_ptr<TriangleMesh> &mesh,
-            const std::vector<Eigen::Vector3d> &prev_vertices,
-            const std::vector<Eigen::Vector3d> &prev_vertex_normals,
-            const std::vector<Eigen::Vector3d> &prev_vertex_colors,
-            const std::vector<std::unordered_set<int>> &adjacency_list,
-            double lambda_filter,
-            bool filter_vertex,
-            bool filter_normal,
-            bool filter_color) const;
 
     /// \brief Function that computes for each edge in the triangle mesh and
     /// passed as parameter edges_to_vertices the cot weight.

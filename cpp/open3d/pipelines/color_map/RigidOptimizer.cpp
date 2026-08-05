@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 #include <tbb/parallel_for.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/io/ImageIO.h"
@@ -18,7 +19,6 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Optional.h"
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
@@ -70,16 +70,6 @@ static void ComputeJacobianAndResidualRigid(
     J_r(5) = v2;
     r = (gray - proxy_intensity[vid]);
     w = 1.0;  // Dummy.
-}
-
-inline void atomic_sum(std::atomic<double>& total, const double& val) {
-#if defined(__cpp_lib_atomic_float) && __cpp_lib_atomic >= 201711L
-    total.fetch_add(val);
-#else
-    double expected = total;
-    while (!total.compare_exchange_weak(expected, expected + val))
-        ;
-#endif
 }
 
 std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
@@ -150,7 +140,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
     std::vector<double> proxy_intensity;
     std::atomic<int> total_num_ = 0;
     int n_camera = int(opt_camera_trajectory.parameters_.size());
-    SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+    SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                opt_camera_trajectory,
                                visibility_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
@@ -198,7 +188,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
                                         JTJ, JTr);
                         pose = delta * pose;
                         opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-                        atomic_sum(residual, r2);
+                        utility::AtomicAdd(residual, r2);
                         total_num_ += int(visibility_image_to_vertex[c].size());
                     }
                 });
@@ -208,18 +198,17 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
         } else {
             utility::LogDebug("Residual error : {:.6f}", residual.load());
         }
-        SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+        SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
-                                    opt_camera_trajectory,
-                                    visibility_vertex_to_image,
-                                    option.image_boundary_margin_,
-                                    option.invisible_vertex_color_knn_);
+            SetGeometryColorAverage(
+                    opt_mesh, images_color, std::nullopt, opt_camera_trajectory,
+                    visibility_vertex_to_image, option.image_boundary_margin_,
+                    option.invisible_vertex_color_knn_);
             std::string file_name = fmt::format(
                     "{}/iter_{}.ply",
                     option.debug_output_dir_ + "/rigid/opt_mesh", itr);
@@ -235,7 +224,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
     }
 
     utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
-    SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
+    SetGeometryColorAverage(opt_mesh, images_color, std::nullopt,
                             opt_camera_trajectory, visibility_vertex_to_image,
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);

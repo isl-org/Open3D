@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
+
+#include <string>
 
 #include "open3d/visualization/gui/Gui.h"
 
@@ -28,7 +30,7 @@ class WindowSystem {
 public:
     using OSWindow = void*;
 
-    virtual ~WindowSystem(){};
+    virtual ~WindowSystem() {};
 
     virtual void Initialize() = 0;
     virtual void Uninitialize() = 0;
@@ -62,6 +64,10 @@ public:
     virtual Size GetWindowSize(OSWindow w) const = 0;
     virtual void SetWindowSize(OSWindow w, int width, int height) = 0;
 
+    // Returns total window-decoration extents as Size(left+right, top+bottom)
+    // so callers can subtract them from the screen work area before sizing.
+    virtual Size GetWindowFrameSize(OSWindow w) const = 0;
+
     virtual Size GetWindowSizePixels(OSWindow w) const = 0;
     virtual void SetWindowSizePixels(OSWindow w, const Size& size) = 0;
 
@@ -85,6 +91,16 @@ public:
                                 rendering::FilamentRenderer* renderer) = 0;
 
     virtual MenuBase* CreateOSMenu() = 0;
+
+    /// Copies text to the system clipboard.
+    /// The default implementation is a no-op for window systems that do not
+    /// support the clipboard.
+    virtual void SetClipboardText(OSWindow w, const char* text) {}
+
+    /// Gets text from the system clipboard.
+    /// The default implementation returns an empty string for window systems
+    /// that do not support the clipboard.
+    virtual std::string GetClipboardText(OSWindow w) { return ""; }
 };
 
 }  // namespace gui

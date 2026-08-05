@@ -1,11 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/nns/FixedRadiusIndex.h"
+
+#include <cassert>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
@@ -15,7 +17,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-FixedRadiusIndex::FixedRadiusIndex(){};
+FixedRadiusIndex::FixedRadiusIndex() {};
 
 FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
                                    double radius) {
@@ -31,7 +33,17 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, radius, index_dtype);
 };
 
-FixedRadiusIndex::~FixedRadiusIndex(){};
+FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
+                                   double radius,
+                                   const Dtype &index_dtype,
+                                   int64_t tile_bytes)
+    : tile_bytes_(tile_bytes) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
+    SetTensorData(dataset_points, radius, index_dtype);
+};
+
+FixedRadiusIndex::~FixedRadiusIndex() {};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius,
@@ -104,8 +116,17 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
         CALL_BUILD(double, BuildSpatialHashTableCUDA)
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL_BUILD(float, BuildSpatialHashTableSYCL)
+        CALL_BUILD(double, BuildSpatialHashTableSYCL)
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         CALL_BUILD(float, BuildSpatialHashTableCPU)
@@ -126,7 +147,9 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         const Tensor &query_points,
         const Tensor &queries_row_splits,
         double radius,
-        bool sort) const {
+        bool sort,
+        Metric metric,
+        bool ignore_query_point) const {
     const Dtype dtype = GetDtype();
     const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
@@ -138,7 +161,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
     AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
 
     const int64_t num_query_points = query_points.GetShape()[0];
@@ -158,10 +181,10 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     Tensor neighbors_index, neighbors_distance;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64, device);
 
-#define RADIUS_PARAMETERS                                               \
-    dataset_points_, query_points_, radius, points_row_splits_,         \
-            queries_row_splits_, hash_table_splits_, hash_table_index_, \
-            hash_table_cell_splits_, Metric::L2, false, true, sort,     \
+#define RADIUS_PARAMETERS                                                    \
+    dataset_points_, query_points_, radius, points_row_splits_,              \
+            queries_row_splits_, hash_table_splits_, hash_table_index_,      \
+            hash_table_cell_splits_, metric, ignore_query_point, true, sort, \
             neighbors_index, neighbors_row_splits, neighbors_distance
 
     if (device.IsCUDA()) {
@@ -171,8 +194,19 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         });
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchSYCL<scalar_t, int_t>(RADIUS_PARAMETERS,
+                                                   tile_bytes_);
+        });
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
@@ -208,7 +242,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {std::nullopt, GetDimension()});
     AssertTensorShape(queries_row_splits, points_row_splits_.GetShape());
 
     const int64_t num_query_points = query_points.GetShape()[0];
@@ -240,8 +274,18 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         });
 #else
         utility::LogError(
-                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
+                "-DBUILD_CUDA_MODULE=OFF. Please compile Open3D with "
                 "-DBUILD_CUDA_MODULE=ON.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchSYCL<scalar_t, int_t>(HYBRID_PARAMETERS, tile_bytes_);
+        });
+#else
+        utility::LogError(
+                "-DBUILD_SYCL_MODULE=OFF. Please compile Open3D with "
+                "-DBUILD_SYCL_MODULE=ON.");
 #endif
     } else {
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {

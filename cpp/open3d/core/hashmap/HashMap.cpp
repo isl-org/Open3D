@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -156,7 +156,8 @@ void HashMap::Insert(const Tensor& input_keys,
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
 
-    if (new_size > capacity) {
+    if (new_size > capacity ||
+        device_hashmap_->GetNonEmptyCount() + length > capacity) {
         Reserve(std::max(new_size, capacity * 2));
     }
     InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
@@ -169,7 +170,8 @@ void HashMap::Activate(const Tensor& input_keys,
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
 
-    if (new_size > capacity) {
+    if (new_size > capacity ||
+        device_hashmap_->GetNonEmptyCount() + length > capacity) {
         Reserve(std::max(new_size, capacity * 2));
     }
 

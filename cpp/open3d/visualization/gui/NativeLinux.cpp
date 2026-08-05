@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,7 +9,9 @@
 
 #include "Application.h"
 #include "Native.h"
+#include "open3d/utility/Logging.h"
 #define GLFW_EXPOSE_NATIVE_X11 1
+#define GLFW_EXPOSE_NATIVE_WAYLAND 1
 #include <GLFW/glfw3native.h>
 #include <memory.h>
 
@@ -18,20 +20,37 @@ namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
-    return (void*)glfwGetX11Window(glfw_window);
+    const int platform = glfwGetPlatform();
+    if (platform == GLFW_PLATFORM_X11) {
+        return (void*)glfwGetX11Window(glfw_window);
+    } else if (platform == GLFW_PLATFORM_WAYLAND) {
+        // Filament v1.54.0 PlatformGLX expects an X11 Window (XID). Receiving
+        // a Wayland wl_surface* here means GLFWWindowSystem::Initialize() did
+        // not successfully force GLFW_PLATFORM_X11 (XWayland unavailable?).
+        utility::LogWarning(
+                "GetNativeDrawable: GLFW is running on Wayland but Filament "
+                "requires an X11 window. Ensure XWayland is running.");
+        return (void*)glfwGetWaylandWindow(glfw_window);
+    } else {
+        return nullptr;
+    }
 }
 
 void PostNativeExposeEvent(GLFWwindow* glfw_window) {
-    Display* d = glfwGetX11Display();
-    auto x11win = glfwGetX11Window(glfw_window);
+    const int platform = glfwGetPlatform();
 
-    XEvent e;
-    memset(&e, 0, sizeof(e));
-    e.type = Expose;
-    e.xexpose.window = x11win;
+    if (platform == GLFW_PLATFORM_X11) {
+        Display* d = glfwGetX11Display();
+        auto x11win = glfwGetX11Window(glfw_window);
 
-    XSendEvent(d, x11win, False, ExposureMask, &e);
-    XFlush(d);
+        XEvent e;
+        memset(&e, 0, sizeof(e));
+        e.type = Expose;
+        e.xexpose.window = x11win;
+
+        XSendEvent(d, x11win, False, ExposureMask, &e);
+        XFlush(d);
+    }
 }
 
 void ShowNativeAlert(const char* message) {

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,8 +18,8 @@ namespace contrib {
 
 const py::tuple SubsampleBatch(py::array points,
                                py::array batches,
-                               utility::optional<py::array> features,
-                               utility::optional<py::array> classes,
+                               std::optional<py::array> features,
+                               std::optional<py::array> classes,
                                float sampleDl,
                                const std::string& method,
                                int max_p,
@@ -202,8 +202,8 @@ const py::tuple SubsampleBatch(py::array points,
 }
 
 const py::object Subsample(py::array points,
-                           utility::optional<py::array> features,
-                           utility::optional<py::array> classes,
+                           std::optional<py::array> features,
+                           std::optional<py::array> classes,
                            float sampleDl,
                            int verbose) {
     std::vector<PointXYZ> original_points;

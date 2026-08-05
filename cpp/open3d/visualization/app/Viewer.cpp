@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ void RunViewer(int argc, const char *argv[]) {
     }
 
     auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
+    app.Initialize();
 
     auto vis = std::make_shared<open3d::visualization::GuiVisualizer>(
             "Open3D", width, height);

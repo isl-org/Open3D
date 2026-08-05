@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -77,9 +77,9 @@ class PyAPIDocsBuilder:
             try:
                 module = self._try_import_module(module_name)
                 self._generate_module_class_function_docs(module_name, module)
-            except:
-                print("[Warning] Module {} cannot be imported.".format(
-                    module_name))
+            except Exception as _e:
+                print(f"[Warning] Module {module_name} cannot be imported: "
+                      f"{_e}.")
 
     @staticmethod
     def _get_documented_module_names():
@@ -88,7 +88,7 @@ class PyAPIDocsBuilder:
         with open("documented_modules.txt", "r") as f:
             for line in f:
                 print(line, end="")
-                m = re.match("^(open3d\..*)\s*$", line)
+                m = re.match(r"^(open3d\..*)\s*$", line)
                 if m:
                     module_names.append(m.group(1))
         print("Documented modules:")
@@ -299,7 +299,8 @@ class PyExampleDocsBuilder:
     @staticmethod
     def _generate_index(title, output_path):
         os.makedirs(output_path)
-        out_string = (f"{title}\n" f"{'-' * len(title)}\n\n")
+        out_string = (f"{title}\n"
+                      f"{'-' * len(title)}\n\n")
         with open(output_path / "index.rst", "w") as f:
             f.write(out_string)
 
@@ -330,7 +331,8 @@ class PyExampleDocsBuilder:
                 if (cat.stem == "geometry"):
                     self._generate_index(cat.stem.capitalize(), out_dir)
                     with open(out_dir / "index.rst", "a") as f:
-                        f.write(f".. toctree::\n" f"    :maxdepth: 2\n\n")
+                        f.write(f".. toctree::\n"
+                                f"    :maxdepth: 2\n\n")
                         for prefix, sub_cat in self.prefixes:
                             f.write(f"    {prefix}/index\n")
 
@@ -532,11 +534,9 @@ class JupyterDocsBuilder:
         # Execute Jupyter notebooks
         # Files that should not be executed.
         nb_direct_copy = [
-            'draw_plotly.ipynb',
-            'hashmap.ipynb',
-            'jupyter_visualization.ipynb',
-            't_icp_registration.ipynb',
-            'tensor.ipynb',
+            'draw_plotly.ipynb', 'hashmap.ipynb', 'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb', 'tensor.ipynb',
+            'gaussian_splatting.ipynb'
         ]
 
         for nb_path in nb_paths:

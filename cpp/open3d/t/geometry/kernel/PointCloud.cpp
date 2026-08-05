@@ -1,13 +1,11 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/kernel/PointCloud.h"
-
-#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
@@ -20,16 +18,16 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void Unproject(const core::Tensor& depth,
-               utility::optional<std::reference_wrapper<const core::Tensor>>
-                       image_colors,
-               core::Tensor& points,
-               utility::optional<std::reference_wrapper<core::Tensor>> colors,
-               const core::Tensor& intrinsics,
-               const core::Tensor& extrinsics,
-               float depth_scale,
-               float depth_max,
-               int64_t stride) {
+void Unproject(
+        const core::Tensor& depth,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
+        core::Tensor& points,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
                 "Both or none of image_colors and colors must have values.");
@@ -54,20 +52,26 @@ void Unproject(const core::Tensor& depth,
     } else if (depth.IsCUDA()) {
         CUDA_CALL(UnprojectCUDA, depth, image_colors, points, colors,
                   intrinsics_d, extrinsics_d, depth_scale, depth_max, stride);
+    } else if (depth.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        UnprojectSYCL(depth, image_colors, points, colors, intrinsics_d,
+                      extrinsics_d, depth_scale, depth_max, stride);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
 }
 
-void Project(
-        core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
-        const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
-        const core::Tensor& intrinsics,
-        const core::Tensor& extrinsics,
-        float depth_scale,
-        float depth_max) {
+void Project(core::Tensor& depth,
+             std::optional<std::reference_wrapper<core::Tensor>> image_colors,
+             const core::Tensor& points,
+             std::optional<std::reference_wrapper<const core::Tensor>> colors,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             float depth_scale,
+             float depth_max) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
                 "Both or none of image_colors and colors must have values.");
@@ -92,6 +96,13 @@ void Project(
     } else if (depth.IsCUDA()) {
         CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors,
                   intrinsics_d, extrinsics_d, depth_scale, depth_max);
+    } else if (depth.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ProjectSYCL(depth, image_colors, points, colors, intrinsics_d,
+                    extrinsics_d, depth_scale, depth_max);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -117,6 +128,12 @@ void GetPointMaskWithinAABB(const core::Tensor& points,
     } else if (mask.IsCUDA()) {
         CUDA_CALL(GetPointMaskWithinAABBCUDA, points_d, min_bound_d,
                   max_bound_d, mask);
+    } else if (mask.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        GetPointMaskWithinAABBSYCL(points_d, min_bound_d, max_bound_d, mask);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -142,6 +159,13 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
     } else if (mask.IsCUDA()) {
         CUDA_CALL(GetPointMaskWithinOBBCUDA, points_d, center_d, rotation_d,
                   extent_d, mask);
+    } else if (mask.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        GetPointMaskWithinOBBSYCL(points_d, center_d, rotation_d, extent_d,
+                                  mask);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }

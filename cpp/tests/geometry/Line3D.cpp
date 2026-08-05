@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@
 
 using namespace open3d::geometry;
 using namespace ::testing;
-using opt_d_t = open3d::utility::optional<double>;
+using opt_d_t = std::optional<double>;
 
 using v_t = Eigen::Vector3d;
 using plane_t = Eigen::Hyperplane<double, 3>;

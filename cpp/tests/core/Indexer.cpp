@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,10 +22,10 @@
 namespace open3d {
 namespace tests {
 
-class IndexerPermuteDevices : public PermuteDevices {};
+class IndexerPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Indexer,
                          IndexerPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+                         testing::ValuesIn(IndexerPermuteDevices::TestCases()));
 
 TEST_P(IndexerPermuteDevices, TensorRef) {
     core::Device device = GetParam();

@@ -1,15 +1,21 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/visualizer/Visualizer.h"
 
+#include <chrono>
 #include <memory>
+#include <thread>
 
 #include "open3d/geometry/TriangleMesh.h"
+
+#if defined(__linux__)
+#include "open3d/visualization/visualizer/EGLOffscreenContext.h"
+#endif
 
 #if defined(__APPLE__) && defined(BUILD_GUI)
 namespace bluegl {
@@ -34,6 +40,11 @@ private:
         // framework build version of Python.
         glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
+        // Try to initialize GLFW against a real windowing system platform
+        // (X11/Wayland/Cocoa/Win32). If no display is available (e.g. no
+        // DISPLAY/WAYLAND_DISPLAY on Linux), this fails and
+        // Visualizer::CreateVisualizerWindow() falls back to an offscreen
+        // EGL context instead of GLFW's software (OSMesa) NULL platform.
         init_status_ = glfwInit();
     }
 
@@ -42,13 +53,14 @@ private:
 
 public:
     ~GLFWContext() {
-        if (init_status_ == GLFW_TRUE) {
+        if (init_status_ != GLFW_FALSE) {
             glfwTerminate();
+            init_status_ = GLFW_FALSE;
             utility::LogDebug("GLFW destruct.");
         }
     }
 
-    /// \brief Get the glfwInit status.
+    /// \brief Get the glfwInit status / GLFW_PLATFORM initialized.
     inline int InitStatus() const { return init_status_; }
 
     /// \brief Get a shared instance of the GLFW context.
@@ -93,7 +105,9 @@ bool Visualizer::CreateVisualizerWindow(
     if (window_) {  // window already created
         utility::LogDebug("[Visualizer] Reusing window.");
         UpdateWindowTitle();
-        glfwSetWindowPos(window_, left, top);
+        if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+            glfwSetWindowPos(window_, left, top);
+        }
         glfwSetWindowSize(window_, width, height);
 #ifdef __APPLE__
         glfwSetWindowSize(window_,
@@ -105,22 +119,56 @@ bool Visualizer::CreateVisualizerWindow(
 #endif  //__APPLE__
         return true;
     }
+    if (headless_) {  // offscreen EGL context already created
+        utility::LogDebug("[Visualizer] Reusing offscreen EGL context.");
+        UpdateWindowTitle();
+        return true;
+    }
 
     utility::LogDebug("[Visualizer] Creating window.");
     glfwSetErrorCallback(GLFWContext::GLFWErrorCallback);
     glfw_context_ = GLFWContext::GetInstance();
-    if (glfw_context_->InitStatus() != GLFW_TRUE) {
+    if (glfw_context_->InitStatus() == GLFW_FALSE) {
+#if defined(__linux__)
+        // No windowing system display is available (e.g. no
+        // DISPLAY/WAYLAND_DISPLAY). Fall back to a GPU-accelerated offscreen
+        // EGL context so headless rendering works in the standard binary.
+        utility::LogInfo(
+                "[Visualizer] No display detected, falling back to EGL "
+                "offscreen rendering.");
+        egl_context_ = EGLOffscreenContext::Create(width, height);
+        if (!egl_context_) {
+            utility::LogWarning(
+                    "Failed to create EGL offscreen context. Headless "
+                    "rendering requires an EGL-capable GPU driver (e.g. "
+                    "Mesa or NVIDIA).");
+            return false;
+        }
+        headless_ = true;
+        if (!InitOpenGL()) {
+            return false;
+        }
+        if (!InitViewControl()) {
+            return false;
+        }
+        if (!InitRenderOption()) {
+            return false;
+        }
+        view_control_ptr_->ChangeWindowSize(width, height);
+        UpdateWindowTitle();
+        is_initialized_ = true;
+        return true;
+#else
         utility::LogWarning("Failed to initialize GLFW");
         return false;
+#endif
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-#ifndef HEADLESS_RENDERING
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_VISIBLE, visible ? 1 : 0);
 
     window_ = glfwCreateWindow(width, height, window_name_.c_str(), NULL, NULL);
@@ -128,7 +176,9 @@ bool Visualizer::CreateVisualizerWindow(
         utility::LogWarning("Failed to create window");
         return false;
     }
-    glfwSetWindowPos(window_, left, top);
+    if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
+        glfwSetWindowPos(window_, left, top);
+    }
     glfwSetWindowUserPointer(window_, this);
 
 #ifdef __APPLE__
@@ -224,11 +274,43 @@ void Visualizer::DestroyVisualizerWindow() {
 
     utility::LogDebug("[Visualizer] Destroying window.");
     is_initialized_ = false;
+    MakeContextCurrent();
     glDeleteVertexArrays(1, &vao_id_);
     vao_id_ = 0;
-    glfwDestroyWindow(window_);
-    window_ = nullptr;
+    if (window_) {
+        glfwDestroyWindow(window_);
+        window_ = nullptr;
+    }
     glfw_context_.reset();
+#if defined(__linux__)
+    egl_context_.reset();
+#endif
+    headless_ = false;
+    should_close_ = false;
+}
+
+void Visualizer::MakeContextCurrent() {
+    if (headless_) {
+#if defined(__linux__)
+        if (egl_context_) {
+            egl_context_->MakeCurrent();
+        }
+#endif
+        return;
+    }
+    glfwMakeContextCurrent(window_);
+}
+
+bool Visualizer::ShouldRemainOpen() const {
+    return headless_ ? !should_close_ : !glfwWindowShouldClose(window_);
+}
+
+void Visualizer::RequestClose() {
+    if (headless_) {
+        should_close_ = true;
+    } else {
+        glfwSetWindowShouldClose(window_, GL_TRUE);
+    }
 }
 
 void Visualizer::RegisterAnimationCallback(
@@ -254,7 +336,7 @@ void Visualizer::UpdateWindowTitle() {
 }
 
 void Visualizer::BuildUtilities() {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
@@ -279,16 +361,16 @@ void Visualizer::Run() {
             if (animation_callback_func_in_loop_(this)) {
                 UpdateGeometry();
             }
-            // Set render flag as dirty anyways, because when we use callback
-            // functions, we assume something has been changed in the callback
-            // and the redraw event should be triggered.
+            // Set render flag as dirty anyways, because when we use
+            // callback functions, we assume something has been changed in
+            // the callback and the redraw event should be triggered.
             UpdateRender();
         }
     }
 }
 
 void Visualizer::Close() {
-    glfwSetWindowShouldClose(window_, GL_TRUE);
+    RequestClose();
     utility::LogDebug("[Visualizer] Window closing.");
 }
 
@@ -296,26 +378,34 @@ bool Visualizer::WaitEvents() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     if (is_redraw_required_) {
         WindowRefreshCallback(window_);
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
-    glfwWaitEvents();
-    return !glfwWindowShouldClose(window_);
+    if (headless_) {
+        // No windowing events to wait for headlessly; sleep briefly instead
+        // of busy-spinning until Close() is called.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    } else {
+        glfwWaitEvents();
+    }
+    return ShouldRemainOpen();
 }
 
 bool Visualizer::PollEvents() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     if (is_redraw_required_) {
         WindowRefreshCallback(window_);
     }
     animation_callback_func_in_loop_ = animation_callback_func_;
-    glfwPollEvents();
-    return !glfwWindowShouldClose(window_);
+    if (!headless_) {
+        glfwPollEvents();
+    }
+    return ShouldRemainOpen();
 }
 
 bool Visualizer::AddGeometry(
@@ -331,7 +421,7 @@ bool Visualizer::AddGeometry(
         return false;
     }
 
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->GetGeometryType() ==
         geometry::Geometry::GeometryType::Unspecified) {
@@ -419,7 +509,7 @@ bool Visualizer::RemoveGeometry(
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete = NULL;
     for (auto &geometry_renderer_ptr : geometry_renderer_ptrs_) {
         if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
@@ -441,7 +531,7 @@ bool Visualizer::ClearGeometries() {
     if (!is_initialized_) {
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     geometry_renderer_ptrs_.clear();
     geometry_ptrs_.clear();
     return UpdateGeometry();
@@ -449,7 +539,7 @@ bool Visualizer::ClearGeometries() {
 
 bool Visualizer::UpdateGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
     bool success = true;
     for (const auto &renderer_ptr : geometry_renderer_ptrs_) {
         if (geometry_ptr == nullptr ||
@@ -466,14 +556,24 @@ void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::SetFullScreen(bool fullscreen) {
+    if (headless_) {  // no-op headless: no window/monitor concept
+        return;
+    }
     if (!fullscreen) {
+        // Wayland ignores window position
         glfwSetWindowMonitor(window_, NULL, saved_window_pos_(0),
                              saved_window_pos_(1), saved_window_size_(0),
                              saved_window_size_(1), GLFW_DONT_CARE);
     } else {
         glfwGetWindowSize(window_, &saved_window_size_(0),
                           &saved_window_size_(1));
-        glfwGetWindowPos(window_, &saved_window_pos_(0), &saved_window_pos_(1));
+        if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND) {
+            saved_window_pos_[0] = 0;
+            saved_window_pos_[1] = 0;
+        } else {
+            glfwGetWindowPos(window_, &saved_window_pos_(0),
+                             &saved_window_pos_(1));
+        }
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         if (const GLFWvidmode *mode = glfwGetVideoMode(monitor)) {
             glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width,
@@ -494,7 +594,7 @@ void Visualizer::ToggleFullScreen() {
 }
 
 bool Visualizer::IsFullScreen() {
-    return glfwGetWindowMonitor(window_) != nullptr;
+    return !headless_ && glfwGetWindowMonitor(window_) != nullptr;
 }
 
 void Visualizer::PrintVisualizerHelp() {

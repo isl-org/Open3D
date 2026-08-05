@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -47,6 +47,13 @@ void BinaryEWCPU(const Tensor& lhs,
                  const Tensor& rhs,
                  Tensor& dst,
                  BinaryEWOpCode op_code);
+
+#ifdef BUILD_SYCL_MODULE
+void BinaryEWSYCL(const Tensor& lhs,
+                  const Tensor& rhs,
+                  Tensor& dst,
+                  BinaryEWOpCode op_code);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void BinaryEWCUDA(const Tensor& lhs,

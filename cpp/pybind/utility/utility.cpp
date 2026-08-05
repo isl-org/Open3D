@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,6 +23,7 @@ void pybind_utility_definitions(py::module &m) {
     auto m_utility = static_cast<py::module>(m.attr("utility"));
     pybind_eigen_definitions(m_utility);
     pybind_logging_definitions(m_utility);
+    pybind_parallel_definitions(m_utility);
 }
 
 }  // namespace utility

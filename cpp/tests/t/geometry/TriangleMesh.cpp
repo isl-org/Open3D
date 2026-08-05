@@ -1,27 +1,37 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "core/CoreTest.h"
+#include "gmock/gmock.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SizeVector.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/io/ImageIO.h"
+#include "open3d/t/io/TriangleMeshIO.h"
+#include "open3d/visualization/utility/Draw.h"
 #include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
-class TriangleMeshPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TriangleMesh,
-                         TriangleMeshPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TriangleMeshPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TriangleMesh,
+        TriangleMeshPermuteDevices,
+        testing::ValuesIn(TriangleMeshPermuteDevices::TestCases()));
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;
@@ -630,6 +640,47 @@ TEST_P(TriangleMeshPermuteDevices, CreateSphere) {
             triangle_indices_custom));
 }
 
+TEST_P(TriangleMeshPermuteDevices, CreateEllipsoid) {
+    core::Device device = GetParam();
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
+
+    // Test with custom parameters.
+    t::geometry::TriangleMesh ellipsoid_custom =
+            t::geometry::TriangleMesh::CreateEllipsoid(
+                    1, 1, 1, 3, float_dtype_custom, int_dtype_custom, device);
+
+    core::Tensor vertex_positions_custom =
+            core::Tensor::Init<double>({{0.0, 0.0, 1.0},
+                                        {0.0, 0.0, -1.0},
+                                        {0.866025, 0, 0.5},
+                                        {0.433013, 0.75, 0.5},
+                                        {-0.433013, 0.75, 0.5},
+                                        {-0.866025, 0.0, 0.5},
+                                        {-0.433013, -0.75, 0.5},
+                                        {0.433013, -0.75, 0.5},
+                                        {0.866025, 0.0, -0.5},
+                                        {0.433013, 0.75, -0.5},
+                                        {-0.433013, 0.75, -0.5},
+                                        {-0.866025, 0.0, -0.5},
+                                        {-0.433013, -0.75, -0.5},
+                                        {0.433013, -0.75, -0.5}},
+                                       device);
+
+    core::Tensor triangle_indices_custom = core::Tensor::Init<int32_t>(
+            {{0, 2, 3},   {1, 9, 8},   {0, 3, 4},   {1, 10, 9}, {0, 4, 5},
+             {1, 11, 10}, {0, 5, 6},   {1, 12, 11}, {0, 6, 7},  {1, 13, 12},
+             {0, 7, 2},   {1, 8, 13},  {8, 3, 2},   {8, 9, 3},  {9, 4, 3},
+             {9, 10, 4},  {10, 5, 4},  {10, 11, 5}, {11, 6, 5}, {11, 12, 6},
+             {12, 7, 6},  {12, 13, 7}, {13, 2, 7},  {13, 8, 2}},
+            device);
+
+    EXPECT_TRUE(ellipsoid_custom.GetVertexPositions().AllClose(
+            vertex_positions_custom));
+    EXPECT_TRUE(ellipsoid_custom.GetTriangleIndices().AllClose(
+            triangle_indices_custom));
+}
+
 TEST_P(TriangleMeshPermuteDevices, CreateTetrahedron) {
     core::Device device = GetParam();
     core::Dtype float_dtype_custom = core::Float64;
@@ -1215,6 +1266,7 @@ TEST_P(TriangleMeshPermuteDevices, SelectByIndex) {
 
 TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     core::Device device = GetParam();
+
     t::geometry::TriangleMesh mesh_empty{device};
 
     // check completely empty mesh
@@ -1343,8 +1395,63 @@ TEST_P(TriangleMeshPermuteDevices, RemoveUnreferencedVertices) {
     EXPECT_TRUE(torus.GetTriangleNormals().AllClose(expected_tri_normals));
 }
 
+TEST_P(TriangleMeshPermuteDevices, ProjectImagesToAlbedo) {
+    using namespace t::geometry;
+    using ::testing::AnyOf;
+    using ::testing::ElementsAre;
+    using ::testing::FloatEq;
+    core::Device device = GetParam();
+    if (!device.IsCPU() || !Image::HAVE_IPP) GTEST_SKIP() << "Not Implemented!";
+    TriangleMesh sphere =
+            TriangleMesh::FromLegacy(*geometry::TriangleMesh::CreateSphere(
+                    1.0, 20, /*create_uv_map=*/true));
+    core::Tensor view[3] = {core::Tensor::Zeros({192, 256, 3}, core::Float32),
+                            core::Tensor::Zeros({192, 256, 3}, core::Float32),
+                            core::Tensor::Zeros({192, 256, 3}, core::Float32)};
+    view[0].Slice(2, 0, 1, 1).Fill(1.0);  // red
+    view[1].Slice(2, 1, 2, 1).Fill(1.0);  // green
+    view[2].Slice(2, 2, 3, 1).Fill(1.0);  // blue
+    core::Tensor intrinsic_matrix = core::Tensor::Init<float>(
+            {{256, 0, 128}, {0, 256, 96}, {0, 0, 1}}, device);
+    core::Tensor extrinsic_matrix[3] = {
+            core::Tensor::Init<float>(
+                    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 3}, {0, 0, 0, 1}},
+                    device),
+            core::Tensor::Init<float>({{-0.5, 0, -0.8660254, 0},
+                                       {0, 1, 0, 0},
+                                       {0.8660254, 0, -0.5, 3},
+                                       {0, 0, 0, 1}},
+                                      device),
+            core::Tensor::Init<float>({{-0.5, 0, 0.8660254, 0},
+                                       {0, 1, 0, 0},
+                                       {-0.8660254, 0, -0.5, 3},
+                                       {0, 0, 0, 1}},
+                                      device),
+    };
+
+    Image albedo = sphere.ProjectImagesToAlbedo(
+            {Image(view[0]), Image(view[1]), Image(view[2])},
+            {intrinsic_matrix, intrinsic_matrix, intrinsic_matrix},
+            {extrinsic_matrix[0], extrinsic_matrix[1], extrinsic_matrix[2]},
+            256, true);
+
+    // visualization::Draw(
+    //         {std::shared_ptr<TriangleMesh>(&sphere, [](TriangleMesh*) {})},
+    //         "ProjectImagesToAlbedo", 1024, 768);
+
+    // Round to uint8_t for tests due to numerical errors between platforms
+    EXPECT_THAT(albedo.AsTensor()
+                        .To(core::Float32)
+                        .Mean({0, 1})
+                        .Round()
+                        .To(core::UInt8)
+                        .ToFlatVector<uint8_t>(),
+                ElementsAre(88, 67, 64));
+}  // namespace tests
+
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
     core::Device device = GetParam();
+
     t::geometry::TriangleMesh mesh_empty;
     EXPECT_NO_THROW(mesh_empty.ComputeTriangleAreas());
 
@@ -1367,6 +1474,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleAreas) {
 TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
     using ::testing::UnorderedElementsAreArray;
     core::Device device = GetParam();
+
     t::geometry::TriangleMesh mesh_empty(device);
     EXPECT_TRUE(mesh_empty.RemoveNonManifoldEdges().IsEmpty());
 
@@ -1439,5 +1547,229 @@ TEST_P(TriangleMeshPermuteDevices, RemoveNonManifoldEdges) {
                                       device)});
     EXPECT_TRUE(mesh.GetTriangleAttr("labels").AllClose(expected_labels));
 }
+
+TEST_P(TriangleMeshPermuteDevices, SamplePointsUniformly) {
+    auto mesh_empty = t::geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
+
+    core::Tensor vertices =
+            core::Tensor::Init<float>({{0, 0, 0}, {1, 0, 0}, {0, 1, 0}});
+    core::Tensor triangles = core::Tensor::Init<int32_t>({{0, 1, 2}});
+
+    auto mesh_simple = t::geometry::TriangleMesh(vertices, triangles);
+
+    int64_t n_points = 2;
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_FALSE(pcd_simple.HasPointColors());
+    EXPECT_FALSE(pcd_simple.HasPointNormals());
+
+    core::Tensor colors =
+            core::Tensor::Init<float>({{1, 0, 0}, {1, 0, 0}, {1, 0, 0}});
+    core::Tensor normals =
+            core::Tensor::Init<float>({{0, 1, 0}, {0, 1, 0}, {0, 1, 0}});
+    mesh_simple.SetVertexColors(colors);
+    mesh_simple.SetVertexNormals(normals);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    core::Tensor ref_point_colors = core::Tensor::Init<float>({1, 0, 0});
+    core::Tensor ref_point_normals = core::Tensor::Init<float>({0, 1, 0});
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal instead of the vertex normals
+    EXPECT_FALSE(mesh_simple.HasTriangleNormals());
+    // Use Float64 positions and normals and uint8_t colors
+    mesh_simple.SetVertexNormals(normals.To(core::Float64));
+    mesh_simple.SetVertexPositions(vertices.To(core::Float64));
+    // new triangle normals
+    ref_point_normals = core::Tensor::Init<double>({0, 0, 1});
+    colors = core::Tensor::Init<uint8_t>(
+            {{255, 0, 0}, {255, 0, 0}, {255, 0, 0}});
+    mesh_simple.SetVertexColors(colors);
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals());
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        // colors are still the same (Float32)
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+
+    // use triangle normal, this time the mesh has no vertex normals
+    mesh_simple.RemoveVertexAttr("normals");
+    pcd_simple = mesh_simple.SamplePointsUniformly(
+            n_points, /*use_triangle_normal=*/true);
+    EXPECT_TRUE(pcd_simple.GetPointPositions().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointColors().GetLength() == n_points);
+    EXPECT_TRUE(pcd_simple.GetPointNormals().GetLength() == n_points);
+
+    for (int64_t pidx = 0; pidx < n_points; ++pidx) {
+        EXPECT_TRUE(
+                pcd_simple.GetPointColors()[pidx].AllClose(ref_point_colors));
+        EXPECT_TRUE(
+                pcd_simple.GetPointNormals()[pidx].AllClose(ref_point_normals));
+    }
+}
+
+TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
+    using ::testing::ElementsAre;
+    core::Device device("CPU:0");
+
+    // MikkTSpace and UVAtlas are CPU only.
+    core::Device cpu_device("CPU:0");
+    auto mesh = t::geometry::TriangleMesh::CreateTorus(
+            1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
+    mesh.ComputeVertexNormals();
+    mesh.ComputeUVAtlas();
+    int tex_size = 256;
+
+    // 1. Compute Tangent space.
+    mesh.ComputeTangentSpace(/*bake=*/true, tex_size);
+    EXPECT_TRUE(mesh.HasVertexAttr("tangents"));
+    EXPECT_THAT(mesh.GetVertexAttr("tangents").GetShape(), ElementsAre(600, 4));
+    EXPECT_TRUE(mesh.GetMaterial().HasTextureMap("tangents"));
+    EXPECT_THAT(
+            mesh.GetMaterial().GetTextureMap("tangents").AsTensor().GetShape(),
+            ElementsAre(tex_size, tex_size, 4));
+    EXPECT_TRUE(mesh.GetMaterial().HasTextureMap("normals"));
+    EXPECT_THAT(
+            mesh.GetMaterial().GetTextureMap("normals").AsTensor().GetShape(),
+            ElementsAre(tex_size, tex_size, 3));
+
+    // Visual inspection.
+    // t::io::WriteImage("baked_tangents.png",
+    //                   mesh.GetMaterial()
+    //                           .GetTextureMap("tangents")
+    //                           .To(core::UInt8, false, 127.5, 127.5));
+    // t::io::WriteImage("baked_normals.png",
+    //                   mesh.GetMaterial().GetTextureMap("normals").To(
+    //                           core::UInt8, false, 127.5, 127.5));
+
+    // Create a dummy world-space normal map (Float32, [-1, 1]).
+    // A simple gradient from (-1,-1,-1) to (1,1,1)
+    core::Tensor world_map_t = core::Tensor::Empty({tex_size, tex_size, 3},
+                                                   core::Float32, cpu_device);
+    for (int i = 0; i < tex_size; ++i) {
+        for (int j = 0; j < tex_size; ++j) {
+            float u = static_cast<float>(j) / (tex_size - 1);
+            float v = static_cast<float>(i) / (tex_size - 1);
+            world_map_t[i][j][0] = 2.0f * u - 1.0f;
+            world_map_t[i][j][1] = 2.0f * v - 1.0f;
+            world_map_t[i][j][2] = 2.0f * (u + v) / 2.0f;  // Z > 0
+        }
+    }
+    world_map_t =
+            world_map_t / world_map_t.Norm({2}, true).Clip_(1e-6, INFINITY);
+    t::geometry::Image world_normal_map(world_map_t);
+    //  t::io::WriteImage("world_normal_map.png",
+    //                    world_normal_map.To(core::UInt8, false, 127.5f,
+    //                    127.5f));
+
+    // 2. World to Tangent space.
+    auto tangent_normal_map = mesh.TransformNormalMap(world_normal_map,
+                                                      /*to_tangent_space=*/true,
+                                                      /*update_material=*/true);
+    EXPECT_EQ(tangent_normal_map.GetDtype(), core::UInt8);
+    EXPECT_EQ(tangent_normal_map.GetChannels(), 3);
+    EXPECT_TRUE(mesh.GetMaterial().HasNormalMap());
+
+    // t::io::WriteImage("tangent_normal_map.png", tangent_normal_map);
+
+    // 3. Tangent to World space.
+    auto world_normal_map_restored =
+            mesh.TransformNormalMap(tangent_normal_map,
+                                    /*to_tangent_space=*/false);
+
+    EXPECT_EQ(world_normal_map_restored.GetDtype(), core::UInt8);
+    EXPECT_EQ(world_normal_map_restored.GetChannels(), 3);
+    // t::io::WriteImage("world_normal_map_restored.png",
+    //                  world_normal_map_restored);
+
+    // world_normal_map_restored is the same as world_normal_map for the region
+    // with valid UV coordinates.
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
+    using ::testing::ElementsAre;
+    core::Device device("CPU:0");
+
+    // UVAtlas is CPU only.
+    core::Device cpu_device("CPU:0");
+    auto mesh = t::geometry::TriangleMesh::CreateTorus(
+            1.0, 0.6, 30, 20, core::Float32, core::Int64, cpu_device);
+    mesh.ComputeVertexNormals();
+    mesh.ComputeUVAtlas();
+
+    auto ao_map = mesh.ComputeAmbientOcclusion(
+            /*tex_width=*/128, /*n_rays=*/8, /*max_hit_distance=*/INFINITY,
+            /*update_material=*/true);
+
+    EXPECT_EQ(ao_map.GetDtype(), core::UInt8);
+    EXPECT_THAT(ao_map.AsTensor().GetShape(), ElementsAre(128, 128, 1));
+    EXPECT_TRUE(mesh.GetMaterial().HasAOMap());
+    EXPECT_NEAR(ao_map.To(core::Float32)
+                        .AsTensor()
+                        .Mean({0, 1}, false)
+                        .Item<float>(),
+                0.967f, 0.02f);
+
+    // t::io::WriteTriangleMesh("torus_ao.glb", mesh);
+    // t::io::WriteImage("torus_ao_texture.png", mesh.GetMaterial().GetAOMap());
+    // Visual inspection.
+    // visualization::Draw({std::shared_ptr<t::geometry::TriangleMesh>(
+    //                            &mesh, [](t::geometry::TriangleMesh*) {})},
+    //                    "Mesh with AO texture");
+}
+
+// Device-agnostic parity check: normal/area kernels on any non-CPU device
+// (CUDA/SYCL) should match the CPU oracle on the same mesh.
+TEST_P(TriangleMeshPermuteDevices, BackendParityNormalsAndAreasMatchCPU) {
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "CPU is the oracle for this parity check.";
+    }
+    const core::Device cpu("CPU:0");
+
+    t::geometry::TriangleMesh mesh_cpu =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, cpu);
+    t::geometry::TriangleMesh mesh_other =
+            t::geometry::TriangleMesh::CreateSphere(1.0, 4, core::Float32,
+                                                    core::Int64, device);
+
+    mesh_cpu.ComputeTriangleNormals();
+    mesh_cpu.ComputeVertexNormals();
+    mesh_cpu.NormalizeNormals();
+    mesh_cpu.ComputeTriangleAreas();
+
+    mesh_other.ComputeTriangleNormals();
+    mesh_other.ComputeVertexNormals();
+    mesh_other.NormalizeNormals();
+    mesh_other.ComputeTriangleAreas();
+
+    EXPECT_TRUE(mesh_other.GetTriangleNormals().To(cpu).AllClose(
+            mesh_cpu.GetTriangleNormals(), 1e-4, 1e-4));
+    EXPECT_TRUE(mesh_other.GetVertexNormals().To(cpu).AllClose(
+            mesh_cpu.GetVertexNormals(), 1e-3, 1e-3));
+    EXPECT_TRUE(mesh_other.GetTriangleAttr("areas").To(cpu).AllClose(
+            mesh_cpu.GetTriangleAttr("areas"), 1e-4, 1e-4));
+}
+
 }  // namespace tests
 }  // namespace open3d

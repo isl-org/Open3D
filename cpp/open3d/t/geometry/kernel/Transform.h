@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -50,6 +50,20 @@ void RotatePointsCUDA(const core::Tensor& R,
                       const core::Tensor& center);
 
 void RotateNormalsCUDA(const core::Tensor& R, core::Tensor& normals);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+void TransformPointsSYCL(const core::Tensor& transformation,
+                         core::Tensor& points);
+
+void TransformNormalsSYCL(const core::Tensor& transformation,
+                          core::Tensor& normals);
+
+void RotatePointsSYCL(const core::Tensor& R,
+                      core::Tensor& points,
+                      const core::Tensor& center);
+
+void RotateNormalsSYCL(const core::Tensor& R, core::Tensor& normals);
 #endif
 
 }  // namespace transform

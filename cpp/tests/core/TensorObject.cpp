@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,12 +22,13 @@
 namespace open3d {
 namespace tests {
 
-class TensorObjectPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TensorObject,
-                         TensorObjectPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorObjectPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TensorObject,
+        TensorObjectPermuteDevices,
+        testing::ValuesIn(TensorObjectPermuteDevices::TestCases()));
 
-class TensorObjectPermuteDevicePairs : public PermuteDevicePairs {};
+class TensorObjectPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         TensorObject,
         TensorObjectPermuteDevicePairs,
@@ -47,7 +48,9 @@ private:
     void *ptr_;
 };
 
-static_assert(std::is_pod<TestObject>(), "TestObject must be a POD.");
+static_assert(std::is_standard_layout<TestObject>::value &&
+                      std::is_trivial<TestObject>::value,
+              "TestObject must be a StandardLayout and TrivialType type.");
 static const int64_t byte_size = sizeof(TestObject);
 static const std::string class_name = "TestObject";
 

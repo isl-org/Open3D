@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <list>
+#include <type_traits>
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
@@ -24,6 +25,8 @@ namespace t {
 namespace geometry {
 
 class LineSet;
+class PointCloud;
+class RaycastingScene;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -255,21 +258,21 @@ public:
     /// Set the value of the "positions" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexPositions(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("positions", value);
     }
 
     /// Set the value of the "colors" attribute in vertex_attr_.
     /// Convenience function.
     void SetVertexColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("colors", value);
     }
 
     /// Set the value of the "normals" attribute in vertex_attr_.
     /// This is a convenience function.
     void SetVertexNormals(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetVertexAttr("normals", value);
     }
 
@@ -285,21 +288,21 @@ public:
 
     /// Set the value of the "indices" attribute in triangle_attr_.
     void SetTriangleIndices(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("indices", value);
     }
 
     /// Set the value of the "normals" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleNormals(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("normals", value);
     }
 
     /// Set the value of the "colors" attribute in triangle_attr_.
     /// This is a convenience function.
     void SetTriangleColors(const core::Tensor &value) {
-        core::AssertTensorShape(value, {utility::nullopt, 3});
+        core::AssertTensorShape(value, {std::nullopt, 3});
         SetTriangleAttr("colors", value);
     }
 
@@ -400,10 +403,30 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a ellipsoid triangle mesh. The ellipsoid will be centered
+    /// at (0, 0, 0).
+    /// \param radius_x defines first radii of the ellipsoid.
+    /// \param radius_y defines second radii of the ellipsoid.
+    /// \param radius_z defines third radii of the ellipsoid.
+    /// \param resolution defines the resolution of the ellipsoid.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateEllipsoid(
+            double radius_x = 1.0,
+            double radius_y = 1.0,
+            double radius_z = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
     /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -418,7 +441,7 @@ public:
     /// Create a octahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -433,7 +456,7 @@ public:
     /// Create a icosahedron triangle mesh. The centroid of the mesh will be
     /// placed at (0, 0, 0) and the vertices have a distance of radius to the
     /// center.
-    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param radius defines the distance from centroid to mesh vertices.
     /// \param float_dtype Float32 or Float64, used to store floating point
     /// values, e.g. vertices, normals, colors.
     /// \param int_dtype Int32 or Int64, used to store index values, e.g.
@@ -516,8 +539,10 @@ public:
     /// cylinder is from (0, 0, 0) to (0, 0, cylinder_height).
     /// \param cone_height defines the height of the cone. The axis of the
     /// cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
-    /// cone_height). \param resolution defines the resolution of the cone. The
-    /// circle will be split into resolution segments. \param cylinder_split
+    /// cone_height).
+    /// \param resolution defines the resolution of the cone. The
+    /// circle will be split into resolution segments.
+    /// \param cylinder_split
     /// defines the number of segments along the cylinder_height direction.
     /// \param cone_split defines the number of segments along
     /// the cone_height direction.
@@ -597,7 +622,7 @@ public:
             const core::Device &device = core::Device("CPU:0"));
 
     /// Create a mesh from a 3D scalar field (volume) by computing the
-    /// isosurface.  This method uses the Flying Edges dual contouring method
+    /// isosurface. This method uses the Flying Edges dual contouring method
     /// that computes the isosurface similar to Marching Cubes.  The center of
     /// the first voxel of the volume is at the origin (0,0,0).  The center of
     /// the voxel at index [z,y,x] will be at (x,y,z).
@@ -608,6 +633,24 @@ public:
     static TriangleMesh CreateIsosurfaces(
             const core::Tensor &volume,
             const std::vector<double> contour_values = {0.0},
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a solid TriangleMesh representing the surface of an
+    /// OrientedBoundingEllipsoid.
+    /// \param ellipsoid The oriented bounding ellipsoid.
+    /// \param scale Scale factor applied to each semi-axis radius before
+    /// constructing the mesh. Default is (1, 1, 1).
+    /// \param resolution Resolution of the generated ellipsoid surface mesh.
+    /// \param float_dtype The data type for vertex attributes.
+    /// \param int_dtype The data type for triangle indices.
+    /// \param device The device for the returned mesh.
+    static TriangleMesh CreateFromOrientedBoundingEllipsoid(
+            const OrientedBoundingEllipsoid &ellipsoid,
+            const core::Tensor &scale = core::Tensor::Ones(
+                    {3}, core::Float64, core::Device("CPU:0")),
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
 public:
@@ -833,6 +876,10 @@ public:
     /// Create an oriented bounding box from vertex attribute "positions".
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
+    /// Create an oriented bounding ellipsoid from vertex attribute "positions".
+    OrientedBoundingEllipsoid GetOrientedBoundingEllipsoid(
+            bool robust = false) const;
+
     /// Fill holes by triangulating boundary edges.
     ///
     /// This function always uses the CPU device.
@@ -959,8 +1006,9 @@ public:
     /// Sweeps the triangle mesh along a direction vector.
     /// \param vector The direction vector.
     /// \param scale Scalar factor which essentially scales the direction
-    /// vector. \param capping If true adds caps to the mesh. \return A triangle
-    /// mesh with the result of the sweep operation.
+    /// vector.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
     TriangleMesh ExtrudeLinear(const core::Tensor &vector,
                                double scale = 1.0,
                                bool capping = true) const;
@@ -984,14 +1032,44 @@ public:
     /// the mesh or has a negative value, it is ignored.
     /// \param indices An integer list of indices. Duplicates are
     /// allowed, but ignored. Signed and unsigned integral types are allowed.
+    /// \param copy_attributes Indicates if vertex attributes (other than
+    /// positions) and triangle attributes (other than indices) should be copied
+    /// to the returned mesh.
     /// \return A new mesh with the selected vertices and faces built
     /// from the selected vertices. If the original mesh is empty, return
     /// an empty mesh.
-    TriangleMesh SelectByIndex(const core::Tensor &indices) const;
+    TriangleMesh SelectByIndex(const core::Tensor &indices,
+                               bool copy_attributes = true) const;
 
     /// Removes unreferenced vertices from the mesh.
     /// \return The reference to itself.
     TriangleMesh RemoveUnreferencedVertices();
+
+    /// Create an albedo for the triangle mesh using calibrated images. The
+    /// triangle mesh must have texture coordinates ("texture_uvs" triangle
+    /// attribute). This works by back projecting the images onto the texture
+    /// surface. Overlapping images are blended together in the resulting
+    /// albedo. For best results, use images captured with exposure and white
+    /// balance lock to reduce the chance of seams in the output texture.
+    ///
+    /// This function is only supported on the CPU device.
+    ///
+    /// \param images vector of images.
+    /// \param intrinsic_matrices vector of {3,3} intrinsic matrices describing
+    /// the pinhole camera.
+    /// \param extrinsic_matrices vector of {4,4} extrinsic matrices describing
+    /// the position and orientation of the camera.
+    /// \param tex_size Output albedo texture size. This is a square image, so
+    /// only one side is needed.
+    /// \param update_material Whether to update the material of the triangle
+    /// mesh, possibly overwriting an existing albedo texture.
+    /// \return Image with albedo texture
+    Image ProjectImagesToAlbedo(
+            const std::vector<Image> &images,
+            const std::vector<core::Tensor> &intrinsic_matrices,
+            const std::vector<core::Tensor> &extrinsic_matrices,
+            int tex_size = 1024,
+            bool update_material = true);
 
     /// Removes all non-manifold edges, by successively deleting triangles
     /// with the smallest surface area adjacent to the
@@ -1006,6 +1084,126 @@ public:
     /// \return 2d integer tensor with shape {n,2} encoding ordered edges.
     /// If mesh is empty or has no triangles, returns an empty tensor.
     core::Tensor GetNonManifoldEdges(bool allow_boundary_edges = true) const;
+
+    /// Sample points uniformly from the triangle mesh surface and return as a
+    /// PointCloud. Normals and colors are interpolated from the triangle mesh.
+    /// If texture_uvs and albedo are present, these are used to estimate the
+    /// sampled point color, otherwise vertex colors are used, if present.
+    /// During sampling, triangle areas are computed and saved in the "areas"
+    /// attribute.
+    /// \param number_of_points The number of points to sample.
+    /// \param use_triangle_normal If true, use the triangle normal as the
+    /// normal of the sampled point. Otherwise, interpolate the vertex normals.
+    PointCloud SamplePointsUniformly(size_t number_of_points,
+                                     bool use_triangle_normal = false);
+
+    /// Compute various metrics between two triangle meshes. This uses ray
+    /// casting for distance computations between a sampled point cloud and a
+    /// triangle mesh. Currently, Chamfer distance, Hausdorff distance  and
+    /// F-Score <a
+    /// href="../tutorial/reference.html#Knapitsch2017">[[Knapitsch2017]]</a>
+    /// are supported. The Chamfer distance is the sum of the mean distance to
+    /// the nearest neighbor from the sampled surface points of the first mesh
+    /// to the second mesh and vice versa. The F-Score at a fixed threshold
+    /// radius is the harmonic mean of the Precision and Recall. Recall is the
+    /// percentage of surface points from the first mesh that have the second
+    /// mesh within the threshold radius, while Precision is the percentage of
+    /// sampled points from the second mesh that have the first mesh surface
+    /// within the threshold radius.
+
+    /// \f{eqnarray*}{
+    ///   \text{Chamfer Distance: } d_{CD}(X,Y) &=& \frac{1}{|X|}\sum_{i \in X}
+    ///   || x_i - n(x_i, Y) || + \frac{1}{|Y|}\sum_{i \in Y} || y_i - n(y_i, X)
+    ///   || \\{}
+    ///   \text{Hausdorff distance: } d_H(X,Y) &=& \max \left\{ \max_{i \in X}
+    ///   || x_i - n(x_i, Y) ||, \max_{i \in Y} || y_i - n(y_i, X) || \right\}
+    ///   \\{}
+    ///   \text{Precision: } P(X,Y|d) &=& \frac{100}{|X|} \sum_{i \in X} || x_i
+    ///   - n(x_i, Y) || < d \\{}
+    ///   \text{Recall: } R(X,Y|d) &=& \frac{100}{|Y|} \sum_{i \in Y} || y_i -
+    ///  n(y_i, X) || < d \\{}
+    ///   \text{F-Score: } F(X,Y|d) &=& \frac{2 P(X,Y|d) R(X,Y|d)}{P(X,Y|d) +
+    ///  R(X,Y|d)}
+    /// \f}
+
+    /// As a side effect, the triangle areas are saved in the "areas" attribute.
+    /// \param mesh2 Other point cloud to compare with.
+    /// \param metrics List of Metric s to compute. Multiple metrics can be
+    /// computed at once for efficiency.
+    /// \param params MetricParameters struct holds parameters required by
+    /// different metrics.
+    /// \returns Tensor containing the requested metrics.
+    core::Tensor ComputeMetrics(
+            const TriangleMesh &mesh2,
+            std::vector<Metric> metrics = {Metric::ChamferDistance},
+            MetricParameters params = MetricParameters()) const;
+
+    /// \brief Computes an ambient occlusion texture for the mesh.
+    ///
+    /// This method generates an ambient occlusion map by casting rays from the
+    /// surface of the mesh and measuring occlusion. The mesh must have texture
+    /// coordinates ("texture_uvs" triangle attribute). The resulting texture is
+    /// a single-channel grayscale image with values in [0, 255], where 0 is
+    /// fully occluded and 255 is fully exposed.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param tex_width The width and height of the output texture in pixels
+    /// (square).
+    /// \param n_rays The number of rays to cast per texel for occlusion
+    /// estimation.
+    /// \param max_hit_distance The maximum distance for ray intersection. The
+    /// default is INFINITY, i.e. very far occlusions also count.
+    /// \param update_material If true, updates the mesh material with the
+    /// computed ambient occlusion texture.
+    /// \return The computed ambient occlusion texture as an Image (single
+    /// channel, UInt8).
+    Image ComputeAmbientOcclusion(int tex_width = 256,
+                                  int n_rays = 32,
+                                  float max_hit_distance = INFINITY,
+                                  bool update_material = true);
+
+    /// Computes tangent space for the triangle mesh with MikkTSpace.  The mesh
+    /// must have vertex positions, vertex normals, and texture UVs (triangle
+    /// attribute 'texture_uvs'). The computed tangents will be added as vertex
+    /// attributes 'tangents' with shape {N, 4}, where the 4th element is the
+    /// sign.  Bitangents are normally computed as needed with the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
+    /// This function works on the CPU and will transfer data to the CPU if
+    /// necessary.
+    /// \param bake If true, the tangents and normals will also be
+    /// baked to textures (unnormalized, interpolated) and saved to the
+    /// material.
+    /// \param tex_width Baked texture size. Default 512.
+    void ComputeTangentSpace(bool bake = true, int tex_width = 512);
+
+    /// \brief Converts a normal map between world and tangent space.
+    ///
+    /// The conversion is performed for each pixel of the map. The mesh must
+    /// have vertex normals (shape {N, 3}), tangents with sign (shape {N, 4})
+    /// and texture UVs.  The tangent space attributes can be computed with
+    /// `ComputeTangentSpace()`. Bitangents are normally computed as needed with
+    /// the formula:
+    /// \verbatim
+    /// vB = sign * cross(vN, vT);
+    /// \endverbatim
+    ///
+    /// \param normal_map The normal map to convert.  When converting to tangent
+    /// space, this is the world-space normal map.  When converting to world
+    /// space, this is the tangent-space normal map.  It is expected to have 3
+    /// channels with Float32 or Float64 data type, with values in range [-1,
+    /// 1], or UInt8 data type in the range [0, 255].
+    /// \param to_tangent_space If true, converts from world to tangent space.
+    /// If false, converts from tangent to world space.
+    /// \param update_material If true and we are converting to tangent space,
+    /// the mesh material will be updated to contain the new normal map.
+    /// \return The converted normal map as an Image. This will have 3 channels,
+    /// UInt8 data type, with values in range [0, 255].
+    Image TransformNormalMap(const Image &normal_map,
+                             bool to_tangent_space = true,
+                             bool update_material = false);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

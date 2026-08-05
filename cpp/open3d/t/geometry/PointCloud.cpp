@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,6 +14,7 @@
 #include <libqhullcpp/QhullVertexSet.h>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <limits>
 #include <string>
@@ -34,6 +35,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -44,19 +46,200 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-PointCloud::PointCloud(const core::Device &device)
+namespace {
+
+// ---------------------------------------------------------------------------
+// Ivanic–Ruedenberg real-SH rotation helpers.
+// Ivanic and K. Ruedenberg, "Rotation Matrices for Real Spherical Harmonics.
+// Direct Determination by Recursion", J. Phys. Chem., vol. 100, no. 15, pp.
+// 6342-6347, 1996. http://pubs.acs.org/doi/pdf/10.1021/jp953350u
+// Corrections (1998): http://pubs.acs.org/doi/pdf/10.1021/jp9833350
+// Conventions: No Condon-Shortley phase, same as GraphDECO 3DGS.
+//
+// BuildIrR1   : degree-1 IR matrix — maps (y,z,x) SH ordering to the
+//               shader's EvaluateShDegree1 convention (m=-1→y, m=0→z, m=+1→x).
+// BuildIrRl   : degree l≥2 matrix via u,v,w recursion (Ivanic 1996 eq.).
+// RotateGSSplat: updates rot + f_rest for a GS PointCloud after Rotate().
+// ---------------------------------------------------------------------------
+
+Eigen::Matrix3f BuildIrR1(const Eigen::Matrix3f& R) {
+    // SH degree-1 basis index → Cartesian axis: {y=1, z=2, x=0}
+    constexpr int idx[3] = {1, 2, 0};
+    Eigen::Matrix3f R1;
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j) R1(i, j) = R(idx[i], idx[j]);
+    return R1;
+}
+
+Eigen::MatrixXf BuildIrRl(int l,
+                          const Eigen::Matrix3f& R1,
+                          const Eigen::MatrixXf& Rp) {
+    // Rp: IR matrix for degree l-1 (shape (2(l-1)+1) × (2(l-1)+1)).
+    // Ivanic–Ruedenberg (1996) + 1998 erratum.
+    // P(i, a, b) accesses Rp with row index a ∈ [-(l-1), l-1].
+    auto P = [&](int i, int a, int b) -> float {
+        // g(m, n) indexes Rp with offset so m ∈ [-(l-1), l-1] maps to [0, 2l-2]
+        auto g = [&](int m, int n) -> float {
+            return Rp(m + l - 1, n + l - 1);
+        };
+        if (b == l)
+            return R1(i + 1, 2) * g(a, l - 1) - R1(i + 1, 0) * g(a, -(l - 1));
+        if (b == -l)
+            return R1(i + 1, 2) * g(a, -(l - 1)) + R1(i + 1, 0) * g(a, l - 1);
+        return R1(i + 1, 1) * g(a, b);
+    };
+
+    int s = 2 * l + 1;
+    Eigen::MatrixXf Rl = Eigen::MatrixXf::Zero(s, s);
+    for (int m = -l; m <= l; ++m) {
+        for (int n = -l; n <= l; ++n) {
+            float d = (m == 0) ? 1.f : 0.f;
+            float denom = std::abs(n) < l ? float(l * l - n * n)
+                                          : float(l * (2 * l - 1));
+            float am = std::abs(float(m));
+
+            // u weight (zero when |m| == l, so P(0, m, n) is never
+            // out-of-bounds).
+            float u = std::sqrt(float(l * l - m * m) / denom);
+
+            // v weight — incorporates sqrt(1+delta_{m,1}) / sqrt(2) factors.
+            float v = 0.5f *
+                      std::sqrt((1.f + d) * (l + am - 1.f) * (l + am) / denom) *
+                      (1.f - 2.f * d);
+
+            // w weight (zero when m == 0).
+            float w = am > 0.f ? -0.5f * std::sqrt((l - am - 1.f) * (l - am) /
+                                                   denom)
+                               : 0.f;
+
+            float res = 0.f;
+
+            // U term: row index = m (safe because u == 0 when |m| == l).
+            if (u != 0.f) res += u * P(0, m, n);
+
+            // V term (Table 2 of Ivanic & Ruedenberg 1998 erratum).
+            if (v != 0.f) {
+                if (m == 0) {
+                    res += v * (P(1, 1, n) + P(-1, -1, n));
+                } else if (m > 0) {
+                    float dv = (m == 1) ? 1.f : 0.f;
+                    res += v * (P(1, m - 1, n) * std::sqrt(1.f + dv) -
+                                P(-1, -m + 1, n) * (1.f - dv));
+                } else {
+                    // m < 0
+                    float dv = (m == -1) ? 1.f : 0.f;
+                    res += v * (P(1, m + 1, n) * (1.f - dv) +
+                                P(-1, -m - 1, n) * std::sqrt(1.f + dv));
+                }
+            }
+
+            // W term: uses shifted row indices (w == 0 when m == 0).
+            if (w != 0.f) {
+                if (m > 0) {
+                    res += w * (P(1, m + 1, n) + P(-1, -m - 1, n));
+                } else {
+                    // m < 0 (m == 0 excluded by w == 0)
+                    res += w * (P(1, m - 1, n) - P(-1, -m + 1, n));
+                }
+            }
+
+            Rl(m + l, n + l) = res;
+        }
+    }
+    return Rl;
+}
+
+// Update rot and f_rest in-place after Rotate(R, center).
+// Proper rotation is assumed (same policy as RotateNormalsKernel).
+// rot: CPU Eigen loop. f_rest: IR matrices computed on CPU, Matmul on device.
+void RotateGSSplat(const core::Tensor& R_tensor, PointCloud& pcd) {
+    auto device = pcd.GetDevice();
+    int64_t N = pcd.GetPointPositions().GetLength();
+
+    // Read R into Eigen (float32, row-major).
+    auto R_f32 = R_tensor.To(core::Device("CPU:0"), core::Float32).Contiguous();
+    const float* rp = R_f32.GetDataPtr<float>();
+    Eigen::Matrix3f R;
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j) R(i, j) = rp[i * 3 + j];
+
+    // --- Quaternion rotation (CPU only) ---
+    // q_new = Quaternion(R) * q_old per splat; improper R gives undefined
+    // results (same policy as normals not being renormalised for non-orthogonal
+    // R).
+    auto rot_attr = pcd.GetPointAttr("rot").To(core::Device("CPU:0"));
+    Eigen::Quaternionf qR(R);
+    float* rptr = rot_attr.GetDataPtr<float>();
+    for (int64_t n = 0; n < N; ++n) {
+        Eigen::Quaternionf q(rptr[n * 4 + 0], rptr[n * 4 + 1], rptr[n * 4 + 2],
+                             rptr[n * 4 + 3]);
+        Eigen::Quaternionf qn = qR * q;
+        rptr[n * 4 + 0] = qn.w();
+        rptr[n * 4 + 1] = qn.x();
+        rptr[n * 4 + 2] = qn.y();
+        rptr[n * 4 + 3] = qn.z();
+    }
+    if (!pcd.GetDevice().IsCPU()) {
+        pcd.SetPointAttr("rot", rot_attr.To(device));
+    }
+
+    // --- SH rotation (all devices via Tensor Matmul) ---
+    // f_dc (degree-0) is invariant; f_rest holds degrees 1 … sh_degree.
+    int sh_degree = pcd.GaussianSplatGetSHOrder();
+    if (sh_degree == 0) return;
+
+    auto& f_rest_attr = pcd.GetPointAttr("f_rest");
+    int64_t Nc = f_rest_attr.GetShape(1);  // (sh_degree+1)² − 1
+
+    // Build block-diagonal rotation matrix R_full (Nc×Nc) on CPU, then
+    // transpose it — we need R_full^T for the right-multiply: f @ R_full^T.
+    Eigen::MatrixXf R_full_T = Eigen::MatrixXf::Zero(Nc, Nc);
+    Eigen::Matrix3f R1 = BuildIrR1(R);
+    Eigen::MatrixXf Rp = R1;
+    int offset = 0;
+    for (int l = 1; l <= sh_degree; ++l) {
+        int sl = 2 * l + 1;
+        Eigen::MatrixXf Rl =
+                (l == 1) ? Eigen::MatrixXf(R1) : BuildIrRl(l, R1, Rp);
+        R_full_T.block(offset, offset, sl, sl) = Rl.transpose();
+        Rp = Rl;
+        offset += sl;
+    }
+
+    // Pack into a float32 Tensor and move to device.
+    std::vector<float> rft_data(Nc * Nc);
+    for (int r = 0; r < Nc; ++r)
+        for (int c = 0; c < Nc; ++c) rft_data[r * Nc + c] = R_full_T(r, c);
+    core::Tensor Rft(rft_data, {Nc, Nc}, core::Float32, core::Device("CPU:0"));
+    Rft = Rft.To(device, core::Float32);
+
+    // f_rest {N, Nc, 3} → permute {N, 3, Nc} → reshape {N*3, Nc}
+    //   @ Rft {Nc, Nc}  → {N*3, Nc} → reshape {N, 3, Nc} → permute {N, Nc, 3}
+    auto f_2d = f_rest_attr.To(core::Float32)
+                        .Permute({0, 2, 1})
+                        .Contiguous()
+                        .Reshape({N * 3, Nc});
+    f_rest_attr = f_2d.Matmul(Rft)
+                          .Reshape({N, 3, Nc})
+                          .Permute({0, 2, 1})
+                          .Contiguous();
+}
+
+}  // namespace
+
+PointCloud::PointCloud(const core::Device& device)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       device_(device),
       point_attr_(TensorMap("positions")) {}
 
-PointCloud::PointCloud(const core::Tensor &points)
+PointCloud::PointCloud(const core::Tensor& points)
     : PointCloud(points.GetDevice()) {
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     SetPointPositions(points);
 }
 
-PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
-                               &map_keys_to_tensors)
+PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>&
+                               map_keys_to_tensors)
     : Geometry(Geometry::GeometryType::PointCloud, 3),
       point_attr_(TensorMap("positions")) {
     if (map_keys_to_tensors.count("positions") == 0) {
@@ -64,7 +247,7 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
     }
     device_ = map_keys_to_tensors.at("positions").GetDevice();
     core::AssertTensorShape(map_keys_to_tensors.at("positions"),
-                            {utility::nullopt, 3});
+                            {std::nullopt, 3});
     point_attr_ = TensorMap("positions", map_keys_to_tensors.begin(),
                             map_keys_to_tensors.end());
 }
@@ -84,7 +267,7 @@ std::string PointCloud::ToString() const {
     if ((point_attr_.size() - point_attr_.count(point_attr_.GetPrimaryKey())) ==
         0)
         return str + " None.";
-    for (const auto &keyval : point_attr_) {
+    for (const auto& keyval : point_attr_) {
         if (keyval.first != "positions") {
             str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
@@ -107,12 +290,12 @@ core::Tensor PointCloud::GetCenter() const {
     return GetPointPositions().Mean({0});
 }
 
-PointCloud PointCloud::To(const core::Device &device, bool copy) const {
+PointCloud PointCloud::To(const core::Device& device, bool copy) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
     PointCloud pcd(device);
-    for (auto &kv : point_attr_) {
+    for (auto& kv : point_attr_) {
         pcd.SetPointAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return pcd;
@@ -120,12 +303,12 @@ PointCloud PointCloud::To(const core::Device &device, bool copy) const {
 
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
-PointCloud PointCloud::Append(const PointCloud &other) const {
+PointCloud PointCloud::Append(const PointCloud& other) const {
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPointPositions().GetLength();
 
-    for (auto &kv : point_attr_) {
+    for (auto& kv : point_attr_) {
         if (other.HasPointAttr(kv.first)) {
             auto other_attr = other.GetPointAttr(kv.first);
             core::AssertTensorDtype(other_attr, kv.second.GetDtype());
@@ -166,7 +349,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
     return pcd;
 }
 
-PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
+PointCloud& PointCloud::Transform(const core::Tensor& transformation) {
     core::AssertTensorShape(transformation, {4, 4});
 
     kernel::transform::TransformPoints(transformation, GetPointPositions());
@@ -174,10 +357,20 @@ PointCloud &PointCloud::Transform(const core::Tensor &transformation) {
         kernel::transform::TransformNormals(transformation, GetPointNormals());
     }
 
+    // The linear part of a general 4×4 may be non-orthogonal, so covariance
+    // (rot, scale) and SH (f_rest) cannot be updated generically.
+    // Compose Rotate() + Scale() + Translate() instead for GS clouds.
+    if (IsGaussianSplat()) {
+        utility::LogWarning(
+                "PointCloud::Transform() does not update Gaussian splat "
+                "attributes (rot, scale, f_rest). Use Rotate(), Scale(), and "
+                "Translate() instead.");
+    }
+
     return *this;
 }
 
-PointCloud &PointCloud::Translate(const core::Tensor &translation,
+PointCloud& PointCloud::Translate(const core::Tensor& translation,
                                   bool relative) {
     core::AssertTensorShape(translation, {3});
 
@@ -191,30 +384,55 @@ PointCloud &PointCloud::Translate(const core::Tensor &translation,
     return *this;
 }
 
-PointCloud &PointCloud::Scale(double scale, const core::Tensor &center) {
+PointCloud& PointCloud::Scale(double scale, const core::Tensor& center) {
     core::AssertTensorShape(center, {3});
 
     const core::Tensor center_d =
             center.To(GetDevice(), GetPointPositions().GetDtype());
-
     GetPointPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
+
+    // For GS splats, negative uniform scale means point inversion plus
+    // positive scaling: positions are mirrored (above), axis lengths scale by
+    // |scale|, and odd-degree SH bands flip sign because Y_lm(-d) = (-1)^l
+    // Y_lm(d).
+    if (IsGaussianSplat()) {
+        GetPointAttr("scale").Mul_(std::abs(scale));
+        if (scale < 0.0) {
+            int sh_degree = GaussianSplatGetSHOrder();
+            for (int l = 1; l <= sh_degree; l += 2) {
+                const int offset = l * l - 1;
+                const int size_l = 2 * l + 1;
+                GetPointAttr("f_rest")
+                        .Slice(1, offset, offset + size_l)
+                        .Mul_(-1.0);
+            }
+        }
+    }
+
     return *this;
 }
 
-PointCloud &PointCloud::Rotate(const core::Tensor &R,
-                               const core::Tensor &center) {
+PointCloud& PointCloud::Rotate(const core::Tensor& R,
+                               const core::Tensor& center) {
     core::AssertTensorShape(R, {3, 3});
     core::AssertTensorShape(center, {3});
 
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
-
     if (HasPointNormals()) {
         kernel::transform::RotateNormals(R, GetPointNormals());
     }
+
+    // For GS splats: rotate quaternions (CPU) and SH coefficients (all
+    // devices). Proper rotation is assumed, consistent with RotateNormalsKernel
+    // which applies R directly without orthogonality checks.
+    if (IsGaussianSplat()) {
+        RotateGSSplat(R, *this);
+    }
+
     return *this;
 }
 
-PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
+PointCloud PointCloud::SelectByMask(const core::Tensor& boolean_mask,
                                     bool invert /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
     core::AssertTensorDtype(boolean_mask, core::Dtype::Bool);
@@ -229,7 +447,7 @@ PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
     }
 
     PointCloud pcd(GetDevice());
-    for (auto &kv : GetPointAttr()) {
+    for (auto& kv : GetPointAttr()) {
         if (HasPointAttr(kv.first)) {
             pcd.SetPointAttr(kv.first, kv.second.IndexGet({indices_local}));
         }
@@ -241,7 +459,7 @@ PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
 }
 
 PointCloud PointCloud::SelectByIndex(
-        const core::Tensor &indices,
+        const core::Tensor& indices,
         bool invert /* = false */,
         bool remove_duplicates /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
@@ -252,7 +470,7 @@ PointCloud PointCloud::SelectByIndex(
 
     if (!remove_duplicates && !invert) {
         core::TensorKey key = core::TensorKey::IndexTensor(indices);
-        for (auto &kv : GetPointAttr()) {
+        for (auto& kv : GetPointAttr()) {
             if (HasPointAttr(kv.first)) {
                 pcd.SetPointAttr(kv.first, kv.second.GetItem(key));
             }
@@ -276,7 +494,7 @@ PointCloud PointCloud::SelectByIndex(
 }
 
 PointCloud PointCloud::VoxelDownSample(double voxel_size,
-                                       const std::string &reduction) const {
+                                       const std::string& reduction) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
@@ -291,20 +509,28 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     // Map discrete voxels to indices.
     core::HashSet voxeli_hashset(voxeli.GetLength(), core::Int64, {3}, device_);
 
-    // Index map: (0, original_points) -> (0, unique_points).
-    core::Tensor index_map_point2voxel, masks;
-    voxeli_hashset.Insert(voxeli, index_map_point2voxel, masks);
-
-    // Insert and find are two different passes.
-    // In the insertion pass, -1/false is returned for already existing
-    // downsampled corresponding points.
-    // In the find pass, actual indices are returned corresponding downsampled
-    // points.
-    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
-    index_map_point2voxel = index_map_point2voxel.To(core::Int64);
+    // Insertion pass: masks==true marks the first occurrence (one per unique
+    // voxel); the returned buf_indices are gather indices into the hash buffer.
+    core::Tensor insert_buf_indices, insert_masks;
+    voxeli_hashset.Insert(voxeli, insert_buf_indices, insert_masks);
 
     int64_t num_points = voxeli.GetLength();
     int64_t num_voxels = voxeli_hashset.Size();
+
+    // buf_indices are not guaranteed dense on SYCL; relabel to [0, num_voxels).
+    core::Tensor remap = core::Tensor::Zeros({voxeli_hashset.GetCapacity()},
+                                             core::Int64, device_);
+    core::Tensor unique_slots =
+            insert_buf_indices.IndexGet({insert_masks}).To(core::Int64);
+    remap.IndexSet({unique_slots},
+                   core::Tensor::Arange(int64_t(0), num_voxels, int64_t(1),
+                                        core::Int64, device_));
+
+    // Find pass: per-point gather index of its voxel slot, then relabel dense.
+    core::Tensor index_map_point2voxel, masks;
+    voxeli_hashset.Find(voxeli, index_map_point2voxel, masks);
+    index_map_point2voxel =
+            remap.IndexGet({index_map_point2voxel.To(core::Int64)});
 
     // Count the number of points in each voxel.
     auto voxel_num_points =
@@ -315,7 +541,7 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
 
     // Create a new point cloud.
     PointCloud pcd_down(device_);
-    for (auto &kv : point_attr_) {
+    for (auto& kv : point_attr_) {
         auto point_attr = kv.second;
 
         std::string attr_string = kv.first;
@@ -349,7 +575,7 @@ PointCloud PointCloud::UniformDownSample(size_t every_k_points) const {
     const int64_t length = GetPointPositions().GetLength();
 
     PointCloud pcd_down(GetDevice());
-    for (auto &kv : GetPointAttr()) {
+    for (auto& kv : GetPointAttr()) {
         pcd_down.SetPointAttr(
                 kv.first,
                 kv.second.Slice(0, 0, length, (int64_t)every_k_points));
@@ -383,12 +609,42 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
-PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
-    // We want the sampled points has the attributes of the original point
-    // cloud, so full copy is needed.
-    const open3d::geometry::PointCloud lpcd = ToLegacy();
-    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
-                      GetPointPositions().GetDtype(), GetDevice());
+PointCloud PointCloud::FarthestPointDownSample(const size_t num_samples,
+                                               const size_t start_index) const {
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    const int64_t num_points = GetPointPositions().GetLength();
+    if (num_samples == 0) {
+        return PointCloud(GetDevice());
+    } else if (num_samples == size_t(num_points)) {
+        return Clone();
+    } else if (num_samples > size_t(num_points)) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, num_points);
+    } else if (start_index >= size_t(num_points)) {
+        utility::LogError("Illegal start index: {}, must <= point size: {}",
+                          start_index, num_points);
+    }
+    core::Tensor selection_mask =
+            core::Tensor::Zeros({num_points}, core::Bool, GetDevice());
+    core::Tensor smallest_distances = core::Tensor::Full(
+            {num_points}, std::numeric_limits<double>::infinity(), dtype,
+            GetDevice());
+
+    int64_t farthest_index = static_cast<int64_t>(start_index);
+
+    for (size_t i = 0; i < num_samples; i++) {
+        selection_mask[farthest_index] = true;
+        core::Tensor selected = GetPointPositions()[farthest_index];
+
+        core::Tensor diff = GetPointPositions() - selected;
+        core::Tensor distances_to_selected = (diff * diff).Sum({1});
+        smallest_distances = open3d::core::Minimum(distances_to_selected,
+                                                   smallest_distances);
+
+        farthest_index = smallest_distances.ArgMax({0}).Item<int64_t>();
+    }
+    return SelectByMask(selection_mask);
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
@@ -503,7 +759,7 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
     return std::make_tuple(SelectByMask(masks), masks);
 }
 
-PointCloud &PointCloud::NormalizeNormals() {
+PointCloud& PointCloud::NormalizeNormals() {
     if (!HasPointNormals()) {
         utility::LogWarning("PointCloud has no normals.");
         return *this;
@@ -511,11 +767,17 @@ PointCloud &PointCloud::NormalizeNormals() {
         SetPointNormals(GetPointNormals().Contiguous());
     }
 
-    core::Tensor &normals = GetPointNormals();
+    core::Tensor& normals = GetPointNormals();
     if (IsCPU()) {
         kernel::pointcloud::NormalizeNormalsCPU(normals);
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::NormalizeNormalsSYCL(normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -523,7 +785,7 @@ PointCloud &PointCloud::NormalizeNormals() {
     return *this;
 }
 
-PointCloud &PointCloud::PaintUniformColor(const core::Tensor &color) {
+PointCloud& PointCloud::PaintUniformColor(const core::Tensor& color) {
     core::AssertTensorShape(color, {3});
     core::Tensor clipped_color = color.To(GetDevice());
     if (color.GetDtype() == core::Float32 ||
@@ -577,6 +839,13 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
                   normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::ComputeBoundaryPointsSYCL(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -585,8 +854,8 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
 }
 
 void PointCloud::EstimateNormals(
-        const utility::optional<int> max_knn /* = 30*/,
-        const utility::optional<double> radius /*= utility::nullopt*/) {
+        const std::optional<int> max_knn /* = 30*/,
+        const std::optional<double> radius /*= std::nullopt*/) {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
 
@@ -624,6 +893,16 @@ void PointCloud::EstimateNormals(
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingHybridSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value(),
+                    max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -638,6 +917,15 @@ void PointCloud::EstimateNormals(
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingKNNSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -653,6 +941,15 @@ void PointCloud::EstimateNormals(
                               EstimateCovariancesUsingRadiusSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -669,6 +966,14 @@ void PointCloud::EstimateNormals(
         CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
                   this->GetPointAttr("covariances"), this->GetPointNormals(),
                   has_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::EstimateNormalsFromCovariancesSYCL(
+                this->GetPointAttr("covariances"), this->GetPointNormals(),
+                has_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -679,7 +984,7 @@ void PointCloud::EstimateNormals(
 }
 
 void PointCloud::OrientNormalsToAlignWithDirection(
-        const core::Tensor &orientation_reference) {
+        const core::Tensor& orientation_reference) {
     core::AssertTensorDevice(orientation_reference, GetDevice());
     core::AssertTensorShape(orientation_reference, {3});
 
@@ -693,20 +998,27 @@ void PointCloud::OrientNormalsToAlignWithDirection(
     core::Tensor reference =
             orientation_reference.To(GetPointPositions().GetDtype());
 
-    core::Tensor &normals = GetPointNormals();
+    core::Tensor& normals = GetPointNormals();
     if (IsCPU()) {
         kernel::pointcloud::OrientNormalsToAlignWithDirectionCPU(normals,
                                                                  reference);
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::OrientNormalsToAlignWithDirectionCUDA,
                   normals, reference);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::OrientNormalsToAlignWithDirectionSYCL(normals,
+                                                                  reference);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
 }
 
 void PointCloud::OrientNormalsTowardsCameraLocation(
-        const core::Tensor &camera_location) {
+        const core::Tensor& camera_location) {
     core::AssertTensorDevice(camera_location, GetDevice());
     core::AssertTensorShape(camera_location, {3});
 
@@ -719,13 +1031,20 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
 
     core::Tensor reference = camera_location.To(GetPointPositions().GetDtype());
 
-    core::Tensor &normals = GetPointNormals();
+    core::Tensor& normals = GetPointNormals();
     if (IsCPU()) {
         kernel::pointcloud::OrientNormalsTowardsCameraLocationCPU(
                 GetPointPositions().Contiguous(), normals, reference);
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::OrientNormalsTowardsCameraLocationCUDA,
                   GetPointPositions().Contiguous(), normals, reference);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::OrientNormalsTowardsCameraLocationSYCL(
+                GetPointPositions().Contiguous(), normals, reference);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -745,9 +1064,147 @@ void PointCloud::OrientNormalsConsistentTangentPlane(
             lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));
 }
 
+namespace {
+void AssertSmoothingInput(const PointCloud& pointcloud) {
+    core::AssertTensorDtypes(pointcloud.GetPointPositions(),
+                             {core::Float32, core::Float64});
+}
+}  // namespace
+
+PointCloud PointCloud::SmoothMLS(double radius, int max_nn) const {
+    AssertSmoothingInput(*this);
+    PointCloud result = Clone();
+    const bool has_normals = HasPointNormals();
+    if (has_normals) {
+        result.SetPointNormals(GetPointNormals().Contiguous());
+    }
+    core::Tensor empty_normals;
+    core::Tensor& normals =
+            has_normals ? result.GetPointNormals() : empty_normals;
+    if (IsCPU()) {
+        kernel::pointcloud::SmoothMLSCPU(GetPointPositions().Contiguous(),
+                                         result.GetPointPositions(), normals,
+                                         has_normals, radius, max_nn);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::SmoothMLSCUDA,
+                  GetPointPositions().Contiguous(), result.GetPointPositions(),
+                  normals, has_normals, radius, max_nn);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::SmoothMLSSYCL(GetPointPositions().Contiguous(),
+                                          result.GetPointPositions(), normals,
+                                          has_normals, radius, max_nn);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+    return result;
+}
+
+PointCloud PointCloud::SmoothLaplacian(size_t iterations,
+                                       double lambda,
+                                       int max_nn,
+                                       bool use_fixed_neighborhoods) const {
+    AssertSmoothingInput(*this);
+    PointCloud result = Clone();
+    if (IsCPU()) {
+        kernel::pointcloud::SmoothLaplacianCPU(
+                GetPointPositions().Contiguous(), result.GetPointPositions(),
+                iterations, lambda, max_nn, use_fixed_neighborhoods);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::SmoothLaplacianCUDA,
+                  GetPointPositions().Contiguous(), result.GetPointPositions(),
+                  iterations, lambda, max_nn, use_fixed_neighborhoods);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::SmoothLaplacianSYCL(
+                GetPointPositions().Contiguous(), result.GetPointPositions(),
+                iterations, lambda, max_nn, use_fixed_neighborhoods);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+    return result;
+}
+
+PointCloud PointCloud::SmoothTaubin(size_t iterations,
+                                    double lambda,
+                                    double mu,
+                                    int max_nn,
+                                    bool use_fixed_neighborhoods) const {
+    AssertSmoothingInput(*this);
+    PointCloud result = Clone();
+    if (IsCPU()) {
+        kernel::pointcloud::SmoothTaubinCPU(
+                GetPointPositions().Contiguous(), result.GetPointPositions(),
+                iterations, lambda, mu, max_nn, use_fixed_neighborhoods);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::SmoothTaubinCUDA,
+                  GetPointPositions().Contiguous(), result.GetPointPositions(),
+                  iterations, lambda, mu, max_nn, use_fixed_neighborhoods);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::SmoothTaubinSYCL(
+                GetPointPositions().Contiguous(), result.GetPointPositions(),
+                iterations, lambda, mu, max_nn, use_fixed_neighborhoods);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+    return result;
+}
+
+PointCloud PointCloud::SmoothBilateral(double radius,
+                                       int max_nn,
+                                       double sigma_s,
+                                       double sigma_r) const {
+    AssertSmoothingInput(*this);
+    if (GetPointPositions().GetLength() == 0) {
+        return Clone();
+    }
+    if (sigma_s <= 0 || sigma_r <= 0) {
+        utility::LogError("Sigma values must be positive.");
+    }
+    PointCloud result = Clone();
+    if (!result.HasPointNormals()) {
+        utility::LogWarning(
+                "PointCloud has no normals. Estimating normals with default "
+                "parameters.");
+        result.EstimateNormals();
+    } else {
+        result.SetPointNormals(GetPointNormals().Contiguous());
+    }
+    if (IsCPU()) {
+        kernel::pointcloud::SmoothBilateralCPU(
+                GetPointPositions().Contiguous(), result.GetPointNormals(),
+                result.GetPointPositions(), radius, max_nn, sigma_s, sigma_r);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::SmoothBilateralCUDA,
+                  GetPointPositions().Contiguous(), result.GetPointNormals(),
+                  result.GetPointPositions(), radius, max_nn, sigma_s, sigma_r);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::pointcloud::SmoothBilateralSYCL(
+                GetPointPositions().Contiguous(), result.GetPointNormals(),
+                result.GetPointPositions(), radius, max_nn, sigma_s, sigma_r);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+    return result;
+}
+
 void PointCloud::EstimateColorGradients(
-        const utility::optional<int> max_knn /* = 30*/,
-        const utility::optional<double> radius /*= utility::nullopt*/) {
+        const std::optional<int> max_knn /* = 30*/,
+        const std::optional<double> radius /*= std::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
                 "PointCloud must have colors and normals attribute "
@@ -792,6 +1249,18 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
                       max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingHybridSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value(),
+                    max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -810,6 +1279,17 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), max_knn.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingKNNSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), max_knn.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -828,6 +1308,17 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchSYCL(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value());
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -837,10 +1328,10 @@ void PointCloud::EstimateColorGradients(
 }
 
 static PointCloud CreatePointCloudWithNormals(
-        const Image &depth_in, /* UInt16 or Float32 */
-        const Image &color_in, /* Float32 */
-        const core::Tensor &intrinsics_in,
-        const core::Tensor &extrinsics,
+        const Image& depth_in, /* UInt16 or Float32 */
+        const Image& color_in, /* Float32 */
+        const core::Tensor& intrinsics_in,
+        const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max,
         int stride) {
@@ -920,9 +1411,9 @@ static PointCloud CreatePointCloudWithNormals(
     return pcd;
 }
 
-PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
-                                            const core::Tensor &intrinsics,
-                                            const core::Tensor &extrinsics,
+PointCloud PointCloud::CreateFromDepthImage(const Image& depth,
+                                            const core::Tensor& intrinsics,
+                                            const core::Tensor& extrinsics,
                                             float depth_scale,
                                             float depth_max,
                                             int stride,
@@ -942,17 +1433,17 @@ PointCloud PointCloud::CreateFromDepthImage(const Image &depth,
                                            depth_max, stride);
     } else {
         core::Tensor points;
-        kernel::pointcloud::Unproject(depth.AsTensor(), utility::nullopt,
-                                      points, utility::nullopt, intrinsics_host,
+        kernel::pointcloud::Unproject(depth.AsTensor(), std::nullopt, points,
+                                      std::nullopt, intrinsics_host,
                                       extrinsics_host, depth_scale, depth_max,
                                       stride);
         return PointCloud(points);
     }
 }
 
-PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
-                                           const core::Tensor &intrinsics,
-                                           const core::Tensor &extrinsics,
+PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage& rgbd_image,
+                                           const core::Tensor& intrinsics,
+                                           const core::Tensor& extrinsics,
                                            float depth_scale,
                                            float depth_max,
                                            int stride,
@@ -979,8 +1470,8 @@ PointCloud PointCloud::CreateFromRGBDImage(const RGBDImage &rgbd_image,
 
 geometry::Image PointCloud::ProjectToDepthImage(int width,
                                                 int height,
-                                                const core::Tensor &intrinsics,
-                                                const core::Tensor &extrinsics,
+                                                const core::Tensor& intrinsics,
+                                                const core::Tensor& extrinsics,
                                                 float depth_scale,
                                                 float depth_max) {
     if (!HasPointPositions()) {
@@ -994,8 +1485,8 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
 
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
-    kernel::pointcloud::Project(depth, utility::nullopt, GetPointPositions(),
-                                utility::nullopt, intrinsics, extrinsics,
+    kernel::pointcloud::Project(depth, std::nullopt, GetPointPositions(),
+                                std::nullopt, intrinsics, extrinsics,
                                 depth_scale, depth_max);
     return geometry::Image(depth);
 }
@@ -1003,8 +1494,8 @@ geometry::Image PointCloud::ProjectToDepthImage(int width,
 geometry::RGBDImage PointCloud::ProjectToRGBDImage(
         int width,
         int height,
-        const core::Tensor &intrinsics,
-        const core::Tensor &extrinsics,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max) {
     if (!HasPointPositions()) {
@@ -1039,9 +1530,9 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
 }
 
 PointCloud PointCloud::FromLegacy(
-        const open3d::geometry::PointCloud &pcd_legacy,
+        const open3d::geometry::PointCloud& pcd_legacy,
         core::Dtype dtype,
-        const core::Device &device) {
+        const core::Device& device) {
     geometry::PointCloud pcd(device);
     if (pcd_legacy.HasPoints()) {
         pcd.SetPointPositions(
@@ -1115,7 +1606,7 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
 }
 
 std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
-        const core::Tensor &camera_location, double radius) const {
+        const core::Tensor& camera_location, double radius) const {
     core::AssertTensorShape(camera_location, {3});
     core::AssertTensorDevice(camera_location, GetDevice());
 
@@ -1214,7 +1705,7 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
             auto inserted = vertex_map.insert({vidx, next_vtx});
             if (inserted.second) {
                 p_triangle[triangle_subscript] = next_vtx;  // hull vertex idx
-                double *coords = p.coordinates();
+                double* coords = p.coordinates();
                 std::copy(coords, coords + 3, p_vertices);
                 p_vertices += 3;
                 p_point_indices[next_vtx++] = vidx;
@@ -1252,8 +1743,14 @@ OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+OrientedBoundingEllipsoid PointCloud::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetPointPositions(),
+                                                       robust);
+}
+
 LineSet PointCloud::ExtrudeRotation(double angle,
-                                    const core::Tensor &axis,
+                                    const core::Tensor& axis,
                                     int resolution,
                                     double translation,
                                     bool capping) const {
@@ -1262,14 +1759,14 @@ LineSet PointCloud::ExtrudeRotation(double angle,
                                   capping);
 }
 
-LineSet PointCloud::ExtrudeLinear(const core::Tensor &vector,
+LineSet PointCloud::ExtrudeLinear(const core::Tensor& vector,
                                   double scale,
                                   bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearLineSet(*this, vector, scale, capping);
 }
 
-PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
+PointCloud PointCloud::Crop(const AxisAlignedBoundingBox& aabb,
                             bool invert) const {
     core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
     if (aabb.IsEmpty()) {
@@ -1283,7 +1780,7 @@ PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
             aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
 }
 
-PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
+PointCloud PointCloud::Crop(const OrientedBoundingBox& obb, bool invert) const {
     core::AssertTensorDevice(GetPointPositions(), obb.GetDevice());
     if (obb.IsEmpty()) {
         utility::LogWarning(
@@ -1305,6 +1802,72 @@ int PointCloud::PCAPartition(int max_points) {
     return num_partitions;
 }
 
+core::Tensor PointCloud::ComputeMetrics(const PointCloud& pcd2,
+                                        std::vector<Metric> metrics,
+                                        MetricParameters params) const {
+    if (IsEmpty() || pcd2.IsEmpty()) {
+        utility::LogError("One or both input point clouds are empty!");
+    }
+    if (!IsCPU() || !pcd2.IsCPU()) {
+        utility::LogWarning(
+                "ComputeDistance is implemented only on CPU. Computing on "
+                "CPU.");
+    }
+    core::Tensor points1 = GetPointPositions().To(core::Device("CPU:0")),
+                 points2 = pcd2.GetPointPositions().To(core::Device("CPU:0"));
+    [[maybe_unused]] core::Tensor indices12, indices21;
+    core::Tensor sqr_distance12, sqr_distance21;
+
+    core::nns::NearestNeighborSearch tree1(points1);
+    core::nns::NearestNeighborSearch tree2(points2);
+
+    if (!tree2.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+    if (!tree1.KnnIndex()) {
+        utility::LogError("[ComputeDistance] Building KNN-Index failed!");
+    }
+
+    std::tie(indices12, sqr_distance12) = tree2.KnnSearch(points1, 1);
+    std::tie(indices21, sqr_distance21) = tree1.KnnSearch(points2, 1);
+
+    return ComputeMetricsCommon(sqr_distance12.Sqrt_(), sqr_distance21.Sqrt_(),
+                                metrics, params);
+}
+
+bool PointCloud::IsGaussianSplat() const {
+    bool have_all_attrs = HasPointAttr("opacity") && HasPointAttr("rot") &&
+                          HasPointAttr("scale") && HasPointAttr("f_dc");
+    if (!have_all_attrs) {  // not 3DGS, no messages.
+        return false;
+    }
+    // Existing but invalid attributes cause errors.
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(GetPointAttr("opacity"), {num_points, 1});
+    core::AssertTensorShape(GetPointAttr("rot"), {num_points, 4});
+    core::AssertTensorShape(GetPointAttr("scale"), {num_points, 3});
+    core::AssertTensorShape(GetPointAttr("f_dc"), {num_points, 3});
+    GaussianSplatGetSHOrder();  // Tests f_rest shape is valid.
+    return true;
+}
+
+int PointCloud::GaussianSplatGetSHOrder() const {
+    if (point_attr_.find("f_rest") == point_attr_.end()) {
+        return 0;
+    }
+    const core::Tensor& f_rest = GetPointAttr("f_rest");
+    auto num_points = GetPointPositions().GetLength();
+    core::AssertTensorShape(f_rest, {num_points, core::None, 3});
+    auto Nc = f_rest.GetShape(1);
+    auto degp1 = static_cast<int>(sqrt(Nc + 1));
+    if (degp1 * degp1 != Nc + 1) {
+        utility::LogError(
+                "f_rest has incomplete Spherical Harmonics coefficients "
+                "({}), expected 0, 3, 8 or 15.",
+                Nc);
+    }
+    return degp1 - 1;
+}
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

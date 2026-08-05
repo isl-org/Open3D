@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -95,6 +95,13 @@ void AddMM(const Tensor& A,
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         AddMMCUDA(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
+                  ldb, lda, ldc, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        AddMMSYCL(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
                   ldb, lda, ldc, dtype, device);
 #else
         utility::LogError("Unimplemented device.");

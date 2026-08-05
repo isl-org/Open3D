@@ -1,11 +1,15 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <rply.h>
+
+#include <algorithm>
+#include <cctype>
+#include <set>
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/LineSetIO.h"
@@ -22,6 +26,67 @@ namespace io {
 
 /// @cond
 namespace {
+
+std::string ToLowerString(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char character) {
+                       return static_cast<char>(std::tolower(character));
+                   });
+    return value;
+}
+
+bool HasGaussianSplatProperties(p_ply ply_file) {
+    std::set<std::string> vertex_property_names;
+
+    p_ply_element element = ply_get_next_element(ply_file, nullptr);
+    while (element) {
+        const char *element_name = nullptr;
+        long element_size = 0;
+        ply_get_element_info(element, &element_name, &element_size);
+        if (element_name != nullptr &&
+            ToLowerString(element_name) == "vertex" && element_size > 0) {
+            p_ply_property property = ply_get_next_property(element, nullptr);
+            while (property) {
+                const char *property_name = nullptr;
+                e_ply_type type;
+                ply_get_property_info(property, &property_name, &type, NULL,
+                                      NULL);
+                if (property_name != nullptr) {
+                    vertex_property_names.insert(ToLowerString(property_name));
+                }
+                property = ply_get_next_property(element, property);
+            }
+            break;
+        }
+        element = ply_get_next_element(ply_file, element);
+    }
+
+    const std::vector<std::string> required_properties = {"x", "y", "z",
+                                                          "opacity"};
+    const bool has_required_properties =
+            std::all_of(required_properties.begin(), required_properties.end(),
+                        [&vertex_property_names](const std::string &name) {
+                            return vertex_property_names.count(name) > 0;
+                        });
+    const int scale_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("scale_", 0) == 0;
+            }));
+    const int rot_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("rot_", 0) == 0;
+            }));
+    const int f_dc_count = static_cast<int>(std::count_if(
+            vertex_property_names.begin(), vertex_property_names.end(),
+            [](const std::string &name) {
+                return name.rfind("f_dc_", 0) == 0;
+            }));
+
+    return has_required_properties && scale_count >= 3 && rot_count >= 4 &&
+           f_dc_count >= 3;
+}
 
 namespace ply_pointcloud_reader {
 
@@ -78,16 +143,14 @@ int ReadColorCallback(p_ply_argument argument) {
     long index;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
                                &index);
-    if (state_ptr->color_index >= state_ptr->color_num) {
+    if (state_ptr->color_index >= state_ptr->color_num * 3) {
         return 0;
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->pointcloud_ptr->colors_[state_ptr->color_index](index) =
+    state_ptr->pointcloud_ptr->colors_[state_ptr->color_index / 3](index) =
             value / 255.0;
-    if (index == 2) {  // reading 'blue'
-        state_ptr->color_index++;
-    }
+    ++state_ptr->color_index;
     return 1;
 }
 
@@ -150,16 +213,14 @@ int ReadColorCallback(p_ply_argument argument) {
     long index;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
                                &index);
-    if (state_ptr->color_index >= state_ptr->color_num) {
+    if (state_ptr->color_index >= state_ptr->color_num * 3) {
         return 0;
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->mesh_ptr->vertex_colors_[state_ptr->color_index](index) =
+    state_ptr->mesh_ptr->vertex_colors_[state_ptr->color_index / 3](index) =
             value / 255.0;
-    if (index == 2) {  // reading 'blue'
-        state_ptr->color_index++;
-    }
+    ++state_ptr->color_index;
     return 1;
 }
 
@@ -248,15 +309,15 @@ int ReadColorCallback(p_ply_argument argument) {
     long index;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
                                &index);
-    if (state_ptr->color_index >= state_ptr->color_num) {
+    if (state_ptr->color_index >= state_ptr->color_num * 3) {
         return 0;
     }
 
     double value = ply_get_argument_value(argument);
-    state_ptr->lineset_ptr->colors_[state_ptr->color_index](index) =
+    state_ptr->lineset_ptr->colors_[state_ptr->color_index / 3](index) =
             value / 255.0;
-    if (index == 2) {  // reading 'blue'
-        state_ptr->color_index++;
+    ++state_ptr->color_index;
+    if (state_ptr->color_index % 3 == 0) {
         ++(*state_ptr->progress_bar);
     }
     return 1;
@@ -270,6 +331,7 @@ struct PLYReaderState {
     utility::ProgressBar *progress_bar;
     std::vector<geometry::Voxel> *voxelgrid_ptr;
     Eigen::Vector3d origin;
+    Eigen::Matrix3d rotation;
     double voxel_size;
     long voxel_index;
     long voxel_num;
@@ -285,6 +347,19 @@ int ReadOriginCallback(p_ply_argument argument) {
 
     double value = ply_get_argument_value(argument);
     state_ptr->origin(index) = value;
+    return 1;
+}
+
+int ReadOriginRotationCallback(p_ply_argument argument) {
+    PLYReaderState *state_ptr;
+    long index;
+    ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
+                               &index);
+
+    double value = ply_get_argument_value(argument);
+    int row = index / 3;
+    int col = index % 3;
+    state_ptr->rotation(row, col) = value;
     return 1;
 }
 
@@ -323,15 +398,15 @@ int ReadColorCallback(p_ply_argument argument) {
     long index;
     ply_get_argument_user_data(argument, reinterpret_cast<void **>(&state_ptr),
                                &index);
-    if (state_ptr->color_index >= state_ptr->color_num) {
+    if (state_ptr->color_index >= state_ptr->color_num * 3) {
         return 0;
     }
 
     double value = ply_get_argument_value(argument);
     auto &ptr = *(state_ptr->voxelgrid_ptr);
-    ptr[state_ptr->color_index].color_(index) = value / 255.0;
-    if (index == 2) {  // reading 'blue'
-        state_ptr->color_index++;
+    ptr[state_ptr->color_index / 3].color_(index) = value / 255.0;
+    ++state_ptr->color_index;
+    if (state_ptr->color_index % 3 == 0) {
         ++(*state_ptr->progress_bar);
     }
     return 1;
@@ -351,6 +426,7 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
         ply_close(ply_file);
         return CONTENTS_UNKNOWN;
     }
+    const bool is_gaussian_splat = HasGaussianSplatProperties(ply_file);
 
     auto nVertices =
             ply_set_read_cb(ply_file, "vertex", "x", nullptr, nullptr, 0);
@@ -370,6 +446,10 @@ FileGeometry ReadFileGeometryTypePLY(const std::string &path) {
     } else if (nLines > 0) {
         contents |= CONTAINS_LINES;
     } else if (nVertices > 0) {
+        contents |= CONTAINS_POINTS;
+    }
+    if (is_gaussian_splat) {
+        contents |= CONTAINS_GAUSSIAN_SPLATS;
         contents |= CONTAINS_POINTS;
     }
     return FileGeometry(contents);
@@ -878,6 +958,24 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
     ply_set_read_cb(ply_file, "origin", "x", ReadOriginCallback, &state, 0);
     ply_set_read_cb(ply_file, "origin", "y", ReadOriginCallback, &state, 1);
     ply_set_read_cb(ply_file, "origin", "z", ReadOriginCallback, &state, 2);
+    ply_set_read_cb(ply_file, "rotation", "r00", ReadOriginRotationCallback,
+                    &state, 0);
+    ply_set_read_cb(ply_file, "rotation", "r01", ReadOriginRotationCallback,
+                    &state, 1);
+    ply_set_read_cb(ply_file, "rotation", "r02", ReadOriginRotationCallback,
+                    &state, 2);
+    ply_set_read_cb(ply_file, "rotation", "r10", ReadOriginRotationCallback,
+                    &state, 3);
+    ply_set_read_cb(ply_file, "rotation", "r11", ReadOriginRotationCallback,
+                    &state, 4);
+    ply_set_read_cb(ply_file, "rotation", "r12", ReadOriginRotationCallback,
+                    &state, 5);
+    ply_set_read_cb(ply_file, "rotation", "r20", ReadOriginRotationCallback,
+                    &state, 6);
+    ply_set_read_cb(ply_file, "rotation", "r21", ReadOriginRotationCallback,
+                    &state, 7);
+    ply_set_read_cb(ply_file, "rotation", "r22", ReadOriginRotationCallback,
+                    &state, 8);
     ply_set_read_cb(ply_file, "voxel_size", "val", ReadScaleCallback, &state,
                     0);
 
@@ -905,6 +1003,7 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
             voxelgrid.AddVoxel(geometry::Voxel(it.grid_index_));
     }
     voxelgrid.origin_ = state.origin;
+    voxelgrid.rotation_ = state.rotation;
     voxelgrid.voxel_size_ = state.voxel_size;
 
     ply_close(ply_file);
@@ -934,6 +1033,16 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_add_property(ply_file, "x", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "y", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_property(ply_file, "z", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_element(ply_file, "rotation", 1);
+    ply_add_property(ply_file, "r00", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r01", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r02", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r10", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r11", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r12", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r20", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r21", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
+    ply_add_property(ply_file, "r22", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
     ply_add_element(ply_file, "voxel_size", 1);
     ply_add_property(ply_file, "val", PLY_DOUBLE, PLY_DOUBLE, PLY_DOUBLE);
 
@@ -964,6 +1073,17 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     ply_write(ply_file, origin(0));
     ply_write(ply_file, origin(1));
     ply_write(ply_file, origin(2));
+    const Eigen::Matrix3d &rotation = voxelgrid.rotation_;
+    ply_write(ply_file, rotation(0, 0));
+    ply_write(ply_file, rotation(0, 1));
+    ply_write(ply_file, rotation(0, 2));
+    ply_write(ply_file, rotation(1, 0));
+    ply_write(ply_file, rotation(1, 1));
+    ply_write(ply_file, rotation(1, 2));
+    ply_write(ply_file, rotation(2, 0));
+    ply_write(ply_file, rotation(2, 1));
+    ply_write(ply_file, rotation(2, 2));
+
     ply_write(ply_file, voxelgrid.voxel_size_);
 
     for (auto &it : voxelgrid.voxels_) {

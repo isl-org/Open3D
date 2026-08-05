@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -58,13 +58,15 @@ void pybind_image_declarations(py::module &m) {
             image(m, "Image", py::buffer_protocol(),
                   "The Image class stores image with customizable rols, cols, "
                   "channels, dtype and device.");
-    py::enum_<Image::InterpType>(m, "InterpType", "Interpolation type.")
+    py::native_enum<Image::InterpType>(m, "InterpType", "enum.Enum",
+                                       "Interpolation type.")
             .value("Nearest", Image::InterpType::Nearest)
             .value("Linear", Image::InterpType::Linear)
             .value("Cubic", Image::InterpType::Cubic)
             .value("Lanczos", Image::InterpType::Lanczos)
             .value("Super", Image::InterpType::Super)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
             rgbd_image(
@@ -181,7 +183,8 @@ void pybind_image_definitions(py::module &m) {
                  "Upsample if sampling rate > 1. Aspect ratio is always "
                  "kept.",
                  "sampling_rate"_a = 0.5,
-                 "interp_type"_a = Image::InterpType::Nearest)
+                 py::arg_v("interp_type", Image::InterpType::Nearest,
+                           "open3d.t.geometry.InterpType.Nearest"))
             .def("pyrdown", &Image::PyrDown,
                  "Return a new downsampled image with pyramid downsampling "
                  "formed by a chained Gaussian filter (kernel_size = 5, sigma"
@@ -250,11 +253,21 @@ void pybind_image_definitions(py::module &m) {
             "device_id"_a = 0);
 
     // Conversion.
-    image.def("to",
-              py::overload_cast<core::Dtype, bool, utility::optional<double>,
-                                double>(&Image::To, py::const_),
-              "Returns an Image with the specified Dtype.", "dtype"_a,
-              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
+    image.def(
+            "to",
+            // scale is py::object instead of std::optional<double> to allow
+            // pybind11-stubgen to produce valid stubs with default value of
+            // None.
+            [](const Image &img, core::Dtype dtype, bool copy, py::object scale,
+               double offset) {
+                std::optional<double> scale_opt;
+                if (!scale.is_none()) {
+                    scale_opt = scale.cast<double>();
+                }
+                return img.To(dtype, copy, scale_opt, offset);
+            },
+            "Returns an Image with the specified Dtype.", "dtype"_a,
+            "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},

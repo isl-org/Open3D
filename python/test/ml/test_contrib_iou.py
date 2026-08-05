@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -11,6 +11,7 @@ import open3d as o3d
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
@@ -45,7 +46,7 @@ def test_bev_iou(device):
         from open3d.ml.contrib import iou_bev_cuda
         iou_bev = iou_bev_cuda
     else:
-        raise ("Unsupported device.")
+        raise RuntimeError(f"Unsupported device {device}.")
 
     result = iou_bev(boxes_0, boxes_1)
     np.testing.assert_allclose(result, ref, rtol=1e-5, atol=1e-8)
@@ -86,7 +87,7 @@ def test_3d_iou(device):
         from open3d.ml.contrib import iou_3d_cuda
         iou_3d = iou_3d_cuda
     else:
-        raise ("Unsupported device.")
+        raise RuntimeError(f"Unsupported device {device}.")
 
     result = iou_3d(boxes_0, boxes_1)
     np.testing.assert_allclose(result, ref, rtol=1e-5, atol=1e-8)

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ REGISTER_OP("Open3DNms")
 
             keep_indices = c->MakeShape({c->UnknownDim()});
             c->set_output(0, keep_indices);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Performs non-maximum suppression of bounding boxes.

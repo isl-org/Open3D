@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -65,9 +65,6 @@ public:
 
     /// Generate Google style python docstring.
     std::string ToGoogleDocString() const;
-
-    /// Apply fixes to namespace, e.g. "::" to "." for python
-    static std::string NamespaceFix(const std::string& s);
 
 protected:
     /// Parse the function name from docstring.

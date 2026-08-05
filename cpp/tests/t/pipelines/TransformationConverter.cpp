@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,10 +14,11 @@
 namespace open3d {
 namespace tests {
 
-class TransformationConverterPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(TransformationConverter,
-                         TransformationConverterPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TransformationConverterPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        TransformationConverter,
+        TransformationConverterPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,12 +19,14 @@
 namespace open3d {
 namespace tests {
 
-class AxisAlignedBoundingBoxPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(AxisAlignedBoundingBox,
-                         AxisAlignedBoundingBoxPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class AxisAlignedBoundingBoxPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        AxisAlignedBoundingBox,
+        AxisAlignedBoundingBoxPermuteDevices,
+        testing::ValuesIn(AxisAlignedBoundingBoxPermuteDevices::TestCases()));
 
-class AxisAlignedBoundingBoxPermuteDevicePairs : public PermuteDevicePairs {};
+class AxisAlignedBoundingBoxPermuteDevicePairs
+    : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         AxisAlignedBoundingBox,
         AxisAlignedBoundingBoxPermuteDevicePairs,

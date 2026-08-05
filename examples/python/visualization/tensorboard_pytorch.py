@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import copy
@@ -95,7 +95,7 @@ def large_scale(n_steps=16,
             length_split=int(3.5 * resolution),
             width_split=int(0.75 * resolution),
             twists=1,
-            raidus=1,
+            radius=1,
             flatness=1,
             width=1,
             scale=1)

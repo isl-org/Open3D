@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ std::tuple<int, core::Tensor> PCAPartition(core::Tensor& points,
         utility::LogError("max_points must be > 0 but is {}", max_points);
     }
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorShape(points, {std::nullopt, 3});
     const size_t max_points_(max_points);
     const size_t num_points = points.GetLength();
     if (num_points == 0) {

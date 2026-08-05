@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,10 +17,19 @@ void Inverse(const Tensor& A, Tensor& output);
 
 void InverseCPU(void* A_data,
                 void* ipiv_data,
-                void* output_data,
+                [[maybe_unused]] void* output_data,
                 int64_t n,
                 Dtype dtype,
                 const Device& device);
+
+#ifdef BUILD_SYCL_MODULE
+void InverseSYCL(void* A_data,
+                 void* ipiv_data,
+                 [[maybe_unused]] void* output_data,
+                 int64_t n,
+                 Dtype dtype,
+                 const Device& device);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void InverseCUDA(void* A_data,

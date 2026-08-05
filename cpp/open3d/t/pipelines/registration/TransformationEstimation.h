@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -225,7 +225,7 @@ private:
 /// Float64, on CPU device for colored-icp method.
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
-    ~TransformationEstimationForColoredICP() override{};
+    ~TransformationEstimationForColoredICP() override {};
 
     /// \brief Constructor.
     ///
@@ -307,7 +307,7 @@ private:
 /// Float64, on CPU device for DopplerICP method.
 class TransformationEstimationForDopplerICP : public TransformationEstimation {
 public:
-    ~TransformationEstimationForDopplerICP() override{};
+    ~TransformationEstimationForDopplerICP() override {};
 
     /// \brief Constructor.
     ///

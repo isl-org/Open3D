@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -158,28 +158,37 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
             "and unreferenced vertices");
 
-    auto tmesh = t::geometry::TriangleMesh::FromLegacy(*mesh);
+    if (mesh->vertices_.size() > 0) {
+        auto tmesh = t::geometry::TriangleMesh::FromLegacy(*mesh);
 
-    // use new object tmesh2 here even if some arrays share memory with tmesh.
-    // We don't want to replace the blobs in tmesh.
-    auto tmesh2 = t::geometry::vtkutils::ComputeNormals(
-            tmesh, /*vertex_normals=*/true, /*face_normals=*/false,
-            /*consistency=*/true, /*auto_orient_normals=*/true,
-            /*splitting=*/false);
+        // use new object tmesh2 here even if some arrays share memory with
+        // tmesh. We don't want to replace the blobs in tmesh.
+        auto tmesh2 = t::geometry::vtkutils::ComputeNormals(
+                tmesh, /*vertex_normals=*/true, /*face_normals=*/false,
+                /*consistency=*/true, /*auto_orient_normals=*/true,
+                /*splitting=*/false);
 
-    mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
-            tmesh2.GetVertexPositions());
-    mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
-            tmesh2.GetTriangleIndices());
-    if (mesh->HasVertexColors()) {
-        mesh->vertex_colors_ =
-                core::eigen_converter::TensorToEigenVector3dVector(
-                        tmesh2.GetVertexColors());
-    }
-    if (mesh->HasVertexNormals()) {
-        mesh->vertex_normals_ =
-                core::eigen_converter::TensorToEigenVector3dVector(
-                        tmesh2.GetVertexNormals());
+        mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
+                tmesh2.GetVertexPositions());
+        mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
+                tmesh2.GetTriangleIndices());
+        if (mesh->HasVertexColors()) {
+            mesh->vertex_colors_ =
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            tmesh2.GetVertexColors());
+        }
+        if (mesh->HasVertexNormals()) {
+            mesh->vertex_normals_ =
+                    core::eigen_converter::TensorToEigenVector3dVector(
+                            tmesh2.GetVertexNormals());
+        }
+    } else {
+        utility::LogWarning(
+                fmt::format("[CreateFromPointCloudAlphaShape] alpha shape "
+                            "reconstruction resulted in empty mesh. Alpha "
+                            "value ({}) could be too small.",
+                            alpha)
+                        .c_str());
     }
 
     return mesh;

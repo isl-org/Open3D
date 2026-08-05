@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ public:
 
         ReduceSubarraysSumCUDA(device.stream(), values.flat<T>().data(),
                                values.shape().dim_size(0),
-                               (int64_t*)row_splits.flat<int64>().data(),
+                               (int64_t*)row_splits.flat<int64_t>().data(),
                                row_splits.shape().dim_size(0) - 1,
                                sums.flat<T>().data());
     }
@@ -39,7 +39,7 @@ public:
                                     .TypeConstraint<type>("T"), \
                             ReduceSubarraysSumOpKernelCUDA<type>);
 REG_KB(int32_t)
-REG_KB(int64)
+REG_KB(int64_t)
 REG_KB(float)
 REG_KB(double)
 #undef REG_KB

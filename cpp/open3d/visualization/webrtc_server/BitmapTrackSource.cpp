@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -39,14 +39,14 @@ void BitmapTrackSource::SetState(
 }
 
 void BitmapTrackSource::AddOrUpdateSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-        const rtc::VideoSinkWants& wants) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
+        const webrtc::VideoSinkWants& wants) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->AddOrUpdateSink(sink, wants);
 }
 
 void BitmapTrackSource::RemoveSink(
-        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+        webrtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
     source()->RemoveSink(sink);
 }

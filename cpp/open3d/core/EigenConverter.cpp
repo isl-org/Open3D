@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ TensorToEigenMatrixXi(const core::Tensor &tensor) {
 template <typename T, int N>
 static std::vector<Eigen::Matrix<T, N, 1>> TensorToEigenVectorNxVector(
         const core::Tensor &tensor) {
-    AssertTensorShape(tensor, {utility::nullopt, N});
+    AssertTensorShape(tensor, {std::nullopt, N});
 
     static_assert(
             (std::is_same<T, double>::value || std::is_same<T, int>::value) &&

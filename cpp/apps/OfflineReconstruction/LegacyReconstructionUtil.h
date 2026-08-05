@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -783,6 +783,9 @@ private:
                 auto pcd = geometry::PointCloud::CreateFromRGBDImage(
                         rgbd, intrinsic, Eigen::Matrix4d::Identity(), true);
                 pcd->Transform(pose_graph.nodes_[i].pose_);
+                // Accumulate into this body's private fragment; bodies are
+                // merged by join().
+                fragment += *pcd;
             }
         }
 

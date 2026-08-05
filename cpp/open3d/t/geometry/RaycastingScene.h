@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -30,14 +30,16 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene(int64_t nthreads = 0);
+    RaycastingScene(int64_t nthreads = 0,
+                    const core::Device &device = core::Device("CPU:0"));
 
     ~RaycastingScene();
 
     /// \brief Add a triangle mesh to the scene.
     /// \param vertex_positions Vertices as Tensor of dim {N,3} and dtype float.
     /// \param triangle_indices Triangles as Tensor of dim {M,3} and dtype
-    /// uint32_t. \return The geometry ID of the added mesh.
+    /// uint32_t.
+    /// \return The geometry ID of the added mesh.
     uint32_t AddTriangles(const core::Tensor &vertex_positions,
                           const core::Tensor &triangle_indices);
 
@@ -70,7 +72,7 @@ public:
     ///         - \b primitive_normals A tensor with the normals of the hit
     ///           triangles. The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> CastRays(
-            const core::Tensor &rays, const int nthreads = 0);
+            const core::Tensor &rays, const int nthreads = 0) const;
 
     /// \brief Checks if the rays have any intersection with the scene.
     /// \param rays A tensor with >=2 dims, shape {.., 6}, and Dtype Float32
@@ -221,9 +223,10 @@ public:
     /// \param intrinsic_matrix The upper triangular intrinsic matrix with
     /// shape {3,3}.
     /// \param extrinsic_matrix The 4x4 world to camera SE(3) transformation
-    /// matrix. \param width_px The width of the image in pixels. \param
-    /// height_px The height of the image in pixels. \return A tensor of shape
-    /// {height_px, width_px, 6} with the rays.
+    /// matrix.
+    /// \param width_px The width of the image in pixels.
+    /// \param height_px The height of the image in pixels.
+    /// \return A tensor of shape {height_px, width_px, 6} with the rays.
     static core::Tensor CreateRaysPinhole(const core::Tensor &intrinsic_matrix,
                                           const core::Tensor &extrinsic_matrix,
                                           int width_px,
@@ -250,6 +253,10 @@ public:
 
 private:
     struct Impl;
+    struct CPUImpl;
+#ifdef BUILD_SYCL_MODULE
+    struct SYCLImpl;
+#endif
     std::unique_ptr<Impl> impl_;
 };
 

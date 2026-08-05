@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // Source code from: https://github.com/HuguesTHOMAS/KPConv.
@@ -44,7 +44,7 @@ REGISTER_OP("Open3DGridSubsampling")
             ::tensorflow::shape_inference::ShapeHandle input;
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input));
             c->set_output(0, input);
-            return Status();
+            return absl::OkStatus();
         });
 
 class GridSubsamplingOp : public OpKernel {

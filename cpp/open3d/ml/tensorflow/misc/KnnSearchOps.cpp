@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ REGISTER_OP("Open3DKnnSearch")
                 neighbors_distance_shape = c->MakeShape({0});
             c->set_output(2, neighbors_distance_shape);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Computes the indices of k nearest neighbors.

@@ -10,6 +10,11 @@ ARG CONDA_SUFFIX
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
 ARG DEVELOPER_BUILD
+ARG BUILD_PYTHON_MODULE=ON
+# OpenBLAS CI builds are static; do not inherit the repo default
+# BUILD_SHARED_LIBS=ON (ARM64 has no WebRTC, so shared+static curl/BoringSSL
+# currently leaves OpenSSL unresolved in libOpen3D.so).
+ARG BUILD_SHARED_LIBS=OFF
 RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
@@ -23,30 +28,50 @@ ENV SUDO=command
 # Minimal dependencies for running Docker
 # wget    : for downloading
 # libgl1  : available on Ubuntu ARM desktop by default
-# libgomp1: available on Ubuntu ARM desktop by default
+# libtbb12 : oneAPI TBB runtime (Open3D CPU parallelism)
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
-    libgomp1 \
+    libtbb12 \
  && rm -rf /var/lib/apt/lists/*
 
-# Minimal dependencies for building
+# Minimal dependencies for building python
 RUN apt-get update && apt-get install -y \
     build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    curl \
     git \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && bash Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh -b \
- && rm Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
+# pyenv
+# The pyenv python paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+# The soft link from the python patch level version to the python mino version
+# ensures python wheel commands (i.e. open3d) are in PATH, since we don't know
+# which patch level pyenv will install (latest).
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+# Install pyenv if it is not already present in BASE_IMAGE.
+RUN if [ ! -d "$PYENV_ROOT" ]; then \
+        curl https://pyenv.run | bash; \
+    fi \
+        && pyenv update \
+        && pyenv install -s $PYTHON_VERSION \
+        && pyenv global $PYTHON_VERSION \
+        && pyenv rehash \
+        && ln -sf $PYENV_ROOT/versions/${PYTHON_VERSION}* $PYENV_ROOT/versions/${PYTHON_VERSION};
+RUN python --version && pip --version
 
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
@@ -81,15 +106,19 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build
-RUN mkdir build \
+# Use cmake --fresh to clear old configs and ensure correct Python/CMake settings in build/.
+RUN mkdir -p build \
  && cd build \
- && cmake \
+ && cmake --fresh \
     -DBUILD_UNIT_TESTS=ON \
+    -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+    -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
     .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl /
+ && export NPROC=$(($(nproc)+2)) \
+ && make -j$NPROC \
+ && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
+ && make install -j$NPROC
+RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi

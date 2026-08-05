@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -66,7 +66,7 @@ REGISTER_OP("Open3DSparseConv")
             ShapeHandle out_features_shape =
                     MakeShapeHandle(c, num_out, out_channels);
             c->set_output(0, out_features_shape);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 General sparse convolution.

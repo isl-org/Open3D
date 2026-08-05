@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ public:
     enum class DeviceType {
         CPU = 0,
         CUDA = 1,
-        SYCL = 2,  // SYCL gpu_selector().
+        SYCL = 2,  // SYCL gpu_selector_v.
     };
 
     /// Default constructor -> "CPU:0".
@@ -31,10 +31,12 @@ public:
     explicit Device(DeviceType device_type, int device_id);
 
     /// Constructor from device type string and device id.
+    /// Use ``Device("cuda")`` or ``Device("CUDA:0")`` for id 0.
     explicit Device(const std::string& device_type, int device_id);
 
-    /// Constructor from string, e.g. "CUDA:0".
-    explicit Device(const std::string& type_colon_id);
+    /// Constructor from string, e.g. ``"CUDA:0"``, ``"cuda"``, or ``"cpu"``.
+    /// Bare type names use device id 0.
+    Device(const std::string& device_str);
 
     bool operator==(const Device& other) const;
 
@@ -113,6 +115,14 @@ template <>
 struct hash<open3d::core::Device> {
     std::size_t operator()(const open3d::core::Device& device) const {
         return std::hash<std::string>{}(device.ToString());
+    }
+};
+
+template <>
+struct less<open3d::core::Device> {
+    bool operator()(const open3d::core::Device& lhs,
+                    const open3d::core::Device& rhs) const {
+        return lhs.ToString() < rhs.ToString();
     }
 };
 }  // namespace std

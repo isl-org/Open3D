@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ struct ReadPointCloudOption {
           remove_nan_points(remove_nan_points),
           remove_infinite_points(remove_infinite_points),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     ReadPointCloudOption(std::function<bool(double)> up)
         : ReadPointCloudOption() {
         update_progress = up;
@@ -101,7 +101,7 @@ struct WritePointCloudOption {
           write_ascii(write_ascii),
           compressed(compressed),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(bool write_ascii,
                           bool compressed = false,
@@ -110,7 +110,7 @@ struct WritePointCloudOption {
         : write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     // for compatibility
     WritePointCloudOption(std::string format,
                           bool write_ascii,
@@ -121,7 +121,7 @@ struct WritePointCloudOption {
           write_ascii(IsAscii(write_ascii)),
           compressed(Compressed(compressed)),
           print_progress(print_progress),
-          update_progress(update_progress){};
+          update_progress(update_progress) {};
     WritePointCloudOption(std::function<bool(double)> up)
         : WritePointCloudOption() {
         update_progress = up;
@@ -140,11 +140,16 @@ struct WritePointCloudOption {
     /// Print progress to stdout about loading progress.  Also see
     /// \p update_progress if you want to have your own progress indicators or
     /// to be able to cancel loading.
-    bool print_progress;
+    bool print_progress = false;
     /// Callback to invoke as reading is progressing, parameter is percentage
     /// completion (0.-100.) return true indicates to continue loading, false
     /// means to try to stop loading and cleanup
     std::function<bool(double)> update_progress;
+    /// When writing SPZ Gaussian splat files, sets the packed header
+    /// ``antialiased`` flag (mip-splat density compensation). Ignored by other
+    /// formats. Matches MaterialRecord::gaussian_splat_antialias at render
+    /// time.
+    bool gaussian_splat_antialias = false;
 };
 
 /// The general entrance for writing a PointCloud to a file

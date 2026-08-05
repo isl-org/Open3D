@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -301,7 +301,7 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     AssertInitialized();
     bool integrate_color = color.AsTensor().NumElements() > 0;
 
-    CheckBlockCoorinates(block_coords);
+    CheckBlockCoordinates(block_coords);
     CheckDepthTensor(depth.AsTensor());
     if (integrate_color) {
         CheckColorTensor(color.AsTensor());
@@ -338,7 +338,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   float trunc_voxel_multiplier,
                                   int range_map_down_factor) {
     AssertInitialized();
-    CheckBlockCoorinates(block_coords);
+    CheckBlockCoordinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
     CheckExtrinsicTensor(extrinsic);
 

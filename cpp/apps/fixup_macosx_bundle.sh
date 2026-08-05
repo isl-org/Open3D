@@ -27,7 +27,7 @@ fi
 
 # Find the rpath paths
 rpaths=$(otool -l "$exe" | grep "path " | awk '{print $2}')
-if [[ $rpath != "" ]]; then
+if [[ $rpaths != "" ]]; then
     echo "@rpath:"
     for rp in $rpaths; do
         echo "    $rp"
@@ -44,7 +44,7 @@ for lib in $libs; do
     if [[ ${lib:0:1} != "@" ]]; then # external library with a regular path
         libname=$(basename $lib)
         # copy the external library, resolve symlink chain
-        cp -aRL "$lib" "$exeDir/$lib"
+        cp -aRL "$lib" "$exeDir/$libname"
         # change its path in the executable
         newpath="@executable_path/$libname"
         echo "$lib -> $newpath"

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -40,23 +40,31 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     U = Tensor::Empty({m, m}, dtype, device);
     S = Tensor::Empty({n}, dtype, device);
     VT = Tensor::Empty({n, n}, dtype, device);
-    Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
 
     void *A_data = A_T.GetDataPtr();
     void *U_data = U.GetDataPtr();
     void *S_data = S.GetDataPtr();
     void *VT_data = VT.GetDataPtr();
-    void *superb_data = superb.GetDataPtr();
 
-    if (device.IsCUDA()) {
+    if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        SVDSYCL(A_data, U_data, S_data, VT_data, m, n, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
+        Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
+        void *superb_data = superb.GetDataPtr();
         SVDCUDA(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                 device);
 #else
         utility::LogError("Unimplemented device.");
 #endif
     } else {
+        Tensor superb = Tensor::Empty({std::min(m, n) - 1}, dtype, device);
+        void *superb_data = superb.GetDataPtr();
         SVDCPU(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                device);
     }

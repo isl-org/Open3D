@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -117,8 +117,8 @@ REGISTER_OP("Open3DContinuousConvTransposeBackpropFilter")
 
             if (c->RankKnown(extents_shape)) {
                 DimensionHandle d;
-                Status s1 = c->WithValue(c->Dim(extents_shape, 1), 1, &d);
-                Status s2 = c->WithValue(c->Dim(extents_shape, 1), 3, &d);
+                absl::Status s1 = c->WithValue(c->Dim(extents_shape, 1), 1, &d);
+                absl::Status s2 = c->WithValue(c->Dim(extents_shape, 1), 3, &d);
 
                 if (!s1.ok() && !s2.ok())
                     TF_RETURN_WITH_CONTEXT_IF_ERROR(
@@ -166,7 +166,7 @@ REGISTER_OP("Open3DContinuousConvTransposeBackpropFilter")
             }
 
             c->set_output(0, filters_shape);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Computes the backrop for the filter of the ContinuousConvTranspose

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -75,6 +75,26 @@ void PoseToTransformationCUDA(scalar_t *transformation_ptr,
 template <typename scalar_t>
 void TransformationToPoseCUDA(scalar_t *pose_ptr,
                               const scalar_t *transformation_ptr);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+/// \brief Helper function for PoseToTransformationSYCL.
+/// Do not call this independently, as it only sets the transformation part
+/// in transformation matrix, using the Pose, the rest is set in
+/// the parent function PoseToTransformation.
+template <typename scalar_t>
+void PoseToTransformationSYCL(scalar_t *transformation_ptr,
+                              const scalar_t *pose_ptr,
+                              const core::Device &device);
+
+/// \brief Helper function for TransformationToPoseSYCL.
+/// Do not call this independently, as it only sets the rotation part in the
+/// pose, using the Transformation, the rest is set in the parent function
+/// TransformationToPose.
+template <typename scalar_t>
+void TransformationToPoseSYCL(scalar_t *pose_ptr,
+                              const scalar_t *transformation_ptr,
+                              const core::Device &device);
 #endif
 
 }  // namespace kernel

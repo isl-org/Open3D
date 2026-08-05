@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
                 "VisualizerWithVertexSelection only supports one geometry");
         return false;
     }
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     // Add the geometry/renderer
     geometry_ptr_ = geometry_in_ptr;
@@ -115,6 +115,7 @@ bool VisualizerWithVertexSelection::AddGeometry(
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             return false;
     }
@@ -214,6 +215,7 @@ bool VisualizerWithVertexSelection::UpdateGeometry(
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             break;
     }
@@ -754,9 +756,9 @@ void VisualizerWithVertexSelection::DragSelectedPoints(
     }
 }
 
-const std::vector<Eigen::Vector3d>
-        *VisualizerWithVertexSelection::GetGeometryPoints(
-                std::shared_ptr<const geometry::Geometry> geometry) {
+const std::vector<Eigen::Vector3d> *
+VisualizerWithVertexSelection::GetGeometryPoints(
+        std::shared_ptr<const geometry::Geometry> geometry) {
     const std::vector<Eigen::Vector3d> *points = nullptr;
     switch (geometry->GetGeometryType()) {
         case geometry::Geometry::GeometryType::PointCloud: {
@@ -786,6 +788,7 @@ const std::vector<Eigen::Vector3d>
         case geometry::Geometry::GeometryType::Octree:
         case geometry::Geometry::GeometryType::OrientedBoundingBox:
         case geometry::Geometry::GeometryType::AxisAlignedBoundingBox:
+        case geometry::Geometry::GeometryType::OrientedBoundingEllipsoid:
         case geometry::Geometry::GeometryType::Unspecified:
             points = nullptr;
             break;

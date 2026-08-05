@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 /* Furthest point sampling
@@ -42,6 +42,6 @@ REGISTER_OP("Open3DRoiPool")
             ::tensorflow::shape_inference::ShapeHandle output2 =
                     c->MakeShape({c->Dim(dims1, 0), c->Dim(dims1, 1)});
             c->set_output(1, output2);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc( TODO )doc");

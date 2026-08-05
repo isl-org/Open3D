@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/Visualizer.h"
-
+#include <filesystem>
+namespace fs = std::filesystem;
 #include "open3d/geometry/Image.h"
+#include "open3d/visualization/visualizer/Visualizer.h"
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"

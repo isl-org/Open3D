@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -163,14 +163,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         utility::LogError("Probability must be > 0 and <= 1.0");
     }
 
-    RANSACResult result;
-
-    // Initialize the best plane model.
-    Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
-
     size_t num_points = points_.size();
-    RandomSampler<size_t> sampler(num_points);
-
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
         utility::LogError(
@@ -184,8 +177,23 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                                std::vector<size_t>{});
     }
 
+    RANSACResult result;
+    Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
+
+    // Pre-generate all random samples before entering the parallel region. This
+    // keeps results reproducible for a given seed (independent of thread
+    // scheduling) and avoids serializing on the global random engine mutex.
+    RandomSampler<size_t> sampler(num_points);
+    std::vector<std::vector<size_t>> all_sampled_indices;
+    all_sampled_indices.reserve(num_iterations);
+    for (int i = 0; i < num_iterations; ++i) {
+        all_sampled_indices.push_back(sampler(ransac_n));
+    }
+
     // Use size_t here to avoid large integer which exceed max of int.
-    std::size_t break_iteration = std::numeric_limits<std::size_t>::max();
+    // Both are read outside the mutex, so they must be atomic.
+    std::atomic<std::size_t> break_iteration =
+            std::numeric_limits<std::size_t>::max();
     std::atomic<std::size_t> iteration_count = 0;
 
     tbb::spin_rw_mutex mtx;
@@ -197,7 +205,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                         continue;
                     }
 
-                    std::vector<std::size_t> inliers = sampler(ransac_n);
+                    // Access the pre-generated sampled indices.
+                    std::vector<std::size_t> inliers = all_sampled_indices[i];
 
                     // Fit model to num_model_parameters randomly selected
                     // points among the inliers.

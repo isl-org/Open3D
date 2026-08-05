@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,6 +18,14 @@ namespace core {
 void pybind_core_dtype_declarations(py::module &m) {
     py::class_<Dtype, std::shared_ptr<Dtype>> dtype(m, "Dtype",
                                                     "Open3D data types.");
+    py::native_enum<Dtype::DtypeCode>(dtype, "DtypeCode", "enum.Enum")
+            .value("Undefined", Dtype::DtypeCode::Undefined)
+            .value("Bool", Dtype::DtypeCode::Bool)
+            .value("Int", Dtype::DtypeCode::Int)
+            .value("UInt", Dtype::DtypeCode::UInt)
+            .value("Float", Dtype::DtypeCode::Float)
+            .value("Object", Dtype::DtypeCode::Object)
+            .finalize();
 }
 void pybind_core_dtype_definitions(py::module &m) {
     // open3d.core.Dtype class

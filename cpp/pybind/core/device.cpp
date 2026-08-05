@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,10 +18,12 @@ void pybind_core_device_declarations(py::module &m) {
     py::class_<Device> device(
             m, "Device",
             "Device context specifying device type and device id.");
-    py::enum_<Device::DeviceType>(device, "DeviceType")
+    py::native_enum<Device::DeviceType>(device, "DeviceType", "enum.Enum")
             .value("CPU", Device::DeviceType::CPU)
             .value("CUDA", Device::DeviceType::CUDA)
-            .export_values();
+            .value("SYCL", Device::DeviceType::SYCL)
+            .export_values()
+            .finalize();
 }
 void pybind_core_device_definitions(py::module &m) {
     auto device = static_cast<py::class_<Device>>(m.attr("Device"));
@@ -31,7 +33,24 @@ void pybind_core_device_definitions(py::module &m) {
     device.def(py::init<const std::string &>());
     device.def("__eq__", &Device::operator==);
     device.def("__ene__", &Device::operator!=);
-    device.def("__repr__", &Device::ToString);
+    device.def("__repr__", [](const Device &d) {
+        std::string device_type;
+        switch (d.GetType()) {
+            case Device::DeviceType::CPU:
+                device_type = "CPU";
+                break;
+            case Device::DeviceType::CUDA:
+                device_type = "CUDA";
+                break;
+            case Device::DeviceType::SYCL:
+                device_type = "SYCL";
+                break;
+            default:
+                utility::LogError("Unknown device type");
+                return d.ToString();
+        }
+        return fmt::format("Device(\"{}\", {})", device_type, d.GetID());
+    });
     device.def("__str__", &Device::ToString);
     device.def("get_type", &Device::GetType);
     device.def("get_id", &Device::GetID);

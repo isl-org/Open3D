@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ template <typename Map,
           typename... Args>
 static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
                                                     const std::string &name,
-                                                    Args &&... args) {
+                                                    Args &&...args) {
     using KeyType = typename Map::key_type;
     using MappedType = typename Map::mapped_type;
     using Class_ = py::class_<Map, holder_type>;

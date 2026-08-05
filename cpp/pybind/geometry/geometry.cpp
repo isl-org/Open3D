@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,16 +17,9 @@ namespace geometry {
 void pybind_geometry_classes_declarations(py::module &m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
             geometry(m, "Geometry", "The base geometry class.");
-    py::enum_<Geometry::GeometryType> geometry_type(geometry, "Type",
-                                                    py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geometry_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
-
-    geometry_type.value("Unspecified", Geometry::GeometryType::Unspecified)
+    py::native_enum<Geometry::GeometryType>(geometry, "Type", "enum.Enum",
+                                            "Enum class for Geometry types.")
+            .value("Unspecified", Geometry::GeometryType::Unspecified)
             .value("PointCloud", Geometry::GeometryType::PointCloud)
             .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
             .value("LineSet", Geometry::GeometryType::LineSet)
@@ -36,7 +29,8 @@ void pybind_geometry_classes_declarations(py::module &m) {
             .value("Image", Geometry::GeometryType::Image)
             .value("RGBDImage", Geometry::GeometryType::RGBDImage)
             .value("TetraMesh", Geometry::GeometryType::TetraMesh)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
                std::shared_ptr<Geometry3D>, Geometry>
             geometry3d(m, "Geometry3D",
@@ -45,6 +39,9 @@ void pybind_geometry_classes_declarations(py::module &m) {
                std::shared_ptr<Geometry2D>, Geometry>
             geometry2d(m, "Geometry2D",
                        "The base geometry class for 2D geometries.");
+
+    m.attr("m") = py::module_::import("typing").attr("TypeVar")("m");
+    m.attr("n") = py::module_::import("typing").attr("TypeVar")("n");
 }
 void pybind_geometry_classes_definitions(py::module &m) {
     // open3d.geometry functions

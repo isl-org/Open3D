@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ REGISTER_OP("Open3DTrilinearDevoxelize")
             c->set_output(1, out2);
             c->set_output(2, out2);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Trilinear Devoxelize.
@@ -167,7 +167,7 @@ REGISTER_OP("Open3DTrilinearDevoxelizeGrad")
 
             c->set_output(0, out);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Gradient function for Trilinear Devoxelize op.

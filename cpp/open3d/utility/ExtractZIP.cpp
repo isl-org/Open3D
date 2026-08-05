@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,7 +12,11 @@
 
 #include <errno.h>
 #include <stdio.h>
+#if __has_include(<minizip/unzip.h>)
+#include <minizip/unzip.h>
+#else
 #include <unzip.h>
+#endif
 
 #include <iostream>
 #include <string>

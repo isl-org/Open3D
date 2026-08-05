@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/FileSystem.h"
@@ -25,16 +26,10 @@
 namespace open3d {
 namespace tests {
 
-class TensorPermuteDevices : public PermuteDevices {};
+class TensorPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
-
-class TensorPermuteDevicesWithSYCL : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(
-        Tensor,
-        TensorPermuteDevicesWithSYCL,
-        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+                         testing::ValuesIn(TensorPermuteDevices::TestCases()));
 
 class TensorPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
@@ -66,7 +61,7 @@ static constexpr const T &AsConst(T &t) noexcept {
     return t;
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, Constructor) {
+TEST_P(TensorPermuteDevices, Constructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
 
@@ -83,7 +78,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, Constructor) {
     EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, ConstructorBool) {
+TEST_P(TensorPermuteDevices, ConstructorBool) {
     core::Device device = GetParam();
 
     core::SizeVector shape{2, 3};
@@ -117,7 +112,7 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
     EXPECT_EQ(t.ToFlatVector<float>(), vals);
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, WithInitList) {
+TEST_P(TensorPermuteDevices, WithInitList) {
     core::Device device = GetParam();
 
     core::Tensor t;
@@ -199,7 +194,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, WithInitList) {
                  std::exception);
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, WithInitValueBool) {
+TEST_P(TensorPermuteDevices, WithInitValueBool) {
     core::Device device = GetParam();
 
     std::vector<bool> vals{true, false, true, true, false, false};
@@ -207,7 +202,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, WithInitValueBool) {
     EXPECT_EQ(t.ToFlatVector<bool>(), vals);
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, WithInitValueTypeMismatch) {
+TEST_P(TensorPermuteDevices, WithInitValueTypeMismatch) {
     core::Device device = GetParam();
 
     std::vector<int> vals{0, 1, 2, 3, 4, 5};
@@ -215,7 +210,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, WithInitValueTypeMismatch) {
                  std::runtime_error);
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, WithInitValueSizeMismatch) {
+TEST_P(TensorPermuteDevices, WithInitValueSizeMismatch) {
     core::Device device = GetParam();
 
     std::vector<float> vals{0, 1, 2, 3, 4};
@@ -266,6 +261,31 @@ TEST_P(TensorPermuteDevices, Arange) {
                  std::runtime_error);
 }
 
+TEST_P(TensorPermuteDevices, Quasirandom) {
+    core::Device device = GetParam();
+
+    // Basic functionality
+    core::Tensor qr_ref = core::Tensor::Init<float>({{0.11803399, 0.035687387},
+                                                     {0.73606795, 0.5713748},
+                                                     {0.35410196, 0.10706216},
+                                                     {0.97213596, 0.64274955},
+                                                     {0.59016997, 0.17843693},
+                                                     {0.20820393, 0.7141243},
+                                                     {0.8262379, 0.24981171},
+                                                     {0.44427192, 0.7854991}});
+    core::Tensor qr = core::Tensor::Quasirandom(8, 2, core::Float32, device);
+    EXPECT_EQ(qr.GetShape(), core::SizeVector({8, 2}));
+    EXPECT_EQ(qr.GetDtype(), core::Float32);
+    EXPECT_EQ(qr.GetDevice(), device);
+    EXPECT_TRUE(qr.To(core::Device("CPU:0")).AllClose(qr_ref));
+
+    // Test error conditions
+    EXPECT_ANY_THROW(core::Tensor::Quasirandom(0, 2));   // n <= 0
+    EXPECT_ANY_THROW(core::Tensor::Quasirandom(10, 0));  // dims <= 0
+    EXPECT_ANY_THROW(
+            core::Tensor::Quasirandom(10, 2, core::Int32));  // wrong dtype
+}
+
 TEST_P(TensorPermuteDevices, Fill) {
     core::Device device = GetParam();
     core::Tensor t(std::vector<float>(2 * 3, 0), {2, 3}, core::Float32, device);
@@ -287,7 +307,7 @@ TEST_P(TensorPermuteDevices, FillSlice) {
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1, 0, 1}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexSetFillFancy) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexSetFillFancy) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -364,7 +384,7 @@ TEST_P(TensorPermuteDevices, To) {
     EXPECT_EQ(dst_t.ToFlatVector<int>(), dst_vals);
 }
 
-TEST_P(TensorPermuteDevicePairs, ToDevice) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, ToDevice) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -382,7 +402,7 @@ TEST_P(TensorPermuteDevicePairs, ToDevice) {
     EXPECT_ANY_THROW(src_t.To(core::Device("CUDA:100000")));
 }
 
-TEST_P(TensorPermuteDevicePairs, CopyBroadcast) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, CopyBroadcast) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -544,7 +564,7 @@ TEST_P(TensorPermuteDevices, Flatten) {
     EXPECT_ANY_THROW(src_t.Flatten(2, 1));
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, DefaultStrides) {
+TEST_P(TensorPermuteDevices, DefaultStrides) {
     core::Device device = GetParam();
 
     core::Tensor t0({}, core::Float32, device);
@@ -678,7 +698,7 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
     EXPECT_EQ(t[1][2][3].Item<float>(), 101);
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, ToString) {
+TEST_P(TensorPermuteDevices, ToString) {
     using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Tensor t;
@@ -837,6 +857,59 @@ TEST_P(TensorPermuteDevices, Slice) {
     EXPECT_EQ(t_5.GetDataPtr(), static_cast<const char *>(blob_head) +
                                         core::Float32.ByteSize() * 3 * 4);
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
+
+    // Negative step tests
+    // t_6 = t[0, ::-1, :] reverses the middle dimension
+    core::Tensor t_6 = t[0].Slice(0, 2, -1, -1);
+    EXPECT_EQ(t_6.GetShape(), core::SizeVector({3, 4}));
+    EXPECT_EQ(t_6.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_6.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_6.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_7: Negative step with stop out-of-bounds (-5)
+    core::Tensor t_7 = t[0].Slice(0, 2, -5, -1);
+    EXPECT_EQ(t_7.GetShape(), core::SizeVector({3, 4}));
+    EXPECT_EQ(t_7.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_7.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_7.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_8 = t[0, 1::-1, :] gives indices 1, 0 (start=1, stop=-1 means before 0)
+    core::Tensor t_8 = t[0].Slice(0, 1, -1, -1);
+    EXPECT_EQ(t_8.GetShape(), core::SizeVector({2, 4}));
+    EXPECT_EQ(t_8.GetStrides(), core::SizeVector({-4, 1}));
+    EXPECT_EQ(t_8.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 1 * 4);
+    EXPECT_EQ(t_8.ToFlatVector<float>(),
+              std::vector<float>({4, 5, 6, 7, 0, 1, 2, 3}));
+
+    // t_9 = t[0, ::-2, :] reverses with step -2
+    core::Tensor t_9 = t[0].Slice(0, 2, -1, -2);
+    EXPECT_EQ(t_9.GetShape(), core::SizeVector({2, 4}));
+    EXPECT_EQ(t_9.GetStrides(), core::SizeVector({-8, 1}));
+    EXPECT_EQ(t_9.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                        core::Float32.ByteSize() * 2 * 4);
+    EXPECT_EQ(t_9.ToFlatVector<float>(),
+              std::vector<float>({8, 9, 10, 11, 0, 1, 2, 3}));
+
+    // t_10 = empty slice with negative step (stop >= start)
+    core::Tensor t_10 = t[0].Slice(0, 0, 1, -1);
+    EXPECT_EQ(t_10.GetShape(), core::SizeVector({0, 4}));
+    EXPECT_EQ(t_10.GetStrides(), core::SizeVector({-4, 1}));
+
+    // t_11 = negative step on first dimension
+    core::Tensor t_11 = t.Slice(0, 1, -1, -1);
+    EXPECT_EQ(t_11.GetShape(), core::SizeVector({2, 3, 4}));
+    EXPECT_EQ(t_11.GetStrides(), core::SizeVector({-12, 4, 1}));
+    EXPECT_EQ(t_11.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                         core::Float32.ByteSize() * 1 * 3 * 4);
+    EXPECT_EQ(t_11.ToFlatVector<float>(),
+              std::vector<float>({12, 13, 14, 15, 16, 17, 18, 19,
+                                  20, 21, 22, 23, 0,  1,  2,  3,
+                                  4,  5,  6,  7,  8,  9,  10, 11}));
 }
 
 TEST_P(TensorPermuteDevices, GetItem) {
@@ -1090,7 +1163,7 @@ TEST_P(TensorPermuteDevices, Append) {
     }
 }
 
-TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, CopyNonContiguous) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -1127,7 +1200,7 @@ TEST_P(TensorPermuteDevicePairs, CopyNonContiguous) {
     }
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGet) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGet) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1164,7 +1237,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGet) {
     EXPECT_EQ(src_t.GetDtype(), dst_t.GetDtype());
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetNegative) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetNegative) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1188,7 +1261,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetNegative) {
     EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({5, 10, 17, 22}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndex) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGet2DBroadcastedIndex) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1218,7 +1291,8 @@ TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndex) {
                                   28, 29, 30, 31, 40, 41, 42, 43}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndexSplitBySlice) {
+TEST_P(TensorPermuteDevicePairsWithSYCL,
+       IndexGet2DBroadcastedIndexSplitBySlice) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1249,7 +1323,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndexSplitBySlice) {
                                   16, 20, 40, 44, 17, 21, 41, 45}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetAssignToBroadcast) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetAssignToBroadcast) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -1279,7 +1353,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetAssignToBroadcast) {
             std::vector<float>({5, 10, 17, 22, 5, 10, 17, 22, 5, 10, 17, 22}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetSeparateBySlice) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetSeparateBySlice) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1303,7 +1377,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetSeparateBySlice) {
               std::vector<float>({0, 4, 8, 13, 17, 21}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetSliceEnd) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetSliceEnd) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1326,7 +1400,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetSliceEnd) {
               std::vector<float>({0, 1, 2, 3, 16, 17, 18, 19}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexSet) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexSet) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -1405,7 +1479,7 @@ TEST_P(TensorPermuteDevicePairs, IndexSet) {
                            core::Tensor::Init<float>({10, 11}, src_device)));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexSetBroadcast) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexSetBroadcast) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -1556,6 +1630,33 @@ TEST_P(TensorPermuteDevices, Det) {
     EXPECT_ANY_THROW(core::Tensor::Ones({3, 4}, dtype, device).Det());
 }
 
+TEST_P(TensorPermuteDevices, Cross) {
+    core::Device device = GetParam();
+    core::Tensor a = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+    core::Tensor b =
+            core::Tensor::Init<float>({{7, 8, 9}, {10, 11, 12}}, device);
+
+    core::Tensor c = a.Cross(b);  // axis=-1
+    core::Tensor c_ref =
+            core::Tensor::Init<float>({{-6, 12, -6}, {-6, 12, -6}}, device);
+    EXPECT_TRUE(c.AllClose(c_ref));
+
+    // Test with axis=0
+    c = a.T().Cross(b.T(), 0);
+    EXPECT_TRUE(c.AllClose(c_ref.T()));
+
+    // Test with broadcast
+    a = core::Tensor::Init<float>({1, 2, 3}, device);
+    b = core::Tensor::Init<float>({{7, 8, 9}, {10, 11, 12}}, device);
+    c = a.Cross(b);
+    c_ref = core::Tensor::Init<float>({{-6, 12, -6}, {-9, 18, -9}}, device);
+    EXPECT_TRUE(c.AllClose(c_ref));
+
+    // Test error conditions
+    core::Tensor bad_shape = core::Tensor::Ones({2, 2}, core::Float32, device);
+    EXPECT_ANY_THROW(a.Cross(bad_shape));
+}
+
 TEST_P(TensorPermuteDevices, ShallowCopyConstructor) {
     core::Device device = GetParam();
     core::Tensor t({2, 3}, core::Float32, device);
@@ -1689,7 +1790,9 @@ TEST_P(TensorPermuteDevices, Div) {
     core::Tensor b =
             core::Tensor::Init<float>({{6, 7, 8}, {9, 10, 11}}, device);
     core::Tensor c = a / b;
-    EXPECT_EQ(c.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
+    core::Tensor c_ref = core::Tensor(std::vector<float>{0, 1, 2, 3, 4, 5},
+                                      {2, 3}, core::Float32, device);
+    EXPECT_TRUE(c.AllClose(c_ref));
 }
 
 TEST_P(TensorPermuteDevices, Div_) {
@@ -1699,7 +1802,9 @@ TEST_P(TensorPermuteDevices, Div_) {
     core::Tensor b =
             core::Tensor::Init<float>({{6, 7, 8}, {9, 10, 11}}, device);
     a /= b;
-    EXPECT_EQ(a.ToFlatVector<float>(), std::vector<float>({0, 1, 2, 3, 4, 5}));
+    core::Tensor a_ref = core::Tensor(std::vector<float>{0, 1, 2, 3, 4, 5},
+                                      {2, 3}, core::Float32, device);
+    EXPECT_TRUE(a.AllClose(a_ref));
 }
 
 TEST_P(TensorPermuteDevices, ReduceSumKeepDim) {
@@ -1910,19 +2015,20 @@ TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
 
 TEST_P(TensorPermuteDevices, ReduceMultipleOutputsSumLargeArray) {
     core::Device device = GetParam();
-    core::SizeVector shape{3, 7, 8234719};
+    constexpr int64_t large = 8234719;
+    core::SizeVector shape{3, 7, large};
     int64_t size = shape.NumElements();
     std::vector<int> vals(size, 1);
     core::Tensor src(vals, shape, core::Int32, device);
     core::Tensor dst;
 
     dst = src.Sum({}, false);
-    EXPECT_EQ(dst.GetShape(), core::SizeVector({3, 7, 8234719}));
-    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(3 * 7 * 8234719, 1));
+    EXPECT_EQ(dst.GetShape(), core::SizeVector({3, 7, large}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(3 * 7 * large, 1));
 
     dst = src.Sum({0}, false);
-    EXPECT_EQ(dst.GetShape(), core::SizeVector({7, 8234719}));
-    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * 8234719, 3));
+    EXPECT_EQ(dst.GetShape(), core::SizeVector({7, large}));
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>(7 * large, 3));
 }
 
 TEST_P(TensorPermuteDevices, ReduceSum64bit1D) {
@@ -2239,6 +2345,9 @@ TEST_P(TensorPermuteDevices, ReduceMaxFloatLimit) {
 
 TEST_P(TensorPermuteDevices, ReduceArgMin) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device))
+        GTEST_SKIP() << "allocateMemSubBuffer() fails on SYCL CPU.";
+
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},
@@ -2267,6 +2376,8 @@ TEST_P(TensorPermuteDevices, ReduceArgMin) {
 
 TEST_P(TensorPermuteDevices, ReduceArgMax) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device))
+        GTEST_SKIP() << "allocateMemSubBuffer() fails on SYCL CPU.";
     core::Tensor src = core::Tensor::Init<float>(
             {{{22, 23, 20, 9}, {6, 14, 18, 13}, {15, 3, 17, 0}},
              {{7, 21, 11, 1}, {4, 2, 10, 19}, {5, 8, 16, 12}}},
@@ -3147,9 +3258,31 @@ TEST_P(TensorPermuteDevices, ToDLPackFromDLPack) {
     EXPECT_EQ(src_t.ToFlatVector<float>(),
               std::vector<float>({12, 14, 20, 22}));
 
+    // Test DLPack v0.x
     DLManagedTensor *dl_t = src_t.ToDLPack();
 
     core::Tensor dst_t = core::Tensor::FromDLPack(dl_t);
+    EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
+    EXPECT_EQ(dst_t.GetStrides(), core::SizeVector({8, 2}));
+    // Note that the original blob head's info has been discarded.
+    EXPECT_EQ(dst_t.GetBlob()->GetDataPtr(),
+              static_cast<const char *>(blob_head) +
+                      core::Float32.ByteSize() * 3 * 4);
+    EXPECT_EQ(dst_t.GetDataPtr(), static_cast<const char *>(blob_head) +
+                                          core::Float32.ByteSize() * 3 * 4);
+    EXPECT_EQ(dst_t.ToFlatVector<float>(),
+              std::vector<float>({12, 14, 20, 22}));
+
+    // Test DLPack v1.x
+    src_t = core::Tensor::Init<float>(
+            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
+             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
+            device);
+    blob_head = src_t.GetBlob()->GetDataPtr();
+    src_t = src_t[1].Slice(0, 0, 3, 2).Slice(1, 0, 4, 2);
+    DLManagedTensorVersioned *dlv_t = src_t.ToDLPackVersioned();
+
+    dst_t = core::Tensor::FromDLPackVersioned(dlv_t);
     EXPECT_EQ(dst_t.GetShape(), core::SizeVector({2, 2}));
     EXPECT_EQ(dst_t.GetStrides(), core::SizeVector({8, 2}));
     // Note that the original blob head's info has been discarded.

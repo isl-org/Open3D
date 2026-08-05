@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -25,6 +25,15 @@ if (sys.version_info > (3, 0)):
 else:
     pyver = 2
     from urllib2 import Request, urlopen
+
+
+def limit_open3d_threads(num_threads=1):
+    """Restrict Open3D to `num_threads` CPU threads in the calling process.
+
+    Use as a multiprocessing.Pool initializer so that worker processes do not
+    each spin up a full-width TBB thread pool and oversubscribe the CPU.
+    """
+    o3d.utility.set_max_threads(num_threads)
 
 
 def edges_to_lineset(mesh, edges, color):

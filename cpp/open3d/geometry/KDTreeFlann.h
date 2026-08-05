@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -80,7 +80,8 @@ public:
     int SearchRadius(const T &query,
                      double radius,
                      std::vector<int> &indices,
-                     std::vector<double> &distance2) const;
+                     std::vector<double> &distance2,
+                     bool sorted = true) const;
 
     template <typename T>
     int SearchHybrid(const T &query,

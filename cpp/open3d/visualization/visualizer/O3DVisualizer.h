@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -161,6 +161,10 @@ public:
 
     void ResetCameraToDefault();
 
+    /// Get menubar from window system. The window came from
+    /// `Application::GetInstance()`
+    std::shared_ptr<gui::MenuBase> GetMenubar();
+
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
     void SetIBL(const std::string& path);
@@ -201,6 +205,14 @@ public:
             std::function<TickResult(O3DVisualizer&, double, double)> cb);
 
     void ExportCurrentImage(const std::string& path);
+
+    /// Copies the current camera view parameters to the clipboard as a JSON
+    /// string with fields: intrinsic_matrix, extrinsic_matrix, near_plane,
+    /// far_plane. Field names match draw.py parameters for easy reuse.
+    void CopyViewToClipboard();
+
+    /// Pastes camera view parameters from the clipboard in JSON format.
+    void PasteViewFromClipboard();
 
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;

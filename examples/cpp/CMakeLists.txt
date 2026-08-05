@@ -37,16 +37,12 @@ open3d_add_example(Flann)
 open3d_add_example(Image)
 open3d_add_example(IntegrateRGBD)
 open3d_add_example(ISSKeypoints)
-open3d_add_example(PlanarPatchDetection   ${OPENMP_TARGET})
+open3d_add_example(PlanarPatchDetection)
 open3d_add_example(LineSet)
 open3d_add_example(Log)
 open3d_add_example(Octree)
 open3d_add_example(OdometryRGBD)
-if (TARGET Open3D::3rdparty_openmp)
-    open3d_add_example(OpenMP                    Open3D::3rdparty_openmp)
-else()
-    open3d_add_example(OpenMP)
-endif()
+open3d_add_example(Parallelism)
 open3d_add_example(PCDFileFormat)
 open3d_add_example(PointCloud)
 open3d_add_example(PoseGraph)
@@ -73,6 +69,7 @@ endif()
 
 if (BUILD_GUI)
     open3d_add_example(Draw)
+    open3d_add_example(GaussianSplat)
     open3d_add_example(MultipleWindows       Open3D::3rdparty_threads)
     open3d_add_example(OffscreenRendering)
     open3d_add_example(TICPSequential        Open3D::3rdparty_threads)
@@ -86,6 +83,15 @@ endif()
 
 if(BUILD_WEBRTC)
     open3d_add_example(DrawWebRTC)
+    # Static MKL + monolithic libwebrtc.a need a late --start-group pass on Linux.
+    if(UNIX AND NOT APPLE AND NOT USE_BLAS)
+        target_link_libraries(DrawWebRTC PRIVATE
+            "-Wl,--start-group"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "-Wl,--end-group")
+    endif()
 endif()
 
 if (BUILD_LIBREALSENSE)
@@ -106,7 +112,7 @@ ProcessorCount(NPROC)
 add_custom_target(build-examples-iteratively
     COMMAND ${CMAKE_COMMAND}
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
-    -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+    -DEXAMPLE_TOP_BUILD_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
     -DCMAKE_BUILD_TYPE="$<CONFIG>"
     -DNPROC="${NPROC}"

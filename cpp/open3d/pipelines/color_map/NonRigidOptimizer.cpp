@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ struct JTJandJTrNonRigidReducer {
     JTJandJTrNonRigidReducer(FuncType& f_, int nonrigidval)
         : f(f_),
           JTJ(MatOutType::Zero(6 + nonrigidval, 6 + nonrigidval)),
-          JTr(VecOutType::Zero(6 + nonrigidval)){};
+          JTr(VecOutType::Zero(6 + nonrigidval)) {};
 
     JTJandJTrNonRigidReducer(JTJandJTrNonRigidReducer& o, tbb::split)
         : f(o.f),
@@ -231,16 +231,6 @@ static void ComputeJacobianAndResidualNonRigid(
     r = (gray - proxy_intensity[vid]);
 }
 
-inline void atomic_sum(std::atomic<double>& total, const double& val) {
-#if defined(__cpp_lib_atomic_float) && __cpp_lib_atomic >= 201711L
-    total.fetch_add(val);
-#else
-    double expected = total;
-    while (!total.compare_exchange_weak(expected, expected + val))
-        ;
-#endif
-}
-
 std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
 RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
                      const std::vector<geometry::RGBDImage>& images_rgbd,
@@ -396,8 +386,8 @@ RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
                         }
                         opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-                        atomic_sum(residual, r2);
-                        atomic_sum(residual_reg, rr_reg);
+                        utility::AtomicAdd(residual, r2);
+                        utility::AtomicAdd(residual_reg, rr_reg);
                     }
                 });
         utility::LogDebug("Residual error : {:.6f}, reg : {:.6f}",

@@ -1,12 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <fmt/core.h>
+#include <tbb/parallel_for_each.h>
 #include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
@@ -16,23 +18,37 @@
 #include <vtkQuadricDecimation.h>
 
 #include <Eigen/Core>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorKey.h"
+#include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/IPPImage.h"
+#include "open3d/t/geometry/kernel/Metrics.h"
 #include "open3d/t/geometry/kernel/PCAPartition.h"
-#include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#include "open3d/t/geometry/kernel/mikktspace.h"
 #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
@@ -116,7 +132,12 @@ std::string TriangleMesh::ToString() const {
         triangles_attr_str[triangles_attr_str.size() - 1] = '.';
     }
 
-    return str + vertices_attr_str + triangles_attr_str;
+    std::string material_str;
+    if (HasMaterial()) {
+        material_str = '\n' + GetMaterial().ToString();
+    }
+
+    return str + vertices_attr_str + triangles_attr_str + material_str;
 }
 
 TriangleMesh &TriangleMesh::Transform(const core::Tensor &transformation) {
@@ -183,6 +204,13 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
                       vertex_normals);
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::trianglemesh::NormalizeNormalsSYCL(vertex_normals);
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -198,6 +226,13 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
                       triangle_normals);
+        } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+            kernel::trianglemesh::NormalizeNormalsSYCL(triangle_normals);
+#else
+            utility::LogError(
+                    "Not compiled with SYCL, but SYCL device is used.");
+#endif
         } else {
             utility::LogError("Unimplemented device");
         }
@@ -231,6 +266,13 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::trianglemesh::ComputeTriangleNormalsCUDA,
                   GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeTriangleNormalsSYCL(
+                GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -271,6 +313,13 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
     } else if (IsCUDA()) {
         CUDA_CALL(kernel::trianglemesh::ComputeVertexNormalsCUDA,
                   GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else if (IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeVertexNormalsSYCL(
+                GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -295,6 +344,14 @@ static core::Tensor ComputeTriangleAreasHelper(const TriangleMesh &mesh) {
         CUDA_CALL(kernel::trianglemesh::ComputeTriangleAreasCUDA,
                   mesh.GetVertexPositions().Contiguous(),
                   mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+    } else if (mesh.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::trianglemesh::ComputeTriangleAreasSYCL(
+                mesh.GetVertexPositions().Contiguous(),
+                mesh.GetTriangleIndices().Contiguous(), triangle_areas);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device");
     }
@@ -313,6 +370,12 @@ TriangleMesh &TriangleMesh::ComputeTriangleAreas() {
                                          {0}, GetVertexPositions().GetDtype(),
                                          GetDevice()));
         utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+    if (HasTriangleAttr("areas")) {
+        utility::LogWarning(
+                "TriangleMesh already has triangle areas: remove "
+                "'areas' triangle attribute if you'd like to update.");
         return *this;
     }
 
@@ -732,6 +795,42 @@ OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromPoints(GetVertexPositions());
 }
 
+OrientedBoundingEllipsoid TriangleMesh::GetOrientedBoundingEllipsoid(
+        bool robust) const {
+    return OrientedBoundingEllipsoid::CreateFromPoints(GetVertexPositions(),
+                                                       robust);
+}
+
+TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
+        const OrientedBoundingEllipsoid &ellipsoid,
+        const core::Tensor &scale,
+        int resolution,
+        core::Dtype float_dtype,
+        core::Dtype int_dtype,
+        const core::Device &device) {
+    // Extract radii scaled by the per-axis scale factors.
+    core::Tensor radii =
+            ellipsoid.GetRadii().To(core::Float64) * scale.To(core::Float64);
+    double rx = radii[0].Item<double>();
+    double ry = radii[1].Item<double>();
+    double rz = radii[2].Item<double>();
+    TriangleMesh mesh = CreateEllipsoid(rx, ry, rz, resolution, float_dtype,
+                                        int_dtype, device);
+    // Apply the ellipsoid rotation and translation.
+    core::Tensor R = ellipsoid.GetRotation().To(device, float_dtype);
+    core::Tensor t = ellipsoid.GetCenter().To(device, float_dtype);
+    core::Tensor T = core::Tensor::Eye(4, float_dtype, device);
+    T.Slice(0, 0, 3).Slice(1, 0, 3) = R;
+    T.Slice(0, 0, 3).Slice(1, 3, 4) = t.Reshape({3, 1});
+    mesh.Transform(T);
+    // Copy color from the ellipsoid to all vertices.
+    core::Tensor color = ellipsoid.GetColor().To(device, float_dtype);
+    int64_t num_vertices = mesh.GetVertexPositions().GetLength();
+    mesh.SetVertexColors(
+            color.Reshape({1, 3}).Expand({num_vertices, 3}).Contiguous());
+    return mesh;
+}
+
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
     // do not include triangle attributes because they will not be preserved by
@@ -977,7 +1076,7 @@ TriangleMesh::BakeVertexAttrTextures(
                 });
     }
     if (update_material) {
-        UpdateMaterialTextures(result, this->GetMaterial());
+        UpdateMaterialTextures(result, GetMaterial());
     }
 
     return result;
@@ -1013,7 +1112,7 @@ TriangleMesh::BakeTriangleAttrTextures(
         }
         core::Tensor tensor =
                 triangle_attr_.at(attr).To(core::Device()).Contiguous();
-        DISPATCH_DTYPE_TO_TEMPLATE(tensor.GetDtype(), [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(tensor.GetDtype(), [&]() {
             core::Tensor tex;
             if (GetTriangleIndices().GetDtype() == core::Int32) {
                 tex = BakeAttribute<scalar_t, int32_t, false>(
@@ -1190,7 +1289,8 @@ static bool IsNegative(T val) {
     return false;
 }
 
-TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
+TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices,
+                                         bool copy_attributes /*=true*/) const {
     core::AssertTensorShape(indices, {indices.GetLength()});
     if (indices.NumElements() == 0) {
         return {};
@@ -1290,7 +1390,8 @@ TriangleMesh TriangleMesh::SelectByIndex(const core::Tensor &indices) const {
     if (tris_cpu.NumElements() > 0) {  // To() needs non-empty tensor
         result.SetTriangleIndices(tris_cpu.To(GetDevice()));
     }
-    CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
+    if (copy_attributes)
+        CopyAttributesByMasks(result, *this, vertex_mask, tri_mask);
 
     return result;
 }
@@ -1345,16 +1446,269 @@ TriangleMesh TriangleMesh::RemoveUnreferencedVertices() {
 
     utility::LogDebug(
             "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
-            (int)(num_verts_old - GetVertexPositions().GetLength()));
+            static_cast<int>(num_verts_old - GetVertexPositions().GetLength()));
 
     return *this;
 }
 
+namespace {
+
+core::Tensor Project(const core::Tensor &t_xyz,  // contiguous {...,3}
+                     const core::Tensor &t_intrinsic_matrix,  // {3,3}
+                     const core::Tensor &t_extrinsic_matrix,  // {4,4}
+                     core::Tensor &t_xy) {  // contiguous {...,2}
+    auto xy_shape = t_xyz.GetShape();
+    auto dt = t_xyz.GetDtype();
+    auto t_K = t_intrinsic_matrix.To(dt).Contiguous(),
+         t_T = t_extrinsic_matrix.To(dt).Contiguous();
+    xy_shape[t_xyz.NumDims() - 1] = 2;
+    if (t_xy.GetDtype() != dt || t_xy.GetShape() != xy_shape) {
+        t_xy = core::Tensor(xy_shape, dt);
+    }
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dt, [&]() {
+        // Eigen is column major
+        Eigen::Map<Eigen::MatrixX<scalar_t>> xy(t_xy.GetDataPtr<scalar_t>(), 2,
+                                                t_xy.NumElements() / 2);
+        Eigen::Map<const Eigen::MatrixX<scalar_t>> xyz(
+                t_xyz.GetDataPtr<scalar_t>(), 3, t_xyz.NumElements() / 3);
+        Eigen::Map<const Eigen::Matrix3<scalar_t>> KT(
+                t_K.GetDataPtr<scalar_t>());
+        Eigen::Map<const Eigen::Matrix4<scalar_t>> TT(
+                t_T.GetDataPtr<scalar_t>());
+
+        auto K = KT.transpose();
+        auto T = TT.transpose();
+        auto R = T.topLeftCorner<3, 3>();
+        auto t = T.topRightCorner<3, 1>();
+        auto pxyz = (K * ((R * xyz).colwise() + t)).array();
+        xy = pxyz.topRows<2>().rowwise() / pxyz.bottomRows<1>();
+    });
+    return t_xy;  // contiguous {...,2}
+}
+
+/// Estimate minimum sqr distance from a set of points to a set of cameras.
+float get_min_cam_sqrdistance(
+        const core::Tensor &positions,
+        const std::vector<core::Tensor> &extrinsic_matrices) {
+    const size_t MAXPTS = 10000;
+    core::Tensor cam_loc({int64_t(extrinsic_matrices.size()), 3},
+                         core::Float32);
+    for (size_t k = 0; k < extrinsic_matrices.size(); ++k) {
+        const core::Tensor RT = extrinsic_matrices[k].Slice(0, 0, 3);
+        cam_loc[k] =
+                -RT.Slice(1, 0, 3).T().Matmul(RT.Slice(1, 3, 4)).Reshape({-1});
+    }
+    size_t npts = positions.GetShape(0);
+    const core::Tensor pos_sample =
+            npts > MAXPTS ? positions.Slice(0, 0, -1, npts / MAXPTS)
+                          : positions;
+    auto nns = core::nns::NearestNeighborSearch(pos_sample);
+    nns.KnnIndex();
+    float min_sqrdistance = nns.KnnSearch(cam_loc, 1)
+                                    .second.Min({0, 1})
+                                    .To(core::Device(), core::Float32)
+                                    .Item<float>();
+    return min_sqrdistance;
+}
+
+}  // namespace
+
+Image TriangleMesh::ProjectImagesToAlbedo(
+        const std::vector<Image> &images,
+        const std::vector<core::Tensor> &intrinsic_matrices,
+        const std::vector<core::Tensor> &extrinsic_matrices,
+        int tex_size /*=1024*/,
+        bool update_material /*=true*/) {
+    if (!GetDevice().IsCPU() || !Image::HAVE_IPP) {
+        utility::LogError(
+                "ProjectImagesToAlbedo is only supported on x86_64 CPU "
+                "devices.");
+    }
+    using core::None;
+    using tk = core::TensorKey;
+    constexpr float EPS = 1e-6;
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh does not contain 'texture_uvs'. Please compute "
+                "it with ComputeUVAtlas() first.");
+    }
+    core::Tensor texture_uvs =
+            GetTriangleAttr("texture_uvs").To(core::Device()).Contiguous();
+    core::AssertTensorShape(texture_uvs, {core::None, 3, 2});
+    core::AssertTensorDtype(texture_uvs, {core::Float32});
+
+    if (images.size() != extrinsic_matrices.size() ||
+        images.size() != intrinsic_matrices.size()) {
+        utility::LogError(
+                "Received {} images, but {} extrinsic matrices and {} "
+                "intrinsic matrices.",
+                images.size(), extrinsic_matrices.size(),
+                intrinsic_matrices.size());
+    }
+
+    // softmax_shift is used to prevent overflow in the softmax function.
+    // softmax_shift is set so that max value of weighting function is exp(64),
+    // well within float range. (exp(89.f) is inf)
+    float min_sqr_distance =
+            get_min_cam_sqrdistance(GetVertexPositions(), extrinsic_matrices);
+    const float softmax_scale = 20 * min_sqr_distance;
+    constexpr float softmax_shift = 10.f, LOG_FLT_MAX = 88.f;
+    // (u,v) -> (x,y,z) : {tex_size, tex_size, 3}
+    // margin \propto tex_size (default 2px for 512 size texture as in
+    // BakeVertexAttrTextures()). Should be at least 1px.
+    core::Tensor position_map = BakeVertexAttrTextures(
+            tex_size, {"positions"}, /*margin=*/(tex_size + 255) / 256,
+            /*fill=*/0,
+            /*update_material=*/false)["positions"];
+    core::Tensor albedo =
+            core::Tensor::Zeros({tex_size, tex_size, 4}, core::Float32);
+    albedo.Slice(2, 3, 4).Fill(EPS);  // regularize weight
+    std::mutex albedo_mutex;
+
+    RaycastingScene rcs;
+    rcs.AddTriangles(*this);
+
+    // setup working data for each task.
+    size_t max_workers = tbb::this_task_arena::max_concurrency();
+    // Tensor copy ctor does shallow copies - OK for empty tensors.
+    std::vector<core::Tensor> this_albedo(max_workers,
+                                          core::Tensor({}, core::Float32)),
+            weighted_image(max_workers, core::Tensor({}, core::Float32)),
+            uv2xy(max_workers, core::Tensor({}, core::Float32)),
+            uvrays(max_workers, core::Tensor({}, core::Float32));
+
+    auto project_one_image = [&](size_t i, tbb::feeder<size_t> &feeder) {
+        size_t widx = tbb::this_task_arena::current_thread_index();
+        // initialize task variables
+        if (!this_albedo[widx].GetShape().IsCompatible(
+                    {tex_size, tex_size, 4})) {
+            this_albedo[widx] =
+                    core::Tensor::Empty({tex_size, tex_size, 4}, core::Float32);
+            uvrays[widx] =
+                    core::Tensor::Empty({tex_size, tex_size, 6}, core::Float32);
+        }
+        auto width = images[i].GetCols(), height = images[i].GetRows();
+        if (!weighted_image[widx].GetShape().IsCompatible({height, width, 4})) {
+            weighted_image[widx] =
+                    core::Tensor({height, width, 4}, core::Float32);
+        }
+        core::AssertTensorShape(intrinsic_matrices[i], {3, 3});
+        core::AssertTensorShape(extrinsic_matrices[i], {4, 4});
+
+        // A. Get image space weight matrix, as inverse of pixel
+        // footprint on the mesh.
+        auto rays = RaycastingScene::CreateRaysPinhole(
+                intrinsic_matrices[i], extrinsic_matrices[i], width, height);
+        core::Tensor cam_loc =
+                rays.GetItem({tk::Index(0), tk::Index(0), tk::Slice(0, 3, 1)});
+
+        // A nested parallel_for's threads must be isolated from the threads
+        // running this paralel_for, else we get BAD ACCESS errors.
+        auto result = tbb::this_task_arena::isolate(
+                [&rays, &rcs]() { return rcs.CastRays(rays); });
+        // Eigen is column-major order
+        Eigen::Map<Eigen::ArrayXXf> normals_e(
+                result["primitive_normals"].GetDataPtr<float>(), 3,
+                width * height);
+        Eigen::Map<Eigen::ArrayXXf> rays_e(rays.GetDataPtr<float>(), 6,
+                                           width * height);
+        Eigen::Map<Eigen::ArrayXXf> t_hit(result["t_hit"].GetDataPtr<float>(),
+                                          1, width * height);
+        auto depth = t_hit * rays_e.bottomRows<3>().colwise().norm().array();
+        // removing this eval() increase runtime a lot (?)
+        auto rays_dir = rays_e.bottomRows<3>().colwise().normalized().eval();
+        auto pixel_foreshortening = (normals_e * rays_dir)
+                                            .colwise()
+                                            .sum()
+                                            .abs();  // ignore face orientation
+        // fix for bad normals
+        auto inv_footprint =
+                pixel_foreshortening.isNaN().select(0, pixel_foreshortening) /
+                (depth * depth);
+        utility::LogDebug(
+                "[ProjectImagesToAlbedo] Image {}, weight (inv_footprint) "
+                "range: {}-{}",
+                i, inv_footprint.minCoeff(), inv_footprint.maxCoeff());
+        weighted_image[widx].Slice(2, 0, 3) =
+                images[i].To(core::Float32).AsTensor();  // range: [0,1]
+        Eigen::Map<Eigen::MatrixXf> weighted_image_e(
+                weighted_image[widx].GetDataPtr<float>(), 4, width * height);
+        weighted_image_e.bottomRows<1>() = inv_footprint;
+
+        // B. Get texture space (u,v) -> (x,y) map and valid domain in
+        // uv space.
+        uvrays[widx].GetItem({tk::Slice(0, None, 1), tk::Slice(0, None, 1),
+                              tk::Slice(0, 3, 1)}) = cam_loc;
+        uvrays[widx].GetItem({tk::Slice(0, None, 1), tk::Slice(0, None, 1),
+                              tk::Slice(3, 6, 1)}) = position_map - cam_loc;
+        // A nested parallel_for's threads must be isolated from the threads
+        // running this paralel_for, else we get BAD ACCESS errors.
+        result = tbb::this_task_arena::isolate(
+                [&rcs, &uvrays, widx]() { return rcs.CastRays(uvrays[widx]); });
+        auto &t_hit_uv = result["t_hit"];
+
+        Project(position_map, intrinsic_matrices[i], extrinsic_matrices[i],
+                uv2xy[widx]);  // {ts, ts, 2}
+        // Disable self-occluded points
+        for (float *p_uv2xy = uv2xy[widx].GetDataPtr<float>(),
+                   *p_t_hit = t_hit_uv.GetDataPtr<float>();
+             p_uv2xy <
+             uv2xy[widx].GetDataPtr<float>() + uv2xy[widx].NumElements();
+             p_uv2xy += 2, ++p_t_hit) {
+            if (*p_t_hit < 1 - EPS) *p_uv2xy = *(p_uv2xy + 1) = -1.f;
+        }
+        core::Tensor uv2xy2 =
+                uv2xy[widx].Permute({2, 0, 1}).Contiguous();  // {2, ts, ts}
+
+        // C. Interpolate weighted image to weighted texture
+        // albedo[u,v] = image[ i[u,v], j[u,v] ]
+        this_albedo[widx].Fill(0.f);
+        IPP_CALL(ipp::Remap, weighted_image[widx], /*{height, width, 4} f32*/
+                 uv2xy2[0],                        /* {texsz, texsz} f32*/
+                 uv2xy2[1],                        /* {texsz, texsz} f32*/
+                 this_albedo[widx],                /*{texsz, texsz, 4} f32*/
+                 t::geometry::Image::InterpType::Linear);
+        // Weights can become negative with higher order interpolation
+
+        std::unique_lock<std::mutex> albedo_lock{albedo_mutex};
+        // ^^^ released when lambda returns.
+        for (auto p_albedo = albedo.GetDataPtr<float>(),
+                  p_this_albedo = this_albedo[widx].GetDataPtr<float>();
+             p_albedo < albedo.GetDataPtr<float>() + albedo.NumElements();
+             p_albedo += 4, p_this_albedo += 4) {
+            float softmax_weight =
+                    exp(std::min(LOG_FLT_MAX, softmax_scale * p_this_albedo[3] -
+                                                      softmax_shift));
+            for (auto k = 0; k < 3; ++k)
+                p_albedo[k] += p_this_albedo[k] * softmax_weight;
+            p_albedo[3] += softmax_weight;
+        }
+    };
+
+    std::vector<size_t> range(images.size(), 0);
+    std::iota(range.begin(), range.end(), 0);
+    tbb::parallel_for_each(range, project_one_image);
+    albedo.Slice(2, 0, 3) /= albedo.Slice(2, 3, 4);
+
+    Image albedo_texture{
+            (albedo.Slice(2, 0, 3) * 255.f).Clip_(0.f, 255.f).To(core::UInt8)};
+    if (update_material) {
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultUnlit
+        }
+        GetMaterial().SetAlbedoMap(albedo_texture);
+    }
+    return albedo_texture;
+}
+
+namespace {
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value &&
                                           !std::is_same<T, bool>::value,
                                   T>::type * = nullptr>
 using Edge = std::tuple<T, T>;
+}
 
 /// brief Helper function to get an edge with ordered vertex indices.
 template <typename T>
@@ -1404,7 +1758,9 @@ TriangleMesh TriangleMesh::RemoveNonManifoldEdges() {
     core::Tensor tris_cpu =
             GetTriangleIndices().To(core::Device()).Contiguous();
 
-    ComputeTriangleAreas();
+    if (!HasTriangleAttr("areas")) {
+        ComputeTriangleAreas();
+    }
     core::Tensor tri_areas_cpu =
             GetTriangleAttr("areas").To(core::Device()).Contiguous();
 
@@ -1505,6 +1861,551 @@ core::Tensor TriangleMesh::GetNonManifoldEdges(
     });
 
     return result;
+}
+
+PointCloud TriangleMesh::SamplePointsUniformly(
+        size_t number_of_points, bool use_triangle_normal /*=false*/) {
+    if (number_of_points <= 0) {
+        utility::LogError("number_of_points <= 0");
+    }
+    if (IsEmpty()) {
+        utility::LogError("Input mesh is empty. Cannot sample points.");
+    }
+    if (!HasTriangleIndices()) {
+        utility::LogError("Input mesh has no triangles. Cannot sample points.");
+    }
+    if (use_triangle_normal && !HasTriangleNormals()) {
+        ComputeTriangleNormals(true);
+    }
+    if (!HasTriangleAttr("areas")) {
+        ComputeTriangleAreas();  // Compute area of each triangle
+    }
+    if (!IsCPU()) {
+        utility::LogWarning(
+                "SamplePointsUniformly is implemented only on CPU. Computing "
+                "on CPU.");
+    }
+    bool use_vert_normals = HasVertexNormals() && !use_triangle_normal;
+    bool use_albedo =
+            HasTriangleAttr("texture_uvs") && GetMaterial().HasAlbedoMap();
+    bool use_vert_colors = HasVertexColors() && !use_albedo;
+
+    auto cpu = core::Device();
+    core::Tensor null_tensor({0}, core::Float32);  // zero size tensor
+    auto triangles = GetTriangleIndices().To(cpu).Contiguous(),
+         vertices = GetVertexPositions().To(cpu).Contiguous();
+    auto float_dt = vertices.GetDtype();
+    auto areas = GetTriangleAttr("areas").To(cpu, float_dt).Contiguous(),
+         vertex_normals =
+                 use_vert_normals
+                         ? GetVertexNormals().To(cpu, float_dt).Contiguous()
+                         : null_tensor,
+         triangle_normals =
+                 use_triangle_normal
+                         ? GetTriangleNormals().To(cpu, float_dt).Contiguous()
+                         : null_tensor,
+         vertex_colors =
+                 use_vert_colors
+                         ? GetVertexColors().To(cpu, core::Float32).Contiguous()
+                         : null_tensor,
+         texture_uvs = use_albedo ? GetTriangleAttr("texture_uvs")
+                                            .To(cpu, float_dt)
+                                            .Contiguous()
+                                  : null_tensor,
+         // With correct range conversion [0,255] -> [0,1]
+            albedo = use_albedo ? GetMaterial()
+                                          .GetAlbedoMap()
+                                          .To(core::Float32)
+                                          .To(cpu)
+                                          .AsTensor()
+                                : null_tensor;
+    if (use_vert_colors) {
+        if (GetVertexColors().GetDtype() == core::UInt8) vertex_colors /= 255;
+        if (GetVertexColors().GetDtype() == core::UInt16)
+            vertex_colors /= 65535;
+    }
+
+    std::array<core::Tensor, 3> result =
+            kernel::trianglemesh::SamplePointsUniformlyCPU(
+                    triangles, vertices, areas, vertex_normals, vertex_colors,
+                    triangle_normals, texture_uvs, albedo, number_of_points);
+
+    PointCloud pcd(result[0]);
+    if (use_vert_normals || use_triangle_normal) pcd.SetPointNormals(result[1]);
+    if (use_albedo || use_vert_colors) pcd.SetPointColors(result[2]);
+    return pcd.To(GetDevice());
+}
+
+core::Tensor TriangleMesh::ComputeMetrics(const TriangleMesh &mesh2,
+                                          std::vector<Metric> metrics,
+                                          MetricParameters params) const {
+    if (IsEmpty() || mesh2.IsEmpty()) {
+        utility::LogError("One or both input triangle meshes are empty!");
+    }
+    if (!IsCPU() || !mesh2.IsCPU()) {
+        utility::LogWarning(
+                "ComputeDistance is implemented only on CPU. Computing on "
+                "CPU.");
+    }
+    auto cpu_mesh1 = To(core::Device("CPU:0")),
+         cpu_mesh2 = mesh2.To(core::Device("CPU:0"));
+    core::Tensor points1 =
+            cpu_mesh1.SamplePointsUniformly(params.n_sampled_points)
+                    .GetPointPositions();
+    core::Tensor points2 =
+            cpu_mesh2.SamplePointsUniformly(params.n_sampled_points)
+                    .GetPointPositions();
+
+    RaycastingScene scene1, scene2;
+    scene1.AddTriangles(cpu_mesh1);
+    scene2.AddTriangles(cpu_mesh2);
+
+    core::Tensor distance21 = scene1.ComputeDistance(points2);
+    core::Tensor distance12 = scene2.ComputeDistance(points1);
+
+    return ComputeMetricsCommon(distance12, distance21, metrics, params);
+}
+
+Image TriangleMesh::ComputeAmbientOcclusion(int tex_width,
+                                            int n_rays,
+                                            float max_hit_distance,
+                                            bool update_material) {
+    using core::Tensor;
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh does not contain 'texture_uvs'. Please compute "
+                "it with ComputeUVAtlas() first.");
+    }
+    if (!HasVertexNormals()) {
+        utility::LogWarning(
+                "TriangleMesh does not have vertex normals. Computing them "
+                "now.");
+        ComputeVertexNormals(true);
+    }
+
+    // Bake positions and normals into textures.
+    const float margin = (tex_width + 511) / 512;  // = ceil(tex_width / 512)
+    auto baked_textures =
+            BakeVertexAttrTextures(tex_width, {"positions", "normals"}, margin,
+                                   /*fill=*/0.0, /*update_material=*/false);
+    Tensor position_map =
+            baked_textures["positions"].To(GetDevice(), core::Float32);
+    Tensor normal_map =
+            baked_textures["normals"].To(GetDevice(), core::Float32);
+
+    RaycastingScene rcs;
+    // TODO: Reuse RCS from BakeVertexAttrTextures() if possible.
+    rcs.AddTriangles(*this);
+
+    const int64_t n_pixels = tex_width * tex_width;
+
+    // Reshape maps and create masks for valid pixels (not in the margin).
+    Tensor positions = position_map.Reshape({n_pixels, 3});
+    Tensor normals = normal_map.Reshape({n_pixels, 3});
+    Tensor valid_mask = positions.Abs().Sum({1}).Ne(0);
+    Tensor valid_indices = valid_mask.NonZero().Flatten();
+    const int64_t n_valid_pixels = valid_indices.GetLength();
+
+    if (n_valid_pixels == 0) {
+        utility::LogWarning("No valid pixels found to compute AO on.");
+        return Image(Tensor::Ones({(int64_t)tex_width, (int64_t)tex_width, 1},
+                                  core::UInt8, GetDevice()) *
+                     255);
+    }
+
+    // Get positions and normals for valid pixels.
+    Tensor valid_positions = positions.IndexGet({valid_indices});
+    Tensor valid_normals = normals.IndexGet({valid_indices});
+
+    // Hemisphere sampling using 2D quasirandom numbers. Uses Malley's method
+    // for unit disk sampling. Note that this gives cosine weighted samples,
+    // which is what we want for AO.
+    // sampled_dirs shape: {n_rays, 3} — same directions reused for every pixel.
+    Tensor qr = Tensor::Quasirandom(n_rays, 2, core::Float32, GetDevice());
+    Tensor r1 = qr.Slice(1, 0, 1);
+    Tensor r = r1.Sqrt();
+    Tensor r2 = qr.Slice(1, 1, 2);
+    Tensor theta = r2 * 2.0 * M_PI;
+    Tensor sampled_dirs =
+            Tensor::Empty({n_rays, 3}, core::Float32, GetDevice());
+    sampled_dirs.Slice(1, 0, 1) = r * theta.Cos();    // X
+    sampled_dirs.Slice(1, 1, 2) = r * theta.Sin();    // Y
+    sampled_dirs.Slice(1, 2, 3) = (1.f - r1).Sqrt();  // Z >= 0
+
+    const Tensor up1 = Tensor::Init<float>({0, 0, 1}, GetDevice());
+    const Tensor up2 = Tensor::Init<float>({1, 0, 0}, GetDevice());
+
+    // Process pixels in batches to bound peak memory.
+    // Peak memory per batch ≈ n_rays * batch_size * 6 * 4 bytes (rays tensor)
+    // plus comparable intermediate tensors (basis, directions).
+    // At batch_size=256K and n_rays=64: ~384 MB for rays alone.
+    constexpr int64_t kBatchSize = 256 * 1024;
+    Tensor ao_values =
+            Tensor::Ones({n_valid_pixels}, core::Float32, GetDevice());
+
+    for (int64_t batch_start = 0; batch_start < n_valid_pixels;
+         batch_start += kBatchSize) {
+        const int64_t batch_end =
+                std::min(batch_start + kBatchSize, n_valid_pixels);
+        const int64_t batch_size = batch_end - batch_start;
+
+        Tensor batch_positions =
+                valid_positions.Slice(0, batch_start, batch_end);
+        Tensor batch_normals = valid_normals.Slice(0, batch_start, batch_end);
+
+        // origins: {n_rays, batch_size, 3} via zero-copy expand.
+        Tensor origins = batch_positions.Expand({n_rays, batch_size, 3});
+        // Expand sampled_dirs to {n_rays, batch_size, 3}.
+        Tensor batch_sampled_dirs =
+                sampled_dirs.Expand({batch_size, n_rays, 3}).Transpose(0, 1);
+
+        // Build per-pixel TBN basis.
+        // up must be Contiguous() so that IndexSet() below writes to distinct
+        // memory locations. Without this, all elements share the same 3 floats
+        // (stride-0 from Expand), causing a global overwrite instead of a
+        // per-pixel conditional update.
+        Tensor t = batch_normals.Expand({n_rays, batch_size, 3});
+        Tensor up = up1.Expand({n_rays, batch_size, 3}).Contiguous();
+        Tensor abs_dot = t.Mul(up).Sum({-1}).Abs();
+        up.IndexSet({abs_dot.Ge(1.0 - 1e-6)}, up2);
+        // Compute b = normalize(cross(t, up))
+        Tensor b = t.Cross(up);
+        b = b / b.Norm({-1}, true).Clip_(1e-6, INFINITY);
+        // Rotate sampled directions from tangent space to world space.
+        Tensor directions = batch_sampled_dirs.Slice(-1, 0, 1) * t.Cross(b) +
+                            batch_sampled_dirs.Slice(-1, 1, 2) * b +
+                            batch_sampled_dirs.Slice(-1, 2, 3) * t;
+
+        // Cast rays for this batch.
+        Tensor rays = origins.Append(directions, -1);
+        Tensor occlusion = rcs.TestOcclusions(
+                rays, 1e-5f,  // tnear > 0 to prevent self-occlusions
+                max_hit_distance);
+        ao_values.Slice(0, batch_start, batch_end) =
+                1.0f - occlusion.To(core::Float32).Mean({0});
+    }
+
+    Tensor ao_texture = Tensor::Ones({n_pixels}, core::Float32, GetDevice());
+    ao_texture.IndexSet({valid_indices}, ao_values);
+    ao_texture = ao_texture.View({(int64_t)tex_width, (int64_t)tex_width, 1});
+
+    // Denoise with bilateral filter.
+    Image ao_image(ao_texture);
+    Image denoised_ao_image;
+    try {
+        // MonteCarlo noise has variance 1/(4*n_rays), so value_sigma \propto
+        // 0.5/sqrt(n_rays). We use twice that for a smoother result.
+        denoised_ao_image = ao_image.FilterBilateral(
+                /*kernel_size*/ 3, /*value_sigma*/ 2. / (2 * sqrt(n_rays)),
+                /*distance_sigma*/ 3.0);
+    } catch (const std::runtime_error &e) {  // macOS does not have IPP
+        utility::LogWarning(
+                "Bilateral filter failed. Increase n_rays if AO is noisy. "
+                "Error: {}",
+                e.what());
+        denoised_ao_image = ao_image;
+    }
+
+    // Convert to an 8-bit image and update material.
+    Image final_image(denoised_ao_image.To(core::UInt8, false, 255.f, 0.f));
+    if (update_material) {
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultUnlit
+        }
+        GetMaterial().SetAOMap(final_image);
+    }
+
+    return final_image;
+}
+
+namespace {
+
+struct MikkTSpaceContextData {
+    const core::Tensor *vertices = nullptr;
+    const core::Tensor *normals = nullptr;
+    const core::Tensor *uvs = nullptr;
+    const core::Tensor *indices = nullptr;
+    core::Tensor *tangents = nullptr;
+    core::Tensor *bitangents = nullptr;
+};
+
+int GetNumFaces(const SMikkTSpaceContext *pContext) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    return data->indices->GetLength();
+}
+
+int GetNumVerticesOfFace(const SMikkTSpaceContext *pContext, const int iFace) {
+    return 3;
+}
+
+void GetPosition(const SMikkTSpaceContext *pContext,
+                 float fvPosOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float *vertex =
+            data->vertices->GetDataPtr<float>() + vertex_index * 3;
+    fvPosOut[0] = vertex[0];
+    fvPosOut[1] = vertex[1];
+    fvPosOut[2] = vertex[2];
+}
+
+void GetNormal(const SMikkTSpaceContext *pContext,
+               float fvNormOut[],
+               const int iFace,
+               const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+    const float *normal = data->normals->GetDataPtr<float>() + vertex_index * 3;
+    fvNormOut[0] = normal[0];
+    fvNormOut[1] = normal[1];
+    fvNormOut[2] = normal[2];
+}
+
+void GetTexCoord(const SMikkTSpaceContext *pContext,
+                 float fvTexcOut[],
+                 const int iFace,
+                 const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    const float *uv = data->uvs->GetDataPtr<float>() + (iFace * 3 + iVert) * 2;
+    fvTexcOut[0] = uv[0];
+    fvTexcOut[1] = uv[1];
+}
+
+void SetTSpaceBasic(const SMikkTSpaceContext *pContext,
+                    const float fvTangent[],
+                    const float fSign,
+                    const int iFace,
+                    const int iVert) {
+    auto *data = static_cast<MikkTSpaceContextData *>(pContext->m_pUserData);
+    int64_t vertex_index =
+            data->indices->GetDataPtr<int64_t>()[iFace * 3 + iVert];
+
+    float *tangent_ptr = data->tangents->GetDataPtr<float>() + vertex_index * 4;
+    tangent_ptr[0] = fvTangent[0];
+    tangent_ptr[1] = fvTangent[1];
+    tangent_ptr[2] = fvTangent[2];
+    tangent_ptr[3] = fSign;
+}
+
+}  // namespace
+
+// Implementation from http://www.mikktspace.com/
+void TriangleMesh::ComputeTangentSpace(bool bake /*=true*/,
+                                       int tex_width /*=512*/) {
+    if (!HasVertexPositions() || !HasVertexNormals() ||
+        !HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "TriangleMesh must have vertex positions, vertex normals, and "
+                "texture UVs to compute tangent space.");
+        return;
+    }
+
+    core::Device cpu_device("CPU:0");
+    TriangleMesh cpu_mesh = To(cpu_device);
+
+    core::Tensor vertices =
+            cpu_mesh.GetVertexPositions().To(core::Float32).Contiguous();
+    core::Tensor normals =
+            cpu_mesh.GetVertexNormals().To(core::Float32).Contiguous();
+    core::Tensor uvs = cpu_mesh.GetTriangleAttr("texture_uvs")
+                               .To(core::Float32)
+                               .Contiguous();
+    core::Tensor indices =
+            cpu_mesh.GetTriangleIndices().To(core::Int64).Contiguous();
+
+    int64_t num_vertices = vertices.GetLength();
+    core::Tensor tangents =
+            core::Tensor::Zeros({num_vertices, 4}, core::Float32, cpu_device);
+
+    MikkTSpaceContextData context_data;
+    context_data.vertices = &vertices;
+    context_data.normals = &normals;
+    context_data.uvs = &uvs;
+    context_data.indices = &indices;
+    context_data.tangents = &tangents;
+
+    SMikkTSpaceInterface mikk_interface;
+    mikk_interface.m_getNumFaces = GetNumFaces;
+    mikk_interface.m_getNumVerticesOfFace = GetNumVerticesOfFace;
+    mikk_interface.m_getPosition = GetPosition;
+    mikk_interface.m_getNormal = GetNormal;
+    mikk_interface.m_getTexCoord = GetTexCoord;
+    mikk_interface.m_setTSpaceBasic = SetTSpaceBasic;
+    mikk_interface.m_setTSpace = nullptr;
+
+    SMikkTSpaceContext mikk_context;
+    mikk_context.m_pInterface = &mikk_interface;
+    mikk_context.m_pUserData = &context_data;
+
+    if (!genTangSpaceDefault(&mikk_context)) {
+        utility::LogError("Failed to generate tangent space.");
+        return;
+    }
+
+    SetVertexAttr("tangents", tangents.To(GetDevice()));  // normalized
+    if (bake) {
+        utility::LogDebug("Baking normals and tangents as textures...");
+        if (!HasMaterial()) {
+            SetMaterial(visualization::rendering::Material());
+            GetMaterial().SetDefaultProperties();  // defaultLit
+        }
+        cpu_mesh.SetVertexAttr("tangents", tangents);
+        const float margin = (tex_width + 511.f) / 512.f;
+        auto baked_textures = cpu_mesh.BakeVertexAttrTextures(
+                tex_width, {"normals", "tangents"}, margin,
+                /*fill=*/0.0, /*bake=*/false);
+        // Baked (interpolated) normals and tangents are NOT normalized.
+        GetMaterial().SetTextureMap("normals",
+                                    baked_textures["normals"].To(GetDevice()));
+        GetMaterial().SetTextureMap("tangents",
+                                    baked_textures["tangents"].To(GetDevice()));
+    }
+}
+
+Image TriangleMesh::TransformNormalMap(const Image &normal_map,
+                                       bool to_tangent_space /*=true*/,
+                                       bool update_material /*=false*/) {
+    if (!HasTriangleAttr("texture_uvs")) {
+        utility::LogError(
+                "Mesh must have triangle attribute 'texture_uvs'. "
+                "Use ComputeUVAtlas() to compute it.");
+    }
+    if (!HasVertexNormals() || !HasVertexAttr("tangents")) {
+        utility::LogError(
+                "Mesh must have vertex normals and tangents. "
+                "Use ComputeVertexNormals() and ComputeTangentSpace() to "
+                "compute them.");
+    }
+    if (normal_map.GetChannels() != 3) {
+        utility::LogError("Normal map must have 3 channels, but has {}.",
+                          normal_map.GetChannels());
+    }
+    const core::Device device = GetDevice();
+    if (normal_map.GetDevice() != device) {
+        utility::LogError("Normal map device {} does not match mesh device {}.",
+                          normal_map.GetDevice().ToString(), device.ToString());
+    }
+    int tex_width = normal_map.GetCols();
+    int tex_height = normal_map.GetRows();
+    if (tex_width != tex_height) {
+        utility::LogWarning(
+                "Normal map width {} and height {} are not equal. Using width "
+                "as texture size.",
+                tex_width, tex_height);
+    }
+
+    // Bake TBN vectors into textures.
+    const float margin = (tex_width + 511) / 512;  // = ceil(tex_width / 512)
+    if (!HasMaterial()) {
+        SetMaterial(visualization::rendering::Material());
+        GetMaterial().SetDefaultProperties();  // defaultLit
+    }
+
+    std::unordered_map<std::string, core::Tensor> baked_textures;
+    if (!(GetMaterial().HasTextureMap("normals") &&
+          GetMaterial().HasTextureMap("tangents"))) {
+        // BakeVertexAttrTextures requires CPU; move results back to the mesh
+        // device for all subsequent computation.
+        baked_textures = To(core::Device("CPU:0"))
+                                 .BakeVertexAttrTextures(
+                                         tex_width, {"normals", "tangents"},
+                                         margin, /*fill=*/0.0, false);
+        baked_textures["normals"] = baked_textures["normals"].To(device);
+        baked_textures["tangents"] = baked_textures["tangents"].To(device);
+    } else {
+        baked_textures["normals"] =
+                GetMaterial().GetTextureMap("normals").AsTensor().To(device);
+        baked_textures["tangents"] =
+                GetMaterial().GetTextureMap("tangents").AsTensor().To(device);
+    }
+
+    // Baked (Interpolated) TBN vectors are NOT normalized.
+    core::Tensor tbn_N = baked_textures.at("normals").To(core::Float32);
+    core::Tensor tbn_T = baked_textures.at("tangents").To(core::Float32);
+    // 4th element of T is the sign for B
+    // bitangent = Sign * cross(normal, tangent)
+    core::Tensor tbn_B =
+            tbn_T.Slice(2, 3, 4) * tbn_N.Cross(tbn_T.Slice(2, 0, 3));
+    tbn_T = tbn_T.Slice(2, 0, 3);
+
+    core::Tensor input_normals_t = normal_map.AsTensor();
+    if (!(input_normals_t.GetDtype() == core::Float32 ||
+          input_normals_t.GetDtype() == core::Float64)) {
+        // Integer: Decode from [0, 255] to [-1, 1]
+        input_normals_t =
+                (input_normals_t.To(core::Float32) / 255.0f) * 2.0f - 1.0f;
+    }
+    input_normals_t = input_normals_t.To(core::Float32);
+
+    if (to_tangent_space) {
+        // World -> Tangent (exact MikkTSpace inverse)
+        // Compute the adjugate rows of TBN (unnormalized cofactors), which
+        // form the exact left-inverse even when T/B/N are not orthonormal
+        // after interpolation:
+        //   row0 = cross(B, N)
+        //   row1 = cross(N, T)
+        //   row2 = cross(T, B)
+        // Orientation sign: fSign = sign(dot(T, row0))
+        // N_t = normalize(fSign * [dot(N_w, row0), dot(N_w, row1),
+        //                          dot(N_w, row2)])
+        core::Tensor row0 = tbn_B.Cross(tbn_N);  // cross(B, N)
+        core::Tensor row1 = tbn_N.Cross(tbn_T);  // cross(N, T)
+        core::Tensor row2 = tbn_T.Cross(tbn_B);  // cross(T, B)
+
+        // fSign = dot(T, row0) >= 0 ? 1 : -1
+        core::Tensor dot_T_row0 = (tbn_T * row0).Sum({2}, true);
+        core::Tensor fSign = (dot_T_row0 >= core::Tensor::Init<float>({0}))
+                                             .To(core::Float32) *
+                                     2.0f -
+                             1.0f;
+
+        core::Tensor tangent_normals_t = core::Tensor::Empty(
+                {tex_height, tex_width, 3}, core::Float32, device);
+        tangent_normals_t.Slice(2, 0, 1) =
+                fSign * (input_normals_t * row0).Sum({2}, true);
+        tangent_normals_t.Slice(2, 1, 2) =
+                fSign * (input_normals_t * row1).Sum({2}, true);
+        tangent_normals_t.Slice(2, 2, 3) =
+                fSign * (input_normals_t * row2).Sum({2}, true);
+
+        // Normalize and encode from [-1, 1] to [0, 255]
+        tangent_normals_t =
+                tangent_normals_t /
+                tangent_normals_t.Norm({2}, true).Clip_(1e-6, INFINITY);
+        tangent_normals_t = (tangent_normals_t + 1.0f) * 127.5f;
+
+        auto out = Image(tangent_normals_t.To(core::UInt8));
+        if (update_material) {
+            GetMaterial().SetNormalMap(out);
+        }
+        return out;
+    } else {
+        // Tangent -> World
+        core::Tensor tangent_normals_t = input_normals_t;
+
+        // N_w = TBN * N_t
+        core::Tensor world_normals_t =
+                tbn_T * tangent_normals_t.Slice(2, 0, 1) +
+                tbn_B * tangent_normals_t.Slice(2, 1, 2) +
+                tbn_N * tangent_normals_t.Slice(2, 2, 3);
+
+        // Normalize
+        world_normals_t = world_normals_t /
+                          world_normals_t.Norm({2}, true).Clip_(1e-6, INFINITY);
+        world_normals_t = (world_normals_t + 1.0f) * 127.5f;
+
+        if (update_material) {
+            utility::LogWarning(
+                    "Ignoring update_material, since output normal map is not "
+                    "in tangent space.");
+        }
+        return Image(world_normals_t.To(core::UInt8));
+    }
 }
 
 }  // namespace geometry

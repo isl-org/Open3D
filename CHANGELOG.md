@@ -1,4 +1,19 @@
 ## Main
+-   Replace OpenMP with oneAPI TBB for all CPU parallelism; Open3D no longer depends on OpenMP. This removes the `libomp` / `libgomp` runtime dependency and the thread oversubscription and crashes caused by loading multiple OpenMP runtimes in one process (e.g. alongside PyTorch in Python). The `WITH_OPENMP` CMake option is removed, oneTBB >= 2021.4.0 is required, and `OMP_NUM_THREADS` is replaced by `open3d.utility.set_max_threads()` (C++: `utility::SetMaxThreads()` or a `tbb::task_arena`). `utility::OMPProgressBar` is removed in favor of `utility::TBBProgressBar`; `utility::GetThreadNum()` and `utility::InParallel()` are removed (PR #6626) (issues #6196, #6544, #6750)
+-   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
+-   Add vcpkg support for easier dependency management (PR #7386)
+-   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
+-   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
+-   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
+-   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
+-   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
+-   Upgrade stdgpu third-party library to commit d7c07d0.
+-   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
+-   Corrected documentation for Link Open3D in C++ projects (broken links).
+-   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
+-   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
 -   Fix tensor based TSDF integration example.
@@ -40,12 +55,39 @@
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
 -   Fix segmentation fault (lambda reference capture) of VisualizerWithCustomAnimation::Play (PR #6804)
+-   Python 3.12 support
 -   Add O3DVisualizer API to enable collapse control of verts in the side panel (PR #6865)
 -   Split pybind declarations/definitions to avoid C++ types in Python docs (PR #6869)
 -   Fix minimal oriented bounding box of MeshBase derived classes and add new unit tests (PR #6898)
 -   Fix projection of point cloud to Depth/RGBD image if no position attribute is provided (PR #6880)
+-   Add choice of voxel pooling mode when creating VoxelGrid from PointCloud (PR #6937)
 -   Support lowercase types when reading PCD files (PR #6930)
 -   Fix visualization/draw ICP example and add warnings (PR #6933)
+-   Unified cloud initializer pipeline for ICP (fixes segfault colored ICP) (PR #6942)
+-   Fix tensor EstimatePointWiseNormalsWithFastEigen3x3 (PR #6980)
+-   Fix alpha shape reconstruction if alpha too small for point scale (PR #6998)
+-   Fix render to depth image on Apple Retina displays (PR #7001)
+-   Fix infinite loop in segment_plane if num_points < ransac_n (PR #7032)
+-   Add select_by_index method to Feature class (PR #7039)
+-   Add optional indices arg for fast computation of a small subset of FPFH features (PR #7118).
+-   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
+-   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
+-   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
+-   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+-   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
+-   Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid (PR #7315)
+-   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
+-   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
+-   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
+-   Add assertion guard for invalid indexing operations (PR #7360)
+-   Implement CUDA multipass for KNN > `GPU_MAX_SELECTION_K` (PR #7381)
+-   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
+-   macOS x86_64 not longer supported, only macOS arm64 is supported.
+-   Python 3.13+3.14 support
+-   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
+-   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
+-   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 

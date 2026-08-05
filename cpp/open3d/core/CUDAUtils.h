@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -22,9 +22,8 @@
 #include <cuda_runtime.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
-
-#include "open3d/utility/Optional.h"
 
 #define OPEN3D_FORCE_INLINE __forceinline__
 #define OPEN3D_HOST_DEVICE __host__ __device__
@@ -287,6 +286,27 @@ void __OPEN3D_GET_LAST_CUDA_ERROR(const char* message,
                                   const int line);
 
 }  // namespace core
+
+#if defined(__CUDA_ARCH__)
+
+namespace detail {
+
+OPEN3D_DEVICE __forceinline__ void Open3DCudaAssertReportAndTrap(
+        const char* message) {
+    static __device__ int open3d_cuda_assert_reported;
+    if (atomicExch(&open3d_cuda_assert_reported, 1) == 0) {
+        printf("Open3D CUDA assertion failed at block [%u,%u,%u], thread "
+               "[%u,%u,%u]:\n%s\n",
+               blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y,
+               threadIdx.z, message);
+    }
+    __trap();
+}
+
+}  // namespace detail
+
+#endif  // defined(__CUDA_ARCH__)
+
 }  // namespace open3d
 
 #endif

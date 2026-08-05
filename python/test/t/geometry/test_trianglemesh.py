@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -1392,3 +1392,23 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
                                                  device=device)
     assert test_box.vertex.positions.allclose(verts)
     assert test_box.triangle.indices.allclose(box.triangle.indices)
+
+
+def test_metrics():
+
+    from open3d.t.geometry import TriangleMesh, Metric, MetricParameters
+    # box is a cube with one vertex at the origin and a side length 1
+    box1 = TriangleMesh.create_box()
+    box2 = TriangleMesh.create_box()
+    box2.vertex.positions *= 1.1
+
+    # 3 faces of the cube are the same, and 3 are shifted up by 0.1 - raycast
+    # distances should follow this.
+    metric_params = MetricParameters(fscore_radius=(0.05, 0.15),
+                                     n_sampled_points=100000)
+    metrics = box1.compute_metrics(
+        box2, (Metric.ChamferDistance, Metric.HausdorffDistance, Metric.FScore),
+        metric_params)
+
+    np.testing.assert_allclose(metrics.cpu().numpy(), (0.1, 0.17, 50, 100),
+                               rtol=0.05)

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ def test_RSBagReader():
     assert n_frames == 6
 
     # save_frames
-    bag_reader = o3d.t.io.RGBDVideoReader.create("L515_test_s.bag")
+    bag_reader = o3d.t.io.RGBDVideoReader.create(sample_l515_bag.path)
     bag_reader.save_frames("L515_test_s")
     # Use issubset() since there may be other OS files present
     assert {'depth', 'color',
@@ -79,8 +79,6 @@ def test_RSBagReader():
     }.issubset(os.listdir('L515_test_s/color'))
 
     shutil.rmtree("L515_test_s")
-    if os.name != 'nt':  # Permission error in Windows
-        os.remove("L515_test_s.bag")
 
 
 # Test recording from a RealSense camera, if one is connected

@@ -1,14 +1,18 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
 
+#include <algorithm>
+#include <limits>
+
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/Random.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -1110,6 +1114,77 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     }
 }
 
+TEST(TriangleMesh, SamplePointsPoissonDisk) {
+    // Empty mesh should throw
+    auto mesh_empty = geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsPoissonDisk(100), std::runtime_error);
+
+    // Simple triangle mesh in z=0 plane: (0,0,0), (1,0,0), (0,1,0)
+    std::vector<Eigen::Vector3d> vertices = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
+    std::vector<Eigen::Vector3i> triangles = {{0, 1, 2}};
+
+    auto mesh_simple = geometry::TriangleMesh();
+    mesh_simple.vertices_ = vertices;
+    mesh_simple.triangles_ = triangles;
+
+    size_t n_points = 100;
+    utility::random::Seed(0);
+    auto pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_TRUE(pcd->colors_.size() == 0);
+    EXPECT_TRUE(pcd->normals_.size() == 0);
+
+    // All points must lie on the triangle surface (z=0, x>=0, y>=0, x+y<=1)
+    for (size_t i = 0; i < pcd->points_.size(); ++i) {
+        const auto &p = pcd->points_[i];
+        EXPECT_NEAR(p(2), 0.0, 1e-10);
+        EXPECT_GE(p(0), -1e-10);
+        EXPECT_GE(p(1), -1e-10);
+        EXPECT_LE(p(0) + p(1), 1.0 + 1e-10);
+    }
+
+    // Poisson disk property: minimum pairwise distance should be > 0
+    // (points are spread apart, not clustered)
+    double min_dist = std::numeric_limits<double>::max();
+    for (size_t i = 0; i < pcd->points_.size(); ++i) {
+        for (size_t j = i + 1; j < pcd->points_.size(); ++j) {
+            double d = (pcd->points_[i] - pcd->points_[j]).norm();
+            min_dist = std::min(min_dist, d);
+        }
+    }
+    // For 100 points on a triangle with area 0.5, the theoretical Poisson disk
+    // radius is r = 2*sqrt(area/n / (2*sqrt(3))) ≈ 0.057. After sample
+    // elimination the actual minimum distance should be a meaningful fraction
+    // of that. We just check it's not degenerate (> 0.01).
+    EXPECT_GT(min_dist, 0.01);
+
+    // With vertex colors and normals
+    std::vector<Eigen::Vector3d> colors = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}};
+    std::vector<Eigen::Vector3d> normals = {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}};
+    mesh_simple.vertex_colors_ = colors;
+    mesh_simple.vertex_normals_ = normals;
+    utility::random::Seed(0);
+    pcd = mesh_simple.SamplePointsPoissonDisk(n_points);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_EQ(pcd->colors_.size(), n_points);
+    EXPECT_EQ(pcd->normals_.size(), n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd->colors_[pidx], Eigen::Vector3d(1, 0, 0));
+        ExpectEQ(pcd->normals_[pidx], Eigen::Vector3d(0, 1, 0));
+    }
+
+    // With triangle normals
+    utility::random::Seed(0);
+    pcd = mesh_simple.SamplePointsPoissonDisk(n_points, 5, nullptr, true);
+    EXPECT_EQ(pcd->points_.size(), n_points);
+    EXPECT_EQ(pcd->normals_.size(), n_points);
+
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(pcd->normals_[pidx], Eigen::Vector3d(0, 0, 1));
+    }
+}
+
 TEST(TriangleMesh, FilterSharpen) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
@@ -1155,10 +1230,14 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    const auto triangles_ref = mesh->triangles_;
+    const size_t vertex_count = mesh->vertices_.size();
 
     mesh = mesh->FilterSmoothLaplacian(1, 0.5);
     std::vector<Eigen::Vector3d> ref1 = {
             {0, 0, 0}, {0.5, 0, 0}, {0, 0.5, 0}, {-0.5, 0, 0}, {0, -0.5, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref1, 1e-3);
 
     mesh = mesh->FilterSmoothLaplacian(10, 0.5);
@@ -1167,6 +1246,8 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
                                          {0, 0.000488, 0},
                                          {-0.000488, 0, 0},
                                          {0, -0.000488, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref2, 1e-3);
 }
 
@@ -1174,6 +1255,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     mesh->vertices_ = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, -1, 0}};
     mesh->triangles_ = {{0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}};
+    const auto triangles_ref = mesh->triangles_;
+    const size_t vertex_count = mesh->vertices_.size();
 
     mesh = mesh->FilterSmoothTaubin(1, 0.5, -0.53);
     std::vector<Eigen::Vector3d> ref1 = {{0, 0, 0},
@@ -1181,6 +1264,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.765, 0},
                                          {-0.765, 0, 0},
                                          {0, -0.765, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref1, 1e-4);
 
     mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
@@ -1189,6 +1274,8 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
                                          {0, 0.052514, 0},
                                          {-0.052514, 0, 0},
                                          {0, -0.052514, 0}};
+    EXPECT_EQ(mesh->vertices_.size(), vertex_count);
+    ExpectEQ(mesh->triangles_, triangles_ref);
     ExpectEQ(mesh->vertices_, ref2, 1e-4);
 }
 
@@ -2188,121 +2275,119 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
             {0.742035, 0.885688, 0.458892}, {0.742035, 0.885688, 0.458892},
             {0.383097, 0.761093, 0.173810}, {0.284898, 0.359292, 0.669062}};
     mesh_gt.triangles_ = {
-        {1, 13, 0},
-        {0, 14, 2},
-        {13, 14, 0},
-        {1, 15, 13},
-        {15, 16, 13},
-        {1, 3, 15},
-        {14, 13, 16},
-        {16, 17, 14},
-        {2, 18, 4},
-        {14, 18, 2},
-        {4, 18, 5},
-        {18, 14, 17},
-        {17, 19, 18},
-        {18, 19, 6},
-        {6, 5, 18},
-        {7, 16, 15},
-        {7, 8, 16},
-        {8, 20, 16},
-        {21, 16, 20},
-        {17, 16, 21},
-        {9, 20, 8},
-        {10, 20, 9},
-        {21, 20, 10},
-        {22, 17, 21},
-        {19, 17, 22},
-        {19, 22, 11},
-        {11, 6, 19},
-        {22, 21, 10},
-        {10, 12, 22},
-        {11, 22, 12},
-        {24, 0, 23},
-        {1, 0, 24},
-        {0, 2, 25},
-        {25, 23, 0},
-        {3, 1, 24},
-        {24, 26, 3},
-        {2, 4, 27},
-        {27, 25, 2},
-        {27, 5, 28},
-        {4, 5, 27},
-        {28, 6, 29},
-        {5, 6, 28},
-        {8, 7, 30},
-        {30, 31, 8},
-        {32, 8, 31},
-        {9, 8, 32},
-        {33, 9, 32},
-        {10, 9, 33},
-        {6, 11, 34},
-        {34, 29, 6},
-        {12, 10, 33},
-        {33, 35, 12},
-        {34, 12, 35},
-        {11, 12, 34},
-        {24, 23, 48},
-        {36, 23, 25},
-        {36, 37, 23},
-        {37, 48, 23},
-        {38, 24, 48},
-        {38, 39, 24},
-        {39, 26, 24},
-        {39, 49, 26},
-        {38, 48, 37},
-        {25, 27, 40},
-        {40, 36, 25},
-        {27, 28, 41},
-        {41, 40, 27},
-        {28, 29, 42},
-        {42, 41, 28},
-        {39, 30, 49},
-        {39, 31, 30},
-        {39, 50, 31},
-        {39, 43, 50},
-        {44, 50, 43},
-        {32, 31, 50},
+            {1, 13, 0},
+            {0, 14, 2},
+            {13, 14, 0},
+            {1, 15, 13},
+            {15, 16, 13},
+            {1, 3, 15},
+            {14, 13, 16},
+            {16, 17, 14},
+            {2, 18, 4},
+            {14, 18, 2},
+            {4, 18, 5},
+            {18, 14, 17},
+            {17, 19, 18},
+            {18, 19, 6},
+            {6, 5, 18},
+            {7, 16, 15},
+            {7, 8, 16},
+            {8, 20, 16},
+            {21, 16, 20},
+            {17, 16, 21},
+            {9, 20, 8},
+            {10, 20, 9},
+            {21, 20, 10},
+            {22, 17, 21},
+            {19, 17, 22},
+            {19, 22, 11},
+            {11, 6, 19},
+            {22, 21, 10},
+            {10, 12, 22},
+            {11, 22, 12},
+            {24, 0, 23},
+            {1, 0, 24},
+            {0, 2, 25},
+            {25, 23, 0},
+            {3, 1, 24},
+            {24, 26, 3},
+            {2, 4, 27},
+            {27, 25, 2},
+            {27, 5, 28},
+            {4, 5, 27},
+            {28, 6, 29},
+            {5, 6, 28},
+            {8, 7, 30},
+            {30, 31, 8},
+            {32, 8, 31},
+            {9, 8, 32},
+            {33, 9, 32},
+            {10, 9, 33},
+            {6, 11, 34},
+            {34, 29, 6},
+            {12, 10, 33},
+            {33, 35, 12},
+            {34, 12, 35},
+            {11, 12, 34},
+            {24, 23, 48},
+            {36, 23, 25},
+            {36, 37, 23},
+            {37, 48, 23},
+            {38, 24, 48},
+            {38, 39, 24},
+            {39, 26, 24},
+            {39, 49, 26},
+            {38, 48, 37},
+            {25, 27, 40},
+            {40, 36, 25},
+            {27, 28, 41},
+            {41, 40, 27},
+            {28, 29, 42},
+            {42, 41, 28},
+            {39, 30, 49},
+            {39, 31, 30},
+            {39, 50, 31},
+            {39, 43, 50},
+            {44, 50, 43},
+            {32, 31, 50},
 #if defined(__APPLE__) && defined(__arm64__)
-        // Apple Silicon consistently triangulates the vertices differently
-        {44, 45, 50},
-        {45, 32, 50},
+            // Apple Silicon consistently triangulates the vertices differently
+            {44, 45, 50},
+            {45, 32, 50},
 #else
-        {44, 32, 50},
-        {44, 45, 32},
+            {44, 32, 50}, {44, 45, 32},
 #endif
-        {45, 33, 32},
-        {42, 34, 46},
-        {29, 34, 42},
-        {47, 33, 45},
-        {35, 33, 47},
-        {34, 35, 47},
-        {47, 46, 34},
-        {37, 36, 51},
-        {39, 38, 52},
-        {53, 52, 51},
-        {52, 37, 51},
-        {52, 38, 37},
-        {36, 40, 54},
-        {54, 51, 36},
-        {54, 40, 41},
-        {51, 54, 55},
-        {55, 53, 51},
-        {55, 41, 42},
-        {54, 41, 55},
-        {43, 39, 52},
-        {56, 52, 53},
-        {56, 44, 52},
-        {44, 43, 52},
-        {45, 44, 56},
-        {56, 55, 57},
-        {53, 55, 56},
-        {55, 42, 46},
-        {46, 57, 55},
-        {45, 56, 57},
-        {57, 47, 45},
-        {57, 46, 47}
-    };
+            {45, 33, 32},
+            {42, 34, 46},
+            {29, 34, 42},
+            {47, 33, 45},
+            {35, 33, 47},
+            {34, 35, 47},
+            {47, 46, 34},
+            {37, 36, 51},
+            {39, 38, 52},
+            {53, 52, 51},
+            {52, 37, 51},
+            {52, 38, 37},
+            {36, 40, 54},
+            {54, 51, 36},
+            {54, 40, 41},
+            {51, 54, 55},
+            {55, 53, 51},
+            {55, 41, 42},
+            {54, 41, 55},
+            {43, 39, 52},
+            {56, 52, 53},
+            {56, 44, 52},
+            {44, 43, 52},
+            {45, 44, 56},
+            {56, 55, 57},
+            {53, 55, 56},
+            {55, 42, 46},
+            {46, 57, 55},
+            {45, 56, 57},
+            {57, 47, 45},
+            {57, 46, 47}};
     std::vector<double> densities_gt = {
             0.39865168929100037, 0.32580316066741943, 0.39778709411621094,
             0.2200755625963211,  0.428702175617218,   0.4288075268268585,

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -20,6 +20,7 @@ import json
 from enum import IntEnum
 
 import sys
+
 sys.path.append(abspath(__file__))
 from realsense_helper import get_profiles
 

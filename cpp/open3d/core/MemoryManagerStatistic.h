@@ -1,16 +1,17 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <tbb/spin_mutex.h>
+
 #include <cstddef>
 #include <map>
 #include <mutex>
-#include <tbb/spin_mutex.h>
 #include <unordered_map>
 
 #include "open3d/core/Device.h"

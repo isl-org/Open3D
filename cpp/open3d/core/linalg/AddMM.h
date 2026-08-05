@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,6 +19,24 @@ namespace core {
 /// added matrix input respectively.
 void AddMM(
         const Tensor& A, const Tensor& B, Tensor& C, double alpha, double beta);
+
+#ifdef BUILD_SYCL_MODULE
+void AddMMSYCL(void* A_data,
+               void* B_data,
+               void* C_data,
+               int64_t m,
+               int64_t k,
+               int64_t n,
+               double alpha,
+               double beta,
+               bool gemmTrA,
+               bool gemmTrB,
+               int lda,
+               int ldb,
+               int ldc,
+               Dtype dtype,
+               const Device& device);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void AddMMCUDA(void* A_data,

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
-#include <unordered_map>
+#include <optional>
 
 #include "open3d/core/Tensor.h"
 
@@ -17,26 +17,38 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
-void Unproject(const core::Tensor& depth,
-               utility::optional<std::reference_wrapper<const core::Tensor>>
-                       image_colors,
-               core::Tensor& points,
-               utility::optional<std::reference_wrapper<core::Tensor>> colors,
-               const core::Tensor& intrinsics,
-               const core::Tensor& extrinsics,
-               float depth_scale,
-               float depth_max,
-               int64_t stride);
+void Unproject(
+        const core::Tensor& depth,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
+        core::Tensor& points,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride);
 
-void Project(
+void Project(core::Tensor& depth,
+             std::optional<std::reference_wrapper<core::Tensor>> image_colors,
+             const core::Tensor& points,
+             std::optional<std::reference_wrapper<const core::Tensor>> colors,
+             const core::Tensor& intrinsics,
+             const core::Tensor& extrinsics,
+             float depth_scale,
+             float depth_max);
+
+#ifdef BUILD_SYCL_MODULE
+/// SYCL implementation of \ref Project (depth buffer from 3D points).
+void ProjectSYCL(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
         float depth_max);
+#endif
 
 void GetPointMaskWithinAABB(const core::Tensor& points,
                             const core::Tensor& min_bound,
@@ -51,10 +63,9 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
 
 void UnprojectCPU(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -63,9 +74,9 @@ void UnprojectCPU(
 
 void ProjectCPU(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -98,13 +109,52 @@ void ComputeBoundaryPointsCPU(const core::Tensor& points,
                               core::Tensor& mask,
                               double angle_threshold);
 
+#ifdef BUILD_SYCL_MODULE
+void UnprojectSYCL(
+        const core::Tensor& depth,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
+        core::Tensor& points,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
+        const core::Tensor& intrinsics,
+        const core::Tensor& extrinsics,
+        float depth_scale,
+        float depth_max,
+        int64_t stride);
+
+void GetPointMaskWithinAABBSYCL(const core::Tensor& points,
+                                const core::Tensor& min_bound,
+                                const core::Tensor& max_bound,
+                                core::Tensor& mask);
+
+void GetPointMaskWithinOBBSYCL(const core::Tensor& points,
+                               const core::Tensor& center,
+                               const core::Tensor& rotation,
+                               const core::Tensor& extent,
+                               core::Tensor& mask);
+
+void NormalizeNormalsSYCL(core::Tensor& normals);
+
+void OrientNormalsToAlignWithDirectionSYCL(core::Tensor& normals,
+                                           const core::Tensor& direction);
+
+void OrientNormalsTowardsCameraLocationSYCL(const core::Tensor& points,
+                                            core::Tensor& normals,
+                                            const core::Tensor& camera);
+
+void ComputeBoundaryPointsSYCL(const core::Tensor& points,
+                               const core::Tensor& normals,
+                               const core::Tensor& indices,
+                               const core::Tensor& counts,
+                               core::Tensor& mask,
+                               double angle_threshold);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
-        utility::optional<std::reference_wrapper<const core::Tensor>>
-                image_colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
         core::Tensor& points,
-        utility::optional<std::reference_wrapper<core::Tensor>> colors,
+        std::optional<std::reference_wrapper<core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -113,9 +163,9 @@ void UnprojectCUDA(
 
 void ProjectCUDA(
         core::Tensor& depth,
-        utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
+        std::optional<std::reference_wrapper<core::Tensor>> image_colors,
         const core::Tensor& points,
-        utility::optional<std::reference_wrapper<const core::Tensor>> colors,
+        std::optional<std::reference_wrapper<const core::Tensor>> colors,
         const core::Tensor& intrinsics,
         const core::Tensor& extrinsics,
         float depth_scale,
@@ -185,6 +235,60 @@ void EstimateColorGradientsUsingRadiusSearchCPU(const core::Tensor& points,
                                                 core::Tensor& color_gradient,
                                                 const double& radius);
 
+void SmoothLaplacianCPU(const core::Tensor& points,
+                        core::Tensor& smoothed_points,
+                        size_t iterations,
+                        double lambda,
+                        int max_nn,
+                        bool use_fixed_neighborhoods);
+
+void SmoothTaubinCPU(const core::Tensor& points,
+                     core::Tensor& smoothed_points,
+                     size_t iterations,
+                     double lambda,
+                     double mu,
+                     int max_nn,
+                     bool use_fixed_neighborhoods);
+
+void SmoothMLSCPU(const core::Tensor& points,
+                  core::Tensor& smoothed_points,
+                  core::Tensor& normals,
+                  bool update_normals,
+                  double radius,
+                  int max_nn);
+
+void SmoothBilateralCPU(const core::Tensor& points,
+                        const core::Tensor& normals,
+                        core::Tensor& smoothed_points,
+                        double radius,
+                        int max_nn,
+                        double sigma_s,
+                        double sigma_r);
+
+#ifdef BUILD_SYCL_MODULE
+/// SYCL hybrid-search color gradients (radius + max_nn cap).
+void EstimateColorGradientsUsingHybridSearchSYCL(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradient,
+                                                 const double& radius,
+                                                 const int64_t& max_nn);
+
+/// SYCL KNN-based color gradients.
+void EstimateColorGradientsUsingKNNSearchSYCL(const core::Tensor& points,
+                                              const core::Tensor& normals,
+                                              const core::Tensor& colors,
+                                              core::Tensor& color_gradient,
+                                              const int64_t& max_nn);
+
+/// SYCL fixed-radius color gradients.
+void EstimateColorGradientsUsingRadiusSearchSYCL(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradient,
+                                                 const double& radius);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
                                               core::Tensor& covariances,
@@ -221,6 +325,89 @@ void EstimateColorGradientsUsingRadiusSearchCUDA(const core::Tensor& points,
                                                  const core::Tensor& colors,
                                                  core::Tensor& color_gradient,
                                                  const double& radius);
+
+void SmoothLaplacianCUDA(const core::Tensor& points,
+                         core::Tensor& smoothed_points,
+                         size_t iterations,
+                         double lambda,
+                         int max_nn,
+                         bool use_fixed_neighborhoods);
+
+void SmoothTaubinCUDA(const core::Tensor& points,
+                      core::Tensor& smoothed_points,
+                      size_t iterations,
+                      double lambda,
+                      double mu,
+                      int max_nn,
+                      bool use_fixed_neighborhoods);
+
+void SmoothMLSCUDA(const core::Tensor& points,
+                   core::Tensor& smoothed_points,
+                   core::Tensor& normals,
+                   bool update_normals,
+                   double radius,
+                   int max_nn);
+
+void SmoothBilateralCUDA(const core::Tensor& points,
+                         const core::Tensor& normals,
+                         core::Tensor& smoothed_points,
+                         double radius,
+                         int max_nn,
+                         double sigma_s,
+                         double sigma_r);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+/// SYCL hybrid-search covariances (radius + max_nn cap).
+void EstimateCovariancesUsingHybridSearchSYCL(const core::Tensor& points,
+                                              core::Tensor& covariances,
+                                              const double& radius,
+                                              const int64_t& max_nn);
+
+/// SYCL KNN-based covariances.
+void EstimateCovariancesUsingKNNSearchSYCL(const core::Tensor& points,
+                                           core::Tensor& covariances,
+                                           const int64_t& max_nn);
+
+/// SYCL fixed-radius covariances.
+void EstimateCovariancesUsingRadiusSearchSYCL(const core::Tensor& points,
+                                              core::Tensor& covariances,
+                                              const double& radius);
+
+/// SYCL normal estimation from precomputed covariances.
+void EstimateNormalsFromCovariancesSYCL(const core::Tensor& covariances,
+                                        core::Tensor& normals,
+                                        const bool has_normals);
+
+void SmoothLaplacianSYCL(const core::Tensor& points,
+                         core::Tensor& smoothed_points,
+                         size_t iterations,
+                         double lambda,
+                         int max_nn,
+                         bool use_fixed_neighborhoods);
+
+void SmoothTaubinSYCL(const core::Tensor& points,
+                      core::Tensor& smoothed_points,
+                      size_t iterations,
+                      double lambda,
+                      double mu,
+                      int max_nn,
+                      bool use_fixed_neighborhoods);
+
+void SmoothMLSSYCL(const core::Tensor& points,
+                   core::Tensor& smoothed_points,
+                   core::Tensor& normals,
+                   bool update_normals,
+                   double radius,
+                   int max_nn);
+
+void SmoothBilateralSYCL(const core::Tensor& points,
+                         const core::Tensor& normals,
+                         core::Tensor& smoothed_points,
+                         double radius,
+                         int max_nn,
+                         double sigma_s,
+                         double sigma_r);
 #endif
 
 }  // namespace pointcloud

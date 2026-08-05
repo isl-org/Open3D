@@ -295,7 +295,7 @@ if(BUILD_VTK_FROM_SOURCE)
 else() #### download prebuilt vtk
 
     foreach(item IN LISTS VTK_LIBRARIES)
-        list(APPEND VTK_BUILD_BYPRODUCTS <SOURCE_DIR>/lib/${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
+        list(APPEND VTK_BUILD_BYPRODUCTS <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
     endforeach()
 
     if(LINUX_AARCH64)

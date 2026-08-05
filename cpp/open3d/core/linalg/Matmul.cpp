@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -65,7 +65,13 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     output = Tensor::Empty({m, n}, dtype, device);
     void* C_data = output.GetDataPtr();
 
-    if (device.IsCUDA()) {
+    if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        MatmulSYCL(B_data, A_data, C_data, n, k, m, dtype, device);
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         MatmulCUDA(B_data, A_data, C_data, n, k, m, dtype, device);

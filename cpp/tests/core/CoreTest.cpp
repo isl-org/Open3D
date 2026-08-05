@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "tests/core/CoreTest.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <vector>
 
 #include "open3d/core/CUDAUtils.h"
@@ -16,7 +17,42 @@
 #include "open3d/core/SizeVector.h"
 
 namespace open3d {
+namespace core {
+void PrintTo(const Device &device, std::ostream *os) {
+    *os << device.ToString();
+}
+void PrintTo(const Dtype &dtype, std::ostream *os) { *os << dtype.ToString(); }
+}  // namespace core
+
 namespace tests {
+
+namespace {
+
+// GitHub Actions runners have no SYCL GPU, only the SYCL CPU fallback device
+// (untested on developer machines). Exercise it in CI so SYCL code paths
+// still get coverage, but keep skipping it in local/interactive runs.
+bool IsCIEnvironment() { return std::getenv("CI") != nullptr; }
+
+std::vector<core::Device> GetSYCLDevicesForTesting() {
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
+
+    // A real SYCL GPU is available: keep existing behavior of testing only
+    // the first (GPU) device, skipping the CPU fallback.
+    if (sycl_devices.size() > 1) {
+        sycl_devices.resize(1);
+        return sycl_devices;
+    }
+
+    // Only the CPU fallback is available. Use it in CI, skip it otherwise.
+    if (IsCIEnvironment() && sycl_devices.size() == 1) {
+        return sycl_devices;
+    }
+
+    return {};
+}
+
+}  // namespace
 
 std::vector<core::Dtype> PermuteDtypesWithBool::TestCases() {
     return {
@@ -45,17 +81,13 @@ std::vector<core::Device> PermuteDevices::TestCases() {
         devices.push_back(cuda_devices[0]);
         devices.push_back(cuda_devices[1]);
     }
-
     return devices;
 }
 
 std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> devices = PermuteDevices::TestCases();
-    std::vector<core::Device> sycl_devices =
-            core::Device::GetAvailableSYCLDevices();
-    if (!sycl_devices.empty()) {
-        devices.push_back(sycl_devices[0]);
-    }
+    std::vector<core::Device> sycl_devices = GetSYCLDevicesForTesting();
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
     return devices;
 }
 
@@ -85,7 +117,6 @@ PermuteDevicePairs::TestCases() {
             }
         }
     }
-
     return device_pairs;
 }
 
@@ -95,12 +126,10 @@ PermuteDevicePairsWithSYCL::TestCases() {
             core::Device::GetAvailableCPUDevices();
     std::vector<core::Device> cuda_devices =
             core::Device::GetAvailableCUDADevices();
-    std::vector<core::Device> sycl_devices =
-            core::Device::GetAvailableSYCLDevices();
+    std::vector<core::Device> sycl_devices = GetSYCLDevicesForTesting();
 
     cpu_devices.resize(std::min(static_cast<size_t>(2), cpu_devices.size()));
     cuda_devices.resize(std::min(static_cast<size_t>(2), cuda_devices.size()));
-    sycl_devices.resize(std::min(static_cast<size_t>(2), sycl_devices.size()));
 
     std::vector<core::Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
@@ -119,7 +148,6 @@ PermuteDevicePairsWithSYCL::TestCases() {
             }
         }
     }
-
     return device_pairs;
 }
 

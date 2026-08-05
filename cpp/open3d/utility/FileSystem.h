@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -44,6 +44,8 @@ std::string GetFileParentDirectory(const std::string &filename);
 std::string GetRegularizedDirectoryName(const std::string &directory);
 
 std::string GetWorkingDirectory();
+
+std::string GetSelfBinaryDirectory();
 
 std::vector<std::string> GetPathComponents(const std::string &path);
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -90,6 +90,22 @@ TriangleMesh TriangleMesh::CreateSphere(double radius,
                                         const core::Device &device) {
     std::shared_ptr<open3d::geometry::TriangleMesh> legacy_mesh =
             open3d::geometry::TriangleMesh::CreateSphere(radius, resolution);
+
+    TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
+                                                 int_dtype, device);
+    return mesh;
+}
+
+TriangleMesh TriangleMesh::CreateEllipsoid(double radius_x,
+                                           double radius_y,
+                                           double radius_z,
+                                           int resolution,
+                                           core::Dtype float_dtype,
+                                           core::Dtype int_dtype,
+                                           const core::Device &device) {
+    std::shared_ptr<open3d::geometry::TriangleMesh> legacy_mesh =
+            open3d::geometry::TriangleMesh::CreateEllipsoid(
+                    radius_x, radius_y, radius_z, resolution);
 
     TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
                                                  int_dtype, device);

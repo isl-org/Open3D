@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // Source code from: https://github.com/HuguesTHOMAS/KPConv.
@@ -47,7 +47,7 @@ REGISTER_OP("Open3DBatchGridSubsampling")
             TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &input0_shape));
             c->set_output(0, input0_shape);
             c->set_output(1, c->input(1));
-            return Status();
+            return absl::OkStatus();
         });
 
 class BatchGridSubsamplingOp : public OpKernel {

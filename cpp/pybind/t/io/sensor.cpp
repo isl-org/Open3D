@@ -1,10 +1,11 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <filesystem>
 #include <memory>
 
 #include "open3d/geometry/RGBDImage.h"
@@ -17,6 +18,7 @@
 #endif
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
+namespace fs = std::filesystem;
 
 namespace open3d {
 namespace t {
@@ -66,9 +68,10 @@ public:
 };
 
 void pybind_sensor_declarations(py::module &m) {
-    py::enum_<SensorType>(m, "SensorType", "Sensor type")
+    py::native_enum<SensorType>(m, "SensorType", "enum.Enum", "Sensor type")
             .value("AZURE_KINECT", SensorType::AZURE_KINECT)
-            .value("REAL_SENSE", SensorType::REAL_SENSE);
+            .value("REAL_SENSE", SensorType::REAL_SENSE)
+            .finalize();
     py::class_<RGBDVideoMetadata> rgbd_video_metadata(m, "RGBDVideoMetadata",
                                                       "RGBD Video metadata.");
     py::class_<RGBDVideoReader, PyRGBDVideoReader,
@@ -274,21 +277,12 @@ void pybind_sensor_definitions(py::module &m) {
                         "Query all connected RealSense cameras for their "
                         "capabilities.")
             .def("init_sensor",
-                 py::overload_cast<const RGBDSensorConfig &, size_t,
-                                   const std::string &>(
-                         &RealSenseSensor::InitSensor),
-                 py::call_guard<py::gil_scoped_release>(),
-                 "sensor_config"_a = RealSenseSensorConfig{},
-                 "sensor_index"_a = 0, "filename"_a = "",
-                 "Configure sensor with custom settings. If this is skipped, "
-                 "default settings will be used. You can enable recording to a "
-                 "bag file by specifying a filename.")
-            .def("init_sensor",
                  py::overload_cast<const RealSenseSensorConfig &, size_t,
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
                  py::call_guard<py::gil_scoped_release>(),
-                 "sensor_config"_a = RealSenseSensorConfig{},
+                 py::arg_v("sensor_config", RealSenseSensorConfig{},
+                           "open3d.t.io.RealSenseSensorConfig()"),
                  "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
                  "default settings will be used. You can enable recording to a "

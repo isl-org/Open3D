@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@ import tempfile
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
@@ -49,7 +50,7 @@ def list_non_bool_dtypes():
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_concatenate(dtype, device):
 
     # 0-D cannot be concatenated.
@@ -200,7 +201,7 @@ def test_concatenate(dtype, device):
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_append(dtype, device):
     # Appending 0-D.
     # 0-D can only be appended along axis = null.

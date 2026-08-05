@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -80,6 +80,11 @@ public:
     virtual void EnableViewCaching(bool enable) = 0;
     virtual bool IsCached() const = 0;
     virtual TextureHandle GetColorBuffer() = 0;
+    virtual TextureHandle GetDepthBuffer() = 0;
+
+    /// Returns the Gaussian compute overlay texture (premultiplied alpha),
+    /// or an invalid handle if no compute output is available.
+    virtual TextureHandle GetGaussianSplatOverlay() { return {}; }
 
     virtual Camera* GetCamera() const = 0;
 };

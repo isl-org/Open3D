@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,6 +17,12 @@ namespace geometry {
 class AxisAlignedBoundingBox;
 class Geometry;
 }  // namespace geometry
+
+namespace t {
+namespace geometry {
+class Geometry;
+}  // namespace geometry
+}  // namespace t
 
 namespace visualization {
 
@@ -40,6 +46,8 @@ public:
 
     void SetTitle(const std::string& title);
     void SetGeometry(std::shared_ptr<const geometry::Geometry> geometry,
+                     bool loaded_model);
+    void SetGeometry(std::shared_ptr<const t::geometry::Geometry> geometry,
                      bool loaded_model);
 
     bool SetIBL(const char* path);

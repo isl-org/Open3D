@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,6 +15,119 @@ namespace open3d {
 namespace geometry {
 
 class AxisAlignedBoundingBox;
+class OrientedBoundingBox;
+
+class OrientedBoundingEllipsoid : public Geometry3D {
+public:
+    /// \brief Default constructor.
+    ///
+    /// Creates an empty Oriented Bounding Ellipsoid.
+    OrientedBoundingEllipsoid()
+        : Geometry3D(Geometry::GeometryType::OrientedBoundingEllipsoid),
+          center_(0, 0, 0),
+          R_(Eigen::Matrix3d::Identity()),
+          radii_(0, 0, 0),
+          color_(1, 1, 1) {}
+
+    /// \brief Parameterized constructor.
+    ///
+    /// \param center Specifies the center position of the bounding ellipsoid.
+    /// \param R The rotation matrix specifying the orientation of the
+    /// bounding ellipsoid with the original frame of reference.
+    /// \param radii The radii of the bounding ellipsoid.
+    OrientedBoundingEllipsoid(const Eigen::Vector3d& center,
+                              const Eigen::Matrix3d& R,
+                              const Eigen::Vector3d& radii)
+        : Geometry3D(Geometry::GeometryType::OrientedBoundingEllipsoid),
+          center_(center),
+          R_(R),
+          radii_(radii),
+          color_(1, 1, 1) {}
+    ~OrientedBoundingEllipsoid() override {}
+
+public:
+    OrientedBoundingEllipsoid& Clear() override;
+    bool IsEmpty() const override;
+    virtual Eigen::Vector3d GetMinBound() const override;
+    virtual Eigen::Vector3d GetMaxBound() const override;
+    virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates an axis-aligned bounding box around the object.
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns an oriented bounding box around the ellipsoid.
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust) const override;
+
+    /// Returns an oriented bounding box around the ellipsoid.
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust) const override;
+
+    virtual OrientedBoundingEllipsoid& Transform(
+            const Eigen::Matrix4d& transformation) override;
+    virtual OrientedBoundingEllipsoid& Translate(
+            const Eigen::Vector3d& translation, bool relative = true) override;
+    virtual OrientedBoundingEllipsoid& Scale(
+            const double scale, const Eigen::Vector3d& center) override;
+    virtual OrientedBoundingEllipsoid& Rotate(
+            const Eigen::Matrix3d& R, const Eigen::Vector3d& center) override;
+
+    /// Returns the volume of the bounding box.
+    double Volume() const;
+
+    /** Returns the six critical points of the bounding ellipsoid.
+     * \verbatim
+     *      ------- x
+     *     /|
+     *    / |
+     *   /  | z
+     *  y
+     *                            2
+     *                         .--|---.
+     *                    .--'    |     '--.
+     *               .--'         |          '--.
+     *            .'              |   4           '.
+     *           /                |  /              \
+     *          /                 | /                \
+     *       0 |------------------|-------------------| 1
+     *          \               / |                  /
+     *           \             /  |                 /
+     *            '.         5    |               .'
+     *               '--.         |          .--'
+     *                    '--.    |     .--'
+     *                         '--|---'
+     *                            3
+     * \endverbatim
+     */
+    std::vector<Eigen::Vector3d> GetEllipsoidPoints() const;
+
+    /// Return indices to points that are within the bounding ellipsoid.
+    std::vector<size_t> GetPointIndicesWithinBoundingEllipsoid(
+            const std::vector<Eigen::Vector3d>& points) const;
+
+    /// Creates an oriented bounding ellipsoid using a PCA.
+    /// Note, that this is only an approximation to the minimum oriented
+    /// bounding box that could be computed for example with O'Rourke's
+    /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
+    /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
+    /// \param points The input points
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    static OrientedBoundingEllipsoid CreateFromPoints(
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
+
+public:
+    /// The center point of the bounding ellipsoid.
+    Eigen::Vector3d center_;
+    /// The rotation matrix of the bounding ellipsoid to transform the original
+    /// frame of reference to the frame of this ellipsoid.
+    Eigen::Matrix3d R_;
+    /// The radii of the bounding ellipsoid in its frame of reference.
+    Eigen::Vector3d radii_;
+    /// The color of the bounding ellipsoid in RGB.
+    Eigen::Vector3d color_;
+};
 
 /// \class OrientedBoundingBox
 ///
@@ -113,27 +226,39 @@ public:
             const AxisAlignedBoundingBox& aabox);
 
     /// Creates an oriented bounding box using a PCA.
-    /// Note, that this is only an approximation to the minimum oriented
+    /// Note, that this is only a coarse approximation to the minimum oriented
     /// bounding box that could be computed for example with O'Rourke's
     /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
     /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
-    /// \param points The input points
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
     /// \param robust If set to true uses a more robust method which works
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
+    /// \remark
+    ///     For an exact algorithm use the Tensor version of
+    ///     open3d::t::geometry::OrientedBoundingBox::CreateFromPoints() and
+    ///     select the method
+    ///     open3d::t::geometry::MethodOBBCreate::MINIMAL_JYLANKI.
     static OrientedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
-    /// Creates the oriented bounding box with the smallest volume.
-    /// The algorithm makes use of the fact that at least one edge of
+    /// Fast approximation of the oriented bounding box with the smallest
+    /// volume. The algorithm makes use of the fact that at least one edge of
     /// the convex hull must be collinear with an edge of the minimum
     /// bounding box: for each triangle in the convex hull, calculate
     /// the minimal axis aligned box in the frame of that triangle.
-    /// at the end, return the box with the smallest volume
-    /// \param points The input points
+    /// at the end, return the box with the smallest volume found.
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
     /// \param robust If set to true uses a more robust method which works
     ///               in degenerate cases but introduces noise to the points
     ///               coordinates.
+    /// \remark
+    ///     For an exact algorithm use the Tensor version of
+    ///     open3d::t::geometry::OrientedBoundingBox::CreateFromPoints() and
+    ///     select the method
+    ///     open3d::t::geometry::MethodOBBCreate::MINIMAL_JYLANKI.
     static OrientedBoundingBox CreateFromPointsMinimal(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
@@ -194,6 +319,7 @@ public:
     /// and orientation as the object
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
+
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(

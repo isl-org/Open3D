@@ -23,25 +23,25 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  BUILD_CUDA_MODULE: OFF
 
 jobs:
-  MacOS:
+  build-lib:
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
-        # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
+        os: [macos-14]
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
-      LOW_MEM_USAGE: ON
+      BUILD_TENSORFLOW_OPS: 'ON'
+      BUILD_PYTORCH_OPS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -62,47 +62,35 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
-          brew install ccache pkg-config
-
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            # Fix gfortran not found issue
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-
-            # Default macos-14 image Xcode (version 15.0.1) linker causes build issues.
-            # Newer Xcode versions work, but embree recommends Apple clang <= 14 on
-            # arm64 to avoid possible "EXEC_BAD_INSTRUCTION" runtime exceptions:
-            # https://github.com/embree/embree/releases/tag/v4.3.1
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-          fi
-
-          # Install libomp 11.1.0 from old brew bottle for x64 catalina (10.15)
-          # / arm64 big sur (11.0). Directly installing the Ruby formula will
-          # install for the current OS.
-          # https://github.com/microsoft/LightGBM/issues/4229
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
+          brew install ccache glslang spirv-cross gcc
+          # Fix gfortran not found issue
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
+          export BUILD_PYTHON_MODULE=OFF
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+          
+          # Compress build directory for reuse (exclude some large potentially unnecessary files if needed)
+          # We need 'build' directory.
+          tar -caf build.tar.xz build
+
+      - name: Upload build artifact
+        if: ${{ matrix.CONFIG == 'OFF' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+          path: build.tar.xz
+          retention-days: 1
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
@@ -114,6 +102,12 @@ jobs:
           zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
           ccache -s
 
+      - name: Generate package attestation
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/package/${{ env.DEVEL_PKG_NAME }}
+
       - name: Upload package
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
@@ -122,13 +116,11 @@ jobs:
           path: build/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Update package devel release
-        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/package/${{ env.DEVEL_PKG_NAME }} --clobber
-          gh release view main-devel
+      - name: Generate viewer attestation
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'OFF' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
@@ -138,80 +130,49 @@ jobs:
           path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
           if-no-files-found: error
 
-  fuse-viewer:
-    permissions:
-      contents: write  # Release upload
-    name: Fuse x64 and ARM64 viewer app
-    runs-on: [macos-12]
-    needs: [MacOS]
-    steps:
-      - name: Checkout source code  # for gh release upload
-        uses: actions/checkout@v4
-      - name: Download viewer apps
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-app-macosx-10_15-*
-          merge-multiple: true
-
-      - name: Fuse x64 and arm64 viewer apps
-        run: |
-          unzip open3d-*-app-macosx-10_15-X64.zip -d x64
-          unzip open3d-*-app-macosx-10_15-ARM64.zip -d arm64
-          APP_NAME=$(ls open3d-*-app-macosx-10_15-X64.zip)
-          APP_NAME=${APP_NAME/-X64/-universal2}  # includes version
-          for i in arm64/Open3D.app/Contents/MacOS/*; do
-            filepath=Open3D.app/Contents/MacOS/$(basename $i)
-            lipo -create arm64/${filepath} x64/${filepath} -output arm64/${filepath}
-          done
-          mv arm64/Open3D.app Open3D.app
-          zip -rv "${APP_NAME}" Open3D.app
-
-      - name: Upload Open3D viewer app
-        uses: actions/upload-artifact@v4
-        with:
-          name: open3d-app-macosx-10_15-universal2
-          path: open3d-*-app-macosx-10_15-universal2.zip
-          if-no-files-found: error
-
-      - name: Update viewer devel release
+      - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel open3d-*-app-macosx-10_15-universal2.zip --clobber
-          gh release view main-devel
-
+          if [[ "${{ env.BUILD_SHARED_LIBS }}" == 'ON' ]]; then
+            .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
+          else
+            .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          fi
 
   build-wheel:
+    needs: build-lib
     name: Build wheel
     permissions:
       contents: write  # upload
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        # macos-12 is Intel runner, macos-14 is Apple Silicon
-        # https://github.com/actions/runner-images
-        os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        os: [macos-14]
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          # TODO: remove macos-14 excludes when https://github.com/actions/setup-python/issues/808 is fixed
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
 
     env:
-      BUILD_CUDA_MODULE: OFF
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -221,7 +182,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-build-${{ matrix.os }}
+      
+      - name: Unpack build artifact
+        run: tar -xf build.tar.xz
 
       - name: Setup cache
         uses: actions/cache@v4
@@ -234,8 +204,7 @@ jobs:
           # Restore any ccache cache entry, if none for
           # ${{ runner.os }}-${{ runner.arch }}-ccache-${{ github.sha }} exists.
           # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ccache
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-ccache
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -253,26 +222,10 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
 
-          # Fix macos-14 arm64 runner image issues, see comments in MacOS job.
-          if [[ ${{ runner.arch}} == "ARM64"  ]]; then
-            ln -s $(which gfortran-13) /usr/local/bin/gfortran
-            sudo xcode-select -switch /Applications/Xcode_14.3.1.app
-          fi
-
-          # Install libomp 11.1.0. See comment above.
-          if [[ ${{ runner.arch}} == "X64"  ]]; then
-            brew unlink libomp
-            # x64 catalina (10.15) bottle
-            export LIBOMP_BOTTLE_HASH=45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
-          else # ARM64
-            # arm64 big_sur (11.0) bottle
-            export LIBOMP_BOTTLE_HASH=f87f7841eb8b72650fa771af39642361aec371ea1a1f94f081ecc0e8168a0e75
-          fi
-          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.bottle.tar.gz \
-          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:$LIBOMP_BOTTLE_HASH
-          brew install -f libomp-11.1.0.bottle.tar.gz
-          brew install ccache
+          brew install ccache glslang spirv-cross gcc
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          # Fix gfortran not found issue
+          ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
       - name: Config and build wheel
         run: |
@@ -284,6 +237,12 @@ jobs:
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
+      - name: Generate wheel attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/attest@v4
+        with:
+          subject-path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+
       - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
@@ -291,78 +250,13 @@ jobs:
           path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
-      - name: Update devel release (x86_64 only wheels)
-        if: ${{ github.ref == 'refs/heads/main' && (matrix.python_version == '3.8' || matrix.python_version == '3.9') }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload main-devel build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
-
-
-  fuse-wheel:
-    name: Fuse universal2 wheel
-    permissions:
-      contents: write  # Release upload
-    runs-on: [macos-12]
-    needs: [build-wheel]
-    strategy:
-      fail-fast: false
-      # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
-      matrix:
-        python_version: ['3.10', '3.11']
-        is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.10'
-    steps:
-      - name: Checkout source code  # for gh release upload
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python_version }}
-
-      - name: Download X64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-*macosx*_x86_64.whl
-          path: x64_wheels
-          merge-multiple: true
-
-      - name: Download ARM64 wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: open3d-*macosx*_arm64.whl
-          path: arm64_wheels
-          merge-multiple: true
-
-      - name: Fuse x64 and ARM64 wheels
-        env:
-          python_version: ${{ matrix.python_version }}
-        run: |
-          PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
-          mkdir universal_wheels
-          pip install delocate
-          delocate-merge -v -w universal_wheels x64_wheels/open3d-*${PYTAG}*.whl arm64_wheels/open3d-*${PYTAG}*.whl
-          NEW_WHL_NAME=$(basename universal_wheels/open3d-*${PYTAG}*.whl)
-          echo "PIP_PKG_NAME=$NEW_WHL_NAME" >> $GITHUB_ENV
-
-      - name: Upload merged wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PIP_PKG_NAME }}
-          path: universal_wheels/${{ env.PIP_PKG_NAME }}
-          if-no-files-found: error
-
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload main-devel universal_wheels/${{ env.PIP_PKG_NAME }} --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
+      
 
   test-wheel:
     name: Test wheel
@@ -373,23 +267,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-12, macos-14]
-        python_version: ['3.8', '3.9', '3.10', '3.11']
+        os: [macos-14]
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
-          - os: macos-14
-            python_version: '3.8'
-          - os: macos-14
-            python_version: '3.9'
-          - is_main: false
-            python_version: '3.8'
-          - is_main: false
-            python_version: '3.9'
           - is_main: false
             python_version: '3.10'
+          - is_main: false
+            python_version: '3.11'
+          - is_main: false
+            python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
 
     env:
+      # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
+      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
@@ -399,6 +295,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

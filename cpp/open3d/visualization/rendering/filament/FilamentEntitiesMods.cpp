@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -89,8 +89,7 @@ TextureSampler FilamentMaterialModifier::SamplerFromSamplerParameters(
     sampler.setWrapModeS(ConvertWrapMode(sampler_config.wrap_u));
     sampler.setWrapModeT(ConvertWrapMode(sampler_config.wrap_v));
     sampler.setWrapModeR(ConvertWrapMode(sampler_config.wrap_w));
-
-    sampler.setAnisotropy(sampler.getAnisotropy());
+    sampler.setAnisotropy(static_cast<float>(sampler_config.GetAnisotropy()));
 
     return sampler;
 }

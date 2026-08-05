@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ void pybind_data_classes(py::module& m) {
             m, "DataDescriptor",
             "DataDescriptor is a class that describes a data file. It contains "
             "the URL mirrors to download the file, the MD5 hash of the file, "
-            "and wether to extract the file.");
+            "and whether to extract the file.");
     data_descriptor
             .def(py::init([](const std::vector<std::string>& urls,
                              const std::string& md5,

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -11,13 +11,18 @@
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
+#if defined(BUILD_CUDA_MODULE)
+#include "open3d/core/CUDAUtils.h"
+#endif
+
 namespace open3d {
 namespace tests {
 
-class TensorCheckPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
-                         TensorCheckPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class TensorCheckPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorCheckPermuteDevices,
+        testing::ValuesIn(TensorCheckPermuteDevices::TestCases()));
 
 TEST_P(TensorCheckPermuteDevices, AssertTensorDtype) {
     core::Device device = GetParam();
@@ -169,7 +174,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with initializer_list.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t, {4, utility::nullopt});
+        core::AssertTensorShape(t, {4, std::nullopt});
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),
@@ -185,8 +190,7 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     // AssertTensorShapeCompatible with DynamicSizeVector instance.
     try {
         t = core::Tensor::Empty({10}, core::Float32, device);
-        core::AssertTensorShape(t,
-                                core::DynamicSizeVector({4, utility::nullopt}));
+        core::AssertTensorShape(t, core::DynamicSizeVector({4, std::nullopt}));
         FAIL() << "Should not reach here.";
     } catch (std::runtime_error const& err) {
         EXPECT_TRUE(utility::ContainsString(err.what(),
@@ -198,6 +202,92 @@ TEST_P(TensorCheckPermuteDevices, AssertTensorShape) {
     } catch (...) {
         FAIL() << "std::runtime_error not thrown.";
     }
+}
+
+namespace {
+#if defined(BUILD_CUDA_MODULE)
+bool IsCudaDeviceAssertError(const char* what) {
+    return open3d::utility::ContainsString(what,
+                                           "device-side assert triggered") ||
+           open3d::utility::ContainsString(what,
+                                           "an illegal instruction was "
+                                           "encountered") ||
+           open3d::utility::ContainsString(what, "unspecified launch failure");
+}
+#endif
+
+#if defined(BUILD_SYCL_MODULE)
+bool IsSyclDeviceAssertError(const char* what) {
+    return open3d::utility::ContainsString(what, "assertion") ||
+           open3d::utility::ContainsString(what, "trap") ||
+           open3d::utility::ContainsString(what, "SYCL") ||
+           open3d::utility::ContainsString(what, "failed");
+}
+#endif
+}  // namespace
+
+// CUDA device assert leaves a pending CUDA error that aborts the process during
+// teardown after this test (see OPEN3D_ASSERT + __trap). Run locally with
+// --gtest_also_run_disabled_tests and filter *AssertTensorIndexOps*
+TEST_P(TensorCheckPermuteDevices, DISABLED_AssertTensorIndexOps) {
+    core::Device device = GetParam();
+    core::Tensor idx = core::Tensor::Init<int64_t>(
+            {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, device);
+    core::Tensor t = core::Tensor::Zeros({10}, core::Float32, device);
+    core::Tensor val =
+            core::Tensor::Ones({idx.GetLength()}, core::Float32, device);
+
+    if (device.IsCPU()) {
+        try {
+            t.IndexAdd_(0, idx, val);
+            FAIL() << "Should not reach here.";
+        } catch (std::runtime_error const& err) {
+            EXPECT_TRUE(utility::ContainsString(
+                    err.what(),
+                    "Index operation data pointer is out of range."));
+        } catch (...) {
+            FAIL() << "std::runtime_error not thrown.";
+        }
+        return;
+    }
+
+    if (device.IsCUDA()) {
+#if !defined(BUILD_CUDA_MODULE)
+        GTEST_SKIP() << "CUDA module not built.";
+#else
+        try {
+            t.IndexAdd_(0, idx, val);
+            core::cuda::Synchronize();
+            core::OPEN3D_GET_LAST_CUDA_ERROR("Index operation failed");
+            FAIL() << "Should not reach here.";
+        } catch (std::runtime_error const& err) {
+            EXPECT_TRUE(IsCudaDeviceAssertError(err.what()) ||
+                        utility::ContainsString(err.what(),
+                                                "Index operation failed"));
+        } catch (...) {
+            FAIL() << "std::runtime_error not thrown.";
+        }
+#endif
+        return;
+    }
+
+    if (device.IsSYCL()) {
+#if !defined(BUILD_SYCL_MODULE)
+        GTEST_SKIP() << "SYCL module not built.";
+#else
+        try {
+            t.IndexAdd_(0, idx, val);
+            FAIL() << "Should not reach here.";
+        } catch (std::exception const& err) {
+            EXPECT_TRUE(IsSyclDeviceAssertError(err.what()));
+        } catch (...) {
+            FAIL() << "std::exception not thrown.";
+        }
+#endif
+        return;
+    }
+
+    GTEST_SKIP() << "Unsupported device type for AssertTensorIndexOps.";
 }
 
 }  // namespace tests

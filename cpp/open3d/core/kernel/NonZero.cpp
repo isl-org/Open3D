@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,6 +18,12 @@ namespace kernel {
 Tensor NonZero(const Tensor& src) {
     if (src.IsCPU()) {
         return NonZeroCPU(src);
+    } else if (src.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        return NonZeroSYCL(src);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);

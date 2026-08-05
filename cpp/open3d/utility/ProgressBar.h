@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -20,7 +20,9 @@ public:
     ProgressBar(std::size_t expected_count,
                 std::string progress_info,
                 bool active = false);
-    void Reset(std::size_t expected_count, std::string progress_info, bool active);
+    void Reset(std::size_t expected_count,
+               std::string progress_info,
+               bool active);
     inline ProgressBar& operator++() { return *this += 1; };
     virtual ProgressBar& operator+=(std::size_t n);
     void SetCurrentCount(size_t n);
@@ -37,14 +39,8 @@ protected:
     bool active_;
 };
 
-class OMPProgressBar : public ProgressBar {
-public:
-    OMPProgressBar(std::size_t expected_count,
-                   std::string progress_info,
-                   bool active = false);
-    ProgressBar& operator+=(std::size_t) override;
-};
-
+/// Thread-safe progress bar for use inside TBB parallel regions.
+/// Prefer this over ProgressBar whenever the loop body may run concurrently.
 class TBBProgressBar {
 public:
     TBBProgressBar(std::size_t expected_count,

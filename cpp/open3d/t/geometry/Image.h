@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -146,7 +146,7 @@ public:
     /// \param offset Optional shift value. Default 0.
     Image To(core::Dtype dtype,
              bool copy = false,
-             utility::optional<double> scale = utility::nullopt,
+             std::optional<double> scale = std::nullopt,
              double offset = 0.0) const;
 
     /// \brief Function to linearly transform pixel intensities in place.

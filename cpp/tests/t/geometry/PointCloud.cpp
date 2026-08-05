@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -10,9 +10,11 @@
 #include <gmock/gmock.h>
 
 #include <limits>
+#include <numeric>
 
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -24,12 +26,13 @@
 namespace open3d {
 namespace tests {
 
-class PointCloudPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(PointCloud,
-                         PointCloudPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class PointCloudPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        PointCloud,
+        PointCloudPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class PointCloudPermuteDevicePairs : public PermuteDevicePairs {};
+class PointCloudPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         PointCloud,
         PointCloudPermuteDevicePairs,
@@ -66,6 +69,187 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
     t::geometry::PointCloud pcd(points);
     EXPECT_TRUE(pcd.HasPointPositions());
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 10);
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothLaplacianUnitCubeReference) {
+    const core::Device device = GetParam();
+    const core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                            {1, 0, 0},
+                                                            {0, 1, 0},
+                                                            {1, 1, 0},
+                                                            {0, 0, 1},
+                                                            {1, 0, 1},
+                                                            {0, 1, 1},
+                                                            {1, 1, 1}},
+                                                           device);
+    const t::geometry::PointCloud pcd(points);
+    const auto smoothed = pcd.SmoothLaplacian(1, 0.5, 7, true);
+
+    // Same hand-derived unit-cube reference as the legacy smoothing test.
+    const core::Tensor ref =
+            core::Tensor::Init<double>({{2.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+                                        {5.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+                                        {2.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+                                        {5.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+                                        {2.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+                                        {5.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+                                        {2.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0},
+                                        {5.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0}},
+                                       device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-12, 1e-12));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothTaubinUnitCubeReference) {
+    const core::Device device = GetParam();
+    const t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                                  {1, 0, 0},
+                                                                  {0, 1, 0},
+                                                                  {1, 1, 0},
+                                                                  {0, 0, 1},
+                                                                  {1, 0, 1},
+                                                                  {0, 1, 1},
+                                                                  {1, 1, 1}},
+                                                                 device));
+    const auto smoothed = pcd.SmoothTaubin(1, 0.5, -0.53, 7, true);
+
+    // The lambda and mu passes scale the centered cube by
+    // (1 - 8 * 0.5 / 7) * (1 + 8 * 0.53 / 7).
+    const core::Tensor ref = core::Tensor::Init<double>(
+            {{0.155918367347, 0.155918367347, 0.155918367347},
+             {0.844081632653, 0.155918367347, 0.155918367347},
+             {0.155918367347, 0.844081632653, 0.155918367347},
+             {0.844081632653, 0.844081632653, 0.155918367347},
+             {0.155918367347, 0.155918367347, 0.844081632653},
+             {0.844081632653, 0.155918367347, 0.844081632653},
+             {0.155918367347, 0.844081632653, 0.844081632653},
+             {0.844081632653, 0.844081632653, 0.844081632653}},
+            device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-11, 1e-11));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothMLSUnitCubeReference) {
+    const core::Device device = GetParam();
+    // A displaced 111 corner removes the perfect cube's repeated covariance
+    // eigenvalues. Hybrid MLS uses exp(-squared_distance / radius^2).
+    const t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                                  {1, 0, 0},
+                                                                  {0, 1, 0},
+                                                                  {1, 1, 0},
+                                                                  {0, 0, 1},
+                                                                  {1, 0, 1},
+                                                                  {0, 1, 1},
+                                                                  {1, 1, 1.25}},
+                                                                 device));
+    const auto smoothed = pcd.SmoothMLS(2.0, 8);
+
+    const core::Tensor ref = core::Tensor::Init<double>(
+            {{0.304746210477, 0.304746210477, -0.132659817770},
+             {0.962061030395, -0.048714601256, 0.018144543922},
+             {-0.048714601256, 0.962061030395, 0.018144543922},
+             {0.502675138804, 0.502675138804, 0.192711663191},
+             {0.464796679444, 0.464796679444, 0.665611708183},
+             {1.134384696129, 0.172553365443, 0.895019947109},
+             {0.172553365443, 1.134384696129, 0.895019947109},
+             {0.830319771401, 0.830319771401, 1.373654459775}},
+            device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-6, 1e-6));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothBilateralUnitCubeReference) {
+    const core::Device device = GetParam();
+    t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                            {1, 0, 0},
+                                                            {0, 1, 0},
+                                                            {1, 1, 0},
+                                                            {0, 0, 1},
+                                                            {1, 0, 1},
+                                                            {0, 1, 1},
+                                                            {1, 1, 1}},
+                                                           device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{-1, -1, -1},
+                                                    {1, -1, -1},
+                                                    {-1, 1, -1},
+                                                    {1, 1, -1},
+                                                    {-1, -1, 1},
+                                                    {1, -1, 1},
+                                                    {-1, 1, 1},
+                                                    {1, 1, 1}},
+                                                   device));
+    const auto smoothed = pcd.SmoothBilateral(2.0, 8, 1.0, 1.0);
+
+    // Summing the hamming-distance weight groups at 000 gives
+    // 0.298085265092; all other corners follow by symmetry.
+    constexpr double low = 0.298085265092;
+    constexpr double high = 1.0 - low;
+    const core::Tensor ref = core::Tensor::Init<double>({{low, low, low},
+                                                         {high, low, low},
+                                                         {low, high, low},
+                                                         {high, high, low},
+                                                         {low, low, high},
+                                                         {high, low, high},
+                                                         {low, high, high},
+                                                         {high, high, high}},
+                                                        device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-9, 1e-9));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothingBoundaryCases) {
+    const core::Device device = GetParam();
+    const t::geometry::PointCloud empty(
+            core::Tensor::Empty({0, 3}, core::Float32, device));
+    EXPECT_EQ(empty.SmoothMLS().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothLaplacian().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothTaubin().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothBilateral().GetPointPositions().GetLength(), 0);
+
+    const core::Tensor two_points =
+            core::Tensor::Init<float>({{0, 0, 0}, {1, 0, 0}}, device);
+    const t::geometry::PointCloud pcd(two_points);
+    EXPECT_TRUE(pcd.SmoothMLS(2.0, 2).GetPointPositions().AllClose(two_points,
+                                                                   1e-6, 1e-6));
+    EXPECT_TRUE(pcd.SmoothLaplacian(0).GetPointPositions().AllClose(
+            two_points, 1e-6, 1e-6));
+    EXPECT_TRUE(pcd.SmoothTaubin(0).GetPointPositions().AllClose(two_points,
+                                                                 1e-6, 1e-6));
+    EXPECT_ANY_THROW(pcd.SmoothBilateral(2.0, 2, 0.0, 1.0));
+    EXPECT_ANY_THROW(pcd.SmoothBilateral(2.0, 2, 1.0, 0.0));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothingKernelsPreserveTensorAttributes) {
+    const core::Device device = GetParam();
+    const core::Tensor points = core::Tensor::Init<float>({{0, 0, 0},
+                                                           {1, 0, 0},
+                                                           {0, 1, 0},
+                                                           {1, 1, 0},
+                                                           {0, 0, 1},
+                                                           {1, 0, 1},
+                                                           {0, 1, 1},
+                                                           {1, 1, 1}},
+                                                          device);
+    t::geometry::PointCloud pcd(points);
+    pcd.SetPointAttr("labels",
+                     core::Tensor::Arange(0, 8, 1, core::Int32, device));
+
+    const auto mls = pcd.SmoothMLS(2.0, 8);
+    EXPECT_EQ(mls.GetDevice(), device);
+    EXPECT_FALSE(mls.HasPointNormals());
+    EXPECT_TRUE(
+            mls.GetPointAttr("labels").AllClose(pcd.GetPointAttr("labels")));
+
+    const auto laplacian = pcd.SmoothLaplacian(1, 0.5, 7, true);
+    const auto taubin = pcd.SmoothTaubin(1, 0.5, -0.53, 7, true);
+    EXPECT_EQ(laplacian.GetDevice(), device);
+    EXPECT_EQ(taubin.GetDevice(), device);
+    EXPECT_TRUE(laplacian.GetPointAttr("labels").AllClose(
+            pcd.GetPointAttr("labels")));
+    EXPECT_TRUE(
+            taubin.GetPointAttr("labels").AllClose(pcd.GetPointAttr("labels")));
+
+    const auto bilateral = pcd.SmoothBilateral(2.0, 8, 0.5, 0.5);
+    EXPECT_EQ(bilateral.GetDevice(), device);
+    EXPECT_TRUE(bilateral.HasPointNormals());
+    EXPECT_TRUE(bilateral.GetPointAttr("labels").AllClose(
+            pcd.GetPointAttr("labels")));
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
@@ -170,6 +354,7 @@ TEST_P(PointCloudPermuteDevices, Copy) {
 
 TEST_P(PointCloudPermuteDevices, Transform) {
     core::Device device = GetParam();
+
     core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pcd(device);
     core::Tensor transformation(
@@ -243,6 +428,172 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+// ---------------------------------------------------------------------------
+// Gaussian splat transform tests
+// ---------------------------------------------------------------------------
+
+// Helper: build a minimal two-splat GS cloud with configurable SH data.
+// Positions: [[0,0,0], [1,0,0]]
+// scale: [[1,1,1], [1,1,1]] (linear, isotropic)
+// rot: [[1,0,0,0], [1,0,0,0]] (identity quaternion, w-first)
+// opacity: [[0], [0]]
+// f_dc: [[0,0,0], [0,0,0]]
+// f_rest: {2, Nc, 3} flattened row-major, where Nc = ((sh_degree+1)^2 - 1).
+static t::geometry::PointCloud MakeGSSplatCloud(
+        const std::vector<float>& f_rest_data = {1, 0, 0, 0, 1, 0, 0, 0, 1, 1,
+                                                 0, 0, 0, 1, 0, 0, 0, 1}) {
+    core::Device cpu("CPU:0");
+    const int64_t num_rest_coeffs =
+            static_cast<int64_t>(f_rest_data.size() / (2 * 3));
+    auto positions =
+            core::Tensor::Init<float>({{0.f, 0.f, 0.f}, {1.f, 0.f, 0.f}}, cpu);
+    auto scale =
+            core::Tensor::Init<float>({{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}}, cpu);
+    auto rot = core::Tensor::Init<float>(
+            {{1.f, 0.f, 0.f, 0.f}, {1.f, 0.f, 0.f, 0.f}}, cpu);
+    auto opacity = core::Tensor::Init<float>({{0.f}, {0.f}}, cpu);
+    auto f_dc =
+            core::Tensor::Init<float>({{0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}}, cpu);
+    auto f_rest = core::Tensor(f_rest_data, {2, num_rest_coeffs, 3},
+                               core::Float32, cpu);
+
+    t::geometry::PointCloud pcd(positions);
+    pcd.SetPointAttr("scale", scale);
+    pcd.SetPointAttr("rot", rot);
+    pcd.SetPointAttr("opacity", opacity);
+    pcd.SetPointAttr("f_dc", f_dc);
+    pcd.SetPointAttr("f_rest", f_rest);
+    return pcd;
+}
+
+TEST(GaussianSplatTransform, RotateProper90Z_UpdatesQuatAndSH) {
+    // 90° rotation around Z: R = [[0,-1,0],[1,0,0],[0,0,1]]
+    // Quaternion: (cos45°, 0, 0, sin45°) = (√2/2, 0, 0, √2/2)
+    // IR degree-1 matrix for this R in (y,z,x) ordering:
+    //   R1[i,j] = R[idx[i], idx[j]], idx={1,2,0}
+    //   R1 = [[0,0,1],[0,1,0],[-1,0,0]]
+    // Applied to old f_rest[n,0:3,c] = [c0, c1, c2]:
+    //   new = R1 @ old = [c2, c1, -c0]
+    auto pcd = MakeGSSplatCloud();
+
+    core::Tensor R = core::Tensor::Init<float>(
+            {{0.f, -1.f, 0.f}, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}},
+            core::Device("CPU:0"));
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    pcd.Rotate(R, center);
+
+    // Quaternion: q_R * identity = q_R = (√2/2, 0, 0, √2/2)
+    auto rot_data = pcd.GetPointAttr("rot").ToFlatVector<float>();
+    const float s = static_cast<float>(std::sqrt(2.0) / 2.0);
+    EXPECT_NEAR(rot_data[0], s, 1e-5f);    // w
+    EXPECT_NEAR(rot_data[1], 0.f, 1e-5f);  // x
+    EXPECT_NEAR(rot_data[2], 0.f, 1e-5f);  // y
+    EXPECT_NEAR(rot_data[3], s, 1e-5f);    // z
+    // Both splats have same rot, check second splat too.
+    EXPECT_NEAR(rot_data[4], s, 1e-5f);
+
+    // f_rest: old [1,0,0] per (k,c)=(0,R), (1,G), (2,B) → apply R1:
+    // new[k=0,R] = old[k=2,R] = 0  (R1 row0 = [0,0,1] → picks k=2)
+    // new[k=1,R] = old[k=1,R] = 0  (R1 row1 = [0,1,0])
+    // new[k=2,R] = -old[k=0,R] = -1 (R1 row2 = [-1,0,0])
+    // f_rest[n, k, c]: n=0, k=0,1,2, c=0(R),1(G),2(B)
+    // Old f_rest for splat 0: [[1,0,0],[0,1,0],[0,0,1]]
+    // After R1: [[0,0,1],[0,1,0],[-1,0,0]] @ [[1,0,0],[0,1,0],[0,0,1]]
+    // row0: 0*[1,0,0] + 0*[0,1,0] + 1*[0,0,1] = [0,0,1]
+    // row1: 0*[1,0,0] + 1*[0,1,0] + 0*[0,0,1] = [0,1,0]
+    // row2: -1*[1,0,0] + 0*[0,1,0] + 0*[0,0,1] = [-1,0,0]
+    auto f_rest_data = pcd.GetPointAttr("f_rest").ToFlatVector<float>();
+    // Splat 0: f_rest[0,0,0..2] = [0,0,1], [0,1,0], [-1,0,0]
+    EXPECT_NEAR(f_rest_data[0], 0.f, 1e-5f);   // [0,0,R]
+    EXPECT_NEAR(f_rest_data[1], 0.f, 1e-5f);   // [0,0,G]
+    EXPECT_NEAR(f_rest_data[2], 1.f, 1e-5f);   // [0,0,B]
+    EXPECT_NEAR(f_rest_data[3], 0.f, 1e-5f);   // [0,1,R]
+    EXPECT_NEAR(f_rest_data[4], 1.f, 1e-5f);   // [0,1,G]
+    EXPECT_NEAR(f_rest_data[5], 0.f, 1e-5f);   // [0,1,B]
+    EXPECT_NEAR(f_rest_data[6], -1.f, 1e-5f);  // [0,2,R]
+    EXPECT_NEAR(f_rest_data[7], 0.f, 1e-5f);   // [0,2,G]
+    EXPECT_NEAR(f_rest_data[8], 0.f, 1e-5f);   // [0,2,B]
+
+    // Linear scales must be unchanged.
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    EXPECT_NEAR(scale_data[0], 1.f, 1e-5f);
+    EXPECT_NEAR(scale_data[3], 1.f, 1e-5f);
+}
+
+TEST(GaussianSplatTransform, ScaleUniformUpdatesLinearScales) {
+    auto pcd = MakeGSSplatCloud();
+    auto rot_before = pcd.GetPointAttr("rot").Clone();
+    auto f_rest_before = pcd.GetPointAttr("f_rest").Clone();
+    auto opacity_before = pcd.GetPointAttr("opacity").Clone();
+
+    double s = 3.0;
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    pcd.Scale(s, center);
+
+    // Linear scales multiplied by 3.
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    for (float v : scale_data) {
+        EXPECT_NEAR(v, 3.f, 1e-5f);
+    }
+
+    // Quaternion, SH, opacity unchanged.
+    EXPECT_TRUE(pcd.GetPointAttr("rot").AllClose(rot_before, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("f_rest").AllClose(f_rest_before, 1e-5, 1e-5));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("opacity").AllClose(opacity_before, 1e-5, 1e-5));
+
+    // Positions scaled: [0,0,0] stays, [1,0,0] → [3,0,0].
+    auto pos_data = pcd.GetPointPositions().ToFlatVector<float>();
+    EXPECT_NEAR(pos_data[0], 0.f, 1e-5f);
+    EXPECT_NEAR(pos_data[3], 3.f, 1e-5f);
+}
+
+TEST(GaussianSplatTransform, ScaleNegativeUsesAbsValueAndNegatesOddSHDegrees) {
+    std::vector<float> f_rest_data(2 * 15 * 3);
+    std::iota(f_rest_data.begin(), f_rest_data.end(), 1.0f);
+    auto pcd = MakeGSSplatCloud(f_rest_data);
+    auto rot_before = pcd.GetPointAttr("rot").Clone();
+    auto f_dc_before = pcd.GetPointAttr("f_dc").Clone();
+    auto opacity_before = pcd.GetPointAttr("opacity").Clone();
+    auto center =
+            core::Tensor::Zeros({3}, core::Float32, core::Device("CPU:0"));
+    // s = -2 means point inversion plus positive scaling. Linear scales use
+    // |s| and odd-degree SH blocks (l = 1, 3) negate under -I.
+    pcd.Scale(-2.0, center);
+
+    auto scale_data = pcd.GetPointAttr("scale").ToFlatVector<float>();
+    for (float v : scale_data) {
+        EXPECT_NEAR(v, 2.f, 1e-5f);  // |−2| = 2
+    }
+
+    std::vector<float> expected = f_rest_data;
+    for (int l : {1, 3}) {
+        const int offset = l * l - 1;
+        const int size_l = 2 * l + 1;
+        for (int n = 0; n < 2; ++n) {
+            for (int k = 0; k < size_l; ++k) {
+                for (int c = 0; c < 3; ++c) {
+                    expected[((n * 15) + offset + k) * 3 + c] *= -1.0f;
+                }
+            }
+        }
+    }
+    core::Tensor expected_f_rest(expected, {2, 15, 3}, core::Float32,
+                                 core::Device("CPU:0"));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("f_rest").AllClose(expected_f_rest, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("rot").AllClose(rot_before, 1e-5, 1e-5));
+    EXPECT_TRUE(pcd.GetPointAttr("f_dc").AllClose(f_dc_before, 1e-5, 1e-5));
+    EXPECT_TRUE(
+            pcd.GetPointAttr("opacity").AllClose(opacity_before, 1e-5, 1e-5));
+
+    auto pos_data = pcd.GetPointPositions().ToFlatVector<float>();
+    EXPECT_NEAR(pos_data[0], 0.f, 1e-5f);
+    EXPECT_NEAR(pos_data[3], -2.f, 1e-5f);
+}
+
 TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
 
@@ -312,7 +663,7 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 
     // Estimate normals using Radius Search.
-    pcd.EstimateNormals(utility::nullopt, 1.1);
+    pcd.EstimateNormals(std::nullopt, 1.1);
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 }
 
@@ -691,6 +1042,7 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDImage) {
 
 TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     if (!t::geometry::Image::HAVE_IPP &&
         device.GetType() ==
@@ -812,6 +1164,62 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
 }
 
+TEST_P(PointCloudPermuteDevices, ProjectToDepthImage) {
+    core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
+    const int width = 8, height = 8;
+    float depth_scale = 1.f, depth_max = 10.f;
+    core::Tensor positions = core::Tensor::Init<float>(
+            {{0.f, 0.f, 1.f}, {0.1f, 0.1f, 1.f}}, device);
+    t::geometry::PointCloud pcd(positions);
+    core::Tensor intrinsics = core::Tensor::Init<double>(
+            {{10., 0., 4.}, {0., 10., 4.}, {0., 0., 1.}}, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float64, device);
+
+    t::geometry::Image depth_img = pcd.ProjectToDepthImage(
+            width, height, intrinsics, extrinsics, depth_scale, depth_max);
+
+    EXPECT_EQ(depth_img.AsTensor().GetShape(),
+              core::SizeVector({height, width, 1}));
+    std::vector<float> depth_flat = depth_img.AsTensor().ToFlatVector<float>();
+    EXPECT_GT(*std::max_element(depth_flat.begin(), depth_flat.end()), 0.f);
+}
+
+TEST_P(PointCloudPermuteDevices, ProjectToRGBDImage) {
+    using ::testing::ElementsAre;
+
+    core::Device device = GetParam();
+    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
+
+    const int width = 8, height = 8;
+    float depth_scale = 1.f, depth_max = 10.f;
+    core::Tensor positions = core::Tensor::Init<float>(
+            {{0.f, 0.f, 1.f}, {0.1f, 0.f, 1.f}, {0.f, 0.1f, 1.f}}, device);
+    core::Tensor colors = core::Tensor::Init<float>(
+            {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, device);
+    t::geometry::PointCloud pcd(device);
+    pcd.SetPointPositions(positions);
+    pcd.SetPointColors(colors);
+    core::Tensor intrinsics = core::Tensor::Init<double>(
+            {{10., 0., 4.}, {0., 10., 4.}, {0., 0., 1.}}, device);
+    core::Tensor extrinsics = core::Tensor::Eye(4, core::Float64, device);
+
+    t::geometry::RGBDImage rgbd = pcd.ProjectToRGBDImage(
+            width, height, intrinsics, extrinsics, depth_scale, depth_max);
+
+    EXPECT_THAT(rgbd.depth_.AsTensor().GetShape(),
+                ElementsAre(height, width, 1));
+    EXPECT_THAT(rgbd.color_.AsTensor().GetShape(),
+                ElementsAre(height, width, 3));
+    std::vector<float> depth_flat =
+            rgbd.depth_.AsTensor().ToFlatVector<float>();
+    std::vector<float> color_flat =
+            rgbd.color_.AsTensor().ToFlatVector<float>();
+    EXPECT_GT(*std::max_element(depth_flat.begin(), depth_flat.end()), 0.f);
+    EXPECT_GT(*std::max_element(color_flat.begin(), color_flat.end()), 0.f);
+}
+
 TEST_P(PointCloudPermuteDevices, SelectByMask) {
     core::Device device = GetParam();
 
@@ -891,6 +1299,7 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
 
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     // Value test
     t::geometry::PointCloud pcd_small(
@@ -954,11 +1363,17 @@ TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
                                        {0, 1.0, 1.0},
                                        {1.0, 1.0, 1.5}},
                                       device));
+
     auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
-    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
-            core::Tensor::Init<float>(
-                    {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}},
-                    device)));
+    auto expected = core::Tensor::Init<float>(
+            {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}}, device);
+
+    auto pcd_small_down_2 = pcd_small.FarthestPointDownSample(4, 4);
+    auto expected_2 = core::Tensor::Init<float>(
+            {{0, 2.0, 0}, {1.0, 1.0, 0}, {0, 0, 1.0}, {1.0, 1.0, 1.5}}, device);
+
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(expected));
+    EXPECT_TRUE(pcd_small_down_2.GetPointPositions().AllClose(expected_2));
 }
 
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
@@ -1006,6 +1421,7 @@ TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
 
 TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
     core::Device device = GetParam();
+    if (core::sy::IsCPUDevice(device)) GTEST_SKIP();
 
     const t::geometry::PointCloud pcd_small(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},

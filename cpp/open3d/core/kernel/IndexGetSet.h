@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -26,6 +26,14 @@ void IndexGetCPU(const Tensor& src,
                  const SizeVector& indexed_shape,
                  const SizeVector& indexed_strides);
 
+#ifdef BUILD_SYCL_MODULE
+void IndexGetSYCL(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void IndexGetCUDA(const Tensor& src,
                   Tensor& dst,
@@ -45,6 +53,14 @@ void IndexSetCPU(const Tensor& src,
                  const std::vector<Tensor>& index_tensors,
                  const SizeVector& indexed_shape,
                  const SizeVector& indexed_strides);
+
+#ifdef BUILD_SYCL_MODULE
+void IndexSetSYCL(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides);
+#endif
 
 #ifdef BUILD_CUDA_MODULE
 void IndexSetCUDA(const Tensor& src,

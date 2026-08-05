@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ REGISTER_OP("Open3DInvertNeighborsList")
 
             // the attributes will have the same shape
             c->set_output(2, inp_neighbors_attributes);
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Inverts a neighbors list made of neighbors_index and neighbors_row_splits.

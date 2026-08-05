@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -79,6 +79,30 @@ bool CorrespondenceCheckerBasedOnNormal::Check(
             return false;
         }
     }
+    return true;
+}
+
+bool CorrespondenceCheckerBasedOnSourceRotation::Check(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        const Eigen::Matrix4d &transformation) const {
+    Eigen::Vector6d transform_6d =
+            open3d::utility::TransformMatrix4dToVector6d(transformation);
+
+    if (rotation_threshold_[0] >= 0.0 &&
+        std::abs(transform_6d[0]) > rotation_threshold_[0]) {
+        return false;
+    }
+    if (rotation_threshold_[1] >= 0.0 &&
+        std::abs(transform_6d[1]) > rotation_threshold_[1]) {
+        return false;
+    }
+    if (rotation_threshold_[2] >= 0.0 &&
+        std::abs(transform_6d[2]) > rotation_threshold_[2]) {
+        return false;
+    }
+
     return true;
 }
 

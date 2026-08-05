@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -82,6 +82,41 @@ struct MaterialRecord {
 
     // Infinite ground plane
     float ground_plane_axis = 0.f;  // 0: XZ; >0: XY; <0: YZ
+
+    // Max Spherical Harmonic degree for rendering gaussian splats.
+    int gaussian_splat_sh_degree = 2;
+
+    // Minimum splat alpha value when rendering gaussian splats.
+    /// Minimum alpha threshold for Gaussian splat CPU-side filtering in
+    /// PackGaussianSplatAttrsDirect().  Splats whose sigmoid(opacity) is below
+    /// this value are discarded at load time and never uploaded to the GPU,
+    /// removing the need for a redundant per-splat GPU alpha test.
+    /// Matches the composite pass kMinAlpha = 1/255.
+    float gaussian_splat_min_alpha = 1.0f / 255.0f;
+
+    // Enable anti-aliasing density compensation for gaussian splats.
+    // Multiplies each splat's opacity by sqrt(det(Sigma) / det(Sigma_blurred))
+    // to counteract the over-brightening caused by the fixed +0.3 blur kernel.
+    bool gaussian_splat_antialias = false;
+
+    // Hard per-splat cap on the number of screen tiles a single splat may
+    // cover; splats whose footprint would exceed this are culled (dropped)
+    // entirely rather than rendered from a smaller tile rectangle, which
+    // would otherwise show up as a hard-edged, wrongly-opaque block. Raise
+    // for very large / close-up splats. Decoupled from GPU memory use: only
+    // `gaussian_splat_avg_tiles_per_splat` below affects buffer sizing.
+    uint32_t gaussian_splat_max_tiles_per_splat = 256;
+
+    // Expected mean tiles-per-splat across the scene, used only to size the
+    // shared tile-entry buffers (a statistical estimate, not an enforced
+    // limit). Raise for scenes with many large/overlapping splats at the
+    // cost of higher GPU memory use; unlike max_tiles_per_splat above, this
+    // does not clip individual splats.
+    uint32_t gaussian_splat_avg_tiles_per_splat = 32;
+
+    // Total tile-coverage entry budget for the whole scene.
+    // Raise this for dense or high-resolution scenes at the cost of GPU memory.
+    uint32_t gaussian_splat_max_tile_entries_total = 32u * 1024u * 1024u;
 
     // Generic material properties
     std::unordered_map<std::string, Eigen::Vector4f> generic_params;

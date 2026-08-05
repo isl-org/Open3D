@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ REGISTER_OP("Open3DBuildSpatialHashTable")
             hash_table_splits_shape = MakeShapeHandle(c, batch_size + 1);
             c->set_output(2, hash_table_splits_shape);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Creates a spatial hash table meant as input for fixed_radius_search

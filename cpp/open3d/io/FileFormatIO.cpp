@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,15 +19,29 @@ static std::map<std::string, FileGeometry (*)(const std::string&)> gExt2Func = {
         {"gltf", ReadFileGeometryTypeGLTF},
         {"obj", ReadFileGeometryTypeOBJ},
         {"fbx", ReadFileGeometryTypeFBX},
+        {"usd", ReadFileGeometryTypeUSD},
+        {"usda", ReadFileGeometryTypeUSD},
+        {"usdc", ReadFileGeometryTypeUSD},
+        {"usdz", ReadFileGeometryTypeUSD},
         {"off", ReadFileGeometryTypeOFF},
         {"pcd", ReadFileGeometryTypePCD},
         {"ply", ReadFileGeometryTypePLY},
+        {"splat", ReadFileGeometryTypeSPLAT},
+        {"spz", ReadFileGeometryTypeSPZ},
         {"pts", ReadFileGeometryTypePTS},
         {"stl", ReadFileGeometryTypeSTL},
         {"xyz", ReadFileGeometryTypeXYZ},
         {"xyzn", ReadFileGeometryTypeXYZN},
         {"xyzrgb", ReadFileGeometryTypeXYZRGB},
 };
+
+FileGeometry ReadFileGeometryTypeSPLAT(const std::string&) {
+    return FileGeometry(CONTAINS_POINTS | CONTAINS_GAUSSIAN_SPLATS);
+}
+
+FileGeometry ReadFileGeometryTypeSPZ(const std::string&) {
+    return FileGeometry(CONTAINS_POINTS | CONTAINS_GAUSSIAN_SPLATS);
+}
 
 FileGeometry ReadFileGeometryType(const std::string& path) {
     auto ext = utility::filesystem::GetFileExtensionInLowerCase(path);

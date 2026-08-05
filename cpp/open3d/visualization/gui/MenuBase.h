@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -48,6 +48,15 @@ public:
     virtual void InsertSeparator(int index) = 0;
 
     virtual int GetNumberOfItems() const = 0;
+
+    /// Get the Menu by name. Returns nullptr if not found.
+    virtual std::shared_ptr<MenuBase> GetMenu(const char* name) = 0;
+
+    /// Get the submenu that contains a leaf item with \p item_id (searches
+    /// recursively). Returns nullptr if the id is not found. Submenu headers
+    /// added with AddMenu / InsertMenu are identified by name via
+    /// GetMenu(const char*).
+    virtual std::shared_ptr<MenuBase> GetMenu(ItemId item_id) = 0;
 
     /// Searches the menu hierarchy down from this menu to find the item
     /// and returns true if the item is enabled.

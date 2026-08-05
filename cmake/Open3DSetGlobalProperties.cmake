@@ -25,17 +25,8 @@ function(open3d_enable_strip target)
     endif()
 endfunction()
 
-# RPATH handling (for TBB DSO). Check current folder, one folder above and the lib sibling folder 
+# RPATH handling (see below). We don't install targets such as pybind, so BUILD_RPATH must be relative as well.
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
-if (APPLE)
-# Add options to cover the various ways in which open3d shaed lib or apps can be installed wrt TBB DSO
-    set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/")
-# pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
-    set(CMAKE_BUILD_RPATH "@loader_path/../")   
-elseif(UNIX)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/")
-    set(CMAKE_BUILD_RPATH "$ORIGIN/../")
-endif()
 
 # open3d_set_global_properties(target)
 #
@@ -56,8 +47,10 @@ function(open3d_set_global_properties target)
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
-    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
-    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+    if (BUILD_CUDA_MODULE)
+        target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
+        target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+    endif()
 
     # std::filesystem (C++17) or std::experimental::filesystem (C++14)
     #
@@ -115,9 +108,6 @@ function(open3d_set_global_properties target)
     if (BUILD_GUI)
         target_compile_definitions(${target} PRIVATE BUILD_GUI)
     endif()
-    if (ENABLE_HEADLESS_RENDERING)
-        target_compile_definitions(${target} PRIVATE HEADLESS_RENDERING)
-    endif()
     if (BUILD_AZURE_KINECT)
         target_compile_definitions(${target} PRIVATE BUILD_AZURE_KINECT)
     endif()
@@ -139,12 +129,13 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
 
-    if(UNIX AND NOT WITH_OPENMP)
+    if(UNIX)
+        # 3rdparty sources (e.g. PoissonRecon, VTK) contain `#pragma omp ...`
+        # which is unknown to the compiler since Open3D does not enable OpenMP.
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
     if(WIN32)
         target_compile_definitions(${target} PRIVATE
-            WINDOWS
             _CRT_SECURE_NO_DEPRECATE
             _CRT_NONSTDC_NO_DEPRECATE
             _SCL_SECURE_NO_WARNINGS
@@ -152,12 +143,23 @@ function(open3d_set_global_properties target)
         if(MSVC)
             target_compile_definitions(${target} PRIVATE NOMINMAX _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE)
             target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/EHsc>)
+            if(BUILD_SYCL_MODULE)
+                # icx mishandles MSVC STL's `_Guarded_by_` SAL annotation (via
+                # oneDPL <execution>); it is a static-analysis no-op, so empty it.
+                # Must be target_compile_options (not definitions) and must not use
+                # $<COMPILE_LANGUAGE:CXX>: CMake mishandles the parentheses in both.
+                target_compile_options(${target} PRIVATE "-D_Guarded_by_(x)=")
+            endif()
             # Multi-thread compile, two ways to enable
             # Option 1, at build time: cmake --build . --parallel %NUMBER_OF_PROCESSORS%
             # https://stackoverflow.com/questions/36633074/set-the-number-of-threads-in-a-cmake-build
             # Option 2, at configure time: add /MP flag, no need to use Option 1
             # https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=vs-2019
-            target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            # Note: /MP is not compatible with the Intel oneAPI DPC++/C++
+            # compiler (icx) when SYCL offloading (-fsycl) is enabled
+            if(NOT BUILD_SYCL_MODULE)
+                target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/MP>)
+            endif()
             if(BUILD_GUI)
                 # GLEW and Open3D make direct OpenGL calls and link to opengl32.lib;
                 # Filament needs to link through bluegl.lib.
@@ -188,12 +190,21 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
-    # Turn off fast math for IntelLLVM DPC++ compiler.
-    # Fast math does not work with some of our NaN handling logics.
+    # IEEE-compliant FP for IntelLLVM / icx (SYCL on Windows and Linux).
+    # -fno-fast-math: preserve NaN handling. -no-ftz : icx
+    # enables FTZ/DAZ at -O1+, which zeroes denormals (e.g. RGB packed into a
+    # float in PCD). Windows icx is clang-cl; prefix with /clang: so the
+    # GNU-style flags take effect.
+    if(WIN32)
+        set(opt-prefix /clang:)
+    else()
+        set(opt-prefix "")
+    endif()
     target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
-    target_compile_options(${target} PRIVATE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-fno-fast-math>
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:${opt-prefix}-no-ftz>
+    )
+    # should be /Qftz- for WIN32?
 
     # Enable strip
     open3d_enable_strip(${target})
@@ -202,5 +213,23 @@ function(open3d_set_global_properties target)
     target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
     target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
     target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
+
+    # RPATH handling. Check current folder, one folder above (cpu/pybind ->
+    # libtbb) and the lib sibling folder (bin/Open3D -> lib/libOpen3D).  Also
+    # check the Python virtual env /lib folder for 3rd party dependency
+    # libraries installed with `pip install`
+    if (APPLE)
+    # Add options to cover the various ways in which open3d shared lib or apps can be installed wrt dependent DSOs
+        set_target_properties(${target} PROPERTIES 
+            INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../"
+    # pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
+            BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../")
+    elseif(UNIX)
+        # INSTALL_RPATH for C++ binaries.
+        set_target_properties(${target} PROPERTIES 
+            INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../"
+        # BUILD_RPATH for Python wheel libs and app.
+            BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
+    endif()
 
 endfunction()

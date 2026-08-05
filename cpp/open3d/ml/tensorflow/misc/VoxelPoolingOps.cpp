@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ REGISTER_OP("Open3DVoxelPooling")
                         c->WithValue(c->Dim(positions_shape, -1), 3, &d));
             }
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Spatial pooling for point clouds by combining points that fall into the same voxel bin.
@@ -202,7 +202,7 @@ REGISTER_OP("Open3DVoxelPoolingGrad")
                         c->Dim(pooled_positions_shape, -1), 3, &d));
             }
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Gradient for features in VoxelPooling. For internal use only.

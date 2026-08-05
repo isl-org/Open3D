@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -30,8 +30,94 @@ void pybind_boundingvolume_declarations(py::module &m) {
                                       "geometries, The axis aligned bounding "
                                       "box uses the coordinate axes for "
                                       "bounding box generation.");
+    py::class_<OrientedBoundingEllipsoid,
+               PyGeometry3D<OrientedBoundingEllipsoid>,
+               std::shared_ptr<OrientedBoundingEllipsoid>, Geometry3D>
+            oriented_bounding_ellipsoid(
+                    m, "OrientedBoundingEllipsoid",
+                    "Class that defines an oriented ellipsoid that can "
+                    "be computed from 3D geometries.");
 }
 void pybind_boundingvolume_definitions(py::module &m) {
+    auto oriented_bounding_ellipsoid = static_cast<py::class_<
+            OrientedBoundingEllipsoid, PyGeometry3D<OrientedBoundingEllipsoid>,
+            std::shared_ptr<OrientedBoundingEllipsoid>, Geometry3D>>(
+            m.attr("OrientedBoundingEllipsoid"));
+    py::detail::bind_default_constructor<OrientedBoundingEllipsoid>(
+            oriented_bounding_ellipsoid);
+    py::detail::bind_copy_functions<OrientedBoundingEllipsoid>(
+            oriented_bounding_ellipsoid);
+    oriented_bounding_ellipsoid
+            .def(py::init<const Eigen::Vector3d &, const Eigen::Matrix3d &,
+                          const Eigen::Vector3d &>(),
+                 "Create OrientedBoundingEllipsoid from center, rotation R and "
+                 "radii "
+                 "in x, y and z "
+                 "direction",
+                 "center"_a, "R"_a, "radii"_a)
+            .def("__repr__",
+                 [](const OrientedBoundingEllipsoid &ellipsoid) {
+                     std::stringstream s;
+                     auto c = ellipsoid.center_;
+                     auto r = ellipsoid.radii_;
+                     s << "OrientedBoundingEllipsoid: center: (" << c.x()
+                       << ", " << c.y() << ", " << c.z()
+                       << "), radii: " << r.x() << ", " << r.y() << ", "
+                       << r.z() << ")";
+                     return s.str();
+                 })
+            .def_static("create_from_points",
+                        &OrientedBoundingEllipsoid::CreateFromPoints,
+                        "points"_a, "robust"_a = false,
+                        R"doc(
+Creates the oriented bounding ellipsoid that encloses the set of points.
+
+Uses Khachiyan's algorithm to compute the minimum volume enclosing ellipsoid.
+https://ecommons.cornell.edu/server/api/core/bitstreams/2b9e302e-e31c-45c9-b292-64a1c0d70bef/content
+
+Args:
+     points (open3d.utility.Vector3dVector): Input points.
+     robust (bool): If set to true uses a more robust method which works in
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingEllipsoid: The minimum volume oriented
+     bounding ellipsoid.
+
+Example::
+
+    import open3d as o3d
+
+    # Compute oriented bounding ellipsoid from a mesh
+    mesh_path = o3d.data.MonkeyModel().path
+    mesh = o3d.io.read_triangle_mesh(mesh_path)
+    mesh.compute_triangle_normals()
+    ellipsoid = mesh.get_oriented_bounding_ellipsoid()
+    print(f"Volume: {ellipsoid.volume()}")
+    print(f"Center: {ellipsoid.center}")
+    print(f"Radii:  {ellipsoid.radii}")
+    ellipsoid.color = (0, 0.44, 0.77)
+    
+    # Option 1: wireframe visualization via LineSet
+    ellipsoid_lines = o3d.geometry.LineSet.create_from_oriented_bounding_ellipsoid(ellipsoid)
+    o3d.visualization.draw([mesh, ellipsoid_lines])
+    
+    # Option 2: solid ellipsoid mesh
+    ellipsoid_mesh = o3d.geometry.TriangleMesh.create_from_oriented_bounding_ellipsoid(ellipsoid)
+    o3d.visualization.draw([mesh, ellipsoid_mesh])
+)doc")
+            .def("volume", &OrientedBoundingEllipsoid::Volume,
+                 "Returns the volume of the bounding ellipsoid.")
+            .def_readwrite("center", &OrientedBoundingEllipsoid::center_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("R", &OrientedBoundingEllipsoid::R_,
+                           "``float64`` array of shape ``(3,3 )``")
+            .def_readwrite("radii", &OrientedBoundingEllipsoid::radii_,
+                           "``float64`` array of shape ``(3, )``")
+            .def_readwrite("color", &OrientedBoundingEllipsoid::color_,
+                           "``float64`` array of shape ``(3, )``");
+    docstring::ClassMethodDocInject(m, "OrientedBoundingEllipsoid", "volume");
+
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
                        std::shared_ptr<OrientedBoundingBox>, Geometry3D>>(
@@ -74,6 +160,11 @@ Creates the oriented bounding box that encloses the set of points.
 Computes the oriented bounding box based on the PCA of the convex hull.
 The returned bounding box is an approximation to the minimal bounding box.
 
+Note:
+     See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
+     for an algorithm returning the minimum oriented bounding box.
+
 Args:
      points (open3d.utility.Vector3dVector): Input points.
      robust (bool): If set to true uses a more robust method which works in
@@ -88,13 +179,20 @@ Returns:
                         &OrientedBoundingBox::CreateFromPointsMinimal,
                         "points"_a, "robust"_a = false,
                         R"doc(
-Creates the oriented bounding box with the smallest volume.
+Creates the oriented bounding box with optimized (but not 
+necessarily smallest) volume.
 
 The algorithm makes use of the fact that at least one edge of
 the convex hull must be collinear with an edge of the minimum
 bounding box: for each triangle in the convex hull, calculate
 the minimal axis aligned box in the frame of that triangle.
-at the end, return the box with the smallest volume
+at the end, return the box with optimized (but not necessarily 
+smallest) volume.
+
+Note:
+     See the Tensor version open3d.t.geometry.OrientedBoundingBox.create_from_points()
+     and select the method open3d.t.geometry.MINIMAL_JYLANKI
+     for an algorithm returning the minimum oriented bounding box.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
@@ -105,6 +203,7 @@ Returns:
      open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
      bounding box is oriented such that its volume is minimized.
 )doc")
+
             .def("volume", &OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,

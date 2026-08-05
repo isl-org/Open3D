@@ -18,7 +18,9 @@ echo
 df -h
 
 echo "Running Open3D C++ unit tests..."
-run_cpp_unit_tests
+if [ "${SKIP_CPP_TESTS:-OFF}" != "ON" ]; then
+    run_cpp_unit_tests
+fi
 
 # Run on GPU only. CPU versions run on Github already
 if nvidia-smi >/dev/null 2>&1; then

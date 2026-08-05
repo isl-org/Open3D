@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -14,6 +14,7 @@ import pickle
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
@@ -125,6 +126,20 @@ def test_device():
     assert o3c.Device("CUDA", 1) != o3c.Device("CUDA:0")
 
     assert o3c.Device("CUDA", 1).__str__() == "CUDA:1"
+
+    device = o3c.Device("cuda")
+    assert device.get_type() == o3c.Device.DeviceType.CUDA
+    assert device.get_id() == 0
+
+
+def test_tensor_to_device_string():
+    t = o3c.Tensor([1, 2, 3])
+    assert t.to("cpu:0").device == o3c.Device("cpu:0")
+    assert t.to("cpu").device == o3c.Device("cpu:0")
+    if o3c.cuda.is_available():
+        t_gpu = t.to("cuda:0")
+        assert t_gpu.device.get_type() == o3c.Device.DeviceType.CUDA
+        assert t_gpu.to("cpu").device == o3c.Device("cpu:0")
 
 
 @pytest.mark.parametrize("dtype", list_dtypes())
@@ -594,7 +609,9 @@ def test_binary_ew_ops(dtype, device):
     np.testing.assert_equal((a - b).cpu().numpy(), np.array([2, 3, 4, 5, 6, 7]))
     np.testing.assert_equal((a * b).cpu().numpy(),
                             np.array([8, 18, 32, 50, 72, 98]))
-    np.testing.assert_equal((a / b).cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
+    # SYCL FP64 emulation may have precision issue.
+    np.testing.assert_allclose((a / b).cpu().numpy(),
+                               np.array([2, 2, 2, 2, 2, 2]))
 
     a = o3c.Tensor(np.array([4, 6, 8, 10, 12, 14]), dtype=dtype, device=device)
     a += b
@@ -610,7 +627,8 @@ def test_binary_ew_ops(dtype, device):
 
     a = o3c.Tensor(np.array([4, 6, 8, 10, 12, 14]), dtype=dtype, device=device)
     a //= b
-    np.testing.assert_equal(a.cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
+    # SYCL FP64 emulation may have precision issue.
+    np.testing.assert_allclose(a.cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
 
 @pytest.mark.parametrize("device", list_devices())

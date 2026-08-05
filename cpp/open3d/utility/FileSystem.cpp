@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WIN32
+#ifdef _WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -23,21 +23,14 @@
 #endif
 #else
 #include <dirent.h>
+#include <dlfcn.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
 #include <filesystem>
-namespace fs = std::__fs::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#endif
+namespace fs = std::filesystem;
 
 #include "open3d/utility/Logging.h"
 
@@ -55,7 +48,7 @@ static std::string GetEnvVar(const std::string &env_var) {
 
 std::string GetHomeDirectory() {
     std::string home_dir = "";
-#ifdef WINDOWS
+#ifdef _WIN32
     // %USERPROFILE%
     // %HOMEDRIVE%
     // %HOMEPATH%
@@ -138,6 +131,56 @@ std::string GetWorkingDirectory() {
     auto ignored = getcwd(buff, PATH_MAX + 1);
     (void)ignored;
     return std::string(buff);
+}
+
+std::string GetSelfBinaryDirectory() {
+#if defined(__APPLE__) || defined(__linux__)
+    // dladdr() resolves which shared-library image owns the given code address.
+    // Passing the address of this very function gives us *this* dylib/so/exe.
+    // This is POSIX-standard and works identically on macOS and Linux.
+    ::Dl_info info;
+    if (::dladdr(reinterpret_cast<void *>(&GetSelfBinaryDirectory), &info) &&
+        info.dli_fname && info.dli_fname[0]) {
+        char resolved[PATH_MAX];
+        const char *p = ::realpath(info.dli_fname, resolved) ? resolved
+                                                             : info.dli_fname;
+        std::string path(p);
+        auto slash = path.rfind('/');
+        return (slash != std::string::npos) ? path.substr(0, slash) : path;
+    }
+
+#elif defined(_WIN32)
+    // GetModuleHandleExW with FLAG_FROM_ADDRESS retrieves the HMODULE of
+    // whichever DLL/EXE contains the given virtual address – i.e. this module.
+    HMODULE hModule = nullptr;
+    if (::GetModuleHandleExW(
+                GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                reinterpret_cast<LPCWSTR>(&GetSelfBinaryDirectory), &hModule)) {
+        wchar_t buf[MAX_PATH];
+        DWORD len = ::GetModuleFileNameW(hModule, buf, MAX_PATH);
+        if (len > 0 && len < MAX_PATH) {
+            // Strip the filename to get the directory.
+            wchar_t *last_sep = ::wcsrchr(buf, L'\\');
+            if (last_sep) *last_sep = L'\0';
+
+            // Convert UTF-16 directory to UTF-8.
+            int sz = ::WideCharToMultiByte(CP_UTF8, 0, buf, -1, nullptr, 0,
+                                           nullptr, nullptr);
+            if (sz > 1) {
+                std::string result(static_cast<size_t>(sz) - 1, '\0');
+                ::WideCharToMultiByte(CP_UTF8, 0, buf, -1, &result[0], sz,
+                                      nullptr, nullptr);
+                // Normalise backslashes for the rest of the codebase.
+                for (char &c : result) {
+                    if (c == '\\') c = '/';
+                }
+                return result;
+            }
+        }
+    }
+#endif
+    return {};
 }
 
 std::vector<std::string> GetPathComponents(const std::string &path) {
@@ -235,7 +278,7 @@ bool DirectoryIsEmpty(const std::string &directory) {
 }
 
 bool MakeDirectory(const std::string &directory) {
-#ifdef WINDOWS
+#ifdef _WIN32
     return (_mkdir(directory.c_str()) == 0);
 #else
     return (mkdir(directory.c_str(), S_IRWXU) == 0);
@@ -395,7 +438,7 @@ std::string GetIOErrorString(const int errnoVal) {
         // Error below could be EWOULDBLOCK on Linux
         case EAGAIN:
             return "Resource unavailable, try again";
-#if !defined(WIN32)
+#if !defined(_WIN32)
         case EDQUOT:
             return "Over quota";
 #endif

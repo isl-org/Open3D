@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -24,6 +24,12 @@ using namespace std;
 
 namespace open3d {
 namespace tests {
+
+class FixedRadiusIndexPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        FixedRadiusIndex,
+        FixedRadiusIndexPermuteDevices,
+        testing::ValuesIn(FixedRadiusIndexPermuteDevices::TestCases()));
 
 // Function to find permutation to sort the given array.
 template <class T>
@@ -58,9 +64,12 @@ void ApplyPermutation(T* vec, const std::vector<size_t> p) {
     }
 }
 
-TEST(FixedRadiusIndex, SearchRadius) {
+TEST_P(FixedRadiusIndexPermuteDevices, SearchRadius) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "FixedRadiusIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                                              {0.0, 0.0, 0.1},
                                                              {0.0, 0.0, 0.2},
@@ -81,7 +90,7 @@ TEST(FixedRadiusIndex, SearchRadius) {
     float radius = 0.1;
     core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Int32);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     core::Tensor indices, distances, neighbors_row_splits;
     core::SizeVector shape{2};
     gt_indices = core::Tensor::Init<int32_t>({1, 4}, device);
@@ -102,7 +111,7 @@ TEST(FixedRadiusIndex, SearchRadius) {
     // Set up index.
     core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Int64);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     shape = core::SizeVector{2};
     gt_indices = core::Tensor::Init<int64_t>({1, 4}, device);
     gt_neighbors_row_splits = gt_neighbors_row_splits.To(core::Int64);
@@ -118,9 +127,12 @@ TEST(FixedRadiusIndex, SearchRadius) {
     EXPECT_TRUE(neighbors_row_splits.AllClose(gt_neighbors_row_splits));
 }
 
-TEST(FixedRadiusIndex, SearchRadiusBatch) {
+TEST_P(FixedRadiusIndexPermuteDevices, SearchRadiusBatch) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "FixedRadiusIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>(
             {{0.719, 0.128, 0.431}, {0.764, 0.970, 0.678},
              {0.692, 0.786, 0.211}, {0.692, 0.969, 0.942},
@@ -300,9 +312,12 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
              gt_neighbors_row_splits_64);
 }
 
-TEST(FixedRadiusIndex, SearchHybrid) {
+TEST_P(FixedRadiusIndexPermuteDevices, SearchHybrid) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "FixedRadiusIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
                                                              {0.0, 0.0, 0.1},
                                                              {0.0, 0.0, 0.2},
@@ -324,7 +339,7 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     int max_knn = 3;
     core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Int32);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     core::Tensor indices, distances, counts;
     core::SizeVector shape{1, 3};
     core::SizeVector shape_counts{1};
@@ -347,7 +362,7 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     // Set up index.
     core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Int64);
 
-    // if raidus == 0.1
+    // if radius == 0.1
     gt_indices = core::Tensor::Init<int64_t>({{1, 4, -1}}, device);
     gt_counts = core::Tensor::Init<int64_t>({2}, device);
 
@@ -362,9 +377,12 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     EXPECT_TRUE(counts.AllClose(gt_counts));
 }
 
-TEST(FixedRadiusIndex, SearchHybridBatch) {
+TEST_P(FixedRadiusIndexPermuteDevices, SearchHybridBatch) {
     // Define test data.
-    core::Device device = core::Device("CUDA:0");
+    core::Device device = GetParam();
+    if (device.IsCPU()) {
+        GTEST_SKIP() << "FixedRadiusIndex does not support CPU device.";
+    }
     core::Tensor dataset_points = core::Tensor::Init<float>(
             {{0.719, 0.128, 0.431}, {0.764, 0.970, 0.678},
              {0.692, 0.786, 0.211}, {0.692, 0.969, 0.942},

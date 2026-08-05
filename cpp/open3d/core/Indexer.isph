@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -11,11 +11,11 @@
 #include "open3d/utility/Helper.isph"
 
 // Maximum number of dimensions of TensorRef.
-enum { MAX_DIMS = 10 };
+enum { MAX_DIMS = 4 };
 
 // Maximum number of inputs of an op.
 // MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
-enum { MAX_INPUTS = 10 };
+enum { MAX_INPUTS = 4 };
 
 // Maximum number of outputs of an op. This number can be increased when
 // necessary.

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -53,6 +53,20 @@ void Inverse(const Tensor &A, Tensor &output) {
 
         InverseCUDA(A_data, ipiv_data, output_data, n, dtype, device);
         output = output.T();
+#else
+        utility::LogError("Unimplemented device.");
+#endif
+    } else if (device.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        Tensor ipiv = Tensor::Empty({n}, core::Int64, device);
+        void *ipiv_data = ipiv.GetDataPtr();
+
+        // LAPACKE supports getri, A is in-place modified as output.
+        Tensor A_T = A.T().To(device, /*copy=*/true);
+        void *A_data = A_T.GetDataPtr();
+
+        InverseSYCL(A_data, ipiv_data, nullptr, n, dtype, device);
+        output = A_T.T();
 #else
         utility::LogError("Unimplemented device.");
 #endif

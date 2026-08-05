@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Online 3D depth video processing pipeline.
@@ -233,7 +233,7 @@ class PipelineView:
 
         Args:
             vfov (float): Vertical field of view for the 3D scene.
-            max_pcd_vertices (int): Maximum point clud verties for which memory
+            max_pcd_vertices (int): Maximum point cloud vertices for which memory
                 is allocated.
             callbacks (dict of kwargs): Callbacks provided by the controller
                 for various operations.

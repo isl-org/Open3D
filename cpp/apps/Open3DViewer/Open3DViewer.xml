@@ -49,7 +49,7 @@
 </mime-type>
 
 <mime-type type="model/gltf-binary">
-    <comment>GL Transmission Format</comment>
+    <comment>GL Transmission Format (Binary)</comment>
     <glob pattern="*.glb"/>
 </mime-type>
 

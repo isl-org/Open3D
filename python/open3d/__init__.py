@@ -1,122 +1,65 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2023 www.open3d.org
+# Copyright (c) 2018-2024 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# Workaround when multiple copies of the OpenMP runtime have been linked to
-# the program, which happens when PyTorch loads OpenMP runtime first. Not that
-# this method is "unsafe, unsupported, undocumented", but we found it to be
-# generally safe to use. This should be deprecated once we found a way to
-# "ensure that only a single OpenMP runtime is linked into the process".
-#
-# https://github.com/llvm-mirror/openmp/blob/8453ca8594e1a5dd8a250c39bf8fcfbfb1760e60/runtime/src/i18n/en_US.txt#L449
-# https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-# Enable thread composability manager to coordinate Intel OpenMP and TBB threads. Only works with Intel OpenMP.
-# TBB must not be already loaded.
-os.environ["TCM_ENABLE"] = "1"
-from ctypes import CDLL
-from ctypes.util import find_library
-from pathlib import Path
+import site
 import warnings
+
+# Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism, so it no longer adds
+# a second OpenMP runtime to the process. Other packages (e.g. PyTorch, MKL) may
+# still bring their own Intel OpenMP; enabling the thread composability manager
+# lets it share a thread pool with TBB instead of oversubscribing the machine.
+# Only works with Intel OpenMP, and TBB must not be already loaded.
+os.environ["TCM_ENABLE"] = "1"
+from pathlib import Path
+
 from open3d._build_config import _build_config
 
+if sys.platform == "win32":
+    # Required for CPU wheel (bundled TBB) and SYCL wheel (SYCL runtime, which
+    # intel-sycl-rt will install in:
+    # - <sys.prefix>/Library/bin # (for standard/virtualenv/conda installs)
+    # - <site.USER_BASE>/Library/bin # (for user-level --user installs)
+    # CUDA runtime is linked dynamically on Windows (unlike Linux, where it is
+    # statically linked) and is installed by the nvidia-*-cu* pip packages
+    # (see requirements_win_cuda.txt) into <site-packages>/nvidia/<component>/bin.
+    _win32_dll_dirs = [os.add_dll_directory(str(Path(__file__).parent))]
+    _site_dirs = [*site.PREFIXES, *site.getsitepackages(), site.USER_BASE]
+    for _site_dir in _site_dirs:
+        if os.path.isdir(os.path.join(_site_dir, "Library", "bin")):
+            _win32_dll_dirs.append(
+                os.add_dll_directory(os.path.join(_site_dir, "Library", "bin")))
+        _nvidia_dir = os.path.join(_site_dir, "nvidia")
+        if os.path.isdir(_nvidia_dir):
+            for _nvidia_pkg_dir in os.listdir(_nvidia_dir):
+                _nvidia_bin_dir = os.path.join(_nvidia_dir, _nvidia_pkg_dir,
+                                               "bin")
+                if os.path.isdir(_nvidia_bin_dir):
+                    _win32_dll_dirs.append(
+                        os.add_dll_directory(_nvidia_bin_dir))
 
-def load_cdll(path):
-    """
-    Wrapper around ctypes.CDLL to take care of Windows compatibility.
-    """
-    path = Path(path)
-    if not path.is_file():
-        raise FileNotFoundError(f"Shared library file not found: {path}.")
-
-    if sys.platform == "win32" and sys.version_info >= (3, 8):
-        # https://stackoverflow.com/a/64472088/1255535
-        return CDLL(str(path), winmode=0)
-    else:
-        return CDLL(str(path))
-
-
-if sys.platform == "win32":  # Unix: Use rpath to find libraries
-    _win32_dll_dir = os.add_dll_directory(str(Path(__file__).parent))
-
-if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
-                                       find_library("c++")):
-    try:  # Preload libc++.so and libc++abi.so (required by filament)
-        load_cdll(str(next((Path(__file__).parent).glob("*c++abi.*"))))
-        load_cdll(str(next((Path(__file__).parent).glob("*c++.*"))))
-    except StopIteration:  # Not found: check system paths while loading
-        pass
+from open3d.pybind import (
+    core,
+    camera,
+    data,
+    geometry,
+    io,
+    pipelines,
+    utility,
+    t,
+)
+from open3d import pybind
 
 __DEVICE_API__ = "cpu"
-if _build_config["BUILD_CUDA_MODULE"]:
-    # Load CPU pybind dll gracefully without introducing new python variable.
-    # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    try:  # StopIteration if cpu version not available
-        load_cdll(str(next((Path(__file__).parent / "cpu").glob("pybind*"))))
-    except StopIteration:
-        warnings.warn(
-            "Open3D was built with CUDA support, but Open3D CPU Python "
-            "bindings were not found. Open3D will not work on systems without"
-            " CUDA devices.",
-            ImportWarning,
-        )
-    try:
-        # Check CUDA availability without importing CUDA pybind symbols to
-        # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = load_cdll(
-            str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
-        if _pybind_cuda.open3d_core_cuda_device_count() > 0:
-            from open3d.cuda.pybind import (
-                core,
-                camera,
-                data,
-                geometry,
-                io,
-                pipelines,
-                utility,
-                t,
-            )
-            from open3d.cuda import pybind
-
-            __DEVICE_API__ = "cuda"
-        else:
-            warnings.warn(
-                "Open3D was built with CUDA support, but no suitable CUDA "
-                "devices found. If your system has CUDA devices, check your "
-                "CUDA drivers and runtime.",
-                ImportWarning,
-            )
-    except OSError as os_error:
-        warnings.warn(
-            f"Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.",
-            ImportWarning,
-        )
-    except StopIteration:
-        warnings.warn(
-            "Open3D was built with CUDA support, but Open3D CUDA Python "
-            "binding library not found! Falling back to the CPU Python "
-            "binding library.",
-            ImportWarning,
-        )
-
-if __DEVICE_API__ == "cpu":
-    from open3d.cpu.pybind import (
-        core,
-        camera,
-        data,
-        geometry,
-        io,
-        pipelines,
-        utility,
-        t,
-    )
-    from open3d.cpu import pybind
+if core.cuda.is_available():
+    __DEVICE_API__ = "cuda"
+elif core.sycl.is_available():
+    __DEVICE_API__ = "xpu"
 
 
 def _insert_pybind_names(skip_names=()):
@@ -124,10 +67,13 @@ def _insert_pybind_names(skip_names=()):
     python subpackages, since they have a different import mechanism."""
     submodules = {}
     for modname in sys.modules:
-        if "open3d." + __DEVICE_API__ + ".pybind" in modname:
+        if "open3d.pybind" in modname:
             if any("." + skip_name in modname for skip_name in skip_names):
                 continue
-            subname = modname.replace(__DEVICE_API__ + ".pybind.", "")
+            # Keep the leading "open3d." so submodules are registered under
+            # e.g. "open3d.t" rather than a bare "t" (which is not importable
+            # via `import open3d.t`).
+            subname = modname.replace("pybind.", "")
             if subname not in sys.modules:
                 submodules[subname] = sys.modules[modname]
     sys.modules.update(submodules)
@@ -140,7 +86,7 @@ _insert_pybind_names(skip_names=("ml",))
 __version__ = "@PROJECT_VERSION@"
 
 if int(sys.version_info[0]) < 3:
-    raise Exception("Open3D only supports Python 3.")
+    raise RuntimeError("Open3D only supports Python 3.")
 
 if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
         "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true"):
@@ -219,5 +165,8 @@ def _jupyter_nbextension_paths():
 
 
 if sys.platform == "win32":
-    _win32_dll_dir.close()
-del os, sys, CDLL, load_cdll, find_library, Path, warnings, _insert_pybind_names
+    for dll_dir in _win32_dll_dirs:
+        dll_dir.close()
+del os, sys, Path, warnings, _insert_pybind_names
+# If this is removed, pybind11_stubgen adds an incomplete "open3d = " to the stub file
+del open3d

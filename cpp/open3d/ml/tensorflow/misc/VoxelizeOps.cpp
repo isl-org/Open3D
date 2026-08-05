@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ REGISTER_OP("Open3DVoxelize")
             voxel_batch_splits = c->MakeShape({c->UnknownDim()});
             c->set_output(3, voxel_batch_splits);
 
-            return Status();
+            return absl::OkStatus();
         })
         .Doc(R"doc(
 Voxelization for point clouds.

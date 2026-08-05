@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -37,16 +37,19 @@ using std::min;
 using std::sqrt;
 #endif
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void UnprojectCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void UnprojectSYCL
 #else
 void UnprojectCPU
 #endif
         (const core::Tensor& depth,
-         utility::optional<std::reference_wrapper<const core::Tensor>>
-                 image_colors,
+         std::optional<std::reference_wrapper<const core::Tensor>> image_colors,
          core::Tensor& points,
-         utility::optional<std::reference_wrapper<core::Tensor>> colors,
+         std::optional<std::reference_wrapper<core::Tensor>> colors,
          const core::Tensor& intrinsics,
          const core::Tensor& extrinsics,
          float depth_scale,
@@ -77,7 +80,7 @@ void UnprojectCPU
     }
 
     // Counter
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     core::Tensor count(std::vector<int>{0}, {}, core::Int32, depth.GetDevice());
     int* count_ptr = count.GetDataPtr<int>();
 #else
@@ -96,6 +99,11 @@ void UnprojectCPU
                     float d = *depth_indexer.GetDataPtr<scalar_t>(x, y) /
                               depth_scale;
                     if (d > 0 && d < depth_max) {
+                        // Use the OPEN3D_ATOMIC_ADD macro (defined outside
+                        // this dispatch macro's argument list) instead of an
+                        // inline #if/#elif chain: MSVC's preprocessor cannot
+                        // parse directives nested inside an open macro-call
+                        // argument list (DISPATCH_DTYPE_TO_TEMPLATE above).
                         int idx = OPEN3D_ATOMIC_ADD(count_ptr, 1);
 
                         float x_c = 0, y_c = 0, z_c = 0;
@@ -119,7 +127,7 @@ void UnprojectCPU
                     }
                 });
     });
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(SYCL_LANGUAGE_VERSION)
     int total_pts_count = count.Item<int>();
 #else
     int total_pts_count = (*count_ptr).load();
@@ -137,6 +145,8 @@ void UnprojectCPU
 
 #if defined(__CUDACC__)
 void GetPointMaskWithinAABBCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetPointMaskWithinAABBSYCL
 #else
 void GetPointMaskWithinAABBCPU
 #endif
@@ -171,6 +181,8 @@ void GetPointMaskWithinAABBCPU
 
 #if defined(__CUDACC__)
 void GetPointMaskWithinOBBCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void GetPointMaskWithinOBBSYCL
 #else
 void GetPointMaskWithinOBBCPU
 #endif
@@ -215,6 +227,8 @@ void GetPointMaskWithinOBBCPU
 
 #if defined(__CUDACC__)
 void NormalizeNormalsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void NormalizeNormalsSYCL
 #else
 void NormalizeNormalsCPU
 #endif
@@ -246,6 +260,8 @@ void NormalizeNormalsCPU
 
 #if defined(__CUDACC__)
 void OrientNormalsToAlignWithDirectionCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void OrientNormalsToAlignWithDirectionSYCL
 #else
 void OrientNormalsToAlignWithDirectionCPU
 #endif
@@ -280,6 +296,8 @@ void OrientNormalsToAlignWithDirectionCPU
 
 #if defined(__CUDACC__)
 void OrientNormalsTowardsCameraLocationCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void OrientNormalsTowardsCameraLocationSYCL
 #else
 void OrientNormalsTowardsCameraLocationCPU
 #endif
@@ -332,6 +350,8 @@ void OrientNormalsTowardsCameraLocationCPU
     });
 }
 
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
+
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
                                                    scalar_t* u,
@@ -369,18 +389,23 @@ inline OPEN3D_HOST_DEVICE void Swap(scalar_t* x, scalar_t* y) {
 template <typename scalar_t>
 inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
     int largest = root;
-    int l = 2 * root + 1;
-    int r = 2 * root + 2;
+    while (true) {
+        int l = 2 * largest + 1;
+        int r = 2 * largest + 2;
+        int next_largest = largest;
 
-    if (l < n && arr[l] > arr[largest]) {
-        largest = l;
-    }
-    if (r < n && arr[r] > arr[largest]) {
-        largest = r;
-    }
-    if (largest != root) {
-        Swap<scalar_t>(&arr[root], &arr[largest]);
-        Heapify<scalar_t>(arr, n, largest);
+        if (l < n && arr[l] > arr[next_largest]) {
+            next_largest = l;
+        }
+        if (r < n && arr[r] > arr[next_largest]) {
+            next_largest = r;
+        }
+        if (next_largest != largest) {
+            Swap<scalar_t>(&arr[largest], &arr[next_largest]);
+            largest = next_largest;
+        } else {
+            break;
+        }
     }
 }
 
@@ -413,8 +438,12 @@ OPEN3D_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
     return max_diff > angle_threshold * M_PI / 180.0 ? true : false;
 }
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void ComputeBoundaryPointsCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void ComputeBoundaryPointsSYCL
 #else
 void ComputeBoundaryPointsCPU
 #endif
@@ -475,6 +504,8 @@ void ComputeBoundaryPointsCPU
                 });
     });
 }
+
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
 
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
@@ -556,6 +587,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingHybridSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingHybridSearchSYCL
 #else
 void EstimateCovariancesUsingHybridSearchCPU
 #endif
@@ -606,6 +639,8 @@ void EstimateCovariancesUsingHybridSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingRadiusSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingRadiusSearchSYCL
 #else
 void EstimateCovariancesUsingRadiusSearchCPU
 #endif
@@ -655,6 +690,8 @@ void EstimateCovariancesUsingRadiusSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateCovariancesUsingKNNSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateCovariancesUsingKNNSearchSYCL
 #else
 void EstimateCovariancesUsingKNNSearchCPU
 #endif
@@ -956,8 +993,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
             normals_ptr[1] = 0.0;
             normals_ptr[2] = 0.0;
             return;
-        } else if (covariance_ptr[0] < covariance_ptr[4] &&
-                   covariance_ptr[0] < covariance_ptr[8]) {
+        } else if (covariance_ptr[4] < covariance_ptr[0] &&
+                   covariance_ptr[4] < covariance_ptr[8]) {
             normals_ptr[0] = 0.0;
             normals_ptr[1] = 1.0;
             normals_ptr[2] = 0.0;
@@ -973,6 +1010,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseNormalsWithFastEigen3x3(
 
 #if defined(__CUDACC__)
 void EstimateNormalsFromCovariancesCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateNormalsFromCovariancesSYCL
 #else
 void EstimateNormalsFromCovariancesCPU
 #endif
@@ -1125,8 +1164,12 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
     }
 }
 
+#ifndef OPEN3D_SKIP_POINTCLOUD_MAIN
+
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingHybridSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingHybridSearchSYCL
 #else
 void EstimateColorGradientsUsingHybridSearchCPU
 #endif
@@ -1179,6 +1222,8 @@ void EstimateColorGradientsUsingHybridSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingKNNSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingKNNSearchSYCL
 #else
 void EstimateColorGradientsUsingKNNSearchCPU
 #endif
@@ -1234,6 +1279,8 @@ void EstimateColorGradientsUsingKNNSearchCPU
 
 #if defined(__CUDACC__)
 void EstimateColorGradientsUsingRadiusSearchCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void EstimateColorGradientsUsingRadiusSearchSYCL
 #else
 void EstimateColorGradientsUsingRadiusSearchCPU
 #endif
@@ -1285,6 +1332,424 @@ void EstimateColorGradientsUsingRadiusSearchCPU
     });
 
     core::cuda::Synchronize(points.GetDevice());
+}
+
+#endif  // OPEN3D_SKIP_POINTCLOUD_MAIN
+
+namespace {
+
+// Builds device-resident neighborhoods once per smoothing pass.  The returned
+// indices include the query point, matching the legacy KD-tree searches.
+void BuildKnnNeighborhoods(const core::Tensor& points,
+                           int max_nn,
+                           core::Tensor& indices) {
+    const int64_t neighbor_count =
+            std::min<int64_t>(points.GetLength(), int64_t(max_nn) + 1);
+    core::nns::NearestNeighborSearch nns(points, core::Int32);
+    if (!nns.KnnIndex()) {
+        utility::LogError("Building KNN index failed.");
+    }
+    core::Tensor distances;
+    std::tie(indices, distances) = nns.KnnSearch(points, neighbor_count);
+    indices = indices.To(core::Int32).Contiguous();
+}
+
+void ApplyLaplacianPass(const core::Tensor& points,
+                        core::Tensor& smoothed_points,
+                        const core::Tensor& indices,
+                        double factor) {
+    const int64_t n = points.GetLength();
+    const int64_t neighbor_count = indices.GetShape()[1];
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        scalar_t* output_ptr = smoothed_points.GetDataPtr<scalar_t>();
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t point_idx) {
+                    scalar_t mean[3] = {0, 0, 0};
+                    int32_t count = 0;
+                    for (int64_t neighbor = 0; neighbor < neighbor_count;
+                         ++neighbor) {
+                        const int32_t neighbor_idx =
+                                indices_ptr[point_idx * neighbor_count +
+                                            neighbor];
+                        if (neighbor_idx < 0 || neighbor_idx == point_idx) {
+                            continue;
+                        }
+                        mean[0] += points_ptr[3 * neighbor_idx + 0];
+                        mean[1] += points_ptr[3 * neighbor_idx + 1];
+                        mean[2] += points_ptr[3 * neighbor_idx + 2];
+                        ++count;
+                    }
+                    const int64_t offset = 3 * point_idx;
+                    if (count == 0) {
+                        output_ptr[offset + 0] = points_ptr[offset + 0];
+                        output_ptr[offset + 1] = points_ptr[offset + 1];
+                        output_ptr[offset + 2] = points_ptr[offset + 2];
+                        return;
+                    }
+                    const scalar_t inv_count =
+                            static_cast<scalar_t>(1.0 / count);
+                    const scalar_t alpha = static_cast<scalar_t>(factor);
+                    output_ptr[offset + 0] = points_ptr[offset + 0] +
+                                             alpha * (mean[0] * inv_count -
+                                                      points_ptr[offset + 0]);
+                    output_ptr[offset + 1] = points_ptr[offset + 1] +
+                                             alpha * (mean[1] * inv_count -
+                                                      points_ptr[offset + 1]);
+                    output_ptr[offset + 2] = points_ptr[offset + 2] +
+                                             alpha * (mean[2] * inv_count -
+                                                      points_ptr[offset + 2]);
+                });
+    });
+}
+
+}  // namespace
+
+#if defined(__CUDACC__)
+void SmoothLaplacianCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void SmoothLaplacianSYCL
+#else
+void SmoothLaplacianCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& smoothed_points,
+         size_t iterations,
+         double lambda,
+         int max_nn,
+         bool use_fixed_neighborhoods) {
+    if (points.GetLength() == 0 || iterations == 0 || max_nn <= 0) {
+        smoothed_points = points.Clone();
+        return;
+    }
+
+    core::Tensor current = points.Contiguous();
+    core::Tensor fixed_indices;
+    if (use_fixed_neighborhoods) {
+        BuildKnnNeighborhoods(current, max_nn, fixed_indices);
+    }
+    for (size_t iteration = 0; iteration < iterations; ++iteration) {
+        core::Tensor indices;
+        if (use_fixed_neighborhoods) {
+            indices = fixed_indices;
+        } else {
+            BuildKnnNeighborhoods(current, max_nn, indices);
+        }
+        core::Tensor next = core::Tensor::Empty(
+                current.GetShape(), current.GetDtype(), current.GetDevice());
+        ApplyLaplacianPass(current, next, indices, lambda);
+        current = next;
+    }
+    smoothed_points = current;
+}
+
+#if defined(__CUDACC__)
+void SmoothTaubinCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void SmoothTaubinSYCL
+#else
+void SmoothTaubinCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& smoothed_points,
+         size_t iterations,
+         double lambda,
+         double mu,
+         int max_nn,
+         bool use_fixed_neighborhoods) {
+    if (points.GetLength() == 0 || iterations == 0 || max_nn <= 0) {
+        smoothed_points = points.Clone();
+        return;
+    }
+
+    core::Tensor current = points.Contiguous();
+    core::Tensor fixed_indices;
+    if (use_fixed_neighborhoods) {
+        BuildKnnNeighborhoods(current, max_nn, fixed_indices);
+    }
+    for (size_t iteration = 0; iteration < iterations; ++iteration) {
+        core::Tensor lambda_indices;
+        if (use_fixed_neighborhoods) {
+            lambda_indices = fixed_indices;
+        } else {
+            BuildKnnNeighborhoods(current, max_nn, lambda_indices);
+        }
+        core::Tensor after_lambda = core::Tensor::Empty(
+                current.GetShape(), current.GetDtype(), current.GetDevice());
+        ApplyLaplacianPass(current, after_lambda, lambda_indices, lambda);
+
+        core::Tensor mu_indices;
+        if (use_fixed_neighborhoods) {
+            mu_indices = fixed_indices;
+        } else {
+            BuildKnnNeighborhoods(after_lambda, max_nn, mu_indices);
+        }
+        core::Tensor after_mu = core::Tensor::Empty(
+                current.GetShape(), current.GetDtype(), current.GetDevice());
+        ApplyLaplacianPass(after_lambda, after_mu, mu_indices, mu);
+        current = after_mu;
+    }
+    smoothed_points = current;
+}
+
+#if defined(__CUDACC__)
+void SmoothMLSCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void SmoothMLSSYCL
+#else
+void SmoothMLSCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& smoothed_points,
+         core::Tensor& normals,
+         bool update_normals,
+         double radius,
+         int max_nn) {
+    smoothed_points = points.Clone();
+    if (points.GetLength() == 0 || (radius <= 0.0 && max_nn <= 0)) {
+        return;
+    }
+
+    core::nns::NearestNeighborSearch nns(points, core::Int32);
+    core::Tensor indices, distances, counts;
+    bool radius_search = false;
+    int64_t fixed_count = 0;
+    if (radius > 0.0 && max_nn > 0) {
+        if (!nns.HybridIndex(radius)) {
+            utility::LogError("Building hybrid index failed.");
+        }
+        std::tie(indices, distances, counts) =
+                nns.HybridSearch(points, radius, max_nn);
+        fixed_count = max_nn;
+    } else if (max_nn > 0) {
+        BuildKnnNeighborhoods(points, max_nn - 1, indices);
+        fixed_count = indices.GetShape()[1];
+        distances = core::Tensor::Zeros(indices.GetShape(), points.GetDtype(),
+                                        points.GetDevice());
+    } else {
+        if (!nns.FixedRadiusIndex(radius)) {
+            utility::LogError("Building radius index failed.");
+        }
+        std::tie(indices, distances, counts) =
+                nns.FixedRadiusSearch(points, radius);
+        radius_search = true;
+    }
+    indices = indices.To(core::Int32).Contiguous();
+    distances = distances.Contiguous();
+    if (counts.NumElements() > 0) {
+        counts = counts.To(core::Int32).Contiguous();
+    }
+
+    const int64_t n = points.GetLength();
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        const scalar_t* distances_ptr = distances.GetDataPtr<scalar_t>();
+        const int32_t* counts_ptr = counts.NumElements() > 0
+                                            ? counts.GetDataPtr<int32_t>()
+                                            : nullptr;
+        scalar_t* output_ptr = smoothed_points.GetDataPtr<scalar_t>();
+        scalar_t* normals_ptr =
+                update_normals ? normals.GetDataPtr<scalar_t>() : nullptr;
+        const scalar_t inv_radius2 =
+                radius > 0.0 ? static_cast<scalar_t>(1.0 / (radius * radius))
+                             : static_cast<scalar_t>(0.0);
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t point_idx) {
+                    const int32_t offset = radius_search
+                                                   ? counts_ptr[point_idx]
+                                                   : point_idx * fixed_count;
+                    const int32_t count =
+                            radius_search ? counts_ptr[point_idx + 1] -
+                                                    counts_ptr[point_idx]
+                                          : (counts_ptr ? counts_ptr[point_idx]
+                                                        : fixed_count);
+                    const int64_t point_offset = 3 * point_idx;
+                    if (count < 3) {
+                        if (update_normals) {
+                            scalar_t* normal = normals_ptr + point_offset;
+                            const scalar_t norm = sqrt(normal[0] * normal[0] +
+                                                       normal[1] * normal[1] +
+                                                       normal[2] * normal[2]);
+                            if (norm > 0) {
+                                normal[0] /= norm;
+                                normal[1] /= norm;
+                                normal[2] /= norm;
+                            }
+                        }
+                        return;
+                    }
+
+                    scalar_t centroid[3] = {0, 0, 0};
+                    scalar_t weight_sum = 0;
+                    for (int32_t neighbor = 0; neighbor < count; ++neighbor) {
+                        const int32_t neighbor_idx =
+                                indices_ptr[offset + neighbor];
+                        if (neighbor_idx < 0) continue;
+                        const scalar_t weight =
+                                exp(-distances_ptr[offset + neighbor] *
+                                    inv_radius2);
+                        centroid[0] +=
+                                weight * points_ptr[3 * neighbor_idx + 0];
+                        centroid[1] +=
+                                weight * points_ptr[3 * neighbor_idx + 1];
+                        centroid[2] +=
+                                weight * points_ptr[3 * neighbor_idx + 2];
+                        weight_sum += weight;
+                    }
+                    if (weight_sum <= 0) return;
+                    centroid[0] /= weight_sum;
+                    centroid[1] /= weight_sum;
+                    centroid[2] /= weight_sum;
+
+                    scalar_t covariance[9] = {0};
+                    for (int32_t neighbor = 0; neighbor < count; ++neighbor) {
+                        const int32_t neighbor_idx =
+                                indices_ptr[offset + neighbor];
+                        if (neighbor_idx < 0) continue;
+                        const scalar_t weight =
+                                exp(-distances_ptr[offset + neighbor] *
+                                    inv_radius2);
+                        const scalar_t x =
+                                points_ptr[3 * neighbor_idx + 0] - centroid[0];
+                        const scalar_t y =
+                                points_ptr[3 * neighbor_idx + 1] - centroid[1];
+                        const scalar_t z =
+                                points_ptr[3 * neighbor_idx + 2] - centroid[2];
+                        covariance[0] += weight * x * x;
+                        covariance[1] += weight * x * y;
+                        covariance[2] += weight * x * z;
+                        covariance[4] += weight * y * y;
+                        covariance[5] += weight * y * z;
+                        covariance[8] += weight * z * z;
+                    }
+                    covariance[3] = covariance[1];
+                    covariance[6] = covariance[2];
+                    covariance[7] = covariance[5];
+                    scalar_t normal[3];
+                    EstimatePointWiseNormalsWithFastEigen3x3(covariance,
+                                                             normal);
+                    const scalar_t projection =
+                            (points_ptr[point_offset + 0] - centroid[0]) *
+                                    normal[0] +
+                            (points_ptr[point_offset + 1] - centroid[1]) *
+                                    normal[1] +
+                            (points_ptr[point_offset + 2] - centroid[2]) *
+                                    normal[2];
+                    output_ptr[point_offset + 0] =
+                            points_ptr[point_offset + 0] -
+                            projection * normal[0];
+                    output_ptr[point_offset + 1] =
+                            points_ptr[point_offset + 1] -
+                            projection * normal[1];
+                    output_ptr[point_offset + 2] =
+                            points_ptr[point_offset + 2] -
+                            projection * normal[2];
+                    if (update_normals) {
+                        normals_ptr[point_offset + 0] = normal[0];
+                        normals_ptr[point_offset + 1] = normal[1];
+                        normals_ptr[point_offset + 2] = normal[2];
+                    }
+                });
+    });
+}
+
+#if defined(__CUDACC__)
+void SmoothBilateralCUDA
+#elif defined(SYCL_LANGUAGE_VERSION)
+void SmoothBilateralSYCL
+#else
+void SmoothBilateralCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& normals,
+         core::Tensor& smoothed_points,
+         double radius,
+         int max_nn,
+         double sigma_s,
+         double sigma_r) {
+    smoothed_points = points.Clone();
+    if (points.GetLength() == 0) return;
+
+    core::nns::NearestNeighborSearch nns(points, core::Int32);
+    if (!nns.HybridIndex(radius)) {
+        utility::LogError("Building hybrid index failed.");
+    }
+    core::Tensor indices, distances, counts;
+    std::tie(indices, distances, counts) =
+            nns.HybridSearch(points, radius, max_nn);
+    indices = indices.To(core::Int32).Contiguous();
+    distances = distances.Contiguous();
+    counts = counts.To(core::Int32).Contiguous();
+
+    const int64_t n = points.GetLength();
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        const scalar_t* distances_ptr = distances.GetDataPtr<scalar_t>();
+        const int32_t* counts_ptr = counts.GetDataPtr<int32_t>();
+        scalar_t* output_ptr = smoothed_points.GetDataPtr<scalar_t>();
+        const scalar_t inv_sigma_s2 =
+                static_cast<scalar_t>(1.0 / (2.0 * sigma_s * sigma_s));
+        const scalar_t inv_sigma_r2 =
+                static_cast<scalar_t>(1.0 / (2.0 * sigma_r * sigma_r));
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t point_idx) {
+                    const int32_t count = counts_ptr[point_idx];
+                    if (count <= 1) return;
+                    const int64_t point_offset = 3 * point_idx;
+                    scalar_t nx = normals_ptr[point_offset + 0];
+                    scalar_t ny = normals_ptr[point_offset + 1];
+                    scalar_t nz = normals_ptr[point_offset + 2];
+                    const scalar_t normal_norm =
+                            sqrt(nx * nx + ny * ny + nz * nz);
+                    if (normal_norm <= 0) return;
+                    nx /= normal_norm;
+                    ny /= normal_norm;
+                    nz /= normal_norm;
+                    scalar_t weighted_sum[3] = {0, 0, 0};
+                    scalar_t weight_sum = 0;
+                    const int64_t offset = point_idx * max_nn;
+                    for (int32_t neighbor = 0; neighbor < count; ++neighbor) {
+                        const int32_t neighbor_idx =
+                                indices_ptr[offset + neighbor];
+                        if (neighbor_idx < 0) continue;
+                        const int64_t neighbor_offset = 3 * neighbor_idx;
+                        const scalar_t range_distance =
+                                (points_ptr[point_offset + 0] -
+                                 points_ptr[neighbor_offset + 0]) *
+                                        nx +
+                                (points_ptr[point_offset + 1] -
+                                 points_ptr[neighbor_offset + 1]) *
+                                        ny +
+                                (points_ptr[point_offset + 2] -
+                                 points_ptr[neighbor_offset + 2]) *
+                                        nz;
+                        const scalar_t weight = exp(
+                                -distances_ptr[offset + neighbor] *
+                                        inv_sigma_s2 -
+                                range_distance * range_distance * inv_sigma_r2);
+                        weighted_sum[0] +=
+                                weight * points_ptr[neighbor_offset + 0];
+                        weighted_sum[1] +=
+                                weight * points_ptr[neighbor_offset + 1];
+                        weighted_sum[2] +=
+                                weight * points_ptr[neighbor_offset + 2];
+                        weight_sum += weight;
+                    }
+                    if (weight_sum > 0) {
+                        output_ptr[point_offset + 0] =
+                                weighted_sum[0] / weight_sum;
+                        output_ptr[point_offset + 1] =
+                                weighted_sum[1] / weight_sum;
+                        output_ptr[point_offset + 2] =
+                                weighted_sum[2] / weight_sum;
+                    }
+                });
+    });
 }
 
 }  // namespace pointcloud

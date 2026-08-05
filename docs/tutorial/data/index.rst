@@ -175,13 +175,20 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
-TriangleModel with PRB texture
+TriangleModel with PBR texture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Open3D can read multi-material models (glTF, FBX, OBJ, STL, OFF, and experimental
+USD import) with :func:`open3d.io.read_triangle_model`. USD support is import-only
+and experimental: mesh geometry and PBR materials (textures and factors) are
+loaded; USD export and full scene features (animation, lights, cameras) are not
+supported. See ``examples/python/io/model_io.py`` for a USDZ sample downloaded
+from Apple's AR Quick Look gallery.
 
 MonkeyModel
 -----------
 
-The monkey model with PRB texture.
+The monkey model with PBR texture.
 
 .. code-block:: python
 
@@ -197,7 +204,7 @@ The monkey model with PRB texture.
 SwordModel
 ----------
 
-The sword model with PRB texture.
+The sword model with PBR texture.
 
 .. code-block:: python
 
@@ -213,7 +220,7 @@ The sword model with PRB texture.
 CrateModel
 ----------
 
-The crate model with PRB texture.
+The crate model with PBR texture.
 
 .. code-block:: python
 
@@ -229,7 +236,7 @@ The crate model with PRB texture.
 FlightHelmetModel
 -----------------
 
-The flight helmet gltf model with PRB texture.
+The flight helmet gltf model with PBR texture.
 
 .. code-block:: python
 

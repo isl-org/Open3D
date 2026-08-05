@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,15 +14,13 @@
 #include <openssl/md5.h>
 
 // https://stackoverflow.com/a/41873190/1255535
-#ifdef WINDOWS
+#ifdef _WIN32
 #pragma comment(lib, "wldap32.lib")
 #pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #define USE_SSLEAY
 #define USE_OPENSSL
 #endif
-
-#define CURL_STATICLIB
 
 #include <curl/curl.h>
 #include <curl/easy.h>

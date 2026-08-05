@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2023 www.open3d.org
+// Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
 #include <stdgpu/memory.h>
+#include <stdgpu/utility.h>
 #include <thrust/device_vector.h>
 #include <thrust/transform.h>
 
@@ -90,7 +91,7 @@ private:
 // accessible in raw CUDA kernels.
 template <typename Key>
 using InternalStdGPUHashBackendAllocator =
-        StdGPUAllocator<thrust::pair<const Key, buf_index_t>>;
+        StdGPUAllocator<stdgpu::pair<const Key, buf_index_t>>;
 
 template <typename Key, typename Hash, typename Eq>
 using InternalStdGPUHashBackend =
@@ -138,8 +139,8 @@ public:
 
     InternalStdGPUHashBackend<Key, Hash, Eq> GetImpl() const { return impl_; }
 
-    void Allocate(int64_t capacity);
-    void Free();
+    void Allocate(int64_t capacity) override;
+    void Free() override;
 
 protected:
     // Use reference, since the structure itself is implicitly handled as a
@@ -252,7 +253,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Erase(const void* input_keys,
 template <typename Key>
 struct ValueExtractor {
     OPEN3D_HOST_DEVICE buf_index_t
-    operator()(const thrust::pair<Key, buf_index_t>& x) const {
+    operator()(const stdgpu::pair<Key, buf_index_t>& x) const {
         return x.second;
     }
 };
