@@ -21,8 +21,7 @@ namespace core {
 void SYCLResetHeap(Tensor &heap) {
     uint32_t *heap_ptr = heap.GetDataPtr<uint32_t>();
     const int64_t capacity = heap.GetLength();
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(heap.GetDevice());
+    sycl::queue queue = sy::GetQueue(heap.GetDevice());
     queue.parallel_for(capacity, [=](int64_t i) {
              heap_ptr[i] = static_cast<uint32_t>(i);
          }).wait_and_throw();

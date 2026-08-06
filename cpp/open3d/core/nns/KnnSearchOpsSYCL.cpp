@@ -297,7 +297,7 @@ void KnnSearchSYCL(const Tensor& points,
     const Device device = points.GetDevice();
     const Dtype dtype = points.GetDtype();
     const Dtype index_dtype = Dtype::FromType<TIndex>();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     const int batch_size = points_row_splits.GetShape(0) - 1;
     std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
             batch_size, NeighborSearchAllocator<T, TIndex>(device));
@@ -311,10 +311,16 @@ void KnnSearchSYCL(const Tensor& points,
             neighbors_row_splits.GetDataPtr<int64_t>();
     int64_t last_neighbors_count = 0;
     int64_t batch_knn = 0;
+    // Per-batch KNN search produces indices local to that batch's point
+    // slice (points.Slice(0, point_begin, point_end)); record point_begin
+    // per batch so the combine step below can offset them back to global
+    // point indices.
+    std::vector<int64_t> batch_point_begin(batch_size);
 
     for (int batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
         const int64_t point_begin =
                 points_row_splits[batch_idx].Item<int64_t>();
+        batch_point_begin[batch_idx] = point_begin;
         const int64_t point_end =
                 points_row_splits[batch_idx + 1].Item<int64_t>();
         const int64_t query_begin =
@@ -562,11 +568,18 @@ void KnnSearchSYCL(const Tensor& points,
     output_allocator.AllocDistances(&neighbors_distance_ptr, neighbors_size);
 
     int64_t offset = 0;
-    for (const auto& alloc : batch_output_allocators) {
+    for (size_t batch_idx = 0; batch_idx < batch_output_allocators.size();
+        ++batch_idx) {
+        const auto& alloc = batch_output_allocators[batch_idx];
         const int64_t sz = alloc.NeighborsIndex().GetShape(0);
         if (sz == 0) continue;
+        // Offset the batch-local point indices back to global point indices
+        // before copying into the combined output.
+        Tensor global_indices =
+                alloc.NeighborsIndex().Add(batch_point_begin[batch_idx]);
         MemoryManager::Memcpy(neighbors_index_ptr + offset, device,
-                              alloc.IndicesPtr(), device, sizeof(TIndex) * sz);
+                              global_indices.GetDataPtr<TIndex>(), device,
+                              sizeof(TIndex) * sz);
         MemoryManager::Memcpy(neighbors_distance_ptr + offset, device,
                               alloc.DistancesPtr(), device, sizeof(T) * sz);
         offset += sz;
@@ -602,7 +615,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const T* points_ptr = points.GetDataPtr<T>();
     const T* queries_ptr = queries.GetDataPtr<T>();
@@ -737,7 +750,7 @@ void HybridSearchSYCL(const Tensor& points,
     const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const T* points_ptr = points.GetDataPtr<T>();
     const T* queries_ptr = queries.GetDataPtr<T>();

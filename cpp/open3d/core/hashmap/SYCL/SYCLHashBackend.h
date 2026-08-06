@@ -282,7 +282,7 @@ SYCLHashBackend<Key, Hash, Eq>::SYCLHashBackend(
         int64_t wg_size)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device),
       wg_size_(wg_size),
-      queue_(sy::SYCLContext::GetInstance().GetDefaultQueue(device)) {
+      queue_(sy::GetQueue(device)) {
     const int64_t device_max_wg_size = static_cast<int64_t>(
             queue_.get_device()
                     .get_info<sycl::info::device::max_work_group_size>());

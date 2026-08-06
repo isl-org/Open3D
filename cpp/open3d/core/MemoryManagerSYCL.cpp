@@ -31,6 +31,17 @@ void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
 
 void MemoryManagerSYCL::Free(void* ptr, const Device& device) {
     if (ptr) {
+        // SYCLContext::Clear() (registered with Python atexit) may have
+        // already torn down the device/queue map by the time this Blob is
+        // destroyed, e.g. when the Blob is kept alive by a torch::Tensor
+        // whose own destruction is deferred until Python interpreter
+        // finalization (after atexit handlers have run). In that case,
+        // there is nothing safe left to free; just leak (the OS reclaims
+        // the memory at process exit) rather than throwing out of this
+        // destructor call path.
+        if (!sy::SYCLContext::GetInstance().IsDeviceAvailable(device)) {
+            return;
+        }
         const sycl::queue& queue =
                 sy::SYCLContext::GetInstance().GetDefaultQueue(device);
         sycl::free(ptr, queue);

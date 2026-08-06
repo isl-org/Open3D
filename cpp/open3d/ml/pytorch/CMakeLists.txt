@@ -156,6 +156,7 @@ if (BUILD_SYCL_MODULE)
         misc/BuildSpatialHashTableOpKernelSYCL.cpp
         misc/FixedRadiusSearchOpKernelSYCL.cpp
         misc/InvertNeighborsListOpKernelSYCL.cpp
+        misc/KnnSearchOpKernelSYCL.cpp
         misc/RaggedToDenseOpKernelSYCL.cpp
         misc/ReduceSubarraysSumOpKernelSYCL.cpp
         misc/VoxelizeOpKernelSYCL.cpp

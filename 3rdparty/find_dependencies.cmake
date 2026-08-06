@@ -1868,8 +1868,11 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     set(MKL_SHARED_LIBRARIES)
     if(BUILD_SYCL_MODULE)
         if(WIN32)
+            # oneAPI >= 2026.0 dropped the umbrella mkl_sycl(d).lib import
+            # library on Windows too (same removal as libmkl_sycl.a on
+            # Linux/macOS, see the oneAPI >= 2026.0 comment above); link only
+            # the two domains Open3D actually calls (blas, lapack).
             list(PREPEND MKL_STATIC_LIBS
-                $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
                 $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
                 $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
             )

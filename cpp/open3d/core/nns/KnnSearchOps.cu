@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <memory>
+#include <vector>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
@@ -149,7 +152,17 @@ void KnnSearchCUDABruteForce(const Tensor& points,
     }
 };
 
-// Single-pass KNN search (when k <= GPU_MAX_SELECTION_K).
+/// Single-pass KNN search (when k <= GPU_MAX_SELECTION_K).
+///
+/// \param ready_event  If non-null, every ephemeral per-tile stream created
+///   below waits (device-side, non-blocking) on this event before doing any
+///   work, so it never reads `points`/`queries`/etc. before prior work queued
+///   on the externally-supplied stream (e.g. PyTorch's current stream) has
+///   finished writing them.
+/// \param done_events  If non-null, an event is recorded on each ephemeral
+///   per-tile stream (right before it is destroyed) and appended here, so the
+///   caller can make the externally-supplied stream wait on them -- again
+///   without a host-side stall -- before consuming the outputs.
 template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void KnnSearchCUDASinglePass(const Tensor& points,
                              const Tensor& queries,
@@ -158,7 +171,9 @@ void KnnSearchCUDASinglePass(const Tensor& points,
                              int tile_cols,
                              OUTPUT_ALLOCATOR& output_allocator,
                              const Tensor& point_norms,
-                             const Tensor& query_norms) {
+                             const Tensor& query_norms,
+                             cudaEvent_t ready_event,
+                             std::vector<cudaEvent_t>* done_events) {
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();
@@ -191,6 +206,10 @@ void KnnSearchCUDASinglePass(const Tensor& points,
         {
             CUDAScopedStream scoped_stream(CUDAScopedStream::CreateNewStream);
             cudaStream_t cur_stream = cuda::GetStream();
+            if (ready_event) {
+                OPEN3D_CUDA_CHECK(
+                        cudaStreamWaitEvent(cur_stream, ready_event, 0));
+            }
             for (int j = 0; j < num_points; j += tile_cols) {
                 int num_points_j = std::min(tile_cols, num_points - j);
                 int col_j = j / tile_cols;
@@ -243,6 +262,13 @@ void KnnSearchCUDASinglePass(const Tensor& points,
                         knn, buf_distances_row_view.GetShape(1),
                         buf_distances_row_view.GetShape(0));
             }
+            if (done_events) {
+                cudaEvent_t done_event;
+                OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(
+                        &done_event, cudaEventDisableTiming));
+                OPEN3D_CUDA_CHECK(cudaEventRecord(done_event, cur_stream));
+                done_events->push_back(done_event);
+            }
         }
     }
 }
@@ -250,6 +276,8 @@ void KnnSearchCUDASinglePass(const Tensor& points,
 // Multi-pass KNN search (when knn > GPU_MAX_SELECTION_K).
 // Processes neighbors in chunks, using a bitmask to avoid selecting
 // already-found neighbors in subsequent passes.
+//
+// \param ready_event, done_events  See KnnSearchCUDASinglePass.
 template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void KnnSearchCUDAMultiPass(const Tensor& points,
                             const Tensor& queries,
@@ -258,7 +286,9 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                             int tile_cols,
                             OUTPUT_ALLOCATOR& output_allocator,
                             const Tensor& point_norms,
-                            const Tensor& query_norms) {
+                            const Tensor& query_norms,
+                            cudaEvent_t ready_event,
+                            std::vector<cudaEvent_t>* done_events) {
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();
@@ -325,6 +355,10 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                 CUDAScopedStream scoped_stream(
                         CUDAScopedStream::CreateNewStream);
                 cudaStream_t cur_stream = cuda::GetStream();
+                if (ready_event) {
+                    OPEN3D_CUDA_CHECK(
+                            cudaStreamWaitEvent(cur_stream, ready_event, 0));
+                }
 
                 for (int j = 0; j < num_points; j += tile_cols) {
                     int num_points_j = std::min(tile_cols, num_points - j);
@@ -487,6 +521,13 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
                                         num_queries_i, num_points, chunk_k, i);
                     }
                 }
+                if (done_events) {
+                    cudaEvent_t done_event;
+                    OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(
+                            &done_event, cudaEventDisableTiming));
+                    OPEN3D_CUDA_CHECK(cudaEventRecord(done_event, cur_stream));
+                    done_events->push_back(done_event);
+                }
             }
         }
 
@@ -499,7 +540,9 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             const Tensor& queries,
                             int knn,
                             OUTPUT_ALLOCATOR& output_allocator,
-                            Tensor& query_neighbors_row_splits) {
+                            Tensor& query_neighbors_row_splits,
+                            cudaEvent_t ready_event,
+                            std::vector<cudaEvent_t>* done_events) {
     CUDAScopedDevice scoped_device(points.GetDevice());
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
@@ -540,13 +583,13 @@ void KnnSearchCUDAOptimized(const Tensor& points,
 
     // Dispatch to appropriate algorithm based on knn
     if (knn <= GPU_MAX_SELECTION_K) {
-        KnnSearchCUDASinglePass<T, TIndex>(points, queries, knn, tile_rows,
-                                           tile_cols, output_allocator,
-                                           point_norms, query_norms);
+        KnnSearchCUDASinglePass<T, TIndex>(
+                points, queries, knn, tile_rows, tile_cols, output_allocator,
+                point_norms, query_norms, ready_event, done_events);
     } else {
-        KnnSearchCUDAMultiPass<T, TIndex>(points, queries, knn, tile_rows,
-                                          tile_cols, output_allocator,
-                                          point_norms, query_norms);
+        KnnSearchCUDAMultiPass<T, TIndex>(
+                points, queries, knn, tile_rows, tile_cols, output_allocator,
+                point_norms, query_norms, ready_event, done_events);
     }
 }
 
@@ -558,8 +601,34 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
-                   Tensor& neighbors_distance) {
+                   Tensor& neighbors_distance,
+                   cudaStream_t user_stream) {
     CUDAScopedDevice scoped_device(points.GetDevice());
+
+    // Event-based, non-blocking bridge to an externally supplied stream
+    // (e.g. PyTorch's current CUDA stream, passed in by the PyTorch op
+    // wrapper): installing it as the ambient stream below makes
+    // KnnSearchCUDABruteForce and all non-tiled work here run directly on
+    // `user_stream` (already correctly queue-ordered, no sync needed). Only
+    // the ephemeral per-tile streams created inside
+    // KnnSearchCUDASinglePass/MultiPass (for pipelining) run on genuinely
+    // different hardware streams and need explicit, device-side-only
+    // (no host stall) event synchronization: `ready_event` lets them wait
+    // for prior work on `user_stream` to finish writing the inputs, and the
+    // collected `done_events` let `user_stream` wait for them to finish
+    // writing the outputs before any subsequent work on `user_stream` (e.g.
+    // the caller reading the result) proceeds.
+    cudaEvent_t ready_event = nullptr;
+    std::vector<cudaEvent_t> done_events;
+    std::unique_ptr<CUDAScopedStream> outer_stream_scope;
+    if (user_stream) {
+        OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(&ready_event,
+                                                   cudaEventDisableTiming));
+        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, user_stream));
+        outer_stream_scope =
+                std::make_unique<CUDAScopedStream>(user_stream);
+    }
+
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();
@@ -590,9 +659,10 @@ void KnnSearchCUDA(const Tensor& points,
                                                batch_output_allocators[i],
                                                neighbors_row_splits_i);
         } else {
-            KnnSearchCUDAOptimized<T, TIndex>(points_i, queries_i, knn,
-                                              batch_output_allocators[i],
-                                              neighbors_row_splits_i);
+            KnnSearchCUDAOptimized<T, TIndex>(
+                    points_i, queries_i, knn, batch_output_allocators[i],
+                    neighbors_row_splits_i, ready_event,
+                    user_stream ? &done_events : nullptr);
         }
 
         if (i > 0) {
@@ -603,14 +673,37 @@ void KnnSearchCUDA(const Tensor& points,
         last_neighbors_count = neighbors_row_splits_i_ptr[num_queries_i];
     }
 
+    // Bridge the ephemeral per-tile streams' completion back to
+    // `user_stream`, device-side only (no host stall), then release the
+    // events -- safe even though the streams that recorded them may already
+    // be destroyed, since CUDA keeps an event's underlying resources alive
+    // until any waits on it are satisfied.
+    auto join_events_to_user_stream = [&]() {
+        if (!user_stream) return;
+        for (cudaEvent_t e : done_events) {
+            OPEN3D_CUDA_CHECK(cudaStreamWaitEvent(user_stream, e, 0));
+            OPEN3D_CUDA_CHECK(cudaEventDestroy(e));
+        }
+        OPEN3D_CUDA_CHECK(cudaEventDestroy(ready_event));
+    };
+
     if (batch_size == 1) {
         neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
                 {num_queries, -1});
         neighbors_distance =
                 batch_output_allocators[0].NeighborsDistance().View(
                         {num_queries, -1});
+        join_events_to_user_stream();
         return;
     }
+
+    // Join the per-tile events to `user_stream` *before* the Memcpy calls
+    // below, since those Memcpy calls run asynchronously on the ambient
+    // stream (== user_stream when bridging) and read from
+    // batch_output_allocators' memory, which may have been written by the
+    // ephemeral per-tile streams above -- without this wait, the combine
+    // step could race with still in-flight tile work.
+    join_events_to_user_stream();
 
     // combine results
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
@@ -629,10 +722,13 @@ void KnnSearchCUDA(const Tensor& points,
         int64_t offset = points_row_splits[i].Item<int64_t>();
         int64_t num_neighbors_i = a.NeighborsIndex().GetShape(0);
         if (num_neighbors_i) {
+            // Offset the batch-local point indices back to global point
+            // indices before copying into the combined output.
             Tensor NeighborIndexAccumulated = a.NeighborsIndex().Add(offset);
             MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
-                                  device, a.IndicesPtr(), device,
-                                  sizeof(TIndex) * num_neighbors_i);
+                                  device,
+                                  NeighborIndexAccumulated.GetDataPtr<TIndex>(),
+                                  device, sizeof(TIndex) * num_neighbors_i);
             MemoryManager::Memcpy(neighbors_distance_ptr + last_neighbors_count,
                                   device, a.DistancesPtr(), device,
                                   sizeof(T) * num_neighbors_i);
@@ -648,7 +744,7 @@ void KnnSearchCUDA(const Tensor& points,
             const Tensor& points, const Tensor& points_row_splits,            \
             const Tensor& queries, const Tensor& queries_row_splits, int knn, \
             Tensor& neighbors_index, Tensor& neighbors_row_splits,            \
-            Tensor& neighbors_distance);
+            Tensor& neighbors_distance, cudaStream_t user_stream);
 
 INSTANTIATE(float, int32_t)
 INSTANTIATE(float, int64_t)

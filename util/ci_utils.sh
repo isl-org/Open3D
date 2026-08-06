@@ -275,10 +275,9 @@ build_pip_package() {
     fi
 
     # Wheel build. Build the CPU wheel first, against the CPU torch/tf in the
-    # current environment. For a CUDA build this also produces the cpu/ ops that
-    # are bundled into the CUDA wheel below, so a CUDA wheel serves both CPU-only
-    # and CUDA torch users. A CPU-only build (e.g.  macOS) is already the final
-    # wheel and skips the CUDA pass.
+    # current environment. A CPU-only build (e.g. macOS) is already the final
+    # wheel and skips the CUDA pass below; the CPU wheel is saved and restored
+    # unchanged alongside the CUDA wheel.
     echo "Packaging Open3D CPU pip wheel..."
     set -x
     cmake "${cacheClear[@]}" "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
@@ -287,14 +286,15 @@ build_pip_package() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
-        echo "Packaging Open3D CUDA pip wheel (bundling CPU + CUDA ops)..."
+        echo "Packaging Open3D CUDA pip wheel..."
         # Save the CPU (open3d-cpu) wheel; the CUDA repackage reuses pip_package.
         mkdir -p ../pip_package_backup
         cp lib/python_package/pip_package/*.whl ../pip_package_backup/
         # CUDA ops must link against CUDA torch/tf.
         install_python_dependencies with-cuda purge-cache
-        # Reconfigure CUDA ON in place. lib/Release/cpu (CPU ops built above) is
-        # preserved and packaged next to the freshly built lib/Release/cuda ops.
+        # Reconfigure CUDA ON in place and rebuild the single
+        # open3d_{torch,tf}_ops.so with CUDA support (dispatch is internal to
+        # this one library; no separate cpu/cuda subdirs to merge).
         set -x
         cmake "${cacheClear[@]}" "${cmakeOptions[@]}" \
             -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON ..
@@ -507,11 +507,14 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    # Match main's build_pip_package() ML-ops ABI while building the CPU and CUDA
-    # wheels in separate dirs. The wheel image already ships CPU torch/tf, so the
-    # CPU wheel links its ops against CPU torch. Before the CUDA wheel we install
-    # CUDA torch/tf (see below) so its ops link against CUDA torch. Both wheels
-    # build torch/tf ops per BUILD_{PYTORCH,TENSORFLOW}_OPS.
+    # Match main's build_pip_package(): build the CPU and CUDA wheels in
+    # separate dirs, each with its own single open3d_{torch,tf}_ops.so (no
+    # cpu/cuda arch subdirs -- CPU/CUDA/SYCL dispatch is internal to one .so,
+    # see cpp/open3d/ml/pytorch/CMakeLists.txt). The wheel image already ships
+    # CPU torch/tf, so the CPU wheel links its ops against CPU torch. Before
+    # the CUDA wheel we install CUDA torch/tf (see below) so its ops link
+    # against CUDA torch. Both wheels build torch/tf ops per
+    # BUILD_{PYTORCH,TENSORFLOW}_OPS.
     if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]] &&
         ! python -c "import torch" >/dev/null 2>&1; then
         install_python_dependencies purge-cache
@@ -585,12 +588,6 @@ build_pip_package_from_installed() {
     if [[ -d assimp || -d embree || -d filament || -d vtk ]]; then
         echo "ERROR: 3rdparty ExternalProject dirs present in installed-mode build"
         exit 1
-    fi
-    # Place CPU-linked ops into lib/Release/cpu beside CUDA ops in lib/Release/cuda
-    # so the CUDA wheel packages both (open3d/{cpu,cuda}); loader picks at runtime.
-    if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]]; then
-        mkdir -p lib/Release/cpu
-        cp -a ../build_cpu_wheel/lib/Release/cpu/open3d_*_ops* lib/Release/cpu/
     fi
     make VERBOSE=1 -j"$NPROC" pip-package
     cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"

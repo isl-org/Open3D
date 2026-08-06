@@ -951,7 +951,7 @@ void SelectTopKQueries(const Device& device,
 
     const T inf = std::numeric_limits<T>::max();
     const int64_t actual_knn = std::min(knn, num_points);
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     if (knn <= kSYCLKnnMidKMax) {
         const int64_t k_bucket = KBucket(knn);
@@ -1051,7 +1051,7 @@ void MergeTopKQueries(const Device& device,
                       int64_t out_stride) {
     if (num_queries == 0 || knn <= 0) return;
     const T inf = std::numeric_limits<T>::max();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     if (knn <= kSYCLKnnMidKMax) {
         queue.parallel_for(
@@ -1171,7 +1171,7 @@ void AddQueryNormsToDistances(const Device& device,
                               const TIndex* indices_ptr,
                               T* distances_ptr,
                               const T* query_norms_ptr) {
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     queue.parallel_for(sycl::range<2>(num_queries, knn),
                        [=](sycl::id<2> id) [[intel::kernel_args_restrict]] {
                            const int64_t q = id[0], k = id[1];

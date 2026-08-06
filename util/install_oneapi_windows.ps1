@@ -34,7 +34,7 @@ try {
     if ($ExtractProc.ExitCode -ne 0) {
         throw "OneAPI webimage extract failed with exit code $($ExtractProc.ExitCode)"
     }
-    Remove-Item webimage.exe -Force
+    Remove-Item webimage.exe -Force -ErrorAction SilentlyContinue
 
     $Bootstrapper = Join-Path $WorkDir "webimage_extracted\bootstrapper.exe"
     if (-not (Test-Path $Bootstrapper)) {

@@ -38,8 +38,7 @@ public:
     /// Host: copy buffer layout and USM pointers from \p hashmap_buffer.
     void Setup(HashBackendBuffer &hashmap_buffer) {
         Device device = hashmap_buffer.GetDevice();
-        sycl::queue queue =
-                sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+        sycl::queue queue = sy::GetQueue(device);
 
         // Properties.
         capacity_ = hashmap_buffer.GetCapacity();

@@ -381,7 +381,7 @@ void BuildSpatialHashTableSYCL(const Tensor& points,
                                Tensor& hash_table_index,
                                Tensor& hash_table_cell_splits) {
     const Device device = points.GetDevice();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const T inv_voxel_size = T(1) / T(2 * radius);
     const int batch_size = static_cast<int>(points_row_splits.GetShape(0)) - 1;
@@ -655,7 +655,7 @@ sycl::event SortNeighborsByDistanceSYCL(const Device& device,
                                         int64_t num_queries,
                                         int64_t num_indices) {
     if (num_indices == 0) return sycl::event();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     auto policy = oneapi::dpl::execution::make_device_policy(queue);
 
     // Per-element segment (query) id, so the sort groups each query's
