@@ -483,6 +483,8 @@ void EstimateRangeCPU
                           range_ptr[1] = depth_min;
                       });
 
+    // The mutex protects only the host fallback; CUDA and SYCL
+    // use device atomics below.
 #if !defined(__CUDACC__)
     tbb::spin_mutex estimate_range_mutex;
     tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");

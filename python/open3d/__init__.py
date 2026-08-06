@@ -10,8 +10,7 @@ import sys
 import site
 import warnings
 
-# Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism, so it no longer adds
-# a second OpenMP runtime to the process. Other packages (e.g. PyTorch, MKL) may
+# Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism. Other packages (e.g. SciPy, MKL) may
 # still bring their own Intel OpenMP; enabling the thread composability manager
 # lets it share a thread pool with TBB instead of oversubscribing the machine.
 # Only works with Intel OpenMP, and TBB must not be already loaded.

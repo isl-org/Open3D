@@ -25,8 +25,10 @@ inline void AtomicAdd(std::atomic<T>& total, const T& val) noexcept {
 #ifdef __cpp_lib_atomic_float
     total.fetch_add(val);
 #else
-    T expected = total.load();
-    while (!total.compare_exchange_weak(expected, expected + val)) {
+    T expected = total.load(std::memory_order_relaxed);
+    while (!total.compare_exchange_weak(expected, expected + val,
+                                        std::memory_order_relaxed,
+                                        std::memory_order_relaxed)) {
     }
 #endif
 }

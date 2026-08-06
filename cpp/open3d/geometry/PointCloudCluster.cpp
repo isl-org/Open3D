@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 
 #include <tbb/parallel_for.h>
-#include <tbb/spin_mutex.h>
 
 #include <Eigen/Dense>
 #include <unordered_set>
@@ -31,8 +30,6 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
                                       print_progress);
     std::vector<std::vector<int>> nbs(points_.size());
 
-    tbb::spin_mutex mtx;
-    tbb::profiling::set_name(mtx, "ClusterDBSCAN");
     tbb::parallel_for(
             tbb::blocked_range<std::size_t>(0, points_.size(),
                                             utility::DefaultGrainSizeTBB()),
@@ -41,7 +38,6 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
                     std::vector<double> dists2;
                     kdtree.SearchRadius(points_[i], eps, nbs[i], dists2);
                 }
-                tbb::spin_mutex::scoped_lock lock(mtx);
                 progress_bar += (range.end() - range.begin());
             });
 

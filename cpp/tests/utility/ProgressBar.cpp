@@ -29,10 +29,9 @@ TEST(ProgressBar, ProgressBar) {
     EXPECT_EQ(iterations, static_cast<int>(progress_bar.GetCurrentCount()));
 }
 
-TEST(ProgressBar, TBBProgressBar) {
+TEST(ProgressBar, Parallel) {
     int iterations = 1000;
-    utility::TBBProgressBar progress_bar(iterations,
-                                         "TBBProgressBar test: ", true);
+    utility::ProgressBar progress_bar(iterations, "ProgressBar test: ", true);
     tbb::parallel_for(
             tbb::blocked_range<int>(0, iterations, 10),
             [&](const tbb::blocked_range<int>& range) {
@@ -44,10 +43,10 @@ TEST(ProgressBar, TBBProgressBar) {
     EXPECT_EQ(static_cast<int>(progress_bar.GetCurrentCount()), iterations);
 }
 
-TEST(ProgressBar, TBBProgressBarBatched) {
+TEST(ProgressBar, ParallelBatched) {
     int iterations = 1000;
-    utility::TBBProgressBar progress_bar(iterations,
-                                         "Batched TBBProgressBar test: ", true);
+    utility::ProgressBar progress_bar(iterations,
+                                      "Batched ProgressBar test: ", true);
     tbb::parallel_for(
             tbb::blocked_range<int>(0, iterations, 10),
             [&](const tbb::blocked_range<int>& range) {

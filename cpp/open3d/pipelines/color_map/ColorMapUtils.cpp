@@ -7,7 +7,7 @@
 
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 
-#include <tbb/concurrent_vector.h>
+#include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_for_each.h>
 
@@ -171,6 +171,8 @@ CreateVertexAndImageVisibility(
                             depth_threshold_for_visibility_check) {
                             continue;
                         }
+                        // Each camera id is processed by exactly one blocked
+                        // range, so this vector has a single writer.
                         visibility_image_to_vertex[camera_id].push_back(
                                 vertex_id);
                     }
@@ -258,13 +260,15 @@ void SetGeometryColorAverage(
     size_t n_vertex = mesh.vertices_.size();
     mesh.vertex_colors_.clear();
     mesh.vertex_colors_.resize(n_vertex);
-    tbb::concurrent_vector<std::size_t> valid_vertices;
-    tbb::concurrent_vector<std::size_t> invalid_vertices;
+    tbb::enumerable_thread_specific<std::vector<std::size_t>> valid_local;
+    tbb::enumerable_thread_specific<std::vector<std::size_t>> invalid_local;
 
     tbb::parallel_for(
             tbb::blocked_range<std::size_t>(0, n_vertex,
                                             utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
+                auto& valid_vertices = valid_local.local();
+                auto& invalid_vertices = invalid_local.local();
                 for (std::size_t i = range.begin(); i < range.end(); ++i) {
                     mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
                     double sum = 0.0;
@@ -310,6 +314,16 @@ void SetGeometryColorAverage(
                     }
                 }
             });
+    std::vector<std::size_t> valid_vertices;
+    std::vector<std::size_t> invalid_vertices;
+    for (const auto& local_vertices : valid_local) {
+        valid_vertices.insert(valid_vertices.end(), local_vertices.begin(),
+                              local_vertices.end());
+    }
+    for (const auto& local_vertices : invalid_local) {
+        invalid_vertices.insert(invalid_vertices.end(), local_vertices.begin(),
+                                local_vertices.end());
+    }
     if (invisible_vertex_color_knn > 0) {
         std::shared_ptr<geometry::TriangleMesh> valid_mesh = mesh.SelectByIndex(
                 {valid_vertices.begin(), valid_vertices.end()});

@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include <tbb/spin_mutex.h>
-
+#include <mutex>
 #include <random>
 
 #include "open3d/utility/Logging.h"
@@ -29,7 +28,7 @@ void Seed(const int seed);
 ///
 /// {
 ///     // Put the lock and the call to the engine in the same scope.
-///     tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
+///     std::scoped_lock lock(utility::random::GetMutex());
 ///     std::shuffle(vals.begin(), vals.end(), utility::random::GetEngine());
 /// }
 /// ```
@@ -37,7 +36,7 @@ std::mt19937& GetEngine();
 
 /// Get global singleton mutex to protect the engine call. Also see
 /// random::GetEngine().
-tbb::spin_mutex& GetMutex();
+std::mutex& GetMutex();
 
 /// Generate a random uint32.
 /// This function is globally seeded by utility::random::Seed().
@@ -82,7 +81,7 @@ public:
 
     /// Call this to generate a uniformly distributed integer.
     T operator()() {
-        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        std::scoped_lock lock(GetMutex());
         return distribution_(GetEngine());
     }
 
@@ -124,7 +123,7 @@ public:
 
     /// Call this to generate a uniformly distributed floating point value.
     T operator()() {
-        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        std::scoped_lock lock(GetMutex());
         return distribution_(GetEngine());
     }
 
@@ -165,7 +164,7 @@ public:
 
     /// Call this to generate a normally distributed floating point value.
     T operator()() {
-        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        std::scoped_lock lock(GetMutex());
         return distribution_(GetEngine());
     }
 
@@ -211,7 +210,7 @@ public:
 
     /// Call this to generate a discretely distributed integer value.
     T operator()() {
-        tbb::spin_mutex::scoped_lock lock(GetMutex());
+        std::scoped_lock lock(GetMutex());
         return distribution_(GetEngine());
     }
 

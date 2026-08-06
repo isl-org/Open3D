@@ -550,10 +550,6 @@ else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
 endif()
 
-# Open3D uses oneAPI TBB for CPU parallelism (see 3rdparty/mkl/tbb.cmake).
-# OpenMP is intentionally not used: it has poor Windows support and multiple
-# OpenMP runtimes loaded into one process (common in Python) cause thread
-# oversubscription and crashes.
 
 # X11
 if(UNIX AND NOT APPLE)
@@ -1852,6 +1848,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         VERSION 2021.4.0
         TARGETS TBB::tbb
     )
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
 else(OPEN3D_USE_ONEAPI_PACKAGES)
@@ -1998,6 +1995,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             VERSION 2021.4.0
             TARGETS TBB::tbb
         )
+        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
         if(NOT 3rdparty_tbb_FOUND)
             set(USE_SYSTEM_TBB OFF)
         endif()

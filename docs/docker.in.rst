@@ -39,7 +39,6 @@ Python applications looks like this:
     RUN apt-get update && apt-get install --no-install-recommends -y \
         libegl1 \
         libgl1 \
-        libtbb12 \
         python3-pip \
         && rm -rf /var/lib/apt/lists/*
 
@@ -120,7 +119,7 @@ driver with an environment variable (``EGL_PLATFORM=surfaceless``):
     FROM ubuntu:24.04
     RUN apt-get update \
         && apt-get install --yes --no-install-recommends \
-        libegl1 libgl1 libtbb12 python3-pip \
+        libegl1 libgl1 python3-pip \
         && rm -rf /var/lib/apt/lists/*
 
     # Install Open3D from the PyPI repositories

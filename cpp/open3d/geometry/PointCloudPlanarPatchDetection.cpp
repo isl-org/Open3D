@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Dense>
@@ -996,16 +997,19 @@ PointCloud::DetectPlanarPatches(
     kdtree.SetGeometry(*this);
     std::vector<std::vector<int>> neighbors;
     neighbors.resize(points_.size());
+    tbb::enumerable_thread_specific<std::vector<int>> indices;
+    tbb::enumerable_thread_specific<std::vector<double>> distance2;
 
     tbb::parallel_for(
             tbb::blocked_range<std::size_t>(0, points_.size(),
                                             utility::DefaultGrainSizeTBB()),
             [&](const tbb::blocked_range<std::size_t>& range) {
+                auto& local_indices = indices.local();
+                auto& local_distance2 = distance2.local();
                 for (std::size_t i = range.begin(); i < range.end(); ++i) {
-                    std::vector<int> indices;
-                    std::vector<double> distance2;
-                    kdtree.Search(points_[i], search_param, neighbors[i],
-                                  distance2);
+                    kdtree.Search(points_[i], search_param, local_indices,
+                                  local_distance2);
+                    neighbors[i] = local_indices;
                 }
             });
 

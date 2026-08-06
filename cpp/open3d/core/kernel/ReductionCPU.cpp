@@ -165,8 +165,6 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-        // TODO: could theoretically do inner reductions in parallel too with
-        // TBB
         tbb::parallel_for(
                 tbb::blocked_range<int64_t>(0, indexer_shape[best_dim], 1),
                 [&](const tbb::blocked_range<int64_t>& range) {

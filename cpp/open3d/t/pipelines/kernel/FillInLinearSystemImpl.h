@@ -73,7 +73,8 @@ void FillInRigidAlignmentTermCPU
     const float *Tj_qs_ptr = static_cast<const float *>(Tj_qs.GetDataPtr());
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
-
+// The mutexes below are compiled only for the host fallback; the SYCL path
+// uses its own work-group and global atomic reductions.
 #if !defined(__CUDACC__)
     tbb::spin_mutex fill_alignment_mutex;
     tbb::profiling::set_name(fill_alignment_mutex,

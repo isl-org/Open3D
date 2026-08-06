@@ -37,7 +37,7 @@ public:
         std::vector<T> indices;
         indices.reserve(sample_size);
 
-        tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
+        std::scoped_lock lock(utility::random::GetMutex());
         while (indices.size() < sample_size) {
             const T idx = dist(utility::random::GetEngine());
             // Well, this is slow. But typically the sample_size is small.

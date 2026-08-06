@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     geometry::KDTreeFlann kdtree;
     kdtree.SetGeometry(*pcd);
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
-    utility::TBBProgressBar progress_bar(mesh->vertices_.size(),
+    utility::ProgressBar progress_bar(mesh->vertices_.size(),
                                          "Prune vertices: ");
     tbb::parallel_for(
             tbb::blocked_range<std::size_t>(0, mesh->vertices_.size(),

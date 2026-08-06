@@ -37,7 +37,7 @@ public:
     std::mt19937& GetEngine() { return engine_; }
 
     /// Get global singleton mutex to protect the engine call.
-    tbb::spin_mutex& GetMutex() { return mutex_; }
+    std::mutex& GetMutex() { return mutex_; }
 
 private:
     RandomContext() {
@@ -47,17 +47,17 @@ private:
     }
     int seed_;
     std::mt19937 engine_;
-    tbb::spin_mutex mutex_;
+    std::mutex mutex_;
 };
 
 void Seed(const int seed) { RandomContext::GetInstance().Seed(seed); }
 
 std::mt19937& GetEngine() { return RandomContext::GetInstance().GetEngine(); }
 
-tbb::spin_mutex& GetMutex() { return RandomContext::GetInstance().GetMutex(); }
+std::mutex& GetMutex() { return RandomContext::GetInstance().GetMutex(); }
 
 uint32_t RandUint32() {
-    tbb::spin_mutex::scoped_lock lock(GetMutex());
+    std::scoped_lock lock(GetMutex());
     return GetEngine()();
 }
 

@@ -19,6 +19,30 @@ ProgressBar::ProgressBar(std::size_t expected_count,
                          bool active) {
     Reset(expected_count, std::move(progress_info), active);
 }
+ProgressBar::ProgressBar(const ProgressBar& other)
+    : expected_count_(other.expected_count_),
+      current_count_(other.current_count_.load(std::memory_order_relaxed)),
+      progress_info_(other.progress_info_),
+      progress_pixel_(other.progress_pixel_.load(std::memory_order_relaxed)),
+      active_(other.active_),
+      finalized_(other.finalized_.load(std::memory_order_relaxed)) {}
+
+ProgressBar& ProgressBar::operator=(const ProgressBar& other) {
+    if (this != &other) {
+        expected_count_ = other.expected_count_;
+        current_count_.store(
+                other.current_count_.load(std::memory_order_relaxed),
+                std::memory_order_relaxed);
+        progress_info_ = other.progress_info_;
+        progress_pixel_.store(
+                other.progress_pixel_.load(std::memory_order_relaxed),
+                std::memory_order_relaxed);
+        active_ = other.active_;
+        finalized_.store(other.finalized_.load(std::memory_order_relaxed),
+                         std::memory_order_relaxed);
+    }
+    return *this;
+}
 
 void ProgressBar::Reset(std::size_t expected_count,
                         std::string progress_info,
@@ -27,19 +51,19 @@ void ProgressBar::Reset(std::size_t expected_count,
     progress_info_ = std::move(progress_info);
     progress_pixel_ = 0;
     active_ = active;
-    // Essentially set current count to zero but
-    // goes through an overridden increment operator
-    current_count_ = std::numeric_limits<std::size_t>::max();
-    operator++();
+    current_count_.store(0, std::memory_order_relaxed);
+    progress_pixel_.store(0, std::memory_order_relaxed);
+    finalized_.store(false, std::memory_order_relaxed);
 }
 
 ProgressBar& ProgressBar::operator+=(std::size_t n) {
-    SetCurrentCount(current_count_ + n);
+    current_count_.fetch_add(n, std::memory_order_relaxed);
+    UpdateBar();
     return *this;
 }
 
 void ProgressBar::SetCurrentCount(std::size_t n) {
-    current_count_ = n;
+    current_count_.store(n, std::memory_order_relaxed);
     UpdateBar();
 }
 
@@ -47,86 +71,36 @@ void ProgressBar::UpdateBar() {
     if (!active_) {
         return;
     }
-    if (current_count_ >= expected_count_) {
-        fmt::print("{}[{}] 100%\n", progress_info_,
-                   std::string(resolution_, '='));
-    } else {
-        std::size_t new_progress_pixel =
-                int(current_count_ * resolution_ / expected_count_);
-        if (new_progress_pixel > progress_pixel_) {
-            progress_pixel_ = new_progress_pixel;
-            int percent = int(current_count_ * 100 / expected_count_);
-            fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
-                       std::string(progress_pixel_, '='),
-                       std::string(resolution_ - 1 - progress_pixel_, ' '),
-                       percent);
-            fflush(stdout);
+    const std::size_t current_count =
+            current_count_.load(std::memory_order_relaxed);
+    if (current_count >= expected_count_) {
+        if (!finalized_.exchange(true, std::memory_order_relaxed)) {
+            fmt::print("{}[{}] 100%\n", progress_info_,
+                       std::string(resolution_, '='));
         }
-    }
-}
-
-TBBProgressBar::TBBProgressBar(std::size_t expected_count,
-                               std::string progress_info,
-                               bool active) {
-    Reset(expected_count, std::move(progress_info), active);
-}
-
-void TBBProgressBar::Reset(std::size_t expected_count,
-                           std::string progress_info,
-                           bool active) noexcept(false) {
-    if (expected_count & flag_bit_mask) {
-        utility::LogError("Expected count out of range [0, 2^31)");
-    }
-    expected_count_ = expected_count;
-    progress_info_ = std::move(progress_info);
-    progress_pixel_ = 0;
-    active_ = active;
-    current_count_ = 0;
-    UpdateBar();
-}
-
-TBBProgressBar& TBBProgressBar::operator++() {
-    ++current_count_;
-    UpdateBar();
-    return *this;
-}
-
-TBBProgressBar& TBBProgressBar::operator+=(std::size_t n) {
-    current_count_ += n;
-    UpdateBar();
-    return *this;
-}
-
-void TBBProgressBar::SetCurrentCount(std::size_t n) {
-    current_count_ = n;
-    UpdateBar();
-}
-
-void TBBProgressBar::UpdateBar() {
-    if (!active_ || current_count_ & flag_bit_mask) {
         return;
     }
-    // Check if the current count equals the expected count
-    // If so set the flag bit and print 100%
-    // tmp is created so that compare_exchange doesn't modify expected_count
-    if (std::size_t tmp = expected_count_;
-        current_count_.compare_exchange_strong(
-                tmp, expected_count_ | flag_bit_mask)) {
-        fmt::print("{}[{}] 100%\n", progress_info_,
-                   std::string(resolution_, '='));
-    } else if (tbb::this_task_arena::current_thread_index() == 0) {
-        std::size_t new_progress_pixel =
-                current_count_ * resolution_ / expected_count_;
-        if (new_progress_pixel > progress_pixel_) {
-            progress_pixel_ = new_progress_pixel;
-            int percent = int(current_count_ * 100 / expected_count_);
-            fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
-                       std::string(progress_pixel_, '='),
-                       std::string(resolution_ - 1 - progress_pixel_, ' '),
-                       percent);
-            fflush(stdout);
-        }
+    const std::size_t new_progress_pixel =
+            current_count * resolution_ / expected_count_;
+    std::size_t previous_pixel =
+            progress_pixel_.load(std::memory_order_relaxed);
+    while (new_progress_pixel > previous_pixel &&
+           !progress_pixel_.compare_exchange_weak(
+                   previous_pixel, new_progress_pixel,
+                   std::memory_order_relaxed, std::memory_order_relaxed)) {
     }
+    if (new_progress_pixel > previous_pixel) {
+        const int percent = int(current_count * 100 / expected_count_);
+        fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
+                   std::string(new_progress_pixel, '='),
+                   std::string(resolution_ - 1 - new_progress_pixel, ' '),
+                   percent);
+        fflush(stdout);
+    }
+}
+
+std::size_t ProgressBar::GetCurrentCount() const {
+    return current_count_.load(std::memory_order_relaxed);
 }
 
 }  // namespace utility

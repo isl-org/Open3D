@@ -510,7 +510,7 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
     {
-        tbb::spin_mutex::scoped_lock lock(utility::random::GetMutex());
+        std::scoped_lock lock(utility::random::GetMutex());
         std::shuffle(indices.begin(), indices.end(),
                      utility::random::GetEngine());
     }
@@ -589,7 +589,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-    utility::TBBProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             points_.size(), "Remove radius outliers: ", print_progress);
 
     tbb::parallel_for(
@@ -633,7 +633,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
 
-    utility::TBBProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             points_.size(), "Remove statistical outliers: ", print_progress);
 
     size_t valid_distances = tbb::parallel_reduce(

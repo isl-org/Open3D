@@ -4,7 +4,6 @@
 // Copyright (c) 2018-2024 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
-
 #include <tbb/parallel_for.h>
 
 #include "open3d/core/hashmap/HashBackendBuffer.h"

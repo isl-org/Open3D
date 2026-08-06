@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <tbb/spin_mutex.h>
-
 #include <cstddef>
 #include <map>
 #include <mutex>
@@ -88,7 +86,7 @@ private:
     /// Print at each malloc and free, disabled by default.
     bool print_at_malloc_free_ = false;
 
-    tbb::spin_mutex statistics_mutex_;
+    std::mutex statistics_mutex_;
     std::map<Device, MemoryStatistics> statistics_;
 };
 

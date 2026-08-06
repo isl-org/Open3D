@@ -67,6 +67,8 @@ void ProjectCPU(
                 float d = zc * depth_scale;
                 {
                     tbb::spin_mutex::scoped_lock lock(mtx);
+                    // Keep depth and color updates together so the selected
+                    // depth always has the corresponding point color.
                     if (*depth_ptr == 0 || *depth_ptr >= d) {
                         *depth_ptr = d;
 
