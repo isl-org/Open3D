@@ -227,7 +227,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                     auto this_result = EvaluateRANSACBasedOnDistance(
                             points_, plane_model, inliers, distance_threshold);
                     {
-                        tbb::spin_rw_mutex::scoped_lock lock(mtx);
+                        tbb::spin_rw_mutex::scoped_lock lock(mtx, false);
                         if (this_result.IsBetterRANSACThan(result)) {
                             lock.upgrade_to_writer();
                             // Have to recheck after upgrading lock because

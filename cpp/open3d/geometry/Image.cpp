@@ -341,12 +341,12 @@ std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     }
     output->Prepare(width_, height_, 1, 1);
 
+    const int grain_size =
+            std::max(1, static_cast<int>(utility::DefaultGrainSizeTBB()) -
+                                2 * half_kernel_size);
     tbb::parallel_for(
-            tbb::blocked_range2d<int, int>(
-                    0, height_,
-                    utility::DefaultGrainSizeTBB() - (2 * half_kernel_size), 0,
-                    width_,
-                    utility::DefaultGrainSizeTBB() - (2 * half_kernel_size)),
+            tbb::blocked_range2d<int, int>(0, height_, grain_size, 0, width_,
+                                           grain_size),
             [&](const tbb::blocked_range2d<int, int> &range) {
                 for (int y = range.rows().begin(); y < range.rows().end();
                      ++y) {
