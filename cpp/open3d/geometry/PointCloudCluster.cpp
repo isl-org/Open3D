@@ -8,7 +8,6 @@
 #include <tbb/parallel_for.h>
 
 #include <Eigen/Dense>
-#include <unordered_set>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -60,33 +59,31 @@ std::vector<int> PointCloud::ClusterDBSCAN(double eps,
             continue;
         }
 
-        std::unordered_set<int> nbs_next(nbs[idx].begin(), nbs[idx].end());
-        std::unordered_set<int> nbs_visited;
-        nbs_visited.insert(int(idx));
-
         labels[idx] = cluster_label;
         ++progress_bar;
-        while (!nbs_next.empty()) {
-            int nb = *nbs_next.begin();
-            nbs_next.erase(nbs_next.begin());
-            nbs_visited.insert(nb);
 
-            // Noise label.
-            if (labels[nb] == -1) {
-                labels[nb] = cluster_label;
-                ++progress_bar;
-            }
-            // Not undefined label.
-            if (labels[nb] != -2) {
+        // BFS/DFS expansion from the seed point: push all neighbors of idx as
+        // the initial work-list, then iteratively pop, label unlabeled points,
+        // and push their neighbors if they are core points. Duplicates are
+        // harmlessly skipped by the labels[nb] >= 0 check.
+        std::vector<int> nbs_next(nbs[idx].begin(), nbs[idx].end());
+
+        while (!nbs_next.empty()) {
+            int nb = nbs_next.back();
+            nbs_next.pop_back();
+
+            // Skip the seed point and already-labeled neighbors.
+            if (nb == int(idx) || labels[nb] >= 0) {
                 continue;
             }
             labels[nb] = cluster_label;
             ++progress_bar;
 
+            // Expand from core points.
             if (nbs[nb].size() >= min_points) {
                 for (int qnb : nbs[nb]) {
-                    if (nbs_visited.count(qnb) == 0) {
-                        nbs_next.insert(qnb);
+                    if (labels[qnb] < 0) {
+                        nbs_next.push_back(qnb);
                     }
                 }
             }
