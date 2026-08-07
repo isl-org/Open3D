@@ -1844,6 +1844,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
     # 2021.4.0 is the minimum version providing tbb/collaborative_call_once.h.
     open3d_find_package_3rdparty_library(3rdparty_tbb
+        PUBLIC
         PACKAGE TBB
         VERSION 2021.4.0
         TARGETS TBB::tbb
