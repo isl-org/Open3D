@@ -555,6 +555,79 @@ public:
                                              const double lambda = 0.0,
                                              const double cos_alpha_tol = 1.0);
 
+    /// \brief Smooth point cloud using weighted Moving Least Squares (MLS).
+    ///
+    /// Inspired by Alexa et al., "Computing and Rendering Point Set Surfaces",
+    /// 2003. For each point, uses a hybrid radius/k-NN search, Gaussian
+    /// distance weights, weighted PCA, and projection onto the local tangent
+    /// plane. Points with fewer than three neighbors are unchanged. Unlike the
+    /// reference, this operation neither constructs a point-set surface nor
+    /// resamples points.
+    ///
+    /// \param radius Search radius and Gaussian weight scale.
+    /// \param max_nn Maximum number of neighbors.
+    /// \return A smoothed point cloud on the same device with its attributes
+    /// preserved by index.
+    PointCloud SmoothMLS(double radius = 0.05, int max_nn = 30) const;
+
+    /// \brief Smooth point cloud using Laplacian smoothing.
+    ///
+    /// Graph Laplacian flow on a k-NN neighborhood, related to Pauly et al.,
+    /// "Spectral Processing of Point-Sampled Geometry", 2001. Each pass
+    /// applies \f$x_i' = x_i + \lambda(\bar{x}_i - x_i)\f$, where
+    /// \f$\bar{x}_i\f$ is the uniform average over nearest neighbors excluding
+    /// the point itself. Unlike the reference, this is an explicit uniform
+    /// k-NN graph Laplacian rather than a spectral operator.
+    ///
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda Smoothing factor.
+    /// \param max_nn Number of nearest neighbors.
+    /// \param use_fixed_neighborhoods Reuse the initial k-NN graph across
+    /// passes instead of recomputing it.
+    /// \return A smoothed point cloud on the same device.
+    PointCloud SmoothLaplacian(size_t iterations = 10,
+                               double lambda = 0.5,
+                               int max_nn = 20,
+                               bool use_fixed_neighborhoods = false) const;
+
+    /// \brief Smooth point cloud using Taubin smoothing.
+    ///
+    /// Taubin, "Curve and Surface Smoothing Without Shrinkage", 1995. Each
+    /// iteration applies a Laplacian pass with \p lambda followed by one with
+    /// \p mu. This Tensor implementation uses a uniform point-cloud k-NN graph
+    /// instead of the paper's mesh Laplacian.
+    ///
+    /// \param iterations Number of smoothing iterations.
+    /// \param lambda Positive Laplacian factor.
+    /// \param mu Negative inverse-Laplacian factor.
+    /// \param max_nn Number of nearest neighbors.
+    /// \param use_fixed_neighborhoods Reuse the initial k-NN graph across
+    /// passes instead of recomputing it.
+    /// \return A smoothed point cloud on the same device.
+    PointCloud SmoothTaubin(size_t iterations = 10,
+                            double lambda = 0.5,
+                            double mu = -0.53,
+                            int max_nn = 20,
+                            bool use_fixed_neighborhoods = false) const;
+
+    /// \brief Smooth point cloud using bilateral filtering.
+    ///
+    /// Related to Jones et al., "Non-Iterative, Feature-Preserving Mesh
+    /// Smoothing", 2003. Each neighbor uses a spatial Gaussian and a range
+    /// Gaussian for displacement along the point normal; positions become
+    /// their weighted centroids. Normals are estimated when absent. Unlike the
+    /// reference, this is applied to unstructured points rather than a mesh.
+    ///
+    /// \param radius Hybrid-search radius.
+    /// \param max_nn Maximum number of neighbors.
+    /// \param sigma_s Spatial Gaussian sigma.
+    /// \param sigma_r Normal-direction range Gaussian sigma.
+    /// \return A smoothed point cloud on the same device.
+    PointCloud SmoothBilateral(double radius = 0.05,
+                               int max_nn = 30,
+                               double sigma_s = 0.05,
+                               double sigma_r = 0.05) const;
+
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,

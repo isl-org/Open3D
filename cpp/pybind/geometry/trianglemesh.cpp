@@ -123,24 +123,25 @@ void pybind_trianglemesh_definitions(py::module &m) {
                            "FilterScope.All"))
             .def("filter_smooth_laplacian",
                  &TriangleMesh::FilterSmoothLaplacian,
-                 "Function to smooth triangle mesh using Laplacian. :math:`v_o "
-                 "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
-                 ":math:`v_i` being the input value, :math:`v_o` the output "
-                 "value, :math:`N` is the  set of adjacent neighbours, "
-                 ":math:`w_n` is the weighting of the neighbour based on the "
-                 "inverse distance (closer neighbours have higher weight), and "
-                 "lambda_filter is the smoothing parameter.",
+                 R"doc(
+Laplacian smoothing on triangle adjacency with inverse-distance weights.
+
+Each iteration: ``v <- v + lambda * (sum(w_n v_n)/sum(w_n) - v)`` with
+``w_n = 1 / (||v - v_n|| + 1e-12)``. Related to Vollmer et al., *Improved
+Laplacian Smoothing of Noisy Surface Meshes*, 1999; Open3D uses inverse
+Euclidean weights and can smooth positions, normals, and/or colors
+(``filter_scope``).
+)doc",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  py::arg_v("filter_scope", MeshBase::FilterScope::All,
                            "FilterScope.All"))
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
-                 "Function to smooth triangle mesh using method of Taubin, "
-                 "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
-                 "Applies in each iteration two times filter_smooth_laplacian, "
-                 "first with filter parameter lambda_filter and second with "
-                 "filter "
-                 "parameter mu as smoothing parameter. This method avoids "
-                 "shrinkage of the triangle mesh.",
+                 R"doc(
+Taubin smoothing: two Laplacian passes per iteration (``lambda_filter`` then ``mu``).
+
+Uses the same inverse-distance Laplacian as :func:`filter_smooth_laplacian`.
+Related to Taubin, *Curve and Surface Smoothing Without Shrinkage*, 1995.
+)doc",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "mu"_a = -0.53,
                  py::arg_v("filter_scope", MeshBase::FilterScope::All,
@@ -350,7 +351,9 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "This function uses the original implementation by "
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false, "n_threads"_a = -1)
+                        "linear_fit"_a = false, "n_threads"_a = -1,
+                        "full_depth"_a = 5, "samples_per_node"_a = 1.5f,
+                        "point_weight"_a = 2.0f)
             .def_static(
                     "create_from_oriented_bounding_box",
                     &TriangleMesh::CreateFromOrientedBoundingBox,

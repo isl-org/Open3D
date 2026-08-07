@@ -71,6 +71,187 @@ TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 10);
 }
 
+TEST_P(PointCloudPermuteDevices, SmoothLaplacianUnitCubeReference) {
+    const core::Device device = GetParam();
+    const core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                            {1, 0, 0},
+                                                            {0, 1, 0},
+                                                            {1, 1, 0},
+                                                            {0, 0, 1},
+                                                            {1, 0, 1},
+                                                            {0, 1, 1},
+                                                            {1, 1, 1}},
+                                                           device);
+    const t::geometry::PointCloud pcd(points);
+    const auto smoothed = pcd.SmoothLaplacian(1, 0.5, 7, true);
+
+    // Same hand-derived unit-cube reference as the legacy smoothing test.
+    const core::Tensor ref =
+            core::Tensor::Init<double>({{2.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+                                        {5.0 / 7.0, 2.0 / 7.0, 2.0 / 7.0},
+                                        {2.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+                                        {5.0 / 7.0, 5.0 / 7.0, 2.0 / 7.0},
+                                        {2.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+                                        {5.0 / 7.0, 2.0 / 7.0, 5.0 / 7.0},
+                                        {2.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0},
+                                        {5.0 / 7.0, 5.0 / 7.0, 5.0 / 7.0}},
+                                       device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-12, 1e-12));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothTaubinUnitCubeReference) {
+    const core::Device device = GetParam();
+    const t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                                  {1, 0, 0},
+                                                                  {0, 1, 0},
+                                                                  {1, 1, 0},
+                                                                  {0, 0, 1},
+                                                                  {1, 0, 1},
+                                                                  {0, 1, 1},
+                                                                  {1, 1, 1}},
+                                                                 device));
+    const auto smoothed = pcd.SmoothTaubin(1, 0.5, -0.53, 7, true);
+
+    // The lambda and mu passes scale the centered cube by
+    // (1 - 8 * 0.5 / 7) * (1 + 8 * 0.53 / 7).
+    const core::Tensor ref = core::Tensor::Init<double>(
+            {{0.155918367347, 0.155918367347, 0.155918367347},
+             {0.844081632653, 0.155918367347, 0.155918367347},
+             {0.155918367347, 0.844081632653, 0.155918367347},
+             {0.844081632653, 0.844081632653, 0.155918367347},
+             {0.155918367347, 0.155918367347, 0.844081632653},
+             {0.844081632653, 0.155918367347, 0.844081632653},
+             {0.155918367347, 0.844081632653, 0.844081632653},
+             {0.844081632653, 0.844081632653, 0.844081632653}},
+            device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-11, 1e-11));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothMLSUnitCubeReference) {
+    const core::Device device = GetParam();
+    // A displaced 111 corner removes the perfect cube's repeated covariance
+    // eigenvalues. Hybrid MLS uses exp(-squared_distance / radius^2).
+    const t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                                  {1, 0, 0},
+                                                                  {0, 1, 0},
+                                                                  {1, 1, 0},
+                                                                  {0, 0, 1},
+                                                                  {1, 0, 1},
+                                                                  {0, 1, 1},
+                                                                  {1, 1, 1.25}},
+                                                                 device));
+    const auto smoothed = pcd.SmoothMLS(2.0, 8);
+
+    const core::Tensor ref = core::Tensor::Init<double>(
+            {{0.304746210477, 0.304746210477, -0.132659817770},
+             {0.962061030395, -0.048714601256, 0.018144543922},
+             {-0.048714601256, 0.962061030395, 0.018144543922},
+             {0.502675138804, 0.502675138804, 0.192711663191},
+             {0.464796679444, 0.464796679444, 0.665611708183},
+             {1.134384696129, 0.172553365443, 0.895019947109},
+             {0.172553365443, 1.134384696129, 0.895019947109},
+             {0.830319771401, 0.830319771401, 1.373654459775}},
+            device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-6, 1e-6));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothBilateralUnitCubeReference) {
+    const core::Device device = GetParam();
+    t::geometry::PointCloud pcd(core::Tensor::Init<double>({{0, 0, 0},
+                                                            {1, 0, 0},
+                                                            {0, 1, 0},
+                                                            {1, 1, 0},
+                                                            {0, 0, 1},
+                                                            {1, 0, 1},
+                                                            {0, 1, 1},
+                                                            {1, 1, 1}},
+                                                           device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{-1, -1, -1},
+                                                    {1, -1, -1},
+                                                    {-1, 1, -1},
+                                                    {1, 1, -1},
+                                                    {-1, -1, 1},
+                                                    {1, -1, 1},
+                                                    {-1, 1, 1},
+                                                    {1, 1, 1}},
+                                                   device));
+    const auto smoothed = pcd.SmoothBilateral(2.0, 8, 1.0, 1.0);
+
+    // Summing the hamming-distance weight groups at 000 gives
+    // 0.298085265092; all other corners follow by symmetry.
+    constexpr double low = 0.298085265092;
+    constexpr double high = 1.0 - low;
+    const core::Tensor ref = core::Tensor::Init<double>({{low, low, low},
+                                                         {high, low, low},
+                                                         {low, high, low},
+                                                         {high, high, low},
+                                                         {low, low, high},
+                                                         {high, low, high},
+                                                         {low, high, high},
+                                                         {high, high, high}},
+                                                        device);
+    EXPECT_TRUE(smoothed.GetPointPositions().AllClose(ref, 1e-9, 1e-9));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothingBoundaryCases) {
+    const core::Device device = GetParam();
+    const t::geometry::PointCloud empty(
+            core::Tensor::Empty({0, 3}, core::Float32, device));
+    EXPECT_EQ(empty.SmoothMLS().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothLaplacian().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothTaubin().GetPointPositions().GetLength(), 0);
+    EXPECT_EQ(empty.SmoothBilateral().GetPointPositions().GetLength(), 0);
+
+    const core::Tensor two_points =
+            core::Tensor::Init<float>({{0, 0, 0}, {1, 0, 0}}, device);
+    const t::geometry::PointCloud pcd(two_points);
+    EXPECT_TRUE(pcd.SmoothMLS(2.0, 2).GetPointPositions().AllClose(two_points,
+                                                                   1e-6, 1e-6));
+    EXPECT_TRUE(pcd.SmoothLaplacian(0).GetPointPositions().AllClose(
+            two_points, 1e-6, 1e-6));
+    EXPECT_TRUE(pcd.SmoothTaubin(0).GetPointPositions().AllClose(two_points,
+                                                                 1e-6, 1e-6));
+    EXPECT_ANY_THROW(pcd.SmoothBilateral(2.0, 2, 0.0, 1.0));
+    EXPECT_ANY_THROW(pcd.SmoothBilateral(2.0, 2, 1.0, 0.0));
+}
+
+TEST_P(PointCloudPermuteDevices, SmoothingKernelsPreserveTensorAttributes) {
+    const core::Device device = GetParam();
+    const core::Tensor points = core::Tensor::Init<float>({{0, 0, 0},
+                                                           {1, 0, 0},
+                                                           {0, 1, 0},
+                                                           {1, 1, 0},
+                                                           {0, 0, 1},
+                                                           {1, 0, 1},
+                                                           {0, 1, 1},
+                                                           {1, 1, 1}},
+                                                          device);
+    t::geometry::PointCloud pcd(points);
+    pcd.SetPointAttr("labels",
+                     core::Tensor::Arange(0, 8, 1, core::Int32, device));
+
+    const auto mls = pcd.SmoothMLS(2.0, 8);
+    EXPECT_EQ(mls.GetDevice(), device);
+    EXPECT_FALSE(mls.HasPointNormals());
+    EXPECT_TRUE(
+            mls.GetPointAttr("labels").AllClose(pcd.GetPointAttr("labels")));
+
+    const auto laplacian = pcd.SmoothLaplacian(1, 0.5, 7, true);
+    const auto taubin = pcd.SmoothTaubin(1, 0.5, -0.53, 7, true);
+    EXPECT_EQ(laplacian.GetDevice(), device);
+    EXPECT_EQ(taubin.GetDevice(), device);
+    EXPECT_TRUE(laplacian.GetPointAttr("labels").AllClose(
+            pcd.GetPointAttr("labels")));
+    EXPECT_TRUE(
+            taubin.GetPointAttr("labels").AllClose(pcd.GetPointAttr("labels")));
+
+    const auto bilateral = pcd.SmoothBilateral(2.0, 8, 0.5, 0.5);
+    EXPECT_EQ(bilateral.GetDevice(), device);
+    EXPECT_TRUE(bilateral.HasPointNormals());
+    EXPECT_TRUE(bilateral.GetPointAttr("labels").AllClose(
+            pcd.GetPointAttr("labels")));
+}
+
 TEST_P(PointCloudPermuteDevices, ConstructFromPointDict) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
