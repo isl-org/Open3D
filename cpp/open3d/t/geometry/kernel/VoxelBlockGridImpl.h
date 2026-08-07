@@ -485,7 +485,7 @@ void EstimateRangeCPU
 
     // The mutex protects only the host fallback; CUDA and SYCL
     // use device atomics below.
-#if !defined(__CUDACC__) && !defined(BUILD_SYCL_MODULE)
+#if !defined(__CUDACC__) && !defined(__SYCL_DEVICE_ONLY__)
     tbb::spin_mutex estimate_range_mutex;
     tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");
 #define LOCAL_LAMBDA_CAPTURE =, &estimate_range_mutex
@@ -518,7 +518,7 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
-#elif defined(SYCL_LANGUAGE_VERSION)
+#elif defined(__SYCL_DEVICE_ONLY__)
                 sycl::atomic_ref<float, sycl::memory_order::acq_rel,
                                  sycl::memory_scope::device,
                                  sycl::access::address_space::global_space>(
