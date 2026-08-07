@@ -18,6 +18,7 @@ ExternalProject_Add(
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
         -DZSTD_BUILD_STATIC=ON
         -DZSTD_BUILD_SHARED=OFF
         -DZSTD_BUILD_PROGRAMS=OFF
@@ -33,3 +34,5 @@ set(ZSTD_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(ZSTD_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(ZSTD_LIBRARIES ${zstd_lib_name})
 set(ZSTD_INSTALL_DIR ${INSTALL_DIR})
+# zstd installs its own CMake package config exporting zstd::libzstd_static.
+set(ZSTD_CONFIG_DIR ${ZSTD_LIB_DIR}/cmake/zstd)
