@@ -483,9 +483,11 @@ void EstimateRangeCPU
                           range_ptr[1] = depth_min;
                       });
 
-    // The mutex protects only the host fallback; CUDA and SYCL
-    // use device atomics below.
-#if !defined(__CUDACC__) && !defined(__SYCL_DEVICE_ONLY__)
+    // CUDA and SYCL device paths use device atomics; only the plain CPU
+    // fallback needs the mutex. SYCL_LANGUAGE_VERSION is defined by the SYCL
+    // compiler for *both* its host and device compilation passes of the same
+    // translation unit.
+#if !defined(__CUDACC__) && !defined(SYCL_LANGUAGE_VERSION)
     tbb::spin_mutex estimate_range_mutex;
     tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");
 #define LOCAL_LAMBDA_CAPTURE =, &estimate_range_mutex
@@ -518,7 +520,7 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
                 atomicMinf(&(range_ptr[0]), z_min);
                 atomicMaxf(&(range_ptr[1]), z_max);
-#elif defined(__SYCL_DEVICE_ONLY__)
+#elif defined(SYCL_LANGUAGE_VERSION)
                 sycl::atomic_ref<float, sycl::memory_order::acq_rel,
                                  sycl::memory_scope::device,
                                  sycl::access::address_space::global_space>(
