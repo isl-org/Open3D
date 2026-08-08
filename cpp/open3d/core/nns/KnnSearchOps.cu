@@ -300,6 +300,17 @@ void KnnSearchCUDAMultiPass(const Tensor& points,
     Tensor mask =
             Tensor::Zeros({num_queries, num_points}, Dtype::UInt8, device);
 
+    // Re-record ready_event once more here, after `mask` is zero-initialized
+    // above (also on the ambient stream): KnnSearchCUDAOptimized already
+    // re-recorded it right after point_norms/query_norms, but that happened
+    // before this function allocated and zeroed `mask`, which the per-tile
+    // kernels below (ApplyMaskToDistances / MarkSelectedIndices) also read
+    // and write. Without this, the ephemeral per-tile streams could start
+    // touching `mask` before its zero-init has actually landed.
+    if (ready_event) {
+        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, cuda::GetStream()));
+    }
+
     int chunk_k = std::min(knn, GPU_MAX_SELECTION_K);
     Tensor temp_distances =
             Tensor::Empty({tile_rows, tile_cols}, dtype, device);
@@ -575,6 +586,16 @@ void KnnSearchCUDAOptimized(const Tensor& points,
     Tensor point_norms = points.Mul(points).Sum({1});
     Tensor query_norms = queries.Mul(queries).Sum({1});
 
+    // (Re-)record ready_event now, on the current (ambient == user_stream,
+    // when bridging) stream, so that a wait on it also covers point_norms /
+    // query_norms above -- they are computed on the ambient stream and were
+    // not yet enqueued when ready_event may have last been recorded (see the
+    // comment in KnnSearchCUDA). KnnSearchCUDAMultiPass re-records it once
+    // more below, after `mask` is computed, for the same reason.
+    if (ready_event) {
+        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, cuda::GetStream()));
+    }
+
     // Divide queries and points into chunks (rows and cols).
     int tile_rows = 0;
     int tile_cols = 0;
@@ -618,15 +639,22 @@ void KnnSearchCUDA(const Tensor& points,
     // collected `done_events` let `user_stream` wait for them to finish
     // writing the outputs before any subsequent work on `user_stream` (e.g.
     // the caller reading the result) proceeds.
+    // `ready_event` is only created here; it is (re-)recorded per batch,
+    // immediately before each ephemeral-stream tile loop that actually waits
+    // on it (see KnnSearchCUDAOptimized / KnnSearchCUDAMultiPass below) --
+    // not here. Recording it this early, before point_norms/query_norms (and,
+    // for the multi-pass path, `mask`) are even enqueued on `user_stream`,
+    // would let the per-tile streams start reading those buffers before
+    // `user_stream` has actually finished writing them: a CUDA event captures
+    // the *position* in the stream's queue at record time, so a wait on an
+    // event recorded before that work was enqueued does not cover it.
     cudaEvent_t ready_event = nullptr;
     std::vector<cudaEvent_t> done_events;
     std::unique_ptr<CUDAScopedStream> outer_stream_scope;
     if (user_stream) {
-        OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(&ready_event,
-                                                   cudaEventDisableTiming));
-        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, user_stream));
-        outer_stream_scope =
-                std::make_unique<CUDAScopedStream>(user_stream);
+        OPEN3D_CUDA_CHECK(
+                cudaEventCreateWithFlags(&ready_event, cudaEventDisableTiming));
+        outer_stream_scope = std::make_unique<CUDAScopedStream>(user_stream);
     }
 
     int num_points = points.GetShape(0);
@@ -651,8 +679,6 @@ void KnnSearchCUDA(const Tensor& points,
         Tensor neighbors_row_splits_i = neighbors_row_splits.Slice(
                 0, queries_row_splits[i].Item<int64_t>(),
                 queries_row_splits[i + 1].Item<int64_t>());
-        int64_t* neighbors_row_splits_i_ptr =
-                neighbors_row_splits_i.GetDataPtr<int64_t>();
 
         if (brute_force) {
             KnnSearchCUDABruteForce<T, TIndex>(points_i, queries_i, knn,
@@ -665,12 +691,14 @@ void KnnSearchCUDA(const Tensor& points,
                     user_stream ? &done_events : nullptr);
         }
 
+        // neighbors_row_splits_i may be device-only memory (not
+        // host-dereferenceable), so the offset add and read-back below go
+        // through Tensor ops (device-safe) rather than raw pointer access.
         if (i > 0) {
-            for (int j = 0; j <= num_queries_i; ++j) {
-                neighbors_row_splits_i_ptr[j] += last_neighbors_count;
-            }
+            neighbors_row_splits_i.Add_(Scalar(last_neighbors_count));
         }
-        last_neighbors_count = neighbors_row_splits_i_ptr[num_queries_i];
+        last_neighbors_count =
+                neighbors_row_splits_i[num_queries_i].Item<int64_t>();
     }
 
     // Bridge the ephemeral per-tile streams' completion back to
@@ -719,16 +747,11 @@ void KnnSearchCUDA(const Tensor& points,
     last_neighbors_count = 0;
     for (int i = 0; i < batch_size; ++i) {
         auto& a = batch_output_allocators[i];
-        int64_t offset = points_row_splits[i].Item<int64_t>();
         int64_t num_neighbors_i = a.NeighborsIndex().GetShape(0);
         if (num_neighbors_i) {
-            // Offset the batch-local point indices back to global point
-            // indices before copying into the combined output.
-            Tensor NeighborIndexAccumulated = a.NeighborsIndex().Add(offset);
             MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
-                                  device,
-                                  NeighborIndexAccumulated.GetDataPtr<TIndex>(),
-                                  device, sizeof(TIndex) * num_neighbors_i);
+                                  device, a.IndicesPtr(), device,
+                                  sizeof(TIndex) * num_neighbors_i);
             MemoryManager::Memcpy(neighbors_distance_ptr + last_neighbors_count,
                                   device, a.DistancesPtr(), device,
                                   sizeof(T) * num_neighbors_i);

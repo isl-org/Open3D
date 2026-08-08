@@ -52,6 +52,18 @@ if (_build_config["BUILD_CUDA_MODULE"] and
 --------------------------------------------------------------------------------
 """)
 
+# Single open3d_torch_ops.so now serves all backends (CPU/CUDA/SYCL); warn
+# (don't fail, there's no other variant to fall back to) if the installed
+# PyTorch's CUDA runtime doesn't match what Open3D's ops were built against,
+# since loading may still succeed but behave incorrectly downstream.
+if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
+        _torch.version.cuda != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but PyTorch was built with "
+          "CUDA {}. The PyTorch ops may fail to load or behave incorrectly. "
+          "Consider installing PyTorch with CUDA {}.".format(
+              _build_config["CUDA_VERSION"], _torch.version.cuda,
+              _build_config["CUDA_VERSION"]))
+
 _lib_path = []
 # allow overriding the path to the op library with an env var.
 if 'OPEN3D_TORCH_OP_LIB' in _os.environ:

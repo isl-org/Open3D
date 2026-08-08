@@ -149,10 +149,54 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
         float* C = out_features + (run_i * num_cols_per_run * out_channels);
         const int ldc = m;
 
+        queue.wait_and_throw();  // DEBUG: force sync to test race hypothesis
+        {
+            std::vector<TFeat> host_columns(size_t(k) * n);
+            queue.memcpy(host_columns.data(), columns,
+                         host_columns.size() * sizeof(TFeat))
+                    .wait_and_throw();
+            fprintf(stderr, "[DEBUG] columns (k=%d, n=%d):\n", k, n);
+            for (int col = 0; col < n; ++col) {
+                fprintf(stderr, "  col %d:", col);
+                for (int row = 0; row < k; ++row) {
+                    fprintf(stderr, " %g",
+                            (double)host_columns[size_t(col) * k + row]);
+                }
+                fprintf(stderr, "\n");
+            }
+            std::vector<TFeat> host_filter(size_t(m) * k);
+            queue.memcpy(host_filter.data(), filter,
+                         host_filter.size() * sizeof(TFeat))
+                    .wait_and_throw();
+            fprintf(stderr, "[DEBUG] filter (m=%d, k=%d):\n", m, k);
+            for (int mm = 0; mm < m; ++mm) {
+                fprintf(stderr, "  row %d:", mm);
+                for (int kk = 0; kk < k; ++kk) {
+                    fprintf(stderr, " %g",
+                            (double)host_filter[size_t(kk) * m + mm]);
+                }
+                fprintf(stderr, "\n");
+            }
+        }
         prev_gemm_event = GemmColumnMajorSYCL<cutlass::layout::ColumnMajor,
                                               cutlass::layout::ColumnMajor>(
                 queue, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, allow_tf32,
                 {fill_column_event});
+        queue.wait_and_throw();  // DEBUG: force sync to test race hypothesis
+        {
+            std::vector<TOut> host_out(size_t(m) * n);
+            queue.memcpy(host_out.data(), C, host_out.size() * sizeof(TOut))
+                    .wait_and_throw();
+            fprintf(stderr, "[DEBUG] out C (m=%d, n=%d) after GEMM:\n", m, n);
+            for (int col = 0; col < n; ++col) {
+                fprintf(stderr, "  col %d:", col);
+                for (int row = 0; row < m; ++row) {
+                    fprintf(stderr, " %g",
+                            (double)host_out[size_t(col) * m + row]);
+                }
+                fprintf(stderr, "\n");
+            }
+        }
     }
 }
 

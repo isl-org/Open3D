@@ -25,7 +25,7 @@ void SVDSYCL(const void* A_data,
              Dtype dtype,
              const Device& device) {
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int64_t lda = m, ldvt = n, ldu = m;
         int64_t scratchpad_size = lapack::gesvd_scratchpad_size<scalar_t>(

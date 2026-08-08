@@ -65,6 +65,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+    elif [[ "with-xpu" =~ ^($options)$ ]]; then
+        # No PyTorch xpu wheels for macOS; this option is Linux-only.
+        # torch+torchvision+xpu are pinned and installed together from
+        # Open3D-ML's requirements-torch-xpu.txt (extra-index-url + exact
+        # versions), so no separate torch install is needed below.
+        TF_ARCH_NAME=tensorflow-cpu
+        TF_ARCH_DISABLE_NAME=tensorflow
+        TORCH_GLNX=""
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -89,7 +97,13 @@ install_python_dependencies() {
         python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ "with-xpu" =~ ^($options)$ ]]; then
+            if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt" ]]; then
+                echo "OPEN3D_ML_ROOT not set or missing requirements-torch-xpu.txt; cannot install torch+xpu"
+                exit 1
+            fi
+            python -m pip install -U -r "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt"
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -642,7 +656,11 @@ test_wheel() {
     HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
         HAVE_PYTORCH_OPS=ON
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_SYCL_MODULE'])"; then
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-xpu.txt"
+        else
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        fi
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
@@ -667,11 +685,11 @@ run_python_tests() {
     source open3d_test.venv/bin/activate
     python -m pip install -U -r "$OPEN3D_SOURCE_ROOT/python/requirements_test.txt"
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
+    # python/test/ml_ops/ is always collected: mltest.py self-gates each op's
+    # backends (torch cpu/cuda/xpu, tf) on actual runtime availability, so
+    # tests silently produce zero cases when a backend/GPU isn't present.
+    # This means a GPU-equipped runner works with no CI config changes.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
-    fi
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
     rm -rf open3d_test.venv     # cleanup for testing the next wheel

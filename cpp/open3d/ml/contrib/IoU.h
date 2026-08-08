@@ -60,8 +60,8 @@ void IoU3dCUDAKernel(const float *boxes_a,
 #ifdef BUILD_SYCL_MODULE
 /// \param queue SYCL queue to run the kernel on (typically PyTorch's current
 /// XPU queue, c10::xpu::getCurrentXPUStream().queue(), or
-/// SYCLContext::GetInstance().GetDefaultQueue(device) for the Open3D-owned
-/// path); using the queue directly (rather than a core::Device) avoids the
+/// core::sy::GetQueue(device) for the Open3D-owned path); using the queue
+/// directly (rather than a core::Device) avoids the
 /// device-index mapping mismatch a foreign (PyTorch) queue can have with
 /// Open3D's own Device enumeration -- see ParallelFor.h's queue-overload
 /// doc comment for the same reasoning.

@@ -14,6 +14,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -176,8 +177,7 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
     Dtype src_dtype = src.GetDtype(), dst_dtype = dst.GetDtype();
     Device src_device = src.GetDevice(), dst_device = dst.GetDevice();
     Device device_with_queue = dst.IsSYCL() ? dst.GetDevice() : src.GetDevice();
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(device_with_queue);
+    sycl::queue queue = sy::GetQueue(device_with_queue);
 
     if (src_device.IsSYCL() && dst_device.IsSYCL()) {
         if (src.IsContiguous() && dst.IsContiguous() &&
@@ -204,20 +204,19 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                 const int64_t n = indexer.NumWorkloads();
                 DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(block_size, [&]() {
                     const int64_t blocks = object_byte_size / block_size;
-                    queue.parallel_for(n, [indexer, blocks](int64_t i) {
-                             // reinterpret_cast required: GetInputPtr
-                             // returns char* and block_t may be
-                             // sycl::vec<> which is not trivially related
-                             // to char via static_cast.
-                             const block_t* src =
-                                     reinterpret_cast<const block_t*>(
-                                             indexer.GetInputPtr(0, i));
-                             block_t* dst = reinterpret_cast<block_t*>(
-                                     indexer.GetOutputPtr(i));
-                             for (int64_t b = 0; b < blocks; ++b) {
-                                 dst[b] = src[b];
-                             }
-                         }).wait_and_throw();
+                    core::ParallelFor(queue, n, [indexer, blocks](int64_t i) {
+                        // reinterpret_cast required: GetInputPtr
+                        // returns char* and block_t may be
+                        // sycl::vec<> which is not trivially related
+                        // to char via static_cast.
+                        const block_t* src = reinterpret_cast<const block_t*>(
+                                indexer.GetInputPtr(0, i));
+                        block_t* dst = reinterpret_cast<block_t*>(
+                                indexer.GetOutputPtr(i));
+                        for (int64_t b = 0; b < blocks; ++b) {
+                            dst[b] = src[b];
+                        }
+                    });
                 });
             } else {
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
@@ -225,10 +224,10 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                         using dst_t = scalar_t;
                         const int64_t n = indexer.NumWorkloads();
-                        queue.parallel_for(n, [indexer](int64_t i) {
-                                 CopyElementKernel<src_t, dst_t> ef(indexer);
-                                 ef(i);
-                             }).wait_and_throw();
+                        core::ParallelFor(queue, n, [indexer](int64_t i) {
+                            CopyElementKernel<src_t, dst_t> ef(indexer);
+                            ef(i);
+                        });
                     });
                 });
             }
@@ -261,7 +260,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const bool contiguous_same_shape = src.IsContiguous() &&
                                        dst.IsContiguous() &&
@@ -274,8 +273,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                     int64_t n = src.NumElements();
                     const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
                     scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                        int64_t i = id[0];
+                    core::ParallelFor(queue, n, [=](int64_t i) {
                         dst_ptr[i] = UnaryEWLogicalNot<scalar_t, scalar_t>(
                                 src_ptr[i]);
                     });
@@ -294,8 +292,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                     int64_t n = src.NumElements();
                     const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
                     bool* dst_ptr = dst.GetDataPtr<bool>();
-                    queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                        int64_t i = id[0];
+                    core::ParallelFor(queue, n, [=](int64_t i) {
                         dst_ptr[i] =
                                 UnaryEWLogicalNot<scalar_t, bool>(src_ptr[i]);
                     });
@@ -322,8 +319,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 int64_t n = src.NumElements();
                 const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
                 bool* dst_ptr = dst.GetDataPtr<bool>();
-                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                    int64_t i = id[0];
+                core::ParallelFor(queue, n, [=](int64_t i) {
                     dst_ptr[i] = UnaryEWFloatCheck(op_code, src_ptr[i]);
                 });
             } else {
@@ -357,8 +353,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
                 int64_t n = src.NumElements();
                 const scalar_t* src_ptr = src.GetDataPtr<scalar_t>();
                 scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
-                queue.parallel_for(sycl::range<1>(n), [=](sycl::id<1> id) {
-                    int64_t i = id[0];
+                core::ParallelFor(queue, n, [=](int64_t i) {
                     dst_ptr[i] = UnaryEWTransform(op_code, src_ptr[i]);
                 });
             } else {

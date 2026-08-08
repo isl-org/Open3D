@@ -205,7 +205,7 @@ template <class ReductionOp, typename scalar_t>
 void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto queue = sy::GetQueue(device);
     size_t work_group_size =
             std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;
@@ -386,7 +386,7 @@ template <class ReductionOp, typename scalar_t>
 void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto queue = sy::GetQueue(device);
     size_t work_group_size =
             std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;

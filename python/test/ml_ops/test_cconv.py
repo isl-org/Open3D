@@ -156,6 +156,68 @@ def test_compare_to_conv3d(ml, feat_out_type, real_type, filter_size,
     np.testing.assert_allclose(y, y_conv3d, **tol[feat_type])
 
 
+@mltest.parametrize.ml_gpu_only
+def test_cconv_allow_tf32(ml):
+    # allow_tf32 is only exposed by the torch op schema (TF has no such
+    # attribute); TF32-equivalent acceleration is also only meaningful on
+    # GPU hardware that supports it (e.g. XMX), so this is torch+gpu only.
+    if ml.module.__name__ != 'torch':
+        pytest.skip('allow_tf32 is only exposed by the torch ops')
+
+    np.random.seed(0)
+    dtype = np.float32
+    filter_size = [3, 3, 3]
+    in_channels, out_channels = 4, 6
+
+    conv_attrs = {
+        'align_corners': False,
+        'coordinate_mapping': 'identity',
+        'normalize': False,
+        'interpolation': 'nearest_neighbor',
+    }
+
+    filters = np.random.random(size=(*filter_size, in_channels,
+                                     out_channels)).astype(dtype)
+    inp_positions = np.random.rand(128, 3).astype(dtype)
+    inp_importance = np.empty((0,), dtype=dtype)
+    out_positions = np.random.rand(16, 3).astype(dtype)
+    extent = np.array([[0.4]], dtype=dtype)
+    offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
+    inp_features = np.random.uniform(size=(inp_positions.shape[0],
+                                           in_channels)).astype(dtype)
+
+    fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = mltest.run_op(
+        ml, ml.device, False, fixed_radius_search, inp_positions,
+        out_positions, extent[0, 0] / 2)
+    neighbors_importance = np.empty((0,), dtype=dtype)
+
+    def run(allow_tf32):
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             ml.ops.continuous_conv,
+                             filters=filters,
+                             out_positions=out_positions,
+                             extents=extent,
+                             offset=offset,
+                             inp_positions=inp_positions,
+                             inp_features=inp_features,
+                             inp_importance=inp_importance,
+                             neighbors_index=neighbors_index,
+                             neighbors_importance=neighbors_importance,
+                             neighbors_row_splits=neighbors_row_splits,
+                             allow_tf32=allow_tf32,
+                             **conv_attrs)
+
+    y_tf32 = run(True)
+    y_ref = run(False)
+    assert y_tf32.shape == y_ref.shape
+    # TF32-equivalent reduced precision, so use a relaxed tolerance -- this
+    # only checks the op runs and stays numerically close, not bit-exactness.
+    np.testing.assert_allclose(y_tf32, y_ref, rtol=1e-2, atol=1e-2)
+
+
 # @pytest.mark.skip()
 @mltest.parametrize.ml
 # yapf: disable

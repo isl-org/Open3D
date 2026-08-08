@@ -274,6 +274,58 @@ def test_compare_to_conv3d_batches(ml, dtype, kernel_size, out_channels,
         np.testing.assert_allclose(y_out, y_conv3d, rtol=1e-3, atol=1e-5)
 
 
+@mltest.parametrize.ml_gpu_only
+def test_sparseconv_allow_tf32(ml):
+    # allow_tf32 is only exposed by the torch op schema (TF has no such
+    # attribute); TF32-equivalent acceleration is also only meaningful on GPU
+    # hardware that supports it (e.g. XMX), so this is torch+gpu only.
+    if ml.module.__name__ != 'torch':
+        pytest.skip('allow_tf32 is only exposed by the torch ops')
+
+    np.random.seed(0)
+    dtype = np.float32
+    kernel_size = [3, 3, 3]
+    in_channels, out_channels = 4, 6
+
+    max_grid_extent = 10
+    inp_positions = np.unique(np.random.randint(0, max_grid_extent,
+                                                (256, 3)).astype(dtype),
+                              axis=0)
+    out_positions = np.unique(np.random.randint(
+        np.max(kernel_size) // 2, max_grid_extent - np.max(kernel_size) // 2,
+        (5, 3)).astype(dtype),
+                              axis=0)
+    inp_importance = np.empty((0,), dtype=dtype)
+    voxel_size = 0.2
+
+    inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
+                                     (in_channels,)).astype(dtype)
+
+    def run(allow_tf32):
+        conv = ml.layers.SparseConv(in_channels=in_channels,
+                                    filters=out_channels,
+                                    kernel_size=kernel_size,
+                                    normalize=False,
+                                    allow_tf32=allow_tf32)
+        conv.to(ml.device)
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             conv,
+                             inp_features,
+                             inp_positions * voxel_size,
+                             out_positions * voxel_size,
+                             voxel_size=voxel_size,
+                             inp_importance=inp_importance)
+
+    y_tf32 = run(True)
+    y_ref = run(False)
+    assert y_tf32.shape == y_ref.shape
+    # TF32-equivalent reduced precision, so use a relaxed tolerance -- this
+    # only checks the op runs and stays numerically close, not bit-exactness.
+    np.testing.assert_allclose(y_tf32, y_ref, rtol=1e-2, atol=1e-2)
+
+
 # yapf: disable
 @pytest.mark.parametrize("kernel_size, out_channels, in_channels, with_out_importance, with_normalization",[
                              ([1,1,1],            2,           7,                True,              False),

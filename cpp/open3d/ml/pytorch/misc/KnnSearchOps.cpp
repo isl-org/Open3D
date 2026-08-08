@@ -143,7 +143,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         // KnnIndex::SearchKnn.
         open3d::core::Tensor neighbors_row_splits_ =
                 open3d::core::Tensor::Empty({queries.size(0) + 1},
-                                            open3d::core::Int64);
+                                            open3d::core::Int64,
+                                            points_.GetDevice());
 
         cudaStream_t user_stream =
                 c10::cuda::getCurrentCUDAStream(device_idx).stream();

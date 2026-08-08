@@ -78,8 +78,7 @@ void FillInRigidAlignmentTermSYCL(core::Tensor &AtA,
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     // Item 17/7.6: PersistentReduce uses local_accessor + barriers (large-WG
     // SLM/barrier policy).
     const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
@@ -198,8 +197,7 @@ void FillInSLACAlignmentTermSYCL(core::Tensor &AtA,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     // Phase 7b large-WG policy: this kernel uses local_accessor + barriers,
     // so it should use the large SLM/barrier work-group size, not the
     // elementwise default.
@@ -431,8 +429,7 @@ void FillInSLACRegularizerTermSYCL(core::Tensor &AtA,
 
     auto device_props =
             core::sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     // Phase 7b large-WG policy: see the analogous comment above.
     const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
     const size_t num_groups = ((size_t)n + wgs - 1) / wgs;

@@ -24,8 +24,7 @@ void IndexGetSYCL(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
+    sycl::queue queue = sy::GetQueue(src.GetDevice());
     if (dtype.IsObject()) {
         const int64_t object_byte_size = dtype.ByteSize();
         const int64_t block_size =
@@ -63,8 +62,7 @@ void IndexSetSYCL(const Tensor& src,
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
+    sycl::queue queue = sy::GetQueue(src.GetDevice());
     if (dtype.IsObject()) {
         const int64_t object_byte_size = dtype.ByteSize();
         const int64_t block_size =

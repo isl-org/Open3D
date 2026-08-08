@@ -713,6 +713,27 @@ void DispatchKnnDirect(sycl::queue& queue,
         tile_points = std::min(tile_points,
                                std::max<int64_t>(max_tile_points_by_slm, 1));
     }
+    // kKnnDirectSubgroupsPerWG (32) is a value tuned for dim=3 on Intel Xe,
+    // giving wg_size = subgroups_per_wg * SG = 512 work-items at SG=16.
+    // Unlike tile_points above, this was never clamped against the device's
+    // actual max_work_group_size, so a device with a smaller limit than 512
+    // would hit an invalid kernel launch. This is not routed through the
+    // generic MaxWorkGroupSizeForSLM helper: that helper's SLM budget model
+    // assumes usage scales linearly per-work-item (slm_bytes_per_wi *
+    // wg_size), whereas this kernel's SLM usage is a fixed double-buffered
+    // tile (2 * tile_points * dim * sizeof(T), already clamped above)
+    // shared by the whole work-group and independent of subgroups_per_wg.
+    // Clamp conservatively against SG=16 (the wider of the two possible
+    // sub-group widths chosen later in DispatchKnnDirectK) so this is safe
+    // regardless of which SG the dtype ends up selecting.
+    {
+        const size_t max_wg_size =
+                queue.get_device()
+                        .get_info<sycl::info::device::max_work_group_size>();
+        subgroups_per_wg = std::min(subgroups_per_wg,
+                                    static_cast<int64_t>(max_wg_size / 16));
+        subgroups_per_wg = std::max<int64_t>(subgroups_per_wg, 1);
+    }
 #define CALL_DIM(NDIMVAL)                                                      \
     DispatchKnnDirectK<T, TIndex, NDIMVAL>(                                    \
             queue, points_ptr, queries_ptr, num_points, num_queries, actual_k, \

@@ -23,6 +23,7 @@ Tensor NonZeroSYCL(const Tensor& src) {
     TensorIterator src_iter(src);
     const int64_t num_elements = src.NumElements();
     auto device = src.GetDevice();
+    auto queue = sy::GetQueue(device);
     OPEN3D_ASSERT(src.GetDataPtr() != nullptr, "Internal error.");
     Tensor indices = Tensor::Arange(0, num_elements, 1, core::Int64, device);
     Tensor non_zero_indices(SizeVector({num_elements}), Int64, device);
@@ -30,13 +31,14 @@ Tensor NonZeroSYCL(const Tensor& src) {
     int64_t* indices_ptr = indices.GetDataPtr<int64_t>();
     size_t num_non_zeros;
     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src.GetDtype(), [&]() {
-        auto it = std::copy_if(oneapi::dpl::execution::dpcpp_default,
-                               indices_ptr, indices_ptr + num_elements,
-                               non_zero_indices_ptr, [src_iter](int64_t index) {
-                                   auto src_ptr = static_cast<const scalar_t*>(
-                                           src_iter.GetPtr(index));
-                                   return *src_ptr != 0;
-                               });
+        auto it =
+                std::copy_if(oneapi::dpl::execution::make_device_policy(queue),
+                             indices_ptr, indices_ptr + num_elements,
+                             non_zero_indices_ptr, [src_iter](int64_t index) {
+                                 auto src_ptr = static_cast<const scalar_t*>(
+                                         src_iter.GetPtr(index));
+                                 return *src_ptr != 0;
+                             });
         num_non_zeros = std::distance(non_zero_indices_ptr, it);
     });
 
@@ -54,7 +56,6 @@ Tensor NonZeroSYCL(const Tensor& src) {
     Tensor result({num_dims, static_cast<int64_t>(num_non_zeros)}, Int64,
                   device);
     int64_t* result_ptr = result.GetDataPtr<int64_t>();
-    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
 
     queue.parallel_for(num_non_zeros, [=](int64_t i) {
              auto non_zero_index = non_zero_indices_ptr[i];

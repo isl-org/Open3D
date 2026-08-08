@@ -30,7 +30,7 @@ void LeastSquaresSYCL(void* A_data,
         utility::LogError("LeastSquares is not supported on SYCL CPU.");
     }
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     int nrhs = k, lda = m, stride_a = lda * n, ldb = std::max(m, n),
         stride_b = ldb * nrhs, batch_size = 1;
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {

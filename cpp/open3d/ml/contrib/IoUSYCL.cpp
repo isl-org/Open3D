@@ -68,8 +68,7 @@ void IoUBevSYCLKernel(const core::Device &device,
                       float *iou,
                       int num_a,
                       int num_b) {
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     IoUBevSYCLKernel(queue, boxes_a, boxes_b, iou, num_a, num_b);
 }
 
@@ -79,8 +78,7 @@ void IoU3dSYCLKernel(const core::Device &device,
                      float *iou,
                      int num_a,
                      int num_b) {
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     IoU3dSYCLKernel(queue, boxes_a, boxes_b, iou, num_a, num_b);
 }
 

@@ -19,8 +19,9 @@
 //   sequence yields the unique keys plus their run lengths in one call.
 //   reduce_by_key has no non-blocking oneDPL async equivalent, so it remains
 //   a genuine synchronization point (see RunLengthEncodeSYCL).
-// - cub::DeviceRadixSort::SortPairs -> oneapi::dpl::sort_by_key. Also has no
-//   async equivalent; a genuine synchronization point.
+// - cub::DeviceRadixSort::SortPairs -> oneapi::dpl::stable_sort_by_key (must
+//   be the stable variant to match cub's stable ordering of points sharing a
+//   hash). Also has no async equivalent; a genuine synchronization point.
 // - cub::DeviceScan::InclusiveSum ->
 // oneapi::dpl::experimental::inclusive_scan_async
 //   (non-blocking; same pattern as InvertNeighborsListSYCL.h).
@@ -384,10 +385,14 @@ void VoxelizeSYCL(sycl::queue& queue,
     sycl::free(indices_batches, queue);
 
     // --- Step 2: sort points by hash (groups points into voxels) ---------
-    // sort_by_key has no async oneDPL equivalent, so this is a genuine
-    // synchronization point (blocks internally before returning).
-    oneapi::dpl::sort_by_key(dpl_policy, hashes, hashes + num_points,
-                             point_indices);
+    // stable_sort_by_key has no async oneDPL equivalent, so this is a
+    // genuine synchronization point (blocks internally before returning).
+    // Must be stable to match the CUDA path's cub::DeviceRadixSort::SortPairs
+    // (see the file header comment above), which is a stable sort: points
+    // that share a hash (i.e. land in the same voxel) must keep their
+    // original relative order.
+    oneapi::dpl::stable_sort_by_key(dpl_policy, hashes, hashes + num_points,
+                                    point_indices);
 
     // --- Step 3: run-length-encode the sorted hashes -> unique voxels ----
     int64_t* unique_hashes = sycl::malloc_device<int64_t>(num_points, queue);

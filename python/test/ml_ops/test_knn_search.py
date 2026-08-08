@@ -288,3 +288,26 @@ def test_knn_search_gpu_unsupported_options(ml, metric, ignore_query_point):
                       points,
                       queries=queries,
                       k=1)
+
+
+@pytest.mark.parametrize('ml', _torch_gpu_modules)
+def test_knn_search_gpu_row_splits_device(ml):
+    """neighbors_row_splits must be allocated on the same device as the
+    input points/queries, not silently default to the CPU device (regression
+    test for KnnSearchOps.cpp's CUDA branch and KnnSearchOpKernelSYCL.cpp,
+    which used to allocate it without specifying a device). Calls the layer
+    directly (rather than going through mltest.run_op, which converts all
+    outputs to numpy) so the returned tensors' .device can still be
+    inspected."""
+    rng = np.random.RandomState(123)
+    points = torch.from_numpy(rng.random(size=(20, 3)).astype(
+        np.float32)).to(ml.device)
+    queries = torch.from_numpy(rng.random(size=(5, 3)).astype(
+        np.float32)).to(ml.device)
+
+    layer = ml.layers.KNNSearch(return_distances=True)
+    ans = layer(points, queries, 3)
+
+    assert ans.neighbors_index.device == points.device
+    assert ans.neighbors_row_splits.device == points.device
+    assert ans.neighbors_distance.device == points.device

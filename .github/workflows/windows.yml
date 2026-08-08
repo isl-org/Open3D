@@ -81,7 +81,7 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.device == 'xpu' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
+      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
       - name: Disk space used
@@ -131,7 +131,7 @@ jobs:
             # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
             python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
           } elseif ( '${{ matrix.device }}' -eq 'xpu' ) {
-            # No PyTorch requirement for SYCL (xpu) since PyTorch ops are disabled
+            python -m pip install -r open3d_ml/requirements-torch-xpu.txt
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -399,7 +399,7 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ (matrix.device == 'cuda' || matrix.device == 'xpu') && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cuda' && 'OFF' || 'ON' }}
 
     steps:
 
@@ -477,7 +477,11 @@ jobs:
             -r python/requirements_build.txt `
             -r python/requirements_jupyter_build.txt
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
-            python -m pip install -U -r open3d_ml/requirements-torch.txt
+            if ('${{ matrix.device }}' -eq 'xpu') {
+              python -m pip install -U -r open3d_ml/requirements-torch-xpu.txt
+            } else {
+              python -m pip install -U -r open3d_ml/requirements-torch.txt
+            }
           }
 
       - name: Config
@@ -614,7 +618,7 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cpu' && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cuda' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -648,7 +652,11 @@ jobs:
           python -m pip install -U -r python/requirements_build.txt `
             -r python/requirements_test.txt
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
-            python -m pip install -U -r open3d_ml/requirements-torch.txt
+            if ('${{ matrix.device }}' -eq 'xpu') {
+              python -m pip install -U -r open3d_ml/requirements-torch-xpu.txt
+            } else {
+              python -m pip install -U -r open3d_ml/requirements-torch.txt
+            }
           }
           $PIP_PKG_NAME = (Get-ChildItem *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
           if (-not $PIP_PKG_NAME) {
@@ -673,10 +681,5 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          $pytest_args = @("python/test/")
-          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'OFF') {
-            echo "Testing ML Ops disabled"
-            $pytest_args += "--ignore=python/test/ml_ops/"
-          }
-          python -m pytest @pytest_args
+          python -m pytest python/test/
           deactivate

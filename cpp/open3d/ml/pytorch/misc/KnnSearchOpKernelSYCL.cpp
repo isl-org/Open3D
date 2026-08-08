@@ -41,11 +41,6 @@ void KnnSearchSYCL(const torch::Tensor& points,
     open3d::core::Tensor queries_row_splits_ =
             TorchToOpen3DTensor(queries_row_splits);
     open3d::core::Tensor neighbors_index_, neighbors_distance_;
-    // o3dnns::KnnSearchSYCL (like o3dnns::KnnSearchCUDA) requires
-    // neighbors_row_splits to be pre-allocated by the caller (it only fills
-    // it in), matching the pattern used by KnnIndex::SearchKnn.
-    open3d::core::Tensor neighbors_row_splits_ = open3d::core::Tensor::Empty(
-            {queries.size(0) + 1}, open3d::core::Int64);
 
     // Installs PyTorch's current XPU queue as the ambient queue for
     // points_'s device; o3dnns::KnnSearchSYCL (and everything it calls, via
@@ -54,6 +49,19 @@ void KnnSearchSYCL(const torch::Tensor& points,
     sycl::queue& torch_queue = c10::xpu::getCurrentXPUStream().queue();
     open3d::core::sy::SYCLScopedQueue scoped_queue(points_.GetDevice(),
                                                    torch_queue);
+
+    // o3dnns::KnnSearchSYCL (like o3dnns::KnnSearchCUDA) requires
+    // neighbors_row_splits to be pre-allocated by the caller (it only fills
+    // it in), matching the pattern used by KnnIndex::SearchKnn. Must be
+    // allocated after scoped_queue above installs PyTorch's queue as
+    // ambient: SYCL USM allocations are bound to the context of the queue
+    // that made them, so allocating this before scoped_queue would bind it
+    // to Open3D's own default context instead of PyTorch's, and the
+    // KnnSearchSYCL call below -- which runs on PyTorch's queue/context --
+    // would then read/write it across a context boundary (crashes on real
+    // hardware).
+    open3d::core::Tensor neighbors_row_splits_ = open3d::core::Tensor::Empty(
+            {queries.size(0) + 1}, open3d::core::Int64, points_.GetDevice());
 
     o3dnns::KnnSearchSYCL<T, TIndex>(
             points_, points_row_splits_, queries_, queries_row_splits_, int(k),

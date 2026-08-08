@@ -127,7 +127,7 @@ void BinaryEWSYCL(const Tensor& lhs,
         utility::LogError("ParallelFor for SYCL cannot run on device {}.",
                           device.ToString());
     }
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const bool contiguous_same_shape =
             lhs.IsContiguous() && rhs.IsContiguous() && dst.IsContiguous() &&

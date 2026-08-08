@@ -13,11 +13,13 @@
 //
 // Backend: CUTLASS v4.2.1 device::Gemm (v2-compatibility shim, kept in v4).
 // - OperatorClass: OpClassSimt (SIMT FP32; no Tensor Cores, no alignment req).
-// - ArchTag: Sm86 (Ampere GA10x — sm_86 — minimum). CUTLASS uses this tag for
-//   algorithm selection; the PTX target arch is set separately via -arch nvcc.
-//   Sm86 is the conservative Ampere target that covers all RTX 30xx and
-//   A-series consumer GPUs. Tile defaults for OpClassSimt are
-//   ArchTag-independent.
+// - ArchTag: Sm86. This is NOT an Ampere-specific optimization — CUTLASS's
+//   OpClassSimt tile defaults (128x128x8, 2 stages) are the same for every
+//   ArchTag, so any tag from the SIMT-supporting range would compile to
+//   identical device code. Sm86 is used purely as an arbitrary-but-safe
+//   placeholder satisfying CUTLASS's template requirement for *some* ArchTag;
+//   the actual PTX target arch is set separately via nvcc's -arch flag, which
+//   is what determines which GPUs the kernel can run on.
 // The calling .cuh files previously instantiated this Gemm type inline; this
 // shim moves it here so the call sites mirror the GemmColumnMajorSYCL pattern.
 
@@ -53,7 +55,8 @@ void GemmColumnMajorCUDA(const cudaStream_t& stream,
                          int ldc) {
     // OpClassSimt: SIMT FP32 — no alignment requirement (lda/ldb need not be
     // multiples of 4), so it works with arbitrary channel/kernel counts.
-    // Sm86 selects Ampere-era algorithm defaults (tile 128×128×8, 2 stages).
+    // Sm86 is an arbitrary-but-safe ArchTag; OpClassSimt's tile defaults
+    // (128x128x8, 2 stages) don't vary by ArchTag (see file header).
     using Gemm = cutlass::gemm::device::Gemm<
             float, LayoutA, float, LayoutB, float, cutlass::layout::ColumnMajor,
             float,  // accumulator

@@ -138,12 +138,12 @@ Usage
 ------
 
 The SYCL backend requires the new CXX11 ABI (Linux, gcc, libstdc++ only). If you
-need to use the Open3D PyTorch extension, you should use cxx11_abi wheels for
-PyTorch:
+need to use the Open3D PyTorch extension on a SYCL/XPU device, install the
+matching PyTorch XPU wheel:
 
 .. code-block:: shell
 
-    pip install torch==2.2.2+cpu.cxx11.abi -i https://download.pytorch.org/whl/cpu/
+    pip install torch==2.13+xpu -i https://download.pytorch.org/whl/xpu/
 
 PyTorch v2.7+ uses the new CXX11 ABI by default.
 

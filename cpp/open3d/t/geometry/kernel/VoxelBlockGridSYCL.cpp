@@ -206,8 +206,15 @@ void DepthTouchSYCL(std::shared_ptr<core::HashMap> &hashmap,
     bool *block_masks_ptr = block_masks.GetDataPtr<bool>();
     count[0] = 0;
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    // Hand-rolled nd_range launch, not core::ParallelFor: the kernel below
+    // uses sub-group collectives (exclusive_scan_over_group/
+    // reduce_over_group/group_broadcast), which every work-item in a
+    // sub-group must reach uniformly. core::ParallelFor's masked dispatch
+    // (`if (i < n) func(i);`) would let out-of-range tail work-items skip
+    // the call entirely, leaving those collectives called by a partial
+    // sub-group -- so `active` is computed and passed into the collectives
+    // themselves instead of guarding the call.
+    sycl::queue queue = core::sy::GetQueue(device);
     size_t wg = core::sy::PreferredWorkGroupSize(device);
     const size_t global_size =
             ((static_cast<size_t>(total_block_count) + wg - 1) / wg) * wg;

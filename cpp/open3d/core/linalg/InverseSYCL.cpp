@@ -23,7 +23,7 @@ void InverseSYCL(void* A_data,
                  Dtype dtype,
                  const Device& device) {
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     int64_t lda = n;
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         // Use blob to ensure cleanup of scratchpad memory.

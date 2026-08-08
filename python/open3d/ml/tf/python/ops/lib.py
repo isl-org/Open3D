@@ -8,8 +8,30 @@
 
 import os as _os
 import sys as _sys
+from packaging.version import parse as _verp
 import tensorflow as _tf
 from open3d import _build_config
+
+if _build_config["Tensorflow_VERSION"] and (
+        _verp(_tf.__version__).release[:2] !=
+        _verp(_build_config["Tensorflow_VERSION"]).release[:2]):
+    print("Warning: Open3D was built with TensorFlow {}, but version {} is "
+          "installed. The TensorFlow ops may fail to load or behave "
+          "incorrectly.".format(_build_config["Tensorflow_VERSION"],
+                                 _tf.__version__))
+
+# Single open3d_tf_ops.so now serves all backends (CPU/CUDA/SYCL); warn
+# (don't fail, there's no other variant to fall back to) if the installed
+# TensorFlow's CUDA runtime doesn't match what Open3D's ops were built
+# against, since loading may still succeed but behave incorrectly downstream.
+_tf_cuda_version = _tf.sysconfig.get_build_info().get("cuda_version")
+if (_build_config["BUILD_CUDA_MODULE"] and _tf_cuda_version and
+        _tf_cuda_version != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but TensorFlow was built "
+          "with CUDA {}. The TensorFlow ops may fail to load or behave "
+          "incorrectly. Consider installing a TensorFlow build with CUDA "
+          "{}.".format(_build_config["CUDA_VERSION"], _tf_cuda_version,
+                       _build_config["CUDA_VERSION"]))
 
 _lib_path = []
 # allow overriding the path to the op library with an env var.

@@ -48,6 +48,23 @@ std::tuple<torch::Tensor, torch::Tensor> roi_pool(
         torch::Tensor boxes3d,
         torch::Tensor pts_feature,
         const int64_t sampled_pts_num) {
+    // roipool3dLauncher{,CPU,SYCL} all read xyz/boxes3d/pts_feature via raw
+    // .data_ptr<float>() below, so their dtype and contiguity must be
+    // validated up front for every backend -- this function used to only be
+    // registered under BUILD_CUDA_MODULE (see git history), which made the op
+    // unreachable at all without CUDA; now that it also has CPU/SYCL paths,
+    // that guard no longer stands in for input validation. Mirrors the
+    // convention used by the sibling ops in this directory (e.g. NmsOps.cpp,
+    // KnnSearchOps.cpp).
+    CHECK_TYPE(xyz, kFloat);
+    CHECK_TYPE(boxes3d, kFloat);
+    CHECK_TYPE(pts_feature, kFloat);
+    CHECK_SAME_DEVICE_TYPE(xyz, boxes3d, pts_feature);
+
+    xyz = xyz.contiguous();
+    boxes3d = boxes3d.contiguous();
+    pts_feature = pts_feature.contiguous();
+
     int batch_size = xyz.size(0);
     int pts_num = xyz.size(1);
     int boxes_num = boxes3d.size(1);

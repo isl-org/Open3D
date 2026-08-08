@@ -57,6 +57,20 @@ jobs:
             # But we might need artifacts. For now keep simple.
           fi
 
+      - name: Run C++ unit tests (SYCL)
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            TAG=open3d-ci:sycl-shared
+          else
+            TAG=open3d-ci:sycl-static
+          fi
+          # GH Actions runners have no SYCL GPU. CI=true makes
+          # IsCIEnvironment()/GetSYCLDevicesForTesting()
+          # (cpp/tests/core/CoreTest.cpp) fall back to testing only the
+          # SYCL-CPU device; oneMKL-on-GPU-only tests self-skip via their own
+          # GTEST_SKIP() guards (e.g. Linalg.cpp's LeastSquares test).
+          docker run --rm -e CI=true "$TAG" ./build/bin/tests --gtest_shuffle
+
       - name: Upload Lib Image
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
@@ -121,6 +135,7 @@ jobs:
             python_version: '3.12'
     env:
       PYTHON_VERSION: ${{ matrix.python_version }}
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/open3d_ml
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -141,9 +156,48 @@ jobs:
       - name: Docker build
         run: |
           export BASE_IMAGE=open3d-lib-sycl-shared:latest
-          
+
           # We execute docker buildscript with python version argument.
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          # TODO(ss/sycl-mlops): switch back to main once
+          # requirements-torch-xpu.txt on ss/xpu is merged upstream.
+          ref: ss/xpu
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Install runtime dependencies
+        # Open3D links against EGL for GPU-accelerated offscreen rendering
+        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
+        # This bare runner (unlike the docker_build.sh image) does not have
+        # it installed by default.
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Test Python package
+        run: |
+          python -V
+          source util/ci_utils.sh
+          test_wheel open3d*.whl
+
+      - name: Run Python unit tests
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests..."
+          # No SYCL GPU on this runner: CI=true (set automatically by GitHub
+          # Actions) makes list_devices()/list_devices_with_torch()
+          # (python/test/open3d_test.py) fall back to the SYCL-CPU device.
+          # ml_ops tests additionally require torch.xpu.is_available(), so
+          # they self-skip here regardless (see mltest.py) and only produce
+          # real coverage on an xpu-equipped runner, with no workflow changes.
+          run_python_tests
 
       - name: Generate artifact attestation
         if: ${{ github.ref == 'refs/heads/main' }}

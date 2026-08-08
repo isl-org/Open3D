@@ -211,18 +211,6 @@ public:
     /// No-op; use \ref HashMap::Reserve for capacity growth.
     void Reserve(int64_t capacity) override {}
 
-    // Insert/Find/Erase stay void (not sycl::event) because they override
-    // DeviceHashBackend's pure-virtual signature, shared verbatim with the
-    // CPU (TBB) and CUDA backends -- changing it would break that common
-    // interface for no gain, since HashMap's own callers (Insert/Find/Erase
-    // in HashMap.cpp) always need the result synchronously anyway (output
-    // buffers are read back into Tensors immediately). Each of the 3 kernels
-    // below still ends in one wait_and_throw(), which is genuinely required:
-    // Insert's DeviceFree() leak-recovery path and the atomic counters it
-    // updates are read by Size()/GetNonEmptyCount() right after by callers
-    // that assume Insert() has fully completed. What WAS removed is the one
-    // avoidable *intermediate* host wait inside Insert (the heap_top_
-    // memcpy), now chained as a device-side kernel dependency instead.
     void Insert(const void* input_keys,
                 const std::vector<const void*>& input_values_soa,
                 buf_index_t* output_buf_indices,
@@ -373,15 +361,8 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     // buf_indices ending up marked valid).
     const int prev_heap_top = this->buffer_->GetHeapTopIndex();
     const int new_heap_top = prev_heap_top + static_cast<int>(count);
-    // Item 7: HashMap::Insert/Activate (HashMap.cpp:151-181) always Reserve()
-    // first, so prev_heap_top + count > capacity_ here is a programming
-    // error, not a runtime condition -- catch it loudly instead of silently
-    // dropping the over-capacity keys. Without this check, dropped keys are
-    // undetectable: mask=false is indistinguishable from "duplicate key",
-    // and output_buf_indices=0 is itself a *valid* buf_index. LogError
-    // throws, so no clamp is needed below. CUDA's SlabHashBackend.h:233 has
-    // the same unclamped `prev_heap_top + count`; left as a follow-up issue
-    // there, not fixed here (out of scope for this PR).
+    // TODO: CUDA's SlabHashBackend.h:233 has the same unclamped `prev_heap_top
+    // + count`; 
     if (new_heap_top > static_cast<int>(this->capacity_)) {
         utility::LogError(
                 "SYCL hashmap Insert: prev_heap_top ({}) + count ({}) = {} "
@@ -389,8 +370,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                 "call before Insert/Activate.",
                 prev_heap_top, count, new_heap_top, this->capacity_);
     }
-    // Chain as a kernel dependency instead of a host wait() here: the
-    // insert_kernel below (via its DeviceFree() leak-recovery path) does an
+    // The insert_kernel below (via its DeviceFree() leak-recovery path) does an
     // atomic fetch_sub on *heap_top_, so it must not run until this memcpy
     // lands, but nothing needs the new value host-side, so a device-side
     // dependency is sufficient and avoids a host round trip.
@@ -744,7 +724,11 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 
     int* d_count = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
-    queue_.memset(d_count, 0, sizeof(int)).wait_and_throw();
+    // scan_kernel below touches d_count via raw USM, so on an out-of-order
+    // queue the SYCL runtime cannot infer the ordering on its own -- an
+    // explicit depends_on() is required for correctness, but nothing needs the
+    // zeroed value host-side, so a device-side dependency suffices.
+    sycl::event memset_event = queue_.memset(d_count, 0, sizeof(int));
 
     const int64_t kWgSize = wg_size_;
 
@@ -785,6 +769,7 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 
     int64_t global_size = ((bucket_count + kWgSize - 1) / kWgSize) * kWgSize;
     queue_.submit([&](sycl::handler& cgh) {
+              cgh.depends_on(memset_event);
               cgh.parallel_for(sycl::nd_range<1>(global_size, kWgSize),
                                scan_kernel);
           }).wait_and_throw();
@@ -798,14 +783,17 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 template <typename Key, typename Hash, typename Eq>
 void SYCLHashBackend<Key, Hash, Eq>::Clear() {
     this->buffer_->ResetHeap();
-    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t))
-            .wait_and_throw();
+    // These three memsets touch disjoint USM allocations, so their relative
+    // order doesn't matter for correctness; queue::wait() blocks on *all*
+    // command groups previously submitted to the queue.
+    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t));
     if (occupied_count_) {
-        queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
+        queue_.memset(occupied_count_, 0, sizeof(int));
     }
     if (non_empty_count_) {
-        queue_.memset(non_empty_count_, 0, sizeof(int)).wait_and_throw();
+        queue_.memset(non_empty_count_, 0, sizeof(int));
     }
+    queue_.wait_and_throw();
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -821,15 +809,17 @@ void SYCLHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
 
     slot_data_ = static_cast<uint64_t*>(MemoryManager::Malloc(
             bucket_count_ * sizeof(uint64_t), this->device_));
-    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t))
-            .wait_and_throw();
+    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t));
 
     occupied_count_ = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
-    queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
+    queue_.memset(occupied_count_, 0, sizeof(int));
 
     non_empty_count_ = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
+    // As in Clear() above: these three memsets are on disjoint USM
+    // allocations, so there is a single wait at the end (blocking on all
+    // command groups previously submitted to the queue).
     queue_.memset(non_empty_count_, 0, sizeof(int)).wait_and_throw();
 }
 
