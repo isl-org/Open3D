@@ -73,6 +73,18 @@ jobs:
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
 
+      - name: Docker test (C++)
+        # Only the C++ phase runs here; Python tests run later in the
+        # build-wheel job against the actual per-Python-version wheel
+        # (see docker/docker_test.sh's cpp_test()/python_test() split),
+        # so we avoid testing Python twice.
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            docker/docker_test.sh sycl-shared cpp
+          else
+            docker/docker_test.sh sycl-static cpp
+          fi
+
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
         env:
@@ -95,7 +107,7 @@ jobs:
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.xz gs://open3d-ci-cache/ || true
 
   build-wheel:
     name: Build Wheel
@@ -109,7 +121,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -119,8 +131,11 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       PYTHON_VERSION: ${{ matrix.python_version }}
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/open3d_ml
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -158,6 +173,37 @@ jobs:
           name: open3d-sycl-wheel-py${{ matrix.python_version }}
           path: open3d*.whl
           if-no-files-found: error
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          ref: main
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Install runtime dependencies
+        # Open3D links against EGL for GPU-accelerated offscreen rendering
+        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
+        # This bare runner (unlike the docker_build.sh image) does not have
+        # it installed by default.
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Test Python package
+        run: |
+          python -V
+          source util/ci_utils.sh
+          test_wheel open3d*.whl
+
+      - name: Run Python unit tests
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests..."
+          run_python_tests
 
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}

@@ -46,8 +46,10 @@ OPTION:
     cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
 
     # Sycl CPU CI (Dockerfile.ci)
-    sycl-shared                : SYCL (oneAPI) with shared lib
-    sycl-static                : SYCL (oneAPI) with static lib
+    sycl-shared [cpp|python]   : SYCL (oneAPI) with shared lib. Optional 2nd
+                                 arg runs only the C++ or Python tests
+                                 (default: full test suite).
+    sycl-static [cpp|python]   : SYCL (oneAPI) with static lib. See above.
 
     # ML CIs (Dockerfile.ci)
     2-noble                   : CUDA CI, 2-noble, developer mode
@@ -97,49 +99,61 @@ restart_docker_daemon_if_on_gcloud() {
     fi
 }
 
-cpp_python_linking_uninstall_test() {
+docker_run_setup() {
+    # Sets shared variables used by cpp_test(), python_test(),
+    # linking_test() and uninstall_test():
+    # - docker_run : "docker run" command prefix with config-dependent flags
+    # - pytest_args: pytest arguments, e.g. to skip ML ops tests
     # Expects the following environment variables to be set:
-    # - DOCKER_TAG
-    # - BUILD_SHARED_LIBS
     # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
-    # - BUILD_SYCL_MODULE
     # - NPROC (optional)
-    echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
-    echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
+    echo "[docker_run_setup()] NPROC=${NPROC:=$(nproc)}"
 
-    # Config-dependent argument: gpu_run_args
     docker_run="docker run --cpus ${NPROC}"
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
         docker_run="${docker_run} --gpus all"
     fi
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        docker_run="${docker_run} --device=/dev/dri"
+        # Only request the DRI render node if present. GCE VMs used for
+        # Intel GPU CI have one, but GitHub-hosted runners are CPU-only and
+        # have no /dev/dri; the SYCL runtime falls back to the CPU device
+        # automatically in that case (see PrintSYCLDevices() in
+        # cpp/open3d/core/SYCLUtils.cpp).
+        if [ -e /dev/dri ]; then
+            docker_run="${docker_run} --device=/dev/dri"
+        fi
         if [ -n "${CI:-}" ]; then
             docker_run="${docker_run} --env CI=${CI}"
         fi
     fi
 
-    # Config-dependent argument: pytest_args
     if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
         pytest_args="--ignore python/test/ml_ops/"
     else
         pytest_args=""
     fi
+}
+
+cpp_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[cpp_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
     restart_docker_daemon_if_on_gcloud
 
-    # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
         # SYCL CPU tests can time out due to kernel compilation time;
         # shard across NPROC processes with GNU parallel to speed this up.
-        echo "[cpp_python_linking_uninstall_test()] Running sharded gtests with GNU parallel."
+        echo "[cpp_test()] Running sharded gtests with GNU parallel."
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
             cd build \
          && seq 0 $((${NPROC} - 1)) | parallel -k --jobs ${NPROC} --halt soon,fail=1 \
@@ -152,12 +166,38 @@ cpp_python_linking_uninstall_test() {
         "
     fi
     restart_docker_daemon_if_on_gcloud
+}
 
-    # Python test
+python_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[python_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
+    restart_docker_daemon_if_on_gcloud
+
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
         python  -W default -m pytest python/test ${pytest_args} -s"
     restart_docker_daemon_if_on_gcloud
+}
+
+linking_test() {
+    # Command-line tools test and C++ linking (cmake/pkg-config) test.
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_SHARED_LIBS
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[linking_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
 
     # Command-line tools test
     echo "testing Open3D command-line tools"
@@ -207,15 +247,42 @@ cpp_python_linking_uninstall_test() {
         "
     fi
     restart_docker_daemon_if_on_gcloud
+}
 
-    # Uninstall
+uninstall_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         cd build \
      && make uninstall \
     "
 }
 
-if [[ "$#" -ne 1 ]]; then
+cpp_python_linking_uninstall_test() {
+    # Runs the full test suite: C++ unit tests, Python unit tests,
+    # command-line tools + C++ linking tests, and the uninstall test.
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_SHARED_LIBS
+    # - BUILD_CUDA_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - BUILD_SYCL_MODULE
+    # - NPROC (optional)
+    cpp_test
+    python_test
+    linking_test
+    uninstall_test
+}
+
+if [[ "$#" -lt 1 ]]; then
     echo "Error: invalid number of arguments." >&2
     print_usage_and_exit_docker_test
 fi
@@ -349,15 +416,35 @@ cpu-shared-ml-release)
     ;;
 
 # SYCL CI
+# Optional 2nd arg selects a single test phase (cpp|python); this is used
+# to split C++ tests (build-lib job) from Python tests (build-wheel job,
+# which builds/tests the actual per-Python-version wheel separately) in
+# .github/workflows/ubuntu-sycl.yml, avoiding duplicate test runs.
 sycl-shared)
     sycl-shared_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    case "${2:-all}" in
+        cpp) cpp_test ;;
+        python) python_test ;;
+        all) cpp_python_linking_uninstall_test ;;
+        *)
+            echo "Error: invalid test phase: ${2}." >&2
+            print_usage_and_exit_docker_test
+            ;;
+    esac
     ;;
 sycl-static)
     sycl-static_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    case "${2:-all}" in
+        cpp) cpp_test ;;
+        python) python_test ;;
+        all) cpp_python_linking_uninstall_test ;;
+        *)
+            echo "Error: invalid test phase: ${2}." >&2
+            print_usage_and_exit_docker_test
+            ;;
+    esac
     ;;
 
     # ML CIs
