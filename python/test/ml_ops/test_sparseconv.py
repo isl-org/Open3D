@@ -301,13 +301,15 @@ def test_sparseconv_allow_tf32(ml):
     inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
                                      (in_channels,)).astype(dtype)
 
+    conv = ml.layers.SparseConv(in_channels=in_channels,
+                                filters=out_channels,
+                                kernel_size=kernel_size,
+                                normalize=False,
+                                allow_tf32=False)
+    conv.to(ml.device)
+
     def run(allow_tf32):
-        conv = ml.layers.SparseConv(in_channels=in_channels,
-                                    filters=out_channels,
-                                    kernel_size=kernel_size,
-                                    normalize=False,
-                                    allow_tf32=allow_tf32)
-        conv.to(ml.device)
+        conv.allow_tf32 = allow_tf32
         return mltest.run_op(ml,
                              ml.device,
                              True,

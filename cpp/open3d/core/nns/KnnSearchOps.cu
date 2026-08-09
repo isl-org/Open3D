@@ -747,11 +747,17 @@ void KnnSearchCUDA(const Tensor& points,
     last_neighbors_count = 0;
     for (int i = 0; i < batch_size; ++i) {
         auto& a = batch_output_allocators[i];
+        int64_t offset = points_row_splits[i].Item<int64_t>();
         int64_t num_neighbors_i = a.NeighborsIndex().GetShape(0);
         if (num_neighbors_i) {
+            // a.NeighborsIndex() is local to points_i (the per-batch slice);
+            // offset it back to a global index into the full `points` tensor
+            // before copying into the combined output.
+            Tensor neighbors_index_i_global = a.NeighborsIndex().Add(offset);
             MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
-                                  device, a.IndicesPtr(), device,
-                                  sizeof(TIndex) * num_neighbors_i);
+                                  device,
+                                  neighbors_index_i_global.GetDataPtr<TIndex>(),
+                                  device, sizeof(TIndex) * num_neighbors_i);
             MemoryManager::Memcpy(neighbors_distance_ptr + last_neighbors_count,
                                   device, a.DistancesPtr(), device,
                                   sizeof(T) * num_neighbors_i);
