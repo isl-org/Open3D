@@ -304,6 +304,15 @@ PointCloud PointCloud::To(const core::Device& device, bool copy) const {
 PointCloud PointCloud::Clone() const { return To(GetDevice(), /*copy=*/true); }
 
 PointCloud PointCloud::Append(const PointCloud& other) const {
+    // A PointCloud with no declared attributes has no dtype or shape to
+    // validate. Treat it as the identity and adopt the populated schema.
+    if (point_attr_.empty()) {
+        return other.point_attr_.empty() ? Clone() : other.Clone();
+    }
+    if (other.point_attr_.empty()) {
+        return Clone();
+    }
+
     PointCloud pcd(GetDevice());
 
     int64_t length = GetPointPositions().GetLength();

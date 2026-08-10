@@ -245,6 +245,11 @@ public:
 
     /// Append a point cloud and returns the resulting point cloud.
     ///
+    /// A point cloud with no declared attributes acts as the identity on either
+    /// side. If exactly one operand has attributes, the result adopts that
+    /// operand's attributes, dtype and device. If both are empty, the result
+    /// retains this point cloud's device.
+    ///
     /// The point cloud being appended, must have all the attributes
     /// present in the point cloud it is being appended to, with same
     /// dtype, device and same shape other than the first dimension / length.
