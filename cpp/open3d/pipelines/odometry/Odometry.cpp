@@ -60,12 +60,13 @@ struct CorrespondenceReduction {
     void InitializeCorrespondenceMap() {
         const int width = depth_t.width_;
         const int height = depth_t.height_;
-        correspondence_map.Prepare(depth_t.width_, depth_t.height_, 2, 4);
-        depth_buffer.Prepare(depth_t.width_, depth_t.height_, 1, 4);
+        correspondence_map.Prepare(width, height, 2, 4);
+        depth_buffer.Prepare(width, height, 1, 4);
+        // One-past-the-end pointer for the whole buffer is (0, height, 0),
         std::fill(correspondence_map.PointerAt<int>(0, 0, 0),
-                  correspondence_map.PointerAt<int>(width, height, 1), -1);
+                  correspondence_map.PointerAt<int>(0, height, 0), -1);
         std::fill(depth_buffer.PointerAt<float>(0, 0, 0),
-                  depth_buffer.PointerAt<float>(width, height, 0), -1.0f);
+                  depth_buffer.PointerAt<float>(0, height, 0), -1.0f);
     }
 
     void inline AddElementToCorrespondenceMap(

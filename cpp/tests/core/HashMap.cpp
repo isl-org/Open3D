@@ -255,16 +255,10 @@ TEST_P(HashMapPermuteDevices, Erase) {
     }
 }
 
-// Regression test for a buffer-slot leak in SYCLHashBackend::Insert: when a
-// thread's CAS for an EMPTY/DELETED slot loses to a concurrent insert of the
-// *same* key, it must free the buffer slot it had already reserved and
-// published before restarting the probe (and likewise if kMaxOuterIter is
-// exhausted while a slot is published-but-unowned). Heavy key duplication
-// with a single Insert call reliably drives many concurrent same-key races.
-// With zero capacity slack (init_capacity == number of unique keys), even
-// one leaked slot means one fewer heap slot is available for the last
-// unique key's bulk-reserved index, so the test would report a smaller
-// Size() / fewer successful masks than expected if the leak is present.
+// Regression test for duplicate-key CAS losers in SYCLHashBackend::Insert.
+// The duplicate-heavy first batch drives concurrent same-key races; the
+// second batch fills the capacity selected for the first batch without a
+// reserve, proving that every losing reservation was returned exactly once.
 TEST_P(HashMapPermuteDevices, InsertNoCapacitySlack) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
@@ -279,8 +273,6 @@ TEST_P(HashMapPermuteDevices, InsertNoCapacitySlack) {
 
     const int n = 20000;
     const int slots = 2;
-    // No headroom: the buffer heap has exactly as many slots as there are
-    // unique keys, so any leaked slot is directly observable.
     const int init_capacity = slots;
 
     HashData<int, int> data(n, slots);
@@ -295,6 +287,20 @@ TEST_P(HashMapPermuteDevices, InsertNoCapacitySlack) {
         hashmap.Insert(keys, values, buf_indices, masks);
         EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), slots);
         EXPECT_EQ(hashmap.Size(), slots);
+
+        std::vector<int> unique_keys(n - slots);
+        std::vector<int> unique_values(n - slots);
+        for (int i = 0; i < n - slots; ++i) {
+            unique_keys[i] = (i + slots) * data.k_factor_;
+            unique_values[i] = i + slots;
+        }
+        core::Tensor remaining_keys(unique_keys, {n - slots}, core::Int32,
+                                    device);
+        core::Tensor remaining_values(unique_values, {n - slots}, core::Int32,
+                                      device);
+        hashmap.Insert(remaining_keys, remaining_values, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), n - slots);
+        EXPECT_EQ(hashmap.Size(), n);
     }
 }
 
