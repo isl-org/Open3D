@@ -110,6 +110,38 @@ def test_member_functions(device):
         pcd3 = pcd2 + pcd
         assert 'The pointcloud is missing attribute' in str(excinfo.value)
 
+    # A point cloud without declared attributes is the identity for append.
+    # Leave the schema-less operand on the default CPU device. Accelerator
+    # parametrizations verify that append adopts the populated side's device.
+    empty = o3d.t.geometry.PointCloud()
+    left_identity = empty.append(pcd2)
+    assert left_identity.point.positions.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+    assert left_identity.point.normals.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+    assert left_identity.point.labels.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+    assert left_identity.point.positions.dtype == dtype
+    assert left_identity.device == device
+
+    right_identity = pcd.append(empty)
+    assert right_identity.point.positions.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+    assert right_identity.point.normals.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+    assert right_identity.point.positions.dtype == dtype
+    assert right_identity.device == device
+
+    empty_on_device = o3d.t.geometry.PointCloud(device)
+    empty_result = empty_on_device.append(empty)
+    assert "positions" not in empty_result.point
+    assert empty_result.device == device
+
+    # The result must not alias the populated operand's tensors.
+    pcd2.point.positions[:] = 2
+    assert left_identity.point.positions.allclose(
+        o3c.Tensor.ones((2, 3), dtype, device))
+
     # transform.
     pcd = o3d.t.geometry.PointCloud(device)
     transform_t = o3c.Tensor(

@@ -188,10 +188,22 @@ void pybind_pointcloud_definitions(py::module& m) {
     pointcloud.def("get_center", &PointCloud::GetCenter,
                    "Returns the center for point coordinates.");
 
-    pointcloud.def("append",
-                   [](const PointCloud& self, const PointCloud& other) {
-                       return self.Append(other);
-                   });
+    pointcloud.def(
+            "append",
+            [](const PointCloud& self, const PointCloud& other) {
+                return self.Append(other);
+            },
+            R"(Append another point cloud and return the result.
+
+A point cloud with no declared attributes acts as the identity on either side,
+which allows incremental accumulation to start from an empty point cloud. If
+both point clouds have no attributes, the result keeps the first point cloud's
+device.
+
+Example:
+    accumulated = o3d.t.geometry.PointCloud()
+    accumulated = accumulated.append(frame))",
+            "other"_a);
     pointcloud.def("__add__",
                    [](const PointCloud& self, const PointCloud& other) {
                        return self.Append(other);

@@ -949,6 +949,37 @@ TEST_P(PointCloudPermuteDevices, Append) {
     // pcd2 has an extra attribute "labels" which is missing in pcd, therefore
     // adding pcd to pcd2 will throw an error for missing attribute "labels"
     EXPECT_ANY_THROW(pcd2 + pcd);
+
+    // A point cloud without any declared attributes acts as the identity. The
+    // populated side's full schema is preserved in either operand order.
+    // Keep the schema-less operand on its default CPU device. Accelerator
+    // parametrizations verify that identity append adopts the populated side.
+    t::geometry::PointCloud empty;
+    t::geometry::PointCloud left_identity = empty + pcd2;
+    EXPECT_TRUE(left_identity.GetPointPositions().AllClose(points));
+    EXPECT_TRUE(left_identity.GetPointColors().AllClose(colors));
+    EXPECT_TRUE(left_identity.GetPointAttr("labels").AllClose(labels));
+    EXPECT_EQ(left_identity.GetPointPositions().GetDtype(), dtype);
+    EXPECT_EQ(left_identity.GetDevice(), device);
+    EXPECT_FALSE(
+            left_identity.GetPointPositions().IsSame(pcd2.GetPointPositions()));
+
+    t::geometry::PointCloud right_identity = pcd + empty;
+    EXPECT_TRUE(right_identity.GetPointPositions().AllClose(points));
+    EXPECT_TRUE(right_identity.GetPointColors().AllClose(colors));
+    EXPECT_EQ(right_identity.GetPointPositions().GetDtype(), dtype);
+    EXPECT_EQ(right_identity.GetDevice(), device);
+    EXPECT_FALSE(
+            right_identity.GetPointPositions().IsSame(pcd.GetPointPositions()));
+
+    t::geometry::PointCloud empty_on_device(device);
+    t::geometry::PointCloud empty_result = empty_on_device + empty;
+    EXPECT_TRUE(empty_result.IsEmpty());
+    EXPECT_EQ(empty_result.GetDevice(), device);
+
+    // Appending clones the populated operand instead of aliasing its tensors.
+    pcd2.GetPointPositions().Fill(2);
+    EXPECT_TRUE(left_identity.GetPointPositions().AllClose(points));
 }
 
 TEST_P(PointCloudPermuteDevices, Has) {

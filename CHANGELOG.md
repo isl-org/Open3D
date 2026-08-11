@@ -1,4 +1,5 @@
 ## Main
+-   Fix appending tensor point clouds when either operand has no declared attributes (issue #7091).
 -   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
 -   Add vcpkg support for easier dependency management (PR #7386)
 -   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
