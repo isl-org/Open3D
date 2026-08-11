@@ -1,3 +1,17 @@
+if(USE_SYSTEM_ZSTD)
+    find_package(zstd CONFIG REQUIRED)
+    get_target_property(_zstd_loc zstd::libzstd IMPORTED_LOCATION)
+    if(NOT _zstd_loc)
+        get_target_property(_zstd_loc zstd::libzstd IMPORTED_LOCATION_RELEASE)
+    endif()
+    get_filename_component(ZSTD_LIB_DIR "${_zstd_loc}" DIRECTORY)
+    get_target_property(ZSTD_LIBRARIES zstd::libzstd OUTPUT_NAME)
+    if(NOT ZSTD_LIBRARIES)
+        get_filename_component(ZSTD_LIBRARIES "${_zstd_loc}" NAME_WE)
+        string(REGEX REPLACE "^lib" "" ZSTD_LIBRARIES "${ZSTD_LIBRARIES}")
+    endif()
+    unset(_zstd_loc)
+else()
 include(ExternalProject)
 
 if(MSVC OR (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
@@ -36,3 +50,4 @@ set(ZSTD_LIBRARIES ${zstd_lib_name})
 set(ZSTD_INSTALL_DIR ${INSTALL_DIR})
 # zstd installs its own CMake package config exporting zstd::libzstd_static.
 set(ZSTD_CONFIG_DIR ${ZSTD_LIB_DIR}/cmake/zstd)
+endif()
