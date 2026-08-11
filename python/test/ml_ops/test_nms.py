@@ -81,8 +81,9 @@ def test_nms_multiblock(ml):
     keep_per_cluster = [
         np.where(cluster_of == c)[0][-1] for c in range(num_clusters)
     ]
-    keep_indices_ref = np.array(
-        sorted(keep_per_cluster, key=lambda i: -scores[i]), dtype=np.int64)
+    keep_indices_ref = np.array(sorted(keep_per_cluster,
+                                       key=lambda i: -scores[i]),
+                                dtype=np.int64)
 
     keep_indices = mltest.run_op(ml,
                                  ml.device,

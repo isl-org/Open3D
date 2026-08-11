@@ -574,8 +574,9 @@ typedef struct DLPackExchangeAPIHeader {
  * \code
  *
  * PyObject *api_obj = type(tensor_obj).__dlpack_c_exchange_api__;  // as C-code
- * MyDLPackExchangeAPI *api = PyCapsule_GetPointer(api_obj, "dlpack_exchange_api");
- * if (api == NULL && PyErr_Occurred()) { goto handle_error; }
+ * MyDLPackExchangeAPI *api = PyCapsule_GetPointer(api_obj,
+ * "dlpack_exchange_api"); if (api == NULL && PyErr_Occurred()) { goto
+ * handle_error; }
  *
  * \endcode
  *

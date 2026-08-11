@@ -188,8 +188,8 @@ def test_cconv_allow_tf32(ml):
 
     fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
     neighbors_index, neighbors_row_splits, _ = mltest.run_op(
-        ml, ml.device, False, fixed_radius_search, inp_positions,
-        out_positions, extent[0, 0] / 2)
+        ml, ml.device, False, fixed_radius_search, inp_positions, out_positions,
+        extent[0, 0] / 2)
     neighbors_importance = np.empty((0,), dtype=dtype)
 
     def run(allow_tf32):

@@ -309,11 +309,12 @@ void KnnSearchSYCL(const Tensor& points,
     Tensor points_c, queries_c;
     bool centered = false;
 
-    // @AGENT: Why do we need to go through the host? Isn't this supposed to be always on the gpu?
-    // neighbors_row_splits may be device-only USM memory (e.g. when the
-    // caller allocated it on a GPU device), so it cannot be dereferenced
-    // directly from the host. Accumulate values in a host-side buffer and
-    // copy the whole thing to neighbors_row_splits in one shot below.
+    // @AGENT: Why do we need to go through the host? Isn't this supposed to be
+    // always on the gpu? neighbors_row_splits may be device-only USM memory
+    // (e.g. when the caller allocated it on a GPU device), so it cannot be
+    // dereferenced directly from the host. Accumulate values in a host-side
+    // buffer and copy the whole thing to neighbors_row_splits in one shot
+    // below.
     std::vector<int64_t> row_splits_host(neighbors_row_splits.GetShape(0));
     int64_t last_neighbors_count = 0;
     int64_t batch_knn = 0;

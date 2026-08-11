@@ -41,8 +41,8 @@ def _trilinear_devoxelize_ref(coords, feat, r):
             for dz in (0, 1):
                 wz = zd if dz else (1 - zd)
                 w = (wx * wy * wz).astype(np.float32)  # [b, n]
-                gathered = feat[np.arange(b)[:, None], :, x_lo + dx,
-                                y_lo + dy, z_lo + dz]  # [b, n, c]
+                gathered = feat[np.arange(b)[:, None], :, x_lo + dx, y_lo + dy,
+                                z_lo + dz]  # [b, n, c]
                 outs += w[:, None, :] * np.transpose(gathered, (0, 2, 1))
     return outs
 
@@ -73,7 +73,9 @@ def test_trilinear_devoxelize_forward(ml, is_training):
         assert wgts.shape == (1,)
 
     expected = _trilinear_devoxelize_ref(coords, features, r)
-    np.testing.assert_allclose(mltest.to_numpy(outs), expected, rtol=1e-5,
+    np.testing.assert_allclose(mltest.to_numpy(outs),
+                               expected,
+                               rtol=1e-5,
                                atol=1e-5)
 
 
@@ -107,7 +109,9 @@ def test_trilinear_devoxelize_backward(ml):
     for bi in range(b):
         for k in range(8):
             np.add.at(expected[bi], (slice(None), inds_np[bi, k]),
-                     wgts_np[bi, k][None, :] * grad_y[bi])
+                      wgts_np[bi, k][None, :] * grad_y[bi])
 
-    np.testing.assert_allclose(mltest.to_numpy(grad_x), expected, rtol=1e-4,
+    np.testing.assert_allclose(mltest.to_numpy(grad_x),
+                               expected,
+                               rtol=1e-4,
                                atol=1e-4)

@@ -14,13 +14,15 @@
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 
+#ifdef BUILD_CUDA_MODULE
+#include <cuda_runtime.h>
+#endif
+
 namespace open3d {
 namespace core {
 namespace nns {
 
 #ifdef BUILD_CUDA_MODULE
-#include <cuda_runtime.h>
-
 /// \param user_stream  Optional externally-supplied CUDA stream (e.g.
 ///   PyTorch's current stream). If non-null, KnnSearchCUDA installs it as
 ///   the ambient stream for the whole call and bridges it to the ephemeral

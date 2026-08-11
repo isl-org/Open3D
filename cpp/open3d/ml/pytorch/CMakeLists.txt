@@ -195,6 +195,10 @@ endif()
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 open3d_set_global_properties(open3d_torch_ops)
 
+# PyTorch 2.13+ requires C++20
+set_property(TARGET open3d_torch_ops PROPERTY CXX_STANDARD 20)
+set_property(TARGET open3d_torch_ops PROPERTY CXX_STANDARD_REQUIRED ON)
+
 if (MSVC)
     # PyTorch's bundled fmt (v11+) requires /utf-8 for Unicode support on MSVC.
     target_compile_options(open3d_torch_ops PRIVATE /utf-8)

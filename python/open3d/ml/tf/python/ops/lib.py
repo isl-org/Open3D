@@ -12,13 +12,13 @@ from packaging.version import parse as _verp
 import tensorflow as _tf
 from open3d import _build_config
 
-if _build_config["Tensorflow_VERSION"] and (
-        _verp(_tf.__version__).release[:2] !=
-        _verp(_build_config["Tensorflow_VERSION"]).release[:2]):
+if _build_config["Tensorflow_VERSION"] and (_verp(
+        _tf.__version__).release[:2] != _verp(
+            _build_config["Tensorflow_VERSION"]).release[:2]):
     print("Warning: Open3D was built with TensorFlow {}, but version {} is "
           "installed. The TensorFlow ops may fail to load or behave "
           "incorrectly.".format(_build_config["Tensorflow_VERSION"],
-                                 _tf.__version__))
+                                _tf.__version__))
 
 # Single open3d_tf_ops.so now serves all backends (CPU/CUDA/SYCL); warn
 # (don't fail, there's no other variant to fall back to) if the installed

@@ -26,8 +26,8 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 # ml modules/combinations remain CPU-only, so GPU ml modules are only
 # included here; unsupported combinations are skipped inside the test.
 _gpu_l2_ml_modules = [
-        v for v in mltest._ml_modules.values()
-        if not v.device_is_gpu or v.module.__name__ == 'torch'
+    v for v in mltest._ml_modules.values()
+    if not v.device_is_gpu or v.module.__name__ == 'torch'
 ]
 ml_gpu_l2 = pytest.mark.parametrize('ml', _gpu_l2_ml_modules)
 
@@ -261,8 +261,8 @@ def test_knn_search_batches(ml, batch_size):
 # other combinations should raise instead of silently computing a wrong
 # result. Only PyTorch has a GPU KnnSearch implementation.
 _torch_gpu_modules = [
-        v for v in mltest._ml_modules.values()
-        if v.device_is_gpu and v.module.__name__ == 'torch'
+    v for v in mltest._ml_modules.values()
+    if v.device_is_gpu and v.module.__name__ == 'torch'
 ]
 
 
@@ -276,18 +276,12 @@ def test_knn_search_gpu_unsupported_options(ml, metric, ignore_query_point):
     rng = np.random.RandomState(123)
     points = rng.random(size=(10, 3)).astype(np.float32)
     queries = points if ignore_query_point else rng.random(
-            size=(5, 3)).astype(np.float32)
+        size=(5, 3)).astype(np.float32)
 
     layer = ml.layers.KNNSearch(metric=metric,
                                 ignore_query_point=ignore_query_point)
     with pytest.raises(Exception):
-        mltest.run_op(ml,
-                      ml.device,
-                      True,
-                      layer,
-                      points,
-                      queries=queries,
-                      k=1)
+        mltest.run_op(ml, ml.device, True, layer, points, queries=queries, k=1)
 
 
 @pytest.mark.parametrize('ml', _torch_gpu_modules)
@@ -300,10 +294,10 @@ def test_knn_search_gpu_row_splits_device(ml):
     outputs to numpy) so the returned tensors' .device can still be
     inspected."""
     rng = np.random.RandomState(123)
-    points = torch.from_numpy(rng.random(size=(20, 3)).astype(
-        np.float32)).to(ml.device)
-    queries = torch.from_numpy(rng.random(size=(5, 3)).astype(
-        np.float32)).to(ml.device)
+    points = torch.from_numpy(rng.random(size=(20, 3)).astype(np.float32)).to(
+        ml.device)
+    queries = torch.from_numpy(rng.random(size=(5, 3)).astype(np.float32)).to(
+        ml.device)
 
     layer = ml.layers.KNNSearch(return_distances=True)
     ans = layer(points, queries, 3)

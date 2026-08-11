@@ -362,7 +362,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
     const int prev_heap_top = this->buffer_->GetHeapTopIndex();
     const int new_heap_top = prev_heap_top + static_cast<int>(count);
     // TODO: CUDA's SlabHashBackend.h:233 has the same unclamped `prev_heap_top
-    // + count`; 
+    // + count`;
     if (new_heap_top > static_cast<int>(this->capacity_)) {
         utility::LogError(
                 "SYCL hashmap Insert: prev_heap_top ({}) + count ({}) = {} "

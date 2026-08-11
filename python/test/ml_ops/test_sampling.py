@@ -11,7 +11,12 @@ import pytest
 import mltest
 
 # Skip all tests if the ml ops were not built.
-pytestmark = mltest.default_marks
+pytestmark = mltest.default_marks + [
+    pytest.mark.skipif(
+        not (o3d._build_config['BUILD_CUDA_MODULE'] or
+             o3d._build_config['BUILD_SYCL_MODULE']),
+        reason='furthest point sampling requires CUDA or SYCL support'),
+]
 
 
 @mltest.parametrize.ml_gpu_only

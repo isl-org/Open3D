@@ -57,6 +57,6 @@ def test_three_interp_grad(ml):
     for bi in range(b):
         for k in range(3):
             np.add.at(expected[bi], (slice(None), idx[bi, :, k]),
-                     weights[bi, :, k][None, :] * grad_out[bi])
+                      weights[bi, :, k][None, :] * grad_out[bi])
 
     np.testing.assert_allclose(grad_x, expected, rtol=1e-4, atol=1e-4)
