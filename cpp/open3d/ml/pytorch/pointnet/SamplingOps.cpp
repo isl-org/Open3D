@@ -37,8 +37,6 @@
 #include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
 #include "torch/script.h"
 
-#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
-
 torch::Tensor furthest_point_sampling(torch::Tensor points,
                                       const int64_t sample_size) {
     int batch_size = points.size(0);
@@ -86,4 +84,3 @@ static auto registry_fp = torch::RegisterOperators(
         "open3d::furthest_point_sampling(Tensor points, int sample_size)"
         " -> Tensor out",
         &furthest_point_sampling);
-#endif

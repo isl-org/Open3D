@@ -697,9 +697,10 @@ void KnnSearchCUDA(const Tensor& points,
         if (i > 0) {
             neighbors_row_splits_i.Add_(Scalar(last_neighbors_count));
         }
-        last_neighbors_count =
-                neighbors_row_splits_i[num_queries_i].Item<int64_t>();
+        last_neighbors_count +=
+                batch_output_allocators[i].NeighborsIndex().GetShape(0);
     }
+    neighbors_row_splits[-1].Fill(last_neighbors_count);
 
     // Bridge the ephemeral per-tile streams' completion back to
     // `user_stream`, device-side only (no host stall), then release the

@@ -15,7 +15,8 @@
 #include "open3d/utility/Logging.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include <cuda_runtime.h>
+struct CUstream_st;
+using cudaStream_t = CUstream_st*;
 #endif
 
 namespace open3d {
