@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <algorithm>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
@@ -50,6 +51,29 @@ void KnnSearchSYCL(const torch::Tensor& points,
                    torch::Tensor& neighbors_row_splits,
                    torch::Tensor& neighbors_distance);
 #endif
+
+void ConvertToGlobalIndices(torch::Tensor& neighbors_index,
+                            const torch::Tensor& points_row_splits,
+                            const torch::Tensor& queries_row_splits,
+                            int64_t k) {
+    int64_t neighbors_offset = 0;
+    const int64_t batch_size = points_row_splits.size(0) - 1;
+    for (int64_t i = 0; i < batch_size; ++i) {
+        const int64_t points_begin = points_row_splits[i].item<int64_t>();
+        const int64_t num_points =
+                points_row_splits[i + 1].item<int64_t>() - points_begin;
+        const int64_t num_queries = queries_row_splits[i + 1].item<int64_t>() -
+                                    queries_row_splits[i].item<int64_t>();
+        const int64_t num_neighbors = std::min(k, num_points) * num_queries;
+        if (num_neighbors > 0) {
+            neighbors_index
+                    .slice(0, neighbors_offset,
+                           neighbors_offset + num_neighbors)
+                    .add_(points_begin);
+        }
+        neighbors_offset += num_neighbors;
+    }
+}
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         torch::Tensor points,
@@ -169,12 +193,16 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         }
 #undef CUDA_FN_PARAMETERS
 
+        torch::Tensor neighbors_index =
+                Open3DToTorchTensor(neighbors_index_).reshape({-1});
+        ConvertToGlobalIndices(neighbors_index, points_row_splits,
+                               queries_row_splits, k);
+
         // KnnSearchCUDA's batch_size==1 fast path returns a 2D
         // [num_queries, k] view; flatten to the 1D ragged layout that this
         // op's contract (and the CPU path) uses.
         return std::make_tuple(
-                Open3DToTorchTensor(neighbors_index_).reshape({-1}),
-                Open3DToTorchTensor(neighbors_row_splits_),
+                neighbors_index, Open3DToTorchTensor(neighbors_row_splits_),
                 Open3DToTorchTensor(neighbors_distance_).reshape({-1}));
 #else
         TORCH_CHECK(false, "KnnSearch was not compiled with CUDA support.")
@@ -194,11 +222,14 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
                 KnnSearchSYCL<double, int64_t>(GPU_FN_PARAMETERS);
             }
         }
+        neighbors_index = neighbors_index.reshape({-1});
+        ConvertToGlobalIndices(neighbors_index, points_row_splits,
+                               queries_row_splits, k);
+
         // KnnSearchSYCL's batch_size==1 fast path returns a 2D
         // [num_queries, k] view; flatten to the 1D ragged layout that this
         // op's contract (and the CPU path) uses.
-        return std::make_tuple(neighbors_index.reshape({-1}),
-                               neighbors_row_splits,
+        return std::make_tuple(neighbors_index, neighbors_row_splits,
                                neighbors_distance.reshape({-1}));
 #else
         TORCH_CHECK(false, "KnnSearch was not compiled with SYCL support.")

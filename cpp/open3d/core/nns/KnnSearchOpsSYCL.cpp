@@ -578,15 +578,6 @@ void KnnSearchSYCL(const Tensor& points,
                 batch_output_allocators[batch_idx];
         const int64_t sz = alloc.NeighborsIndex().GetShape(0);
         if (sz == 0) continue;
-        // Each allocator's indices are batch-local (0-based within that
-        // batch's points slice, since the per-batch search above ran on
-        // points_raw/points_i, already Slice()'d to [point_begin,
-        // point_end)); shift them to global point indices before
-        // concatenating across batches (mirrors the CPU path's
-        // `+= points_row_splits[i]` in KnnSearchOpKernel.cpp).
-        const int64_t point_begin =
-                points_row_splits[batch_idx].Item<int64_t>();
-        alloc.NeighborsIndex_().Add_(Scalar(point_begin));
         MemoryManager::Memcpy(neighbors_index_ptr + offset, device,
                               alloc.IndicesPtr(), device, sizeof(TIndex) * sz);
         MemoryManager::Memcpy(neighbors_distance_ptr + offset, device,
