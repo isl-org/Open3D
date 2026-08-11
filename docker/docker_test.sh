@@ -151,18 +151,20 @@ cpp_test() {
 
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        # SYCL CPU tests can time out due to kernel compilation time;
-        # shard across NPROC processes with GNU parallel to speed this up.
+        # SYCL CPU tests can time out due to kernel compilation time. Keep the
+        # test shard count independent from the host CPU count so every CI run
+        # executes the same four GoogleTest shards.
+        gtest_shards=4
         echo "[cpp_test()] Running sharded gtests with GNU parallel."
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
             cd build \
-         && seq 0 $((${NPROC} - 1)) | parallel -k --jobs ${NPROC} --halt soon,fail=1 \
-            'GTEST_TOTAL_SHARDS=${NPROC} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum*' \
+         && seq 0 $((${gtest_shards} - 1)) | parallel -k --jobs ${gtest_shards} --halt never \
+            'GTEST_TOTAL_SHARDS=${gtest_shards} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
         "
     else
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
             cd build \
-         && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+         && ./bin/tests --gtest_shuffle \
         "
     fi
     restart_docker_daemon_if_on_gcloud
