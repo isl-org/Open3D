@@ -48,9 +48,9 @@ jobs:
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_build.sh sycl-shared build-lib
             docker tag open3d-ci:sycl-shared open3d-lib-sycl-shared:latest
-            docker save open3d-lib-sycl-shared:latest -o open3d-lib-sycl-shared.tar
-            xz open3d-lib-sycl-shared.tar
-            ls -lhs open3d-lib-sycl-shared.tar.xz
+            docker save open3d-lib-sycl-shared:latest | zstd -T0 --fast=1 \
+              -o open3d-lib-sycl-shared.tar.zst
+            ls -lhs open3d-lib-sycl-shared.tar.zst
           else
             docker/docker_build.sh sycl-static build-lib
             # Static build usually doesn't produce wheels or shared libs for python
@@ -62,8 +62,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-lib-sycl-shared
-          path: open3d-lib-sycl-shared.tar.xz
+          path: open3d-lib-sycl-shared.tar.zst
           retention-days: 1
+          compression-level: 0
 
       - name: Upload C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -153,7 +154,7 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: docker load -i open3d-lib-sycl-shared.tar.xz 
+        run: zstd -d --stdout open3d-lib-sycl-shared.tar.zst | docker load
 
       - name: Docker build
         run: |
