@@ -550,20 +550,6 @@ else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
 endif()
 
-# OpenMP
-if(WITH_OPENMP)
-    open3d_find_package_3rdparty_library(3rdparty_openmp
-        PACKAGE OpenMP
-        PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
-        TARGETS OpenMP::OpenMP_CXX
-    )
-    if(3rdparty_openmp_FOUND)
-        message(STATUS "Building with OpenMP")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_openmp)
-    else()
-        set(WITH_OPENMP OFF)
-    endif()
-endif()
 
 # X11
 if(UNIX AND NOT APPLE)
@@ -1864,11 +1850,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
 
     # 2. oneTBB
     # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
+    # 2021.4.0 is the minimum version providing tbb/collaborative_call_once.h.
     open3d_find_package_3rdparty_library(3rdparty_tbb
+        PUBLIC
         PACKAGE TBB
+        VERSION 2021.4.0
         TARGETS TBB::tbb
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
 else(OPEN3D_USE_ONEAPI_PACKAGES)
     # MKL/BLAS
@@ -2006,20 +1996,26 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
 
     # TBB
+    # Minimum version 2021.4.0 is required for tbb/collaborative_call_once.h,
+    # used by utility::ProgressBar. Bundled TBB (mkl/tbb.cmake) is newer.
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
             PACKAGE TBB
+            VERSION 2021.4.0
             TARGETS TBB::tbb
         )
+        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
         if(NOT 3rdparty_tbb_FOUND)
             set(USE_SYSTEM_TBB OFF)
         endif()
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
+        # TBB is a public dependency: TBB types and headers appear in public
+        # Open3D headers (e.g. core/ParallelFor.h, utility/ProgressBar.h).
+        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
     endif()
 
 endif(OPEN3D_USE_ONEAPI_PACKAGES)

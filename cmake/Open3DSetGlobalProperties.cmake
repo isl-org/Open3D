@@ -129,7 +129,9 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
 
-    if(UNIX AND NOT WITH_OPENMP)
+    if(UNIX)
+        # 3rdparty sources (e.g. PoissonRecon, VTK) contain `#pragma omp ...`
+        # which is unknown to the compiler since Open3D does not enable OpenMP.
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
     if(WIN32)

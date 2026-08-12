@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
 // cppcheck-suppress missingIncludeSystem
 #include <Eigen/Core>
 
@@ -34,26 +37,31 @@ void ApplyIndexedLaplacianUpdate(
     const int n_values = static_cast<int>(previous_values.size());
     next_values.resize(previous_values.size());
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int index = 0; index < n_values; ++index) {
-        Eigen::Vector3d weighted_sum = Eigen::Vector3d::Zero();
-        double total_weight = 0.0;
-        for_each_neighbor(index, [&](int neighbor_index) {
-            const double weight =
-                    compute_weight(index, neighbor_index, reference_positions);
-            total_weight += weight;
-            weighted_sum += weight * previous_values[neighbor_index];
-        });
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, n_values,
+                                    utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int> &range) {
+                for (int index = range.begin(); index < range.end(); ++index) {
+                    Eigen::Vector3d weighted_sum = Eigen::Vector3d::Zero();
+                    double total_weight = 0.0;
+                    for_each_neighbor(index, [&](int neighbor_index) {
+                        const double weight = compute_weight(
+                                index, neighbor_index, reference_positions);
+                        total_weight += weight;
+                        weighted_sum +=
+                                weight * previous_values[neighbor_index];
+                    });
 
-        if (total_weight > 0.0) {
-            next_values[index] = previous_values[index] +
-                                 factor * (weighted_sum / total_weight -
-                                           previous_values[index]);
-        } else {
-            next_values[index] = previous_values[index];
-        }
-    }
+                    if (total_weight > 0.0) {
+                        next_values[index] =
+                                previous_values[index] +
+                                factor * (weighted_sum / total_weight -
+                                          previous_values[index]);
+                    } else {
+                        next_values[index] = previous_values[index];
+                    }
+                }
+            });
 }
 
 }  // namespace smoothing

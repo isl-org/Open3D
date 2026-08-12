@@ -48,9 +48,9 @@ jobs:
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_build.sh sycl-shared build-lib
             docker tag open3d-ci:sycl-shared open3d-lib-sycl-shared:latest
-            docker save open3d-lib-sycl-shared:latest -o open3d-lib-sycl-shared.tar
-            xz open3d-lib-sycl-shared.tar
-            ls -lhs open3d-lib-sycl-shared.tar.xz
+            docker save open3d-lib-sycl-shared:latest | zstd -T0 --fast=1 \
+              -o open3d-lib-sycl-shared.tar.zst
+            ls -lhs open3d-lib-sycl-shared.tar.zst
           else
             docker/docker_build.sh sycl-static build-lib
             # Static build usually doesn't produce wheels or shared libs for python
@@ -62,8 +62,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-lib-sycl-shared
-          path: open3d-lib-sycl-shared.tar.xz
+          path: open3d-lib-sycl-shared.tar.zst
           retention-days: 1
+          compression-level: 0
 
       - name: Upload C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -72,6 +73,18 @@ jobs:
           name: open3d-devel-sycl
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+
+      - name: Docker test (C++)
+        # Only the C++ phase runs here; Python tests run later in the
+        # build-wheel job against the actual per-Python-version wheel
+        # (see docker/docker_test.sh's cpp_test()/python_test() split),
+        # so we avoid testing Python twice.
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            docker/docker_test.sh sycl-shared cpp
+          else
+            docker/docker_test.sh sycl-static cpp
+          fi
 
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -95,7 +108,7 @@ jobs:
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.xz gs://open3d-ci-cache/ || true
 
   build-wheel:
     name: Build Wheel
@@ -109,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -119,8 +132,13 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       PYTHON_VERSION: ${{ matrix.python_version }}
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/open3d_ml
+      # TensorFlow v2.20 only supports python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -136,7 +154,7 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: docker load -i open3d-lib-sycl-shared.tar.xz 
+        run: zstd -d --stdout open3d-lib-sycl-shared.tar.zst | docker load
 
       - name: Docker build
         run: |
@@ -144,6 +162,13 @@ jobs:
           
           # We execute docker buildscript with python version argument.
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
+
+          # The loaded build-lib image contains its Python 3.12 wheel. Keep
+          # only the wheel produced for this matrix entry before later steps
+          # expand open3d*.whl.
+          PYTHON_ABI="cp${PYTHON_VERSION/./}"
+          find . -maxdepth 1 -name 'open3d*.whl' \
+            ! -name "*${PYTHON_ABI}-${PYTHON_ABI}-*.whl" -delete
 
       - name: Generate artifact attestation
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -158,6 +183,37 @@ jobs:
           name: open3d-sycl-wheel-py${{ matrix.python_version }}
           path: open3d*.whl
           if-no-files-found: error
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v4
+        with:
+          repository: isl-org/Open3D-ML
+          ref: main
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Install runtime dependencies
+        # Open3D links against EGL for GPU-accelerated offscreen rendering
+        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
+        # This bare runner (unlike the docker_build.sh image) does not have
+        # it installed by default.
+        run: sudo apt-get update && sudo apt-get install --yes libegl1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Test Python package
+        run: |
+          python -V
+          source util/ci_utils.sh
+          test_wheel open3d*.whl
+
+      - name: Run Python unit tests
+        run: |
+          source util/ci_utils.sh
+          echo "Running Open3D python tests..."
+          run_python_tests
 
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}

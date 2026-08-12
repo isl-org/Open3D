@@ -34,10 +34,10 @@ public:
 
     /// This is used by other downstream random generators.
     /// You must also lock the GetMutex() before calling the engine.
-    std::mt19937* GetEngine() { return &engine_; }
+    std::mt19937& GetEngine() { return engine_; }
 
     /// Get global singleton mutex to protect the engine call.
-    std::mutex* GetMutex() { return &mutex_; }
+    std::mutex& GetMutex() { return mutex_; }
 
 private:
     RandomContext() {
@@ -52,13 +52,13 @@ private:
 
 void Seed(const int seed) { RandomContext::GetInstance().Seed(seed); }
 
-std::mt19937* GetEngine() { return RandomContext::GetInstance().GetEngine(); }
+std::mt19937& GetEngine() { return RandomContext::GetInstance().GetEngine(); }
 
-std::mutex* GetMutex() { return RandomContext::GetInstance().GetMutex(); }
+std::mutex& GetMutex() { return RandomContext::GetInstance().GetMutex(); }
 
 uint32_t RandUint32() {
-    std::lock_guard<std::mutex> lock(*GetMutex());
-    return (*GetEngine())();
+    std::scoped_lock lock(GetMutex());
+    return GetEngine()();
 }
 
 }  // namespace random

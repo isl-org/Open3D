@@ -28,11 +28,11 @@ ENV SUDO=command
 # Minimal dependencies for running Docker
 # wget    : for downloading
 # libgl1  : available on Ubuntu ARM desktop by default
-# libgomp1: available on Ubuntu ARM desktop by default
+# libtbb12 : oneAPI TBB runtime (Open3D CPU parallelism)
 RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
-    libgomp1 \
+    libtbb12 \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building python
