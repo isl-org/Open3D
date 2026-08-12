@@ -163,6 +163,13 @@ jobs:
           # We execute docker buildscript with python version argument.
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
 
+          # The loaded build-lib image contains its Python 3.12 wheel. Keep
+          # only the wheel produced for this matrix entry before later steps
+          # expand open3d*.whl.
+          PYTHON_ABI="cp${PYTHON_VERSION/./}"
+          find . -maxdepth 1 -name 'open3d*.whl' \
+            ! -name "*${PYTHON_ABI}-${PYTHON_ABI}-*.whl" -delete
+
       - name: Generate artifact attestation
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
