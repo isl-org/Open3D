@@ -50,9 +50,11 @@ torch::Tensor furthest_point_sampling(torch::Tensor points,
             torch::full({batch_size, pts_size}, 1e10,
                         torch::dtype(ToTorchDtype<float>()).device(device));
 
+#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
     const float *points_data = points.data_ptr<float>();
     float *temp_data = temp.data_ptr<float>();
     int *out_data = out.data_ptr<int>();
+#endif
 
     if (points.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
