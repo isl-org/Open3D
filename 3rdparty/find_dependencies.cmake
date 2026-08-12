@@ -550,20 +550,6 @@ else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_assimp)
 endif()
 
-# OpenMP
-if(WITH_OPENMP)
-    open3d_find_package_3rdparty_library(3rdparty_openmp
-        PACKAGE OpenMP
-        PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
-        TARGETS OpenMP::OpenMP_CXX
-    )
-    if(3rdparty_openmp_FOUND)
-        message(STATUS "Building with OpenMP")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_openmp)
-    else()
-        set(WITH_OPENMP OFF)
-    endif()
-endif()
 
 # X11
 if(UNIX AND NOT APPLE)
@@ -1073,13 +1059,18 @@ if(USE_SYSTEM_PNG)
     find_package(ZLIB REQUIRED)
 endif()
 include(${Open3D_3RDPARTY_DIR}/zstd/zstd.cmake)
-open3d_import_3rdparty_library(3rdparty_zstd
-    HIDDEN
-    INCLUDE_DIRS ${ZSTD_INCLUDE_DIRS}
-    LIB_DIR      ${ZSTD_LIB_DIR}
-    LIBRARIES    ${ZSTD_LIBRARIES}
-    DEPENDS      ext_zstd
-)
+if(USE_SYSTEM_ZSTD)
+    add_library(3rdparty_zstd INTERFACE)
+    target_link_libraries(3rdparty_zstd INTERFACE zstd::libzstd)
+else()
+    open3d_import_3rdparty_library(3rdparty_zstd
+        HIDDEN
+        INCLUDE_DIRS ${ZSTD_INCLUDE_DIRS}
+        LIB_DIR      ${ZSTD_LIB_DIR}
+        LIBRARIES    ${ZSTD_LIBRARIES}
+        DEPENDS      ext_zstd
+    )
+endif()
 include(${Open3D_3RDPARTY_DIR}/spz/spz.cmake)
 open3d_import_3rdparty_library(3rdparty_spz
     HIDDEN
@@ -1088,19 +1079,22 @@ open3d_import_3rdparty_library(3rdparty_spz
     LIBRARIES    ${SPZ_LIBRARIES}
     DEPENDS      ext_spz
 )
-# Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps so libzstd.a
-# precedes libspz.a, leaving unresolved ZSTD_* under one-pass GNU ld. Force
-# absolute archive paths in the correct order on 3rdparty_spz. Do not add
-# -Wl,--start-group/--end-group here: duplicate group markers collide with
-# MKL's GROUPED import and empty its start/end-group (undefined mkl_*).
-# Do not INTERFACE-link Open3D::3rdparty_zstd (avoids reordering).
 set(_spz_archive
     "${SPZ_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set(_zstd_archive
-    "${ZSTD_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZSTD_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set(_spz_iface_libs
-    "$<BUILD_INTERFACE:${_spz_archive}>"
-    "$<BUILD_INTERFACE:${_zstd_archive}>")
+set(_spz_iface_libs "$<BUILD_INTERFACE:${_spz_archive}>")
+if(USE_SYSTEM_ZSTD)
+    list(APPEND _spz_iface_libs zstd::libzstd)
+else()
+    # Shared Open3D + static spz/zstd: CMake may emit INTERFACE deps so libzstd.a
+    # precedes libspz.a, leaving unresolved ZSTD_* under one-pass GNU ld. Force
+    # absolute archive paths in the correct order on 3rdparty_spz. Do not add
+    # -Wl,--start-group/--end-group here: duplicate group markers collide with
+    # MKL's GROUPED import and empty its start/end-group (undefined mkl_*).
+    # Do not INTERFACE-link Open3D::3rdparty_zstd (avoids reordering).
+    set(_zstd_archive
+        "${ZSTD_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${ZSTD_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    list(APPEND _spz_iface_libs "$<BUILD_INTERFACE:${_zstd_archive}>")
+endif()
 # Preserve any INSTALL_INTERFACE entries from open3d_import_3rdparty_library.
 get_target_property(_spz_existing_libs 3rdparty_spz INTERFACE_LINK_LIBRARIES)
 if(_spz_existing_libs)
@@ -1110,14 +1104,16 @@ if(_spz_existing_libs)
         endif()
     endforeach()
 endif()
-if(NOT BUILD_SHARED_LIBS)
+if(NOT BUILD_SHARED_LIBS AND NOT USE_SYSTEM_ZSTD)
     list(APPEND _spz_iface_libs
         "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${PROJECT_NAME}_3rdparty_zstd${CMAKE_STATIC_LIBRARY_SUFFIX}>")
 endif()
 set_property(TARGET 3rdparty_spz PROPERTY INTERFACE_LINK_LIBRARIES "${_spz_iface_libs}")
-get_target_property(_zstd_link_opts 3rdparty_zstd INTERFACE_LINK_OPTIONS)
-if(_zstd_link_opts)
-    target_link_options(3rdparty_spz INTERFACE ${_zstd_link_opts})
+if(NOT USE_SYSTEM_ZSTD)
+    get_target_property(_zstd_link_opts 3rdparty_zstd INTERFACE_LINK_OPTIONS)
+    if(_zstd_link_opts)
+        target_link_options(3rdparty_spz INTERFACE ${_zstd_link_opts})
+    endif()
 endif()
 if(TARGET Open3D::3rdparty_zlib)
     target_link_libraries(3rdparty_spz INTERFACE Open3D::3rdparty_zlib)
@@ -1126,10 +1122,8 @@ else()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_spz)
 unset(_spz_archive)
-unset(_zstd_archive)
 unset(_spz_iface_libs)
 unset(_spz_existing_libs)
-unset(_zstd_link_opts)
 
 # rply
 open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
@@ -1925,11 +1919,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
 
     # 2. oneTBB
     # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
+    # 2021.4.0 is the minimum version providing tbb/collaborative_call_once.h.
     open3d_find_package_3rdparty_library(3rdparty_tbb
+        PUBLIC
         PACKAGE TBB
+        VERSION 2021.4.0
         TARGETS TBB::tbb
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
 else(OPEN3D_USE_ONEAPI_PACKAGES)
     # MKL/BLAS
@@ -2067,20 +2065,26 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     endif()
 
     # TBB
+    # Minimum version 2021.4.0 is required for tbb/collaborative_call_once.h,
+    # used by utility::ProgressBar. Bundled TBB (mkl/tbb.cmake) is newer.
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
             PACKAGE TBB
+            VERSION 2021.4.0
             TARGETS TBB::tbb
         )
+        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
         if(NOT 3rdparty_tbb_FOUND)
             set(USE_SYSTEM_TBB OFF)
         endif()
     endif()
     if(NOT USE_SYSTEM_TBB)
         include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
+        # TBB is a public dependency: TBB types and headers appear in public
+        # Open3D headers (e.g. core/ParallelFor.h, utility/ProgressBar.h).
+        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM Open3D::3rdparty_tbb)
     else()
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
+        list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
     endif()
 
 endif(OPEN3D_USE_ONEAPI_PACKAGES)

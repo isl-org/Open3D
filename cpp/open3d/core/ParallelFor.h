@@ -21,6 +21,8 @@
 #include <cuda_runtime.h>
 
 #include "open3d/core/CUDAUtils.h"
+#else
+#include <tbb/parallel_for.h>
 #endif
 
 #if defined(SYCL_LANGUAGE_VERSION)
@@ -72,9 +74,16 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
 
 #else
 
-/// Run a function in parallel on CPU.
+/// Run a function in parallel on CPU, with an explicit grain size.
+///
+/// \param grain_size Minimum number of iterations TBB will give to one worker.
+/// A range shorter than \p grain_size is never split, so callers that have
+/// already blocked the work themselves must pass 1.
 template <typename func_t>
-void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
+void ParallelForCPU_(const Device& device,
+                     int64_t n,
+                     int64_t grain_size,
+                     const func_t& func) {
     if (!device.IsCPU()) {
         utility::LogError("ParallelFor for CPU cannot run on device {}.",
                           device.ToString());
@@ -83,10 +92,25 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
         return;
     }
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int64_t i = 0; i < n; ++i) {
-        func(i);
-    }
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, n, grain_size),
+                      [&func](const tbb::blocked_range<int64_t>& range) {
+                          for (int64_t i = range.begin(); i < range.end();
+                               ++i) {
+                              func(i);
+                          }
+                      });
+}
+
+/// Run a function in parallel on CPU.
+///
+/// Element-wise kernels are cheap per item (a few flops, often memory bound),
+/// so use the smaller 2D grain size rather than DefaultGrainSizeTBB(): a
+/// larger grain leaves threads idle for medium-sized tensors.
+template <typename func_t>
+void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
+    ParallelForCPU_(device, n,
+                    static_cast<int64_t>(utility::DefaultGrainSizeTBB2D()),
+                    func);
 }
 
 #endif
@@ -291,16 +315,20 @@ void ParallelFor(const Device& device,
     if (device.IsSYCL()) {
         ParallelForSYCL_(device, n, func);
     } else {
+        // The work is already blocked into num_threads chunks here, so the
+        // grain size must be 1: a larger grain would exceed the range and
+        // make TBB run every chunk on a single thread.
         int num_threads = utility::EstimateMaxThreads();
-        ParallelForCPU_(device, num_threads, [&](int64_t i) {
+        ParallelForCPU_(device, num_threads, /*grain_size=*/1, [&](int64_t i) {
             int64_t start = n * i / num_threads;
             int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
             vec_func(start, end);
         });
     }
 #else
+    // See the comment above: the range is already one item per thread.
     int num_threads = utility::EstimateMaxThreads();
-    ParallelForCPU_(device, num_threads, [&](int64_t i) {
+    ParallelForCPU_(device, num_threads, /*grain_size=*/1, [&](int64_t i) {
         int64_t start = n * i / num_threads;
         int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
         vec_func(start, end);

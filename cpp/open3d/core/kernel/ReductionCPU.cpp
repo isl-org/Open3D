@@ -5,7 +5,11 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+
 #include <limits>
+#include <utility>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -76,9 +80,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         // See: PyTorch's TensorIterator::parallel_reduce for the reference
         // design of reduction strategy.
-        if (utility::EstimateMaxThreads() == 1 || utility::InParallel()) {
-            LaunchReductionKernelSerial<scalar_t>(indexer_, reduce_func);
-        } else if (indexer_.NumOutputElements() <= 1) {
+        if (indexer_.NumOutputElements() <= 1) {
             LaunchReductionKernelTwoPass<scalar_t>(indexer_, reduce_func,
                                                    identity);
         } else {
@@ -111,30 +113,28 @@ private:
                     "Internal error: two-pass reduction only works for "
                     "single-output reduction ops.");
         }
-        int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = utility::EstimateMaxThreads();
-        int64_t workload_per_thread =
-                (num_workloads + num_threads - 1) / num_threads;
-        std::vector<scalar_t> thread_results(num_threads, identity);
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            int64_t start = thread_idx * workload_per_thread;
-            int64_t end = std::min(start + workload_per_thread, num_workloads);
-            scalar_t local_result = identity;
-            for (int64_t workload_idx = start; workload_idx < end;
-                 ++workload_idx) {
-                scalar_t* src = reinterpret_cast<scalar_t*>(
-                        indexer.GetInputPtr(0, workload_idx));
-                local_result = element_kernel(*src, local_result);
-            }
-            thread_results[thread_idx] = local_result;
+        const auto num_workloads = indexer.NumWorkloads();
+        if (num_workloads == 0) {
+            return;
         }
-        scalar_t* dst = reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            *dst = element_kernel(thread_results[thread_idx], *dst);
-        }
+        scalar_t& dst = *reinterpret_cast<scalar_t*>(indexer.GetOutputPtr(0));
+        // Deterministic reduce: the split of the range does not depend on the
+        // number of participating threads, so floating point results are
+        // reproducible run-to-run and independent of machine load.
+        dst = tbb::parallel_deterministic_reduce(
+                tbb::blocked_range<int64_t>(0, num_workloads,
+                                            utility::DefaultGrainSizeTBB()),
+                identity,
+                [&](const tbb::blocked_range<int64_t>& range, scalar_t so_far) {
+                    for (int64_t workload_idx = range.begin();
+                         workload_idx < range.end(); ++workload_idx) {
+                        scalar_t* src = reinterpret_cast<scalar_t*>(
+                                indexer.GetInputPtr(0, workload_idx));
+                        so_far = element_kernel(*src, so_far);
+                    }
+                    return so_far;
+                },
+                element_kernel);
     }
 
     template <typename scalar_t, typename func_t>
@@ -165,13 +165,16 @@ private:
                     "LaunchReductionKernelTwoPass instead.");
         }
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t i = 0; i < indexer_shape[best_dim]; ++i) {
-            Indexer sub_indexer(indexer);
-            sub_indexer.ShrinkDim(best_dim, i, 1);
-            LaunchReductionKernelSerial<scalar_t>(sub_indexer, element_kernel);
-        }
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, indexer_shape[best_dim], 1),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t i = range.begin(); i < range.end(); ++i) {
+                        Indexer sub_indexer(indexer);
+                        sub_indexer.ShrinkDim(best_dim, i, 1);
+                        LaunchReductionKernelSerial<scalar_t>(sub_indexer,
+                                                              element_kernel);
+                    }
+                });
     }
 
 private:
@@ -198,30 +201,37 @@ public:
         }
     }
 
+    /// Parallelize over output elements; each output element's reduction runs
+    /// serially. Used when there are enough outputs to keep all threads busy.
     template <typename scalar_t, typename func_t>
     static void LaunchArgReductionParallelDim(const Indexer& indexer,
                                               func_t reduce_func,
                                               scalar_t identity) {
-        int64_t num_output_elements = indexer.NumOutputElements();
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t output_idx = 0; output_idx < num_output_elements;
-             output_idx++) {
-            // sub_indexer.NumWorkloads() == ipo.
-            // sub_indexer's workload_idx is indexer's ipo_idx.
-            Indexer sub_indexer = indexer.GetPerOutputIndexer(output_idx);
-            scalar_t dst_val = identity;
-            for (int64_t workload_idx = 0;
-                 workload_idx < sub_indexer.NumWorkloads(); workload_idx++) {
-                int64_t src_idx = workload_idx;
-                scalar_t* src_val = reinterpret_cast<scalar_t*>(
-                        sub_indexer.GetInputPtr(0, workload_idx));
-                int64_t* dst_idx = reinterpret_cast<int64_t*>(
-                        sub_indexer.GetOutputPtr(0, workload_idx));
-                std::tie(*dst_idx, dst_val) =
-                        reduce_func(src_idx, *src_val, *dst_idx, dst_val);
-            }
-        }
+        const int64_t num_output_elements = indexer.NumOutputElements();
+        tbb::parallel_for(
+                tbb::blocked_range<int64_t>(0, num_output_elements,
+                                            utility::DefaultGrainSizeTBB()),
+                [&](const tbb::blocked_range<int64_t>& range) {
+                    for (int64_t output_idx = range.begin();
+                         output_idx < range.end(); ++output_idx) {
+                        // sub_indexer.NumWorkloads() == ipo.
+                        // sub_indexer's workload_idx is indexer's ipo_idx.
+                        Indexer sub_indexer =
+                                indexer.GetPerOutputIndexer(output_idx);
+                        int64_t dst_idx = 0;
+                        scalar_t dst_val = identity;
+                        for (int64_t workload_idx = 0;
+                             workload_idx < sub_indexer.NumWorkloads();
+                             ++workload_idx) {
+                            scalar_t* src_val = reinterpret_cast<scalar_t*>(
+                                    sub_indexer.GetInputPtr(0, workload_idx));
+                            std::tie(dst_idx, dst_val) = reduce_func(
+                                    workload_idx, *src_val, dst_idx, dst_val);
+                        }
+                        *reinterpret_cast<int64_t*>(
+                                sub_indexer.GetOutputPtr(0)) = dst_idx;
+                    }
+                });
     }
 
     /// Create num_threads workers to compute partial arg reductions
@@ -236,38 +246,35 @@ public:
                     "Internal error: two-pass arg reduction only works for "
                     "single-output arg reduction ops.");
         }
-        int64_t num_workloads = indexer.NumWorkloads();
-        int64_t num_threads = utility::EstimateMaxThreads();
-        int64_t workload_per_thread =
-                (num_workloads + num_threads - 1) / num_threads;
-        std::vector<int64_t> thread_results_idx(num_threads, 0);
-        std::vector<scalar_t> thread_results_val(num_threads, identity);
-
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            int64_t start = thread_idx * workload_per_thread;
-            int64_t end = std::min(start + workload_per_thread, num_workloads);
-            scalar_t local_result_val = identity;
-            int64_t local_result_idx = 0;
-            for (int64_t workload_idx = start; workload_idx < end;
-                 ++workload_idx) {
-                int64_t src_idx = workload_idx;
-                scalar_t* src_val = reinterpret_cast<scalar_t*>(
-                        indexer.GetInputPtr(0, workload_idx));
-                std::tie(local_result_idx, local_result_val) = reduce_func(
-                        src_idx, *src_val, local_result_idx, local_result_val);
-            }
-            thread_results_val[thread_idx] = local_result_val;
-            thread_results_idx[thread_idx] = local_result_idx;
+        const int64_t num_workloads = indexer.NumWorkloads();
+        if (num_workloads == 0) {
+            return;
         }
-        scalar_t dst_val = identity;
-        int64_t* dst_idx = reinterpret_cast<int64_t*>(indexer.GetOutputPtr(0));
-        for (int64_t thread_idx = 0; thread_idx < num_threads; ++thread_idx) {
-            std::tie(*dst_idx, dst_val) = reduce_func(
-                    thread_results_idx[thread_idx],
-                    thread_results_val[thread_idx], *dst_idx, dst_val);
-        }
+        // (index, value) pairs are combined so that the winning index travels
+        // with its value across range splits. Deterministic reduce keeps the
+        // result independent of the number of participating threads.
+        using result_t = std::pair<int64_t, scalar_t>;
+        const result_t val_idx = tbb::parallel_deterministic_reduce(
+                tbb::blocked_range<int64_t>(0, num_workloads,
+                                            utility::DefaultGrainSizeTBB()),
+                result_t{0, identity},
+                [&](const tbb::blocked_range<int64_t>& range, result_t so_far) {
+                    for (int64_t workload_idx = range.begin();
+                         workload_idx < range.end(); ++workload_idx) {
+                        scalar_t* src_val = reinterpret_cast<scalar_t*>(
+                                indexer.GetInputPtr(0, workload_idx));
+                        so_far = reduce_func(workload_idx, *src_val,
+                                             so_far.first, so_far.second);
+                    }
+                    return so_far;
+                },
+                // reduce_func keeps its second argument on ties, so pass the
+                // right half first to make ties resolve to the lower index.
+                [&reduce_func](const result_t& lhs, const result_t& rhs) {
+                    return reduce_func(rhs.first, rhs.second, lhs.first,
+                                       lhs.second);
+                });
+        *reinterpret_cast<int64_t*>(indexer.GetOutputPtr(0)) = val_idx.first;
     }
 
 private:

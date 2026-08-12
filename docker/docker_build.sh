@@ -462,7 +462,7 @@ sycl-shared_export_env() {
     export BUILD_SHARED_LIBS=ON
     
     export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
     export BUILD_PYTORCH_OPS=ON
 
     if [[ "build-lib" =~ ^($options)$ ]]; then

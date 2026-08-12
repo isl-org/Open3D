@@ -119,26 +119,10 @@ if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
     endif()
 endif()
-if (WITH_OPENMP AND APPLE)
-# Package libomp v11.1.0, if it is not installed. Later version cause crash on
-# x86_64 if PyTorch is already imported.
-# https://github.com/microsoft/LightGBM/issues/4229
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
-    execute_process(COMMAND brew list --versions libomp
-        COMMAND cut "-d\ " -f2
-        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
-        message(WARNING "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
-    endif()
-    file(GENERATE OUTPUT update_pybind_libomp.sh
-        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
-grep libomp | tr -d '[:space:]')
-install_name_tool -change $libomp_library @rpath/$(basename $libomp_library) \
-"$<TARGET_FILE:pybind>"]=])
-    add_custom_command(TARGET pybind POST_BUILD
-        COMMAND bash update_pybind_libomp.sh
-        COMMENT "Updating pybind to use packaged libomp")
-endif()
+# Note: Open3D no longer links libomp. TBB (packaged above via
+# PYTHON_EXTRA_LIBRARIES) is the only threading runtime shipped in the wheel,
+# which avoids the multiple-OpenMP-runtime crashes seen when another Python
+# package (e.g. PyTorch) loads its own libomp.
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:

@@ -718,13 +718,10 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
         n_threads = (int)std::thread::hardware_concurrency();
     }
 
-#ifdef _OPENMP
-    ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::OPEN_MP,
-                     n_threads);
-#else
+    // PoissonRecon has its own thread pool. Use its std::thread backend: Open3D
+    // is not built with OpenMP, so its OPEN_MP backend is unavailable.
     ThreadPool::Init((ThreadPool::ParallelType)(int)ThreadPool::THREAD_POOL,
                      n_threads);
-#endif
 
     auto mesh = std::make_shared<TriangleMesh>();
     std::vector<double> densities;

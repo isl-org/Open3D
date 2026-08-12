@@ -173,6 +173,7 @@ std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
         mesh_partitions.emplace_back(mesh_tmp);
     }
 
+    utility::LogDebug("Partitioning");
     std::vector<UVAtlasPartitionOutput> uvatlas_partitions(parallel_partitions);
 
     // By default UVAtlas uses a fast mode if there are more than 25k faces.
@@ -202,6 +203,7 @@ std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
         LoopFn(tbb::blocked_range<size_t>(0, parallel_partitions));
     }
 
+    utility::LogDebug("Combining partitions");
     // merge outputs for the packing algorithm
     UVAtlasPartitionOutput& combined_output = uvatlas_partitions.front();
     for (int i = 1; i < parallel_partitions; ++i) {
@@ -246,6 +248,7 @@ std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
         output = UVAtlasPartitionOutput();
     }
 
+    utility::LogDebug("Packing UVAtlas");
     HRESULT hr = UVAtlasPack(combined_output.vb, combined_output.ib,
                              DXGI_FORMAT_R32_UINT, width, height, gutter,
                              combined_output.partition_result_adjacency,
