@@ -18,8 +18,9 @@ FetchContent_MakeAvailable(ext_benchmark)
 
 if (BUILD_SYCL_MODULE)
     # Google Benchmark 1.5.5 uses __COUNTER__, which IntelLLVM diagnoses as a
-    # C2y extension when warnings are treated as errors.
-    target_compile_options(benchmark PRIVATE
+    # C2y extension when warnings are treated as errors. The public header
+    # exposes the macro to benchmark consumers, so they need the suppression.
+    target_compile_options(benchmark PUBLIC
         $<$<CXX_COMPILER_ID:IntelLLVM>:-Wno-c2y-extensions>)
 endif()
 

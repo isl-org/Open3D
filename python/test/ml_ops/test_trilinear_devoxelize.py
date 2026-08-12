@@ -12,6 +12,11 @@ import mltest
 # Skip all tests if the ml ops were not built.
 pytestmark = mltest.default_marks
 
+_torch_gpu_modules = [
+    v for v in mltest._ml_modules.values()
+    if v.device_is_gpu and v.module.__name__ == 'torch'
+]
+
 
 def _trilinear_devoxelize_ref(coords, feat, r):
     """Numpy reference matching TrilinearDevoxelize.cu's algorithm.
@@ -47,7 +52,7 @@ def _trilinear_devoxelize_ref(coords, feat, r):
     return outs
 
 
-@mltest.parametrize.ml_gpu_only
+@pytest.mark.parametrize('ml', _torch_gpu_modules)
 @pytest.mark.parametrize('is_training', [True, False])
 def test_trilinear_devoxelize_forward(ml, is_training):
     rng = np.random.RandomState(0)
@@ -79,7 +84,7 @@ def test_trilinear_devoxelize_forward(ml, is_training):
                                atol=1e-5)
 
 
-@mltest.parametrize.ml_gpu_only
+@pytest.mark.parametrize('ml', _torch_gpu_modules)
 def test_trilinear_devoxelize_backward(ml):
     rng = np.random.RandomState(0)
     b, c, n, r = 2, 3, 50, 8

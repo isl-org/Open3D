@@ -64,11 +64,8 @@ jobs:
           else
             TAG=open3d-ci:sycl-static
           fi
-          # GH Actions runners have no SYCL GPU. CI=true makes
-          # IsCIEnvironment()/GetSYCLDevicesForTesting()
-          # (cpp/tests/core/CoreTest.cpp) fall back to testing only the
-          # SYCL-CPU device; oneMKL-on-GPU-only tests self-skip via their own
-          # GTEST_SKIP() guards (e.g. Linalg.cpp's LeastSquares test).
+          # GH Actions runners have no SYCL GPU. CI=true enables fall back to
+          # testing only the SYCL-CPU device
           docker run --rm -e CI=true "$TAG" ./build/bin/tests --gtest_shuffle
 
       - name: Upload Lib Image

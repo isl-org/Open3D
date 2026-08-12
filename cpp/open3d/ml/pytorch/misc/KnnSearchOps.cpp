@@ -194,7 +194,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
 #undef CUDA_FN_PARAMETERS
 
         torch::Tensor neighbors_index =
-                Open3DToTorchTensor(neighbors_index_).reshape({-1});
+                Open3DToTorchTensor(neighbors_index_)
+                        .reshape({neighbors_index_.GetLength()});
         ConvertToGlobalIndices(neighbors_index, points_row_splits,
                                queries_row_splits, k);
 
@@ -203,7 +204,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         // op's contract (and the CPU path) uses.
         return std::make_tuple(
                 neighbors_index, Open3DToTorchTensor(neighbors_row_splits_),
-                Open3DToTorchTensor(neighbors_distance_).reshape({-1}));
+                Open3DToTorchTensor(neighbors_distance_)
+                        .reshape({neighbors_distance_.GetLength()}));
 #else
         TORCH_CHECK(false, "KnnSearch was not compiled with CUDA support.")
 #endif
@@ -222,15 +224,16 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
                 KnnSearchSYCL<double, int64_t>(GPU_FN_PARAMETERS);
             }
         }
-        neighbors_index = neighbors_index.reshape({-1});
+        neighbors_index = neighbors_index.reshape({neighbors_index.numel()});
         ConvertToGlobalIndices(neighbors_index, points_row_splits,
                                queries_row_splits, k);
 
         // KnnSearchSYCL's batch_size==1 fast path returns a 2D
         // [num_queries, k] view; flatten to the 1D ragged layout that this
         // op's contract (and the CPU path) uses.
-        return std::make_tuple(neighbors_index, neighbors_row_splits,
-                               neighbors_distance.reshape({-1}));
+        return std::make_tuple(
+                neighbors_index, neighbors_row_splits,
+                neighbors_distance.reshape({neighbors_distance.numel()}));
 #else
         TORCH_CHECK(false, "KnnSearch was not compiled with SYCL support.")
 #endif
