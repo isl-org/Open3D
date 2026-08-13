@@ -296,6 +296,30 @@ jobs:
           path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
           if-no-files-found: error
 
+      - name: Setup WinApp CLI
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: microsoft/setup-WinAppCli@v0.1
+
+      - name: Build MSIX
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & "${{ env.SRC_DIR }}\cpp\apps\Open3DViewer\WindowsMSIX\build_msix.ps1" `
+              -SrcDir "${{ env.SRC_DIR }}" `
+              -InstallDir "C:\Program Files\Open3D\bin\Open3D" `
+              -CMakeCachePath "C:/Open3D/build/CMakeCache.txt" `
+              -OutDir "C:\Open3D"
+
+      - name: Upload MSIX
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-app-windows-msix-amd64
+          path: |
+            C:\Open3D\*.msix
+            C:\Open3D\Open3D.cer
+          if-no-files-found: error
+
       - name: Update devel release with viewer
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         env:

@@ -83,4 +83,14 @@
     <glob pattern="*.xyzrgb"/>
 </mime-type>
 
+<mime-type type="application/x-splat">
+    <comment>3D Gaussian Splat</comment>
+    <glob pattern="*.splat"/>
+</mime-type>
+
+<mime-type type="application/x-spz">
+    <comment>3D Gaussian Splat (compressed)</comment>
+    <glob pattern="*.spz"/>
+</mime-type>
+
 </mime-info>
