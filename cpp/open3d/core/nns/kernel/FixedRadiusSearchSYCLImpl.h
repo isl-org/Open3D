@@ -290,15 +290,7 @@ sycl::event BuildSpatialHashTableSYCLRaw(sycl::queue& queue,
                 host_hash_table_splits[b + 1] - host_hash_table_splits[b]);
     }
     // Kernel-private scratch (never touched by PyTorch/oneDPL/sycl-tla), so
-    // it is backed by sycl::buffer rather than malloc_device/free. This also
-    // fixes a real bug: the previous USM version called sycl::free() on this
-    // pointer immediately after the batch loop but *before* the
-    // queue.wait_and_throw() below, while the Pass-3 scatter kernels reading
-    // it could still be in flight -- sycl::free() does not wait for
-    // in-flight commands, so freeing this memory while a kernel might still
-    // be using it is undefined behavior (a use-after-free race). The buffer
-    // destructor blocks on its last reader before releasing memory, so no
-    // such race is possible.
+    // it is backed by sycl::buffer rather than malloc_device/free.
     std::vector<sycl::event> scatter_events;
     if (max_hash_table_size > 0) {
         sycl::buffer<uint32_t, 1> slot_counts_buf{

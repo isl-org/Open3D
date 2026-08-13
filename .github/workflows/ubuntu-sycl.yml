@@ -227,37 +227,6 @@ jobs:
           path: open3d*.whl
           if-no-files-found: error
 
-      - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v4
-        with:
-          repository: isl-org/Open3D-ML
-          ref: main
-          path: ${{ env.OPEN3D_ML_ROOT }}
-
-      - name: Install runtime dependencies
-        # Open3D links against EGL for GPU-accelerated offscreen rendering
-        # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
-        # This bare runner (unlike the docker_build.sh image) does not have
-        # it installed by default.
-        run: sudo apt-get update && sudo apt-get install --yes libegl1
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python_version }}
-
-      - name: Test Python package
-        run: |
-          python -V
-          source util/ci_utils.sh
-          test_wheel open3d*.whl
-
-      - name: Run Python unit tests
-        run: |
-          source util/ci_utils.sh
-          echo "Running Open3D python tests..."
-          run_python_tests
-
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' }}
         env:

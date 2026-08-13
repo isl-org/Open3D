@@ -375,6 +375,10 @@ TEST_P(ReadWritePC, ColorRounding) {
     if (!(int(args.compare) & int(Compare::COLORS))) {
         return;
     }
+    const std::string tmp_filename =
+            utility::filesystem::GetFileNameWithoutExtension(args.filename) +
+            ".color_rounding." +
+            utility::filesystem::GetFileExtensionInLowerCase(args.filename);
 
     {
         geometry::PointCloud pc_start;
@@ -388,10 +392,10 @@ TEST_P(ReadWritePC, ColorRounding) {
         const std::string tmp_path =
                 utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
-                tmp_path + "/" + args.filename, pc_start,
+                tmp_path + "/" + tmp_filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
         geometry::PointCloud pc_load;
-        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
+        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + tmp_filename, pc_load,
                                    {"auto", false, false, true}));
         EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
@@ -407,10 +411,10 @@ TEST_P(ReadWritePC, ColorRounding) {
         const std::string tmp_path =
                 utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
-                tmp_path + "/" + args.filename, pc_start,
+                tmp_path + "/" + tmp_filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
         geometry::PointCloud pc_load;
-        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
+        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + tmp_filename, pc_load,
                                    {"auto", false, false, true}));
         EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
