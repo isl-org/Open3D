@@ -128,8 +128,7 @@ jobs:
         if: ${{ env.BUILD_PYTORCH_OPS == 'ON' }}
         run: |
           if ( '${{ matrix.device }}' -eq 'cuda' ) {
-            # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
-            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+            python -m pip install -r open3d_ml/requirements-torch-cuda.txt
           } elseif ( '${{ matrix.device }}' -eq 'xpu' ) {
             python -m pip install -r open3d_ml/requirements-torch-xpu.txt
           } else {

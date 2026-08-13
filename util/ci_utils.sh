@@ -658,6 +658,10 @@ test_wheel() {
         HAVE_PYTORCH_OPS=ON
         if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_SYCL_MODULE'])"; then
             python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-xpu.txt"
+        elif python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_CUDA_MODULE'])"; then
+            # Install CUDA-enabled PyTorch matching the CUDA version Open3D was
+            # built against.
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
         else
             python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
         fi
