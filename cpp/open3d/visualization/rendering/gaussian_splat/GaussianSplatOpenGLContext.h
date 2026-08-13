@@ -15,6 +15,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 #if !defined(__APPLE__)
 
 namespace open3d {
@@ -49,6 +52,19 @@ public:
     ///   Linux   -> GLXContext
     ///   Windows -> HGLRC
     void* GetNativeContext() const;
+
+    /// Queries an identifier for the GPU adapter this context is bound to,
+    /// so callers (Vulkan interop) can select a *matching* physical device.
+    /// GL_EXT_memory_object cross-adapter import silently fails, so this
+    /// match is required on multi-GPU (hybrid graphics) systems.
+    ///   Windows -> DXGI adapter LUID (8 bytes), via the monitor the
+    ///              context's window is associated with. More reliable than
+    ///              GL_DEVICE_UUID_EXT, which some drivers advertise but do
+    ///              not actually implement (observed: Intel Iris Xe/Arc
+    ///              hybrid driver returns GL_INVALID_OPERATION for it).
+    ///   Other platforms -> GL_DEVICE_UUID_EXT (16 bytes).
+    /// Returns false (leaving out_id untouched) if unavailable.
+    bool GetAdapterId(std::uint8_t out_id[16], std::size_t& out_size) const;
 
     /// Destroys the context and associated resources.
     void Shutdown();

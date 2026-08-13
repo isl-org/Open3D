@@ -22,6 +22,7 @@
 #endif  // _MSC_VER
 
 #include <cstddef>  // <filament/Engine> recursive includes needs this, std::size_t especially
+#include <cstdint>
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -126,32 +127,18 @@ EngineInstance::EngineInstance() {
         backend = filament::backend::Backend::OPENGL;
     }
 
-    // Initialise the Vulkan interop context BEFORE the GL context so that
-    // Vulkan device memory allocations and exported FDs are ready for the
-    // GL EXT_memory_object import calls made during PrepareOutputTextures().
-    // Failure is non-fatal: the Vulkan backend will fall back gracefully.
-    {
-        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-        if (!vk_ctx.IsValid()) {
-            if (!vk_ctx.Initialize()) {
-                utility::LogWarning(
-                        "EngineInstance: Vulkan interop context init failed: "
-                        "{}",
-                        vk_ctx.GetLastError());
-            }
-        }
-    }
-
-    // On Linux (X11/XWayland via GLX) and Windows (WGL), create our compute
-    // GL context BEFORE the Filament engine so we can pass it as the
-    // sharedGLContext. Filament then creates its own context sharing our GL
-    // namespace, enabling zero-copy texture import() between the two
-    // contexts. This must happen before Engine::create() because GLX/WGL
+    // Create our compute GL context BEFORE the Vulkan interop context so we
+    // can read the GPU adapter's GL_DEVICE_UUID_EXT and select a *matching*
+    // Vulkan physical device. GL_EXT_memory_object cross-adapter import is
+    // not supported: if Vulkan picks a different GPU than the GL context is
+    // bound to (e.g. multi-GPU laptops), the memory import silently fails
+    // (GL_OUT_OF_MEMORY) even though the Vulkan-side export succeeds.
+    // This must also happen before Engine::create() because GLX/WGL context
     // sharing can only be established at context creation time.
+    auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
         !shared_context_) {
-        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
         if (!gl_ctx.IsValid()) {
             gl_ctx.InitializeStandalone();
         }
@@ -161,6 +148,33 @@ EngineInstance::EngineInstance() {
                     "EngineInstance: passing GS compute context to Filament "
                     "as sharedGLContext ({:p}).",
                     shared_context_);
+        }
+    }
+
+    // Initialise the Vulkan interop context, preferring the physical device
+    // whose adapter id matches the GL context's adapter (see above). Failure
+    // is non-fatal: the Vulkan backend will fall back gracefully.
+    {
+        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+        if (!vk_ctx.IsValid()) {
+            std::uint8_t gl_adapter_id[16];
+            std::size_t gl_adapter_id_size = 0;
+            const bool have_id =
+                    gl_ctx.IsValid() &&
+                    gl_ctx.GetAdapterId(gl_adapter_id, gl_adapter_id_size);
+            if (!vk_ctx.Initialize(have_id ? gl_adapter_id : nullptr,
+                                  have_id ? gl_adapter_id_size : 0)) {
+                utility::LogWarning(
+                        "EngineInstance: Vulkan interop context init failed: "
+                        "{}",
+                        vk_ctx.GetLastError());
+            }
+        }
+        // GL context is already current at this point (created above), so
+        // the interop extension probe can run now.
+        if (vk_ctx.IsValid() && gl_ctx.IsValid() &&
+            !vk_ctx.AreGLExtensionsReady()) {
+            vk_ctx.ProbeGLExtensions();
         }
     }
 #endif

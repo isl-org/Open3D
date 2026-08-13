@@ -32,6 +32,7 @@
 
 #if !defined(__APPLE__)
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -110,10 +111,22 @@ public:
 
     /// Load Vulkan via BlueVK, select a physical device with external-memory
     /// extension support, and create a compute queue.
-    /// Must be called BEFORE
-    /// GaussianSplatOpenGLContext::InitializeStandalone(). Returns false on
-    /// failure; call GetLastError() for a diagnostic string.
-    bool Initialize();
+    ///
+    /// `gl_adapter_id`/`gl_adapter_id_size`, if `gl_adapter_id` is non-null,
+    /// identify the GPU adapter the GL interop context is bound to (see
+    /// GaussianSplatOpenGLContext::GetAdapterId()): an 8-byte DXGI LUID on
+    /// Windows or a 16-byte GL_DEVICE_UUID_EXT elsewhere. When provided,
+    /// only physical devices whose VkPhysicalDeviceIDProperties deviceLUID
+    /// (8 bytes) or deviceUUID (16 bytes) matches are eligible:
+    /// GL_EXT_memory_object import requires the Vulkan device and the GL
+    /// context to be on the *same* GPU adapter, otherwise the import
+    /// silently fails (GL_OUT_OF_MEMORY) even though the Vulkan-side export
+    /// succeeds. If null, or no Vulkan device matches, falls back to the
+    /// old best-effort scoring (may pick a mismatched adapter on multi-GPU
+    /// systems).
+    /// Returns false on failure; call GetLastError() for a diagnostic string.
+    bool Initialize(const std::uint8_t* gl_adapter_id = nullptr,
+                    std::size_t gl_adapter_id_size = 0);
 
     /// Release all Vulkan resources and invalidate the context.
     void Shutdown();
@@ -209,7 +222,8 @@ private:
     // --- Internal helpers -------------------------------------------------
 
     bool CreateInstance();
-    bool SelectPhysicalDevice();
+    bool SelectPhysicalDevice(const std::uint8_t* gl_adapter_id,
+                             std::size_t gl_adapter_id_size);
     bool CreateLogicalDevice();
 
     /// Allocate a VkImage with a dedicated exportable memory allocation and
@@ -220,11 +234,13 @@ private:
                                  VkImageUsageFlags usage,
                                  VkImage& out_image,
                                  VkDeviceMemory& out_memory,
-                                 int& out_fd) const;
+                                 // intptr_t (not int): must hold a 64-bit
+                                 // Windows HANDLE without truncation.
+                                 intptr_t& out_fd) const;
 
     /// Import a Vulkan FD into an OpenGL memory-object and create a GL
     /// texture backed by that memory object.
-    bool ImportFDIntoGL(int fd,
+    bool ImportFDIntoGL(intptr_t fd,
                         std::uint32_t width,
                         std::uint32_t height,
                         VkDeviceSize memory_size,

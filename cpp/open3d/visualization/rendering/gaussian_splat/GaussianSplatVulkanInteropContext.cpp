@@ -169,7 +169,8 @@ GaussianSplatVulkanInteropContext::~GaussianSplatVulkanInteropContext() {
 // Initialize / Shutdown
 // ---------------------------------------------------------------------------
 
-bool GaussianSplatVulkanInteropContext::Initialize() {
+bool GaussianSplatVulkanInteropContext::Initialize(
+        const std::uint8_t* gl_adapter_id, std::size_t gl_adapter_id_size) {
     if (initialized_) return true;
 
     // Initialize the global dynamic dispatcher with vkGetInstanceProcAddr
@@ -192,7 +193,7 @@ bool GaussianSplatVulkanInteropContext::Initialize() {
     // function pointers (required for physical device enumeration etc.).
     VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Instance>(*instance_));
 
-    if (!SelectPhysicalDevice()) return false;
+    if (!SelectPhysicalDevice(gl_adapter_id, gl_adapter_id_size)) return false;
     if (!CreateLogicalDevice()) return false;
 
     // After device creation, update the dispatcher with device-level
@@ -314,7 +315,8 @@ bool GaussianSplatVulkanInteropContext::CreateInstance() {
 // Physical device selection
 // ---------------------------------------------------------------------------
 
-bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
+bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
+        const std::uint8_t* gl_adapter_id, std::size_t gl_adapter_id_size) {
     auto devices = instance_.enumeratePhysicalDevices();
     if (devices.empty()) {
         last_error_ = "No Vulkan-capable devices found";
@@ -322,13 +324,58 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
         return false;
     }
 
+    // GL_EXT_memory_object interop requires the Vulkan device and the GL
+    // context to be the *same* physical GPU adapter: cross-adapter import
+    // is not supported and fails silently (GL_OUT_OF_MEMORY) even though
+    // the Vulkan-side export succeeds. When the GL adapter id is known
+    // (8-byte DXGI LUID on Windows, 16-byte GL_DEVICE_UUID_EXT elsewhere),
+    // restrict candidates to the matching device first.
+    const bool have_id = gl_adapter_id != nullptr &&
+                        (gl_adapter_id_size == 8 || gl_adapter_id_size == 16);
+
     int best_score = -1;
     std::size_t best_idx = devices.size();
     for (std::size_t i = 0; i < devices.size(); ++i) {
-        const int score = ScoreDevice(devices[i]);
+        int score = ScoreDevice(devices[i]);
+        if (score < 0) continue;
+        if (have_id) {
+            const auto id_props =
+                    devices[i].getProperties2<vk::PhysicalDeviceProperties2,
+                                              vk::PhysicalDeviceIDProperties>();
+            const auto& id = id_props.get<vk::PhysicalDeviceIDProperties>();
+            bool matches = false;
+            if (gl_adapter_id_size == 8) {
+                matches = id.deviceLUIDValid &&
+                          std::memcmp(id.deviceLUID.data(), gl_adapter_id,
+                                      8) == 0;
+            } else {
+                matches = std::memcmp(id.deviceUUID.data(), gl_adapter_id,
+                                      16) == 0;
+            }
+            if (!matches) continue;  // not the GL-bound adapter; skip
+            score += 100;  // guarantee a match wins over any non-match
+        }
         if (score > best_score) {
             best_score = score;
             best_idx = i;
+        }
+    }
+
+    if (best_idx == devices.size() && have_id) {
+        // No device matched the GL adapter. Falling back to best-effort
+        // scoring risks a repeat of the cross-adapter import failure, but a
+        // working (if unshared) device is still better than none for
+        // callers that only need compute, so fall back with a warning.
+        utility::LogWarning(
+                "GaussianSplat Vulkan: no physical device matched the GL "
+                "context's adapter; GL/Vulkan interop may fail. Falling "
+                "back to best-effort device scoring.");
+        for (std::size_t i = 0; i < devices.size(); ++i) {
+            const int score = ScoreDevice(devices[i]);
+            if (score > best_score) {
+                best_score = score;
+                best_idx = i;
+            }
         }
     }
 
@@ -474,7 +521,7 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         VkImageUsageFlags usage,
         VkImage& out_image,
         VkDeviceMemory& out_memory,
-        int& out_fd) const {
+        intptr_t& out_fd) const {
     const vk::Format format = static_cast<vk::Format>(vk_format);
     const vk::ImageUsageFlags vk_usage =
             static_cast<vk::ImageUsageFlags>(usage);
@@ -576,10 +623,12 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         dev.destroyImage(image);
         return false;
     }
-    out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
+    // Stored as intptr_t (not int) to avoid truncating/sign-extending the
+    // 64-bit HANDLE, which previously corrupted the value passed to GL.
+    out_fd = reinterpret_cast<intptr_t>(win32_handle);
     // NOTE: on Windows, HANDLE values are not real file descriptors and should
     // be closed with CloseHandle() after being imported into GL. However, the
-    // current design passes them as int (out_fd) to ImportFDIntoGL, which will
+    // current design passes them as out_fd to ImportFDIntoGL, which will
     // pass them to glImportMemoryWin32HandleEXT. GL takes ownership of the
     // HANDLE import, so we cannot close it here. The HANDLE lifetime is managed
     // by GL and Vulkan.
@@ -602,7 +651,7 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
 }
 
 bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
-        int fd,
+        intptr_t fd,
         std::uint32_t width,
         std::uint32_t height,
         VkDeviceSize memory_size,
@@ -617,9 +666,20 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
         return false;
     }
 
+    // AllocateExportableImage() always allocates via
+    // vk::MemoryDedicatedAllocateInfo, so GL must be told this memory object
+    // is dedicated to a single resource before the handle/fd is imported.
+    // Omitting this causes some Windows GL drivers to silently fail the
+    // import (GL_OUT_OF_MEMORY) and crash on the subsequent storage call.
+    {
+        const GLint dedicated = GL_TRUE;
+        glMemoryObjectParameterivEXT(out_gl_memory_object,
+                                     GL_DEDICATED_MEMORY_OBJECT_EXT,
+                                     &dedicated);
+    }
+
 #if defined(_WIN32)
-    const HANDLE win32_handle =
-            reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
+    const HANDLE win32_handle = reinterpret_cast<HANDLE>(fd);
     glImportMemoryWin32HandleEXT(out_gl_memory_object,
                                  static_cast<GLuint64>(memory_size),
                                  GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
@@ -630,7 +690,7 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
 #else
     glImportMemoryFdEXT(out_gl_memory_object,
                         static_cast<GLuint64>(memory_size),
-                        GL_HANDLE_TYPE_OPAQUE_FD_EXT, fd);
+                        GL_HANDLE_TYPE_OPAQUE_FD_EXT, static_cast<int>(fd));
     // FD ownership is transferred to GL; do not close it.
 #endif
 
@@ -642,6 +702,13 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
         utility::LogWarning("GaussianSplat GL: glCreateTextures returned 0");
         return false;
     }
+
+    // The imported Vulkan image was allocated with optimal (driver-opaque)
+    // tiling; GL defaults imported textures to linear tiling, so this must be
+    // set explicitly or glTextureStorageMem2DEXT operates on a mismatched
+    // memory layout (crashes some Windows drivers instead of erroring).
+    glTextureParameteri(out_gl_texture, GL_TEXTURE_TILING_EXT,
+                        GL_OPTIMAL_TILING_EXT);
 
     // Allocate GL texture storage bound to the imported memory.
     GLenum gl_internal_format = 0;
@@ -704,7 +771,7 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
             break;
     }
 
-    int export_fd = -1;
+    intptr_t export_fd = -1;
     {
         // Probe memory requirements using a temporary image (no exportable
         // memory yet) to determine the actual allocation size for GL import.
