@@ -195,7 +195,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
 
         torch::Tensor neighbors_index =
                 Open3DToTorchTensor(neighbors_index_)
-                        .reshape({neighbors_index_.GetLength()});
+                        .reshape({neighbors_index_.NumElements()});
         ConvertToGlobalIndices(neighbors_index, points_row_splits,
                                queries_row_splits, k);
 
@@ -205,7 +205,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         return std::make_tuple(
                 neighbors_index, Open3DToTorchTensor(neighbors_row_splits_),
                 Open3DToTorchTensor(neighbors_distance_)
-                        .reshape({neighbors_distance_.GetLength()}));
+                        .reshape({neighbors_distance_.NumElements()}));
 #else
         TORCH_CHECK(false, "KnnSearch was not compiled with CUDA support.")
 #endif

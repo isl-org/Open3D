@@ -717,11 +717,12 @@ void KnnSearchCUDA(const Tensor& points,
     };
 
     if (batch_size == 1) {
+        const int64_t neighbors_per_query = std::min<int64_t>(knn, num_points);
         neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
-                {num_queries, -1});
+                {num_queries, neighbors_per_query});
         neighbors_distance =
                 batch_output_allocators[0].NeighborsDistance().View(
-                        {num_queries, -1});
+                        {num_queries, neighbors_per_query});
         join_events_to_user_stream();
         return;
     }
