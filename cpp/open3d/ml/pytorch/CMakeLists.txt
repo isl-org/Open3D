@@ -79,8 +79,11 @@ target_sources(open3d_torch_ops PRIVATE
     ragged_tensor/RaggedTensor.cpp)
 
 target_sources(open3d_torch_ops PRIVATE
+    pointnet/BallQueryKernelCPU.cpp
     pointnet/BallQueryOps.cpp
+    pointnet/InterpolateKernelCPU.cpp
     pointnet/InterpolateOps.cpp
+    pointnet/SamplingKernelCPU.cpp
     pointnet/SamplingOps.cpp
     pvcnn/TrilinearDevoxelizeOps.cpp
 )

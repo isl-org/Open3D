@@ -37,7 +37,6 @@
 #include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
 #include "torch/script.h"
 
-#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 torch::Tensor ball_query(torch::Tensor xyz,
                          torch::Tensor center,
                          double radius,
@@ -70,8 +69,8 @@ torch::Tensor ball_query(torch::Tensor xyz,
         TORCH_CHECK(false, "ball_query was not compiled with SYCL support");
 #endif
     } else {
-        TORCH_CHECK(false, "ball_query does not support " + xyz.toString() +
-                                   " as input");
+        ball_query_launcher_cpu(batch_size, pts_num, ball_num, radius, nsample,
+                                center_data, xyz_data, idx);
     }
     return out;
 }
@@ -81,4 +80,3 @@ static auto registry = torch::RegisterOperators(
         "float radius, int nsample)"
         " -> Tensor out",
         &ball_query);
-#endif

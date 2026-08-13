@@ -42,7 +42,6 @@
 #include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
 #include "torch/script.h"
 
-#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
                                                   torch::Tensor data_pts) {
     int batch_size = query_pts.size(0);
@@ -78,8 +77,8 @@ std::tuple<torch::Tensor, torch::Tensor> three_nn(torch::Tensor query_pts,
         TORCH_CHECK(false, "three_nn was not compiled with SYCL support");
 #endif
     } else {
-        TORCH_CHECK(false, "three_nn does not support " + data_pts.toString() +
-                                   " as input");
+        three_nn_launcher_cpu(batch_size, pts_num_out, pts_num_in, pts_out,
+                              pts_in, dist2, idx);
     }
 
     return std::tuple<torch::Tensor, torch::Tensor>(out_dist2, out_idx);
@@ -120,8 +119,8 @@ torch::Tensor three_interpolate(torch::Tensor points,
                     "three_interpolate was not compiled with SYCL support");
 #endif
     } else {
-        TORCH_CHECK(false, "three_interpolate does not support " +
-                                   points.toString() + " as input");
+        three_interpolate_launcher_cpu(batch_size, C, M, N, points_data,
+                                       idx_data, weights_data, out_data);
     }
 
     return out;
@@ -165,8 +164,8 @@ torch::Tensor three_interpolate_grad(torch::Tensor grad_out,
                     "support");
 #endif
     } else {
-        TORCH_CHECK(false, "three_interpolate_grad does not support " +
-                                   grad_out.toString() + " as input");
+        three_interpolate_grad_launcher_cpu(batch_size, C, N, M, grad_out_data,
+                                            idx_data, weights_data, out_data);
     }
 
     return out;
@@ -188,4 +187,3 @@ static auto registry_grad = torch::RegisterOperators(
         "Tensor idx, Tensor weights, int N)"
         " -> Tensor out",
         &three_interpolate_grad);
-#endif

@@ -14,7 +14,7 @@ import mltest
 pytestmark = mltest.default_marks
 
 
-@mltest.parametrize.ml_gpu_only
+@mltest.parametrize.ml
 def test_query_pts(ml):
 
     values0 = mltest.fetch_numpy(

@@ -76,10 +76,30 @@ _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_name = 'open3d_torch_ops' + _lib_suffix + _lib_ext
 _lib_path.append(_os.path.join(_package_root, _lib_name))
 
-# On Windows add the package root so Open3D.dll is found when torch loads the ops.
-_dll_dir = None
+# On Windows add DLL search directories so Open3D.dll and SYCL runtime DLLs
+# are found when torch loads the ops. SYCL/oneAPI runtime DLLs come from
+# pip-installed torch+xpu packages (intel-sycl-rt, intel-opencl-rt,
+# onemkl-sycl-*, intel-openmp, ...), not from a system oneAPI install. These
+# are data-only wheels (no importable Python module) that pip installs under
+# "<sys.prefix>/Library/bin" on Windows (verified by inspecting the
+# intel-sycl-rt wheel: its DLLs are stored at
+# "intel_sycl_rt-<ver>.data/data/Library/bin/*.dll", which pip's "data"
+# install scheme maps to "<sys.prefix>/Library/bin").
+_dll_dirs = []
 if _sys.platform == 'win32':
-    _dll_dir = _os.add_dll_directory(_os.path.abspath(_package_root))
+    _dll_dirs.append(_os.add_dll_directory(_os.path.abspath(_package_root)))
+    if _build_config.get('BUILD_SYCL_MODULE', False):
+        # torch/lib holds torch.dll, torch_xpu.dll and other bundled DLLs.
+        _torch_lib = _os.path.join(_os.path.dirname(_torch.__file__), 'lib')
+        if _os.path.isdir(_torch_lib):
+            _dll_dirs.append(
+                    _os.add_dll_directory(_os.path.abspath(_torch_lib)))
+        # <sys.prefix>/Library/bin holds the Intel oneAPI/SYCL runtime DLLs
+        # (sycl9.dll, pi_*.dll, libmkl_sycl_*.dll, libiomp5md.dll, ...).
+        _sycl_rt_bin = _os.path.join(_sys.prefix, 'Library', 'bin')
+        if _os.path.isdir(_sycl_rt_bin):
+            _dll_dirs.append(
+                    _os.add_dll_directory(_os.path.abspath(_sycl_rt_bin)))
 
 _load_except = None
 _loaded = False
@@ -96,8 +116,8 @@ for _lp in _lib_path:
                   'BUILD_PYTORCH_OPS was enabled.'.format(
                       _os.path.realpath(_lp)))
 
-if _dll_dir:
-    _dll_dir.close()
+for _dd in _dll_dirs:
+    _dd.close()
 
 if not _loaded:
     raise _load_except

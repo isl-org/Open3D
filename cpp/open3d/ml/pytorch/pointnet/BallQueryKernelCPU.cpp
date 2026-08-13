@@ -31,33 +31,63 @@
 //
 //***************************************************************************************/
 
-#pragma once
+#include <algorithm>
 
-void ball_query_launcher(int b,
-                         int n,
-                         int m,
-                         float radius,
-                         int nsample,
-                         const float *xyz,
-                         const float *new_xyz,
-                         int *idx);
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
+#include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
 
 void ball_query_launcher_cpu(int b,
                              int n,
                              int m,
                              float radius,
                              int nsample,
-                             const float *xyz,
                              const float *new_xyz,
-                             int *idx);
+                             const float *xyz,
+                             int *idx) {
+    // new_xyz: (B, M, 3)
+    // xyz: (B, N, 3)
+    // output:
+    //      idx: (B, M, nsample)
+    //
+    // Each (batch, query_pt) pair is independent — no data races.
+    // Parallelize over flattened b * m (total query points).
+    const float radius2 = radius * radius;
+    const int total_queries = b * m;
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, total_queries),
+            [&](const tbb::blocked_range<int> &r) {
+                for (int flat = r.begin(); flat != r.end(); ++flat) {
+                    const int batch = flat / m;
+                    const int i = flat % m;
 
-#ifdef BUILD_SYCL_MODULE
-void ball_query_launcher_sycl(int b,
-                              int n,
-                              int m,
-                              float radius,
-                              int nsample,
-                              const float *xyz,
-                              const float *new_xyz,
-                              int *idx);
-#endif
+                    const float *new_xyz_bi =
+                            new_xyz + batch * m * 3 + i * 3;
+                    const float *xyz_b = xyz + batch * n * 3;
+                    int *idx_bi = idx + batch * m * nsample + i * nsample;
+
+                    float new_x = new_xyz_bi[0];
+                    float new_y = new_xyz_bi[1];
+                    float new_z = new_xyz_bi[2];
+
+                    int cnt = 0;
+                    for (int k = 0; k < n; ++k) {
+                        float x = xyz_b[k * 3 + 0];
+                        float y = xyz_b[k * 3 + 1];
+                        float z = xyz_b[k * 3 + 2];
+                        float d2 = (new_x - x) * (new_x - x) +
+                                   (new_y - y) * (new_y - y) +
+                                   (new_z - z) * (new_z - z);
+                        if (d2 < radius2) {
+                            if (cnt == 0) {
+                                std::fill(idx_bi, idx_bi + nsample, k);
+                            }
+                            idx_bi[cnt] = k;
+                            ++cnt;
+                            if (cnt >= nsample) break;
+                        }
+                    }
+                }
+            });
+}

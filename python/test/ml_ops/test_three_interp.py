@@ -14,7 +14,7 @@ import mltest
 pytestmark = mltest.default_marks
 
 
-@mltest.parametrize.ml_gpu_only
+@mltest.parametrize.ml
 def test_three_interp(ml):
 
     values0 = mltest.fetch_numpy(
@@ -33,10 +33,14 @@ def test_three_interp(ml):
     expected = mltest.fetch_numpy(
         'https://storage.googleapis.com/isl-datasets/open3d-dev/test/ml_ops/data/three_interp/out.npy'
     )
-    np.testing.assert_equal(ans, expected)
+    # The CPU kernel sums the three weighted terms in a different order (and
+    # without the fused-multiply-add pattern used by the CUDA/SYCL kernels),
+    # so results can differ by a few float32 ULPs; use a tight numerical
+    # tolerance instead of exact equality.
+    np.testing.assert_allclose(ans, expected, rtol=1e-5, atol=1e-6)
 
 
-@mltest.parametrize.ml_gpu_only
+@mltest.parametrize.ml
 def test_three_interp_grad(ml):
     rng = np.random.RandomState(0)
     b, c, n, m = 2, 4, 20, 10
