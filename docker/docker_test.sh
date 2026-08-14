@@ -162,7 +162,7 @@ cpp_test() {
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
             cd build \
          && seq 0 $((${gtest_shards} - 1)) | parallel -k --jobs ${gtest_shards} --halt never \
-            'd=/tmp/open3d-gtest-shard-{}; mkdir -p "$d" && TMPDIR="$d" GTEST_TOTAL_SHARDS='"${gtest_shards}"' GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
+            'd=/tmp/open3d-gtest-shard-{}; mkdir -p "\$d" && TMPDIR="\$d" GTEST_TOTAL_SHARDS='"${gtest_shards}"' GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
         "
     else
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \

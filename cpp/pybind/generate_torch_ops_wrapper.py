@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 """This script inspects the open3d_torch_ops library and generates function wrappers"""
 import os
+import site
 import sys
 import inspect
 import argparse
@@ -146,10 +147,25 @@ def main():
             if path and os.path.isdir(path):
                 _dll_dir_handles.append(os.add_dll_directory(path))
 
-        _add_dll_dir(args.dependencies_dir)
-        _add_dll_dir(os.path.dirname(os.path.abspath(args.lib)))
-        _add_dll_dir(os.path.join(os.path.dirname(torch.__file__), "lib"))
-        _add_dll_dir(os.path.join(sys.prefix, "Library", "bin"))
+        _dll_search_paths = []
+        _dll_search_paths.append(args.dependencies_dir)
+        _dll_search_paths.append(os.path.dirname(os.path.abspath(args.lib)))
+        _dll_search_paths.append(os.path.join(os.path.dirname(torch.__file__),
+                                              "lib"))
+        _dll_search_paths.append(os.path.join(sys.prefix, "Library", "bin"))
+        # oneAPI pip wheels may install runtime DLLs next to the venv.
+        for _site in getattr(site, "getsitepackages", lambda: [])():
+            _dll_search_paths.append(os.path.join(_site, "Library", "bin"))
+
+        for _path in _dll_search_paths:
+            _add_dll_dir(_path)
+
+        # PATH is still consulted by the Windows loader for transitive deps.
+        _path_prefix = os.pathsep.join(
+            [p for p in _dll_search_paths if p and os.path.isdir(p)])
+        if _path_prefix:
+            os.environ["PATH"] = _path_prefix + os.pathsep + os.environ.get(
+                    "PATH", "")
 
     try:
         torch.ops.load_library(args.lib)
