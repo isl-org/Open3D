@@ -27,6 +27,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #if !defined(__APPLE__)
+#include "open3d/visualization/rendering/GpuAdapterSelection.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
 #endif
@@ -127,20 +128,58 @@ EngineInstance::EngineInstance() {
         backend = filament::backend::Backend::OPENGL;
     }
 
-    // Create our compute GL context BEFORE the Vulkan interop context so we
-    // can read the GPU adapter's GL_DEVICE_UUID_EXT and select a *matching*
-    // Vulkan physical device. GL_EXT_memory_object cross-adapter import is
-    // not supported: if Vulkan picks a different GPU than the GL context is
-    // bound to (e.g. multi-GPU laptops), the memory import silently fails
-    // (GL_OUT_OF_MEMORY) even though the Vulkan-side export succeeds.
-    // This must also happen before Engine::create() because GLX/WGL context
-    // sharing can only be established at context creation time.
+    // Vulkan selects its physical device first (discrete-GPU-preferred,
+    // emulated/software devices down-weighted — see ScoreDevice()), honoring
+    // any loader-level device reordering (e.g. VK_LOADER_DEVICE_SELECT on
+    // Linux) for free. The compute GL context is then steered onto that same
+    // adapter before creation: GL_EXT_memory_object cross-adapter import is
+    // not supported and silently fails (GL_OUT_OF_MEMORY) on multi-GPU
+    // (hybrid graphics) systems if Vulkan and GL end up on different GPUs.
+    auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
+    if (!vk_ctx.IsValid() && !vk_ctx.Initialize()) {
+        utility::LogWarning(
+                "EngineInstance: Vulkan interop context init failed: {}",
+                vk_ctx.GetLastError());
+    }
+
     auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
     if ((backend == filament::backend::Backend::OPENGL ||
          backend == filament::backend::Backend::DEFAULT) &&
         !shared_context_) {
         if (!gl_ctx.IsValid()) {
+            GpuAdapterInfo vk_adapter_info;
+            if (vk_ctx.IsValid()) {
+                vk_adapter_info = GetAdapterInfo(vk_ctx.GetPhysicalDevice());
+                SteerNextGLContextToAdapter(vk_adapter_info);
+            }
             gl_ctx.InitializeStandalone();
+
+            // Safety net only: GaussianSplatVulkanInteropContext::Initialize()
+            // already avoids picking a monitor-less adapter when it can, so
+            // steering above should normally succeed. This still guards
+            // against rarer cases (e.g. the window manager not honoring the
+            // position hint) by making Vulkan follow GL if they still
+            // disagree — guaranteeing the two share a GPU (required for
+            // GL_EXT_memory_object import) matters more than which GPU is
+            // used.
+            if (gl_ctx.IsValid() && vk_adapter_info.valid) {
+                const GpuAdapterInfo gl_actual = GetAdapterInfoForWindow(
+                        gl_ctx.GetNativeWindowHandle());
+                if (gl_actual.valid &&
+                    !SameAdapter(gl_actual, vk_adapter_info)) {
+                    utility::LogWarning(
+                            "EngineInstance: GL landed on adapter '{}' but "
+                            "Vulkan selected '{}'; reinitializing Vulkan to "
+                            "match GL so compute interop works correctly.",
+                            gl_actual.device_name, vk_adapter_info.device_name);
+                    vk_ctx.Shutdown();
+                    if (!vk_ctx.Initialize(&gl_actual)) {
+                        utility::LogWarning(
+                                "EngineInstance: Vulkan reinit to match GL "
+                                "adapter failed: {}", vk_ctx.GetLastError());
+                    }
+                }
+            }
         }
         if (gl_ctx.IsValid()) {
             shared_context_ = gl_ctx.GetNativeContext();
@@ -151,31 +190,20 @@ EngineInstance::EngineInstance() {
         }
     }
 
-    // Initialise the Vulkan interop context, preferring the physical device
-    // whose adapter id matches the GL context's adapter (see above). Failure
-    // is non-fatal: the Vulkan backend will fall back gracefully.
-    {
-        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-        if (!vk_ctx.IsValid()) {
-            std::uint8_t gl_adapter_id[16];
-            std::size_t gl_adapter_id_size = 0;
-            const bool have_id =
-                    gl_ctx.IsValid() &&
-                    gl_ctx.GetAdapterId(gl_adapter_id, gl_adapter_id_size);
-            if (!vk_ctx.Initialize(have_id ? gl_adapter_id : nullptr,
-                                  have_id ? gl_adapter_id_size : 0)) {
-                utility::LogWarning(
-                        "EngineInstance: Vulkan interop context init failed: "
-                        "{}",
-                        vk_ctx.GetLastError());
-            }
-        }
-        // GL context is already current at this point (created above), so
-        // the interop extension probe can run now.
-        if (vk_ctx.IsValid() && gl_ctx.IsValid() &&
-            !vk_ctx.AreGLExtensionsReady()) {
+    if (vk_ctx.IsValid() && gl_ctx.IsValid() &&
+        !vk_ctx.AreGLExtensionsReady()) {
+        if (gl_ctx.MakeCurrent()) {
             vk_ctx.ProbeGLExtensions();
+            gl_ctx.ReleaseCurrent();
         }
+    }
+    // Diagnostic-only verification that GL and Vulkan ended up on the same
+    // adapter; never gates behavior (some drivers fail this query, see
+    // GetCurrentGLAdapterUUID()'s doc comment).
+    if (gl_ctx.IsValid() && gl_ctx.MakeCurrent()) {
+        utility::LogDebug("EngineInstance: GL adapter UUID = {}",
+                          HexEncode(GetCurrentGLAdapterUUID()));
+        gl_ctx.ReleaseCurrent();
     }
 #endif
 

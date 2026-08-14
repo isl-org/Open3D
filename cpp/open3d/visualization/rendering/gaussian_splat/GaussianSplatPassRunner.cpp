@@ -190,9 +190,14 @@ bool RunGaussianGeometryPasses(
                 vs.dc_opacity_buf,
                 attrs.dc_opacity.size() * sizeof(std::uint32_t),
                 "gs.dc_opacity");
-        vs.sh_buf = ctx.ResizeBuffer(
-                vs.sh_buf, attrs.sh_coefficients.size() * sizeof(std::uint32_t),
-                "gs.sh_coeffs");
+        // Always keep this buffer non-empty: the project shader statically
+        // references binding 5 even when guarded by "if (sh_degree >= 1u)",
+        // so a size-0 (i.e. unallocated) buffer leaves the descriptor unwritten
+        // and unbound, which some drivers (e.g. Intel Arc) fault on even
+        // though it's never read at that degree (VUID-vkCmdDispatch-None-08114).
+        const std::size_t sh_bytes = std::max<std::size_t>(
+                1, attrs.sh_coefficients.size()) * sizeof(std::uint32_t);
+        vs.sh_buf = ctx.ResizeBuffer(vs.sh_buf, sh_bytes, "gs.sh_coeffs");
     }
 
     // GPU-only intermediate buffers: private storage for better cache

@@ -49,6 +49,8 @@
 #endif
 #include <vulkan/vulkan_raii.hpp>
 
+#include "open3d/visualization/rendering/GpuAdapterSelection.h"
+
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -110,23 +112,12 @@ public:
     static GaussianSplatVulkanInteropContext& GetInstance();
 
     /// Load Vulkan via BlueVK, select a physical device with external-memory
-    /// extension support, and create a compute queue.
-    ///
-    /// `gl_adapter_id`/`gl_adapter_id_size`, if `gl_adapter_id` is non-null,
-    /// identify the GPU adapter the GL interop context is bound to (see
-    /// GaussianSplatOpenGLContext::GetAdapterId()): an 8-byte DXGI LUID on
-    /// Windows or a 16-byte GL_DEVICE_UUID_EXT elsewhere. When provided,
-    /// only physical devices whose VkPhysicalDeviceIDProperties deviceLUID
-    /// (8 bytes) or deviceUUID (16 bytes) matches are eligible:
-    /// GL_EXT_memory_object import requires the Vulkan device and the GL
-    /// context to be on the *same* GPU adapter, otherwise the import
-    /// silently fails (GL_OUT_OF_MEMORY) even though the Vulkan-side export
-    /// succeeds. If null, or no Vulkan device matches, falls back to the
-    /// old best-effort scoring (may pick a mismatched adapter on multi-GPU
-    /// systems).
+    /// extension support, and create a compute queue. If `required_adapter`
+    /// is valid, only that physical GPU is selected; otherwise native discrete
+    /// GPUs are preferred over integrated, translation, and software devices.
+    /// Vulkan and OpenGL must use the same adapter for memory-object interop.
     /// Returns false on failure; call GetLastError() for a diagnostic string.
-    bool Initialize(const std::uint8_t* gl_adapter_id = nullptr,
-                    std::size_t gl_adapter_id_size = 0);
+    bool Initialize(const GpuAdapterInfo* required_adapter = nullptr);
 
     /// Release all Vulkan resources and invalidate the context.
     void Shutdown();
@@ -222,8 +213,7 @@ private:
     // --- Internal helpers -------------------------------------------------
 
     bool CreateInstance();
-    bool SelectPhysicalDevice(const std::uint8_t* gl_adapter_id,
-                             std::size_t gl_adapter_id_size);
+    bool SelectPhysicalDevice(const GpuAdapterInfo* required_adapter);
     bool CreateLogicalDevice();
 
     /// Allocate a VkImage with a dedicated exportable memory allocation and

@@ -42,11 +42,6 @@
 #endif
 #include <GLFW/glfw3native.h>
 
-#if defined(_WIN32)
-#include <dxgi.h>
-#pragma comment(lib, "dxgi.lib")
-#endif
-
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -174,81 +169,6 @@ void* GaussianSplatOpenGLContext::GetNativeContext() const {
     return reinterpret_cast<void*>(glfwGetWGLContext(window));
 #else
     return reinterpret_cast<void*>(glfwGetGLXContext(window));
-#endif
-}
-
-bool GaussianSplatOpenGLContext::GetAdapterId(std::uint8_t out_id[16],
-                                              std::size_t& out_size) const {
-    if (!initialized_ || !glfw_window_) {
-        return false;
-    }
-#if defined(_WIN32)
-    // Find the DXGI adapter driving the monitor this (hidden) window is
-    // associated with, and return its 8-byte LUID. This is used to match
-    // against Vulkan's VkPhysicalDeviceIDProperties::deviceLUID so the
-    // Vulkan device selected for GL_EXT_memory_object interop is guaranteed
-    // to be the *same* physical GPU as this GL context — required because
-    // cross-adapter memory import silently fails (GL_OUT_OF_MEMORY).
-    HWND hwnd = glfwGetWin32Window(static_cast<GLFWwindow*>(glfw_window_));
-    if (!hwnd) return false;
-    HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
-
-    IDXGIFactory1* factory = nullptr;
-    if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1),
-                                  reinterpret_cast<void**>(&factory))) ||
-        !factory) {
-        return false;
-    }
-
-    bool found = false;
-    LUID luid{};
-    for (UINT i = 0;; ++i) {
-        IDXGIAdapter1* adapter = nullptr;
-        if (factory->EnumAdapters1(i, &adapter) == DXGI_ERROR_NOT_FOUND) {
-            break;
-        }
-        if (!adapter) continue;
-        for (UINT j = 0;; ++j) {
-            IDXGIOutput* output = nullptr;
-            if (adapter->EnumOutputs(j, &output) == DXGI_ERROR_NOT_FOUND) {
-                break;
-            }
-            if (!output) continue;
-            DXGI_OUTPUT_DESC odesc{};
-            if (SUCCEEDED(output->GetDesc(&odesc)) &&
-                odesc.Monitor == mon) {
-                DXGI_ADAPTER_DESC1 adesc{};
-                if (SUCCEEDED(adapter->GetDesc1(&adesc))) {
-                    luid = adesc.AdapterLuid;
-                    found = true;
-                }
-            }
-            output->Release();
-            if (found) break;
-        }
-        adapter->Release();
-        if (found) break;
-    }
-    factory->Release();
-
-    if (!found) return false;
-    std::memcpy(out_id, &luid, sizeof(luid));
-    out_size = sizeof(luid);
-    return true;
-#else
-    if (GLEW_EXT_memory_object == 0) {
-        return false;
-    }
-    GLint num_uuids = 0;
-    glGetIntegerv(GL_NUM_DEVICE_UUIDS_EXT, &num_uuids);
-    if (num_uuids < 1) {
-        return false;
-    }
-    glGetUnsignedBytei_vEXT(GL_DEVICE_UUID_EXT, 0,
-                            reinterpret_cast<GLubyte*>(out_id));
-    if (glGetError() != GL_NO_ERROR) return false;
-    out_size = 16;
-    return true;
 #endif
 }
 

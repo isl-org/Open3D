@@ -41,7 +41,10 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <vector>
+
+#include <fmt/format.h>
 
 #include "open3d/utility/Logging.h"
 
@@ -113,11 +116,15 @@ bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
     return true;
 }
 
+/// Sentinel returned by ScoreDevice() for devices that must never be picked
+/// (no compute queue, missing required extensions, or API version too low).
+/// Distinct from the emulated-device penalty below, which keeps the device
+/// eligible as a last resort when nothing better is available.
+constexpr int kDeviceRejected = std::numeric_limits<int>::min();
+
 /// Score a physical device for interop suitability.  Higher is better.
-///  +2  : discrete GPU
-///  +1  : integrated GPU
-///   0  : any compute-capable device
-///  -∞  : no compute queue or missing required extensions → reject
+/// Native discrete > native integrated > other native > D3D12 translation > CPU.
+///  kDeviceRejected : no compute queue or missing required extensions/version
 int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     // Check for a compute queue.
     const auto qfams = dev.getQueueFamilyProperties();
@@ -128,7 +135,7 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
             break;
         }
     }
-    if (!has_compute) return -1;
+    if (!has_compute) return kDeviceRejected;
 
     // Check device extensions.
     const auto exts = dev.enumerateDeviceExtensionProperties();
@@ -137,16 +144,33 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     const bool ok =
             CheckExtensions(exts, kRequiredDeviceExtensions,
                             std::size(kRequiredDeviceExtensions), missing);
-    if (!ok) return -1;
+    if (!ok) return kDeviceRejected;
+
+    const auto props = dev.getProperties();
 
     // Shaders are compiled for Vulkan 1.3 (SPIR-V 1.6); reject older devices.
-    const auto props = dev.getProperties();
-    if (props.apiVersion < VK_API_VERSION_1_3) return -1;
+    if (props.apiVersion < VK_API_VERSION_1_3) return kDeviceRejected;
 
-    // Score device type.
-    if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) return 2;
-    if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) return 1;
-    return 0;
+    const std::string renderer(props.deviceName.data());
+    const bool software = renderer.find("llvmpipe") != std::string::npos ||
+                          renderer.find("SwiftShader") != std::string::npos ||
+                          renderer.find("WARP") != std::string::npos ||
+                          renderer.find("Basic Render Driver") !=
+                                  std::string::npos;
+    if (software) return 0;
+
+    int score = 10;
+    if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+        score = 30;
+    } else if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+        score = 20;
+    }
+    // Penalize emulated Vulkan-on-D3D12 devices (e.g. WSL2)
+    if (renderer.find("D3D12") != std::string::npos ||
+        renderer.find("Dozen") != std::string::npos) {
+        --score;
+    }
+    return score;
 }
 
 }  // namespace
@@ -170,7 +194,7 @@ GaussianSplatVulkanInteropContext::~GaussianSplatVulkanInteropContext() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::Initialize(
-        const std::uint8_t* gl_adapter_id, std::size_t gl_adapter_id_size) {
+        const GpuAdapterInfo* required_adapter) {
     if (initialized_) return true;
 
     // Initialize the global dynamic dispatcher with vkGetInstanceProcAddr
@@ -193,7 +217,8 @@ bool GaussianSplatVulkanInteropContext::Initialize(
     // function pointers (required for physical device enumeration etc.).
     VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Instance>(*instance_));
 
-    if (!SelectPhysicalDevice(gl_adapter_id, gl_adapter_id_size)) return false;
+    if (!SelectPhysicalDevice(required_adapter)) return false;
+
     if (!CreateLogicalDevice()) return false;
 
     // After device creation, update the dispatcher with device-level
@@ -316,7 +341,7 @@ bool GaussianSplatVulkanInteropContext::CreateInstance() {
 // ---------------------------------------------------------------------------
 
 bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
-        const std::uint8_t* gl_adapter_id, std::size_t gl_adapter_id_size) {
+        const GpuAdapterInfo* required_adapter) {
     auto devices = instance_.enumeratePhysicalDevices();
     if (devices.empty()) {
         last_error_ = "No Vulkan-capable devices found";
@@ -324,36 +349,16 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
         return false;
     }
 
-    // GL_EXT_memory_object interop requires the Vulkan device and the GL
-    // context to be the *same* physical GPU adapter: cross-adapter import
-    // is not supported and fails silently (GL_OUT_OF_MEMORY) even though
-    // the Vulkan-side export succeeds. When the GL adapter id is known
-    // (8-byte DXGI LUID on Windows, 16-byte GL_DEVICE_UUID_EXT elsewhere),
-    // restrict candidates to the matching device first.
-    const bool have_id = gl_adapter_id != nullptr &&
-                        (gl_adapter_id_size == 8 || gl_adapter_id_size == 16);
-
-    int best_score = -1;
+    int best_score = kDeviceRejected;
     std::size_t best_idx = devices.size();
     for (std::size_t i = 0; i < devices.size(); ++i) {
-        int score = ScoreDevice(devices[i]);
-        if (score < 0) continue;
-        if (have_id) {
-            const auto id_props =
-                    devices[i].getProperties2<vk::PhysicalDeviceProperties2,
-                                              vk::PhysicalDeviceIDProperties>();
-            const auto& id = id_props.get<vk::PhysicalDeviceIDProperties>();
-            bool matches = false;
-            if (gl_adapter_id_size == 8) {
-                matches = id.deviceLUIDValid &&
-                          std::memcmp(id.deviceLUID.data(), gl_adapter_id,
-                                      8) == 0;
-            } else {
-                matches = std::memcmp(id.deviceUUID.data(), gl_adapter_id,
-                                      16) == 0;
-            }
-            if (!matches) continue;  // not the GL-bound adapter; skip
-            score += 100;  // guarantee a match wins over any non-match
+        const int score = ScoreDevice(devices[i]);
+        if (score == kDeviceRejected) continue;
+        if (required_adapter && required_adapter->valid &&
+            !SameAdapter(GetAdapterInfo(static_cast<vk::PhysicalDevice::CType>(
+                                 *devices[i])),
+                        *required_adapter)) {
+            continue;  // not the required adapter; skip
         }
         if (score > best_score) {
             best_score = score;
@@ -361,29 +366,13 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
         }
     }
 
-    if (best_idx == devices.size() && have_id) {
-        // No device matched the GL adapter. Falling back to best-effort
-        // scoring risks a repeat of the cross-adapter import failure, but a
-        // working (if unshared) device is still better than none for
-        // callers that only need compute, so fall back with a warning.
-        utility::LogWarning(
-                "GaussianSplat Vulkan: no physical device matched the GL "
-                "context's adapter; GL/Vulkan interop may fail. Falling "
-                "back to best-effort device scoring.");
-        for (std::size_t i = 0; i < devices.size(); ++i) {
-            const int score = ScoreDevice(devices[i]);
-            if (score > best_score) {
-                best_score = score;
-                best_idx = i;
-            }
-        }
-    }
-
     if (best_idx == devices.size()) {
         last_error_ =
-                "No suitable Vulkan device found with required interop "
-                "extensions. Required "
-                "extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+                required_adapter && required_adapter->valid
+                        ? "No Vulkan device matched the required adapter '" +
+                                  required_adapter->device_name + "'"
+                        : "No suitable Vulkan device found with required "
+                          "interop extensions. Required extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
