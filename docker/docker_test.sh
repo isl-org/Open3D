@@ -156,10 +156,13 @@ cpp_test() {
         # executes the same four GoogleTest shards.
         gtest_shards=4
         echo "[cpp_test()] Running sharded gtests with GNU parallel."
+        # Each shard is a separate process but shares the host /tmp by default.
+        # Many IO tests write fixed basenames (e.g. test.xyzrgb) under
+        # GetTempDirectoryPath(); isolate shards via TMPDIR so they do not race.
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
             cd build \
          && seq 0 $((${gtest_shards} - 1)) | parallel -k --jobs ${gtest_shards} --halt never \
-            'GTEST_TOTAL_SHARDS=${gtest_shards} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
+            'd=/tmp/open3d-gtest-shard-{}; mkdir -p "$d" && TMPDIR="$d" GTEST_TOTAL_SHARDS='"${gtest_shards}"' GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
         "
     else
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \

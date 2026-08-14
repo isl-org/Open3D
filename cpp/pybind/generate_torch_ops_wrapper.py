@@ -138,13 +138,24 @@ def main():
     args = parser.parse_args()
     print(args)
 
+    _dll_dir_handles = []
     if sys.platform == "win32":
-        open3d_deps = os.add_dll_directory(args.dependencies_dir)
+        # open3d_torch_ops.dll depends on Open3D.dll, torch, and (for XPU
+        # builds) Intel SYCL runtime DLLs under site-packages/Library/bin.
+        def _add_dll_dir(path):
+            if path and os.path.isdir(path):
+                _dll_dir_handles.append(os.add_dll_directory(path))
 
-    torch.ops.load_library(args.lib)
+        _add_dll_dir(args.dependencies_dir)
+        _add_dll_dir(os.path.dirname(os.path.abspath(args.lib)))
+        _add_dll_dir(os.path.join(os.path.dirname(torch.__file__), "lib"))
+        _add_dll_dir(os.path.join(sys.prefix, "Library", "bin"))
 
-    if sys.platform == "win32":
-        open3d_deps.close()
+    try:
+        torch.ops.load_library(args.lib)
+    finally:
+        for handle in _dll_dir_handles:
+            handle.close()
 
     generated_function_strs = ''
     generated_namedtuple_strs = ''

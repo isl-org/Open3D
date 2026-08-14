@@ -31,12 +31,12 @@
 //
 //***************************************************************************************/
 
-#include <algorithm>
-#include <limits>
-
 #include <tbb/blocked_range.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
+
+#include <algorithm>
+#include <limits>
 
 #include "open3d/ml/pytorch/pointnet/SamplingKernel.h"
 
@@ -84,17 +84,12 @@ void furthest_point_sampling_launcher_cpu(
                         tbb::parallel_for(
                                 tbb::blocked_range<int>(0, n),
                                 [&](const tbb::blocked_range<int> &kr) {
-                                    BestPair &local_best =
-                                            tls_best.local();
-                                    for (int k = kr.begin();
-                                         k != kr.end();
+                                    BestPair &local_best = tls_best.local();
+                                    for (int k = kr.begin(); k != kr.end();
                                          ++k) {
-                                        float x2 =
-                                                dataset_b[k * 3 + 0];
-                                        float y2 =
-                                                dataset_b[k * 3 + 1];
-                                        float z2 =
-                                                dataset_b[k * 3 + 2];
+                                        float x2 = dataset_b[k * 3 + 0];
+                                        float y2 = dataset_b[k * 3 + 1];
+                                        float z2 = dataset_b[k * 3 + 2];
 
                                         float d = (x2 - x1) * (x2 - x1) +
                                                   (y2 - y1) * (y2 - y1) +

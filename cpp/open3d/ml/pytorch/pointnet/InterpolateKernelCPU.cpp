@@ -31,12 +31,12 @@
 //
 //***************************************************************************************/
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
-
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_for.h>
 
 #include "open3d/ml/pytorch/pointnet/InterpolateKernel.h"
 
@@ -63,8 +63,7 @@ void three_nn_launcher_cpu(int b,
                     const int batch = flat / n;
                     const int i = flat % n;
 
-                    const float *unknown_b =
-                            unknown + batch * n * 3 + i * 3;
+                    const float *unknown_b = unknown + batch * n * 3 + i * 3;
                     const float *known_b = known + batch * m * 3;
                     float *dist2_b = dist2 + batch * n * 3 + i * 3;
                     int *idx_b = idx + batch * n * 3 + i * 3;
@@ -82,8 +81,7 @@ void three_nn_launcher_cpu(int b,
                         float x = known_b[k * 3 + 0];
                         float y = known_b[k * 3 + 1];
                         float z = known_b[k * 3 + 2];
-                        float d = (ux - x) * (ux - x) +
-                                  (uy - y) * (uy - y) +
+                        float d = (ux - x) * (ux - x) + (uy - y) * (uy - y) +
                                   (uz - z) * (uz - z);
                         if (d < best1) {
                             best3 = best2;
@@ -137,14 +135,10 @@ void three_interpolate_launcher_cpu(int b,
                     const int c_idx = (flat / n) % c;
                     const int i = flat % n;
 
-                    const float *points_bc =
-                            points + batch * c * m + c_idx * m;
-                    const int *idx_i =
-                            idx + batch * n * 3 + i * 3;
-                    const float *weight_i =
-                            weight + batch * n * 3 + i * 3;
-                    float *out_bci =
-                            out + batch * c * n + c_idx * n + i;
+                    const float *points_bc = points + batch * c * m + c_idx * m;
+                    const int *idx_i = idx + batch * n * 3 + i * 3;
+                    const float *weight_i = weight + batch * n * 3 + i * 3;
+                    float *out_bci = out + batch * c * n + c_idx * n + i;
 
                     *out_bci = weight_i[0] * points_bc[idx_i[0]] +
                                weight_i[1] * points_bc[idx_i[1]] +
@@ -174,30 +168,27 @@ void three_interpolate_grad_launcher_cpu(int b,
     std::fill(grad_points, grad_points + b * c * m, 0.0f);
 
     const int total_slices = b * c;
-    tbb::parallel_for(
-            tbb::blocked_range<int>(0, total_slices),
-            [&](const tbb::blocked_range<int> &r) {
-                for (int flat = r.begin(); flat != r.end(); ++flat) {
-                    const int batch = flat / c;
-                    const int c_idx = flat % c;
+    tbb::parallel_for(tbb::blocked_range<int>(0, total_slices),
+                      [&](const tbb::blocked_range<int> &r) {
+                          for (int flat = r.begin(); flat != r.end(); ++flat) {
+                              const int batch = flat / c;
+                              const int c_idx = flat % c;
 
-                    const float *grad_out_bc =
-                            grad_out + batch * c * n + c_idx * n;
-                    const int *idx_b =
-                            idx + batch * n * 3;
-                    const float *weight_b =
-                            weight + batch * n * 3;
-                    float *grad_points_bc =
-                            grad_points + batch * c * m + c_idx * m;
+                              const float *grad_out_bc =
+                                      grad_out + batch * c * n + c_idx * n;
+                              const int *idx_b = idx + batch * n * 3;
+                              const float *weight_b = weight + batch * n * 3;
+                              float *grad_points_bc =
+                                      grad_points + batch * c * m + c_idx * m;
 
-                    for (int i = 0; i < n; ++i) {
-                        const int *idx_i = idx_b + i * 3;
-                        const float *weight_i = weight_b + i * 3;
-                        float g = grad_out_bc[i];
-                        grad_points_bc[idx_i[0]] += weight_i[0] * g;
-                        grad_points_bc[idx_i[1]] += weight_i[1] * g;
-                        grad_points_bc[idx_i[2]] += weight_i[2] * g;
-                    }
-                }
-            });
+                              for (int i = 0; i < n; ++i) {
+                                  const int *idx_i = idx_b + i * 3;
+                                  const float *weight_i = weight_b + i * 3;
+                                  float g = grad_out_bc[i];
+                                  grad_points_bc[idx_i[0]] += weight_i[0] * g;
+                                  grad_points_bc[idx_i[1]] += weight_i[1] * g;
+                                  grad_points_bc[idx_i[2]] += weight_i[2] * g;
+                              }
+                          }
+                      });
 }

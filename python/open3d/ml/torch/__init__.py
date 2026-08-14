@@ -92,14 +92,14 @@ if _sys.platform == 'win32':
         # torch/lib holds torch.dll, torch_xpu.dll and other bundled DLLs.
         _torch_lib = _os.path.join(_os.path.dirname(_torch.__file__), 'lib')
         if _os.path.isdir(_torch_lib):
-            _dll_dirs.append(
-                    _os.add_dll_directory(_os.path.abspath(_torch_lib)))
+            _dll_dirs.append(_os.add_dll_directory(
+                _os.path.abspath(_torch_lib)))
         # <sys.prefix>/Library/bin holds the Intel oneAPI/SYCL runtime DLLs
         # (sycl9.dll, pi_*.dll, libmkl_sycl_*.dll, libiomp5md.dll, ...).
         _sycl_rt_bin = _os.path.join(_sys.prefix, 'Library', 'bin')
         if _os.path.isdir(_sycl_rt_bin):
             _dll_dirs.append(
-                    _os.add_dll_directory(_os.path.abspath(_sycl_rt_bin)))
+                _os.add_dll_directory(_os.path.abspath(_sycl_rt_bin)))
 
 _load_except = None
 _loaded = False

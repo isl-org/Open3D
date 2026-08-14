@@ -14,7 +14,7 @@ import mltest
 pytestmark = mltest.default_marks
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_gpu_and_torch_cpu
 def test_three_nn(ml):
 
     values0 = mltest.fetch_numpy(

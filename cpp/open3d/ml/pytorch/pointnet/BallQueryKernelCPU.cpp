@@ -31,10 +31,10 @@
 //
 //***************************************************************************************/
 
-#include <algorithm>
-
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+
+#include <algorithm>
 
 #include "open3d/ml/pytorch/pointnet/BallQueryKernel.h"
 
@@ -62,8 +62,7 @@ void ball_query_launcher_cpu(int b,
                     const int batch = flat / m;
                     const int i = flat % m;
 
-                    const float *new_xyz_bi =
-                            new_xyz + batch * m * 3 + i * 3;
+                    const float *new_xyz_bi = new_xyz + batch * m * 3 + i * 3;
                     const float *xyz_b = xyz + batch * n * 3;
                     int *idx_bi = idx + batch * m * nsample + i * nsample;
 

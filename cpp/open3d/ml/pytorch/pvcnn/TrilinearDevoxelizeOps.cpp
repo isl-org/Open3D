@@ -35,6 +35,35 @@
 #include "open3d/ml/pytorch/pvcnn/TrilinearDevoxelizeKernel.h"
 #include "torch/script.h"
 
+#if !(defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE))
+std::vector<at::Tensor> trilinear_devoxelize_forward(
+        const int64_t r,
+        const bool is_training,
+        const at::Tensor coords,
+        const at::Tensor features) {
+    (void)r;
+    (void)is_training;
+    (void)coords;
+    (void)features;
+    TORCH_CHECK(false,
+                "trilinear_devoxelize_forward requires Open3D built with CUDA "
+                "or SYCL");
+}
+
+at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
+                                         const at::Tensor indices,
+                                         const at::Tensor weights,
+                                         const int64_t r) {
+    (void)grad_y;
+    (void)indices;
+    (void)weights;
+    (void)r;
+    TORCH_CHECK(false,
+                "trilinear_devoxelize_backward requires Open3D built with CUDA "
+                "or SYCL");
+}
+#endif
+
 #if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
 std::vector<at::Tensor> trilinear_devoxelize_forward(
         const int64_t r,
@@ -178,6 +207,8 @@ at::Tensor trilinear_devoxelize_backward(const at::Tensor grad_y,
     return grad_x;
 }
 
+#endif
+
 static auto registry = torch::RegisterOperators(
         "open3d::trilinear_devoxelize_forward(int r, bool is_training,"
         "Tensor coords, Tensor features)"
@@ -189,5 +220,3 @@ static auto registry_grad = torch::RegisterOperators(
         "Tensor indices, Tensor weights, int r)"
         " -> Tensor grad_x",
         &trilinear_devoxelize_backward);
-
-#endif

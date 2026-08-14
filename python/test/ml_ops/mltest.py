@@ -268,12 +268,19 @@ class MLTensor:
 
 
 # add parameterizations for the ml module and the device
+_ml_gpu_and_torch_cpu = [
+    v for k, v in _ml_modules.items()
+    if v.device_is_gpu or (v.module.__name__ == 'torch' and not v.device_is_gpu)
+]
 parametrize = SimpleNamespace(
     ml=pytest.mark.parametrize('ml', _ml_modules.values()),
     ml_cpu_only=pytest.mark.parametrize(
         'ml', [v for k, v in _ml_modules.items() if not v.device_is_gpu]),
     ml_gpu_only=pytest.mark.parametrize(
         'ml', [v for k, v in _ml_modules.items() if v.device_is_gpu]),
+    # PointNet-style TF ops are GPU-only; PyTorch has CPU fallbacks on this
+    # branch. Run GPU frameworks plus torch CPU, but not tensorflow CPU:0.
+    ml_gpu_and_torch_cpu=pytest.mark.parametrize('ml', _ml_gpu_and_torch_cpu),
     ml_torch_only=pytest.mark.parametrize(
         'ml',
         [v for k, v in _ml_modules.items() if v.module.__name__ == 'torch']),

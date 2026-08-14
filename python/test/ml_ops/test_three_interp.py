@@ -14,7 +14,7 @@ import mltest
 pytestmark = mltest.default_marks
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_gpu_and_torch_cpu
 def test_three_interp(ml):
 
     values0 = mltest.fetch_numpy(
@@ -40,7 +40,7 @@ def test_three_interp(ml):
     np.testing.assert_allclose(ans, expected, rtol=1e-5, atol=1e-6)
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_gpu_and_torch_cpu
 def test_three_interp_grad(ml):
     rng = np.random.RandomState(0)
     b, c, n, m = 2, 4, 20, 10
