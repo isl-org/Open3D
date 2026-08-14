@@ -172,6 +172,10 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
 
     auto* glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
 
+#if defined(_WIN32)
+    SetNativeWindowIcon(glfw_window);
+#endif
+
     glfwSetWindowUserPointer(glfw_window, o3d_window);
     glfwSetWindowSizeCallback(glfw_window, ResizeCallback);
     glfwSetWindowPosCallback(glfw_window, WindowMovedCallback);

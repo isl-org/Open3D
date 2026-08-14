@@ -55,6 +55,8 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}" "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
         if (UNIX)
+            install(FILES "$<TARGET_FILE:TBB::tbb>"
+                DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}")
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
@@ -160,6 +162,18 @@ endmacro()
 if (BUILD_GUI)
     open3d_add_app_common(Open3DViewer Open3D Open3DViewer)
     open3d_add_app_gui(Open3DViewer Open3D Open3DViewer)
+    if (WIN32)
+        add_custom_target(Open3DViewerMSIX
+            COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}"
+                --config "$<CONFIG>"
+            COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass
+                    -File "${PROJECT_SOURCE_DIR}/cpp/apps/Open3DViewer/WindowsMSIX/build_msix.ps1"
+                    -InstallDir "${CMAKE_INSTALL_PREFIX}/bin/Open3D"
+                    -Version "${PROJECT_VERSION}"
+                    -OutDir "${CMAKE_BINARY_DIR}/msix-package"
+            VERBATIM)
+            add_dependencies(Open3DViewerMSIX Open3DViewer)
+    endif()
 endif()
 
 open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)

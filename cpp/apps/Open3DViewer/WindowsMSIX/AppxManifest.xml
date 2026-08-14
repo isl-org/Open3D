@@ -6,13 +6,13 @@
   - Checked in as source; only the Version attribute is substituted at pack time
     in CI (placeholder @OPEN3D_MSIX_VERSION@ → four-part version, e.g. 0.18.0.0).
   - Publisher "CN=Open3D" is matched by the self-signed dev cert generated in CI
-    via: winapp cert generate --manifest AppxManifest.xml
+    using the manifest publisher value
   - runFullTrust is the only required capability for a packaged Win32 desktop app.
   - File associations are derived from cpp/apps/Open3DViewer/Open3DViewer.xml.
     The viewer receives the opened file path as argv[1] (standard packaged app
     full-trust activation behaviour).
-  - Assets/ PNGs are checked in (generated once from icon.ico with
-    winapp manifest update-assets; regenerate and commit on icon changes).
+  - MSIX PNGs are kept with the shared GUI resources and installed under
+    resources/ alongside the viewer's other runtime resources.
 -->
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -29,7 +29,7 @@
   <Properties>
     <DisplayName>Open3D</DisplayName>
     <PublisherDisplayName>Open3D</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>resources\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -48,15 +48,15 @@
       <uap:VisualElements
         DisplayName="Open3D"
         Description="Open3D Viewer for 3D data, meshes, point clouds and Gaussian Splats."
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png"
+        Square150x150Logo="resources\Square150x150Logo.png"
+        Square44x44Logo="resources\Square44x44Logo.png"
         BackgroundColor="transparent" />
       <Extensions>
         <!-- Register file associations for all formats supported by Open3D.
              Source of truth: cpp/apps/Open3DViewer/Open3DViewer.xml        -->
         <uap:Extension Category="windows.fileTypeAssociation">
           <uap:FileTypeAssociation Name="open3dformats">
-            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:Logo>resources\Square44x44Logo.png</uap:Logo>
             <uap:DisplayName>Open3D 3D file</uap:DisplayName>
             <uap:SupportedFileTypes>
               <uap:FileType>.ply</uap:FileType>
