@@ -230,7 +230,7 @@ bool SteerNextGLContextToAdapter(const GpuAdapterInfo& info) {
     // this relies on the Mesa/NVIDIA PRIME-offload env var convention, which
     // only takes effect if set before the first GL/GLX context is created
     // in this process.
-    setenv("DRI_PRIME", pci_id, 1);
+    setenv("DRI_PRIME", pci_id.c_str(), 1);
     if (info.is_nvidia) {
         setenv("__NV_PRIME_RENDER_OFFLOAD", "1", 1);
         setenv("__GLX_VENDOR_LIBRARY_NAME", "nvidia", 1);
