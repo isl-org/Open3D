@@ -1100,9 +1100,9 @@ Ref:
             "nonzero",
             [](const Tensor& tensor, bool as_tuple) -> py::object {
                 if (as_tuple) {
-                    return py::cast(tensor.NonZero());
-                } else {
                     return py::cast(tensor.NonZeroNumpy());
+                } else {
+                    return py::cast(tensor.NonZero());
                 }
             },
             "Find the indices of the elements that are non-zero.",
@@ -1110,13 +1110,12 @@ Ref:
     docstring::ClassMethodDocInject(
             m, "Tensor", "nonzero",
             {{"as_tuple",
-              "If ``as_tuple`` is True, returns an int64 tensor of shape "
-              "{num_dims, num_non_zeros}, where the i-th row contains the "
-              "indices of the non-zero elements in i-th dimension of the "
-              "original tensor. If ``as_tuple`` is False, Returns a vector "
-              "of "
-              "int64 Tensors, each containing the indices of the non-zero "
-              "elements in each dimension."}});
+              "If ``as_tuple`` is True, returns a list of int64 Tensors, "
+              "each containing the indices of the non-zero elements in each "
+              "dimension. If ``as_tuple`` is False, returns an int64 tensor "
+              "of shape {num_dims, num_non_zeros}, where the i-th row "
+              "contains the indices of the non-zero elements in i-th "
+              "dimension of the original tensor."}});
     tensor.def("all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
                py::arg("dim") = py::none(), py::arg("keepdim") = false,
                "Returns true if all elements in the tensor are true. Only "
