@@ -373,10 +373,9 @@ jobs:
       artifact-metadata: write
     runs-on: windows-2022
     needs: build-lib
-    # Build wheels even if build-lib failed (e.g. some architecture or debug
-    # builds failed, but others succeeded, or unit tests failed): we want to build
-    # whichever wheels have available devel package artifacts.
-    if: ${{ !cancelled() }}
+    # Build wheels even if build-lib failed (e.g. flaky unit tests): still run
+    # whichever matrix legs have devel package artifacts available.
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -600,6 +599,7 @@ jobs:
       contents: read
     runs-on: windows-2022
     needs: [build-wheel]
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:

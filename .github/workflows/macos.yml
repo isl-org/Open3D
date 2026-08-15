@@ -143,6 +143,7 @@ jobs:
 
   build-wheel:
     needs: build-lib
+    if: ${{ always() && !cancelled() }}
     name: Build wheel
     permissions:
       contents: write  # upload
@@ -266,6 +267,7 @@ jobs:
       contents: read
     runs-on: ${{ matrix.os }}
     needs: [build-wheel]
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
