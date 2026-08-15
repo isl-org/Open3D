@@ -1068,7 +1068,18 @@ def test_non_zero(device):
     np_x = np.array([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
     np_nonzero_tuple = np.nonzero(np_x)
     o3_x = o3c.Tensor(np_x, device=device)
+
+    expected_tensor = np.vstack(np_nonzero_tuple)
+    o3_nonzero = o3_x.nonzero()
+    o3_nonzero_false = o3_x.nonzero(as_tuple=False)
+    assert isinstance(o3_nonzero, o3c.Tensor)
+    assert isinstance(o3_nonzero_false, o3c.Tensor)
+    np.testing.assert_equal(o3_nonzero.cpu().numpy(), expected_tensor)
+    np.testing.assert_equal(o3_nonzero_false.cpu().numpy(), expected_tensor)
+
     o3_nonzero_tuple = o3_x.nonzero(as_tuple=True)
+    assert not isinstance(o3_nonzero_tuple, o3c.Tensor)
+    assert len(o3_nonzero_tuple) == np_x.ndim
     for np_t, o3_t in zip(np_nonzero_tuple, o3_nonzero_tuple):
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
