@@ -163,8 +163,8 @@ EngineInstance::EngineInstance() {
             // GL_EXT_memory_object import) matters more than which GPU is
             // used.
             if (gl_ctx.IsValid() && vk_adapter_info.valid) {
-                const GpuAdapterInfo gl_actual = GetAdapterInfoForWindow(
-                        gl_ctx.GetNativeWindowHandle());
+                const GpuAdapterInfo gl_actual =
+                        GetAdapterInfoForWindow(gl_ctx.GetNativeWindowHandle());
                 if (gl_actual.valid &&
                     !SameAdapter(gl_actual, vk_adapter_info)) {
                     utility::LogWarning(
@@ -176,7 +176,8 @@ EngineInstance::EngineInstance() {
                     if (!vk_ctx.Initialize(&gl_actual)) {
                         utility::LogWarning(
                                 "EngineInstance: Vulkan reinit to match GL "
-                                "adapter failed: {}", vk_ctx.GetLastError());
+                                "adapter failed: {}",
+                                vk_ctx.GetLastError());
                     }
                 }
             }

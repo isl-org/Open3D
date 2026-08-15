@@ -15,9 +15,8 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <windows.h>
-
 #include <dxgi.h>
+#include <windows.h>
 #pragma comment(lib, "dxgi.lib")
 #endif
 
@@ -38,12 +37,11 @@
 #endif
 
 #include <GL/glew.h>
+#include <fmt/format.h>
 
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
-
-#include <fmt/format.h>
 
 #include "open3d/utility/Logging.h"
 
@@ -74,8 +72,8 @@ bool FindMonitorRectForAdapter(const GpuAdapterInfo& info, RECT* out_rect) {
         if (!adapter) continue;
         DXGI_ADAPTER_DESC1 adesc{};
         if (SUCCEEDED(adapter->GetDesc1(&adesc)) &&
-            std::memcmp(&adesc.AdapterLuid, info.luid,
-                        sizeof(info.luid)) == 0) {
+            std::memcmp(&adesc.AdapterLuid, info.luid, sizeof(info.luid)) ==
+                    0) {
             IDXGIOutput* output = nullptr;
             if (adapter->EnumOutputs(0, &output) != DXGI_ERROR_NOT_FOUND &&
                 output) {
@@ -99,11 +97,10 @@ bool FindMonitorRectForAdapter(const GpuAdapterInfo& info, RECT* out_rect) {
 GpuAdapterInfo GetAdapterInfo(VkPhysicalDevice physical_device) {
     GpuAdapterInfo info;
     vk::PhysicalDevice pd(physical_device);
-    const auto chain =
-            pd.getProperties2<vk::PhysicalDeviceProperties2,
-                              vk::PhysicalDeviceIDProperties>();
+    const auto chain = pd.getProperties2<vk::PhysicalDeviceProperties2,
+                                         vk::PhysicalDeviceIDProperties>();
     info.device_name = chain.get<vk::PhysicalDeviceProperties2>()
-                                .properties.deviceName.data();
+                               .properties.deviceName.data();
     const auto& id = chain.get<vk::PhysicalDeviceIDProperties>();
     if (id.deviceLUIDValid) {
         std::memcpy(info.luid, id.deviceLUID.data(), sizeof(info.luid));
@@ -203,8 +200,7 @@ GpuAdapterInfo GetAdapterInfo(VkPhysicalDevice physical_device) {
     const auto chain =
             pd.getProperties2<vk::PhysicalDeviceProperties2,
                               vk::PhysicalDevicePCIBusInfoPropertiesEXT>();
-    const auto& pci =
-            chain.get<vk::PhysicalDevicePCIBusInfoPropertiesEXT>();
+    const auto& pci = chain.get<vk::PhysicalDevicePCIBusInfoPropertiesEXT>();
     info.pci_domain = pci.pciDomain;
     info.pci_bus = pci.pciBus;
     info.pci_device = pci.pciDevice;
@@ -213,8 +209,9 @@ GpuAdapterInfo GetAdapterInfo(VkPhysicalDevice physical_device) {
     const auto driver_chain =
             pd.getProperties2<vk::PhysicalDeviceProperties2,
                               vk::PhysicalDeviceDriverProperties>();
-    info.is_nvidia = driver_chain.get<vk::PhysicalDeviceDriverProperties>()
-                              .driverID == vk::DriverId::eNvidiaProprietary;
+    info.is_nvidia =
+            driver_chain.get<vk::PhysicalDeviceDriverProperties>().driverID ==
+            vk::DriverId::eNvidiaProprietary;
     info.valid = true;
     return info;
 }
@@ -222,9 +219,9 @@ GpuAdapterInfo GetAdapterInfo(VkPhysicalDevice physical_device) {
 bool SteerNextGLContextToAdapter(const GpuAdapterInfo& info) {
     if (!info.valid) return false;
 
-        const std::string pci_id = fmt::format(
-            "pci-{:04x}_{:02x}_{:02x}_{:01x}", info.pci_domain,
-            info.pci_bus, info.pci_device, info.pci_function);
+    const std::string pci_id =
+            fmt::format("pci-{:04x}_{:02x}_{:02x}_{:01x}", info.pci_domain,
+                        info.pci_bus, info.pci_device, info.pci_function);
 
     // EXPERIMENTAL: no portable GLX API exists to select a specific GPU, so
     // this relies on the Mesa/NVIDIA PRIME-offload env var convention, which

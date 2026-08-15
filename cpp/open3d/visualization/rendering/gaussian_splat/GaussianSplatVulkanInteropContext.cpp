@@ -38,13 +38,12 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <GL/glew.h>
+#include <fmt/format.h>
 
 #include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <vector>
-
-#include <fmt/format.h>
 
 #include "open3d/utility/Logging.h"
 
@@ -123,7 +122,8 @@ bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
 constexpr int kDeviceRejected = std::numeric_limits<int>::min();
 
 /// Score a physical device for interop suitability.  Higher is better.
-/// Native discrete > native integrated > other native > D3D12 translation > CPU.
+/// Native discrete > native integrated > other native > D3D12 translation >
+/// CPU.
 ///  kDeviceRejected : no compute queue or missing required extensions/version
 int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     // Check for a compute queue.
@@ -152,11 +152,11 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     if (props.apiVersion < VK_API_VERSION_1_3) return kDeviceRejected;
 
     const std::string renderer(props.deviceName.data());
-    const bool software = renderer.find("llvmpipe") != std::string::npos ||
-                          renderer.find("SwiftShader") != std::string::npos ||
-                          renderer.find("WARP") != std::string::npos ||
-                          renderer.find("Basic Render Driver") !=
-                                  std::string::npos;
+    const bool software =
+            renderer.find("llvmpipe") != std::string::npos ||
+            renderer.find("SwiftShader") != std::string::npos ||
+            renderer.find("WARP") != std::string::npos ||
+            renderer.find("Basic Render Driver") != std::string::npos;
     if (software) return 0;
 
     int score = 10;
@@ -357,7 +357,7 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
         if (required_adapter && required_adapter->valid &&
             !SameAdapter(GetAdapterInfo(static_cast<vk::PhysicalDevice::CType>(
                                  *devices[i])),
-                        *required_adapter)) {
+                         *required_adapter)) {
             continue;  // not the required adapter; skip
         }
         if (score > best_score) {
@@ -372,7 +372,9 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
                         ? "No Vulkan device matched the required adapter '" +
                                   required_adapter->device_name + "'"
                         : "No suitable Vulkan device found with required "
-                          "interop extensions. Required extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+                          "interop extensions. Required "
+                          "extensions:"
+                          " " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }

@@ -180,7 +180,8 @@ public:
                     resource_mgr.CreateRenderTarget(view_color, targets.depth);
         }
         // Disable MSAA before binding the render target: Filament validates
-        // MSAA/sampleable-depth compatibility inside SetRenderTarget() (see #7495).
+        // MSAA/sampleable-depth compatibility inside SetRenderTarget() (see
+        // #7495).
         auto* native = view.GetNativeView();
         auto msaa = native->getMultiSampleAntiAliasingOptions();
         msaa.enabled = false;

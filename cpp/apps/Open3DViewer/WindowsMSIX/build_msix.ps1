@@ -36,18 +36,24 @@ $manifestPath = Join-Path $STAGING "AppxManifest.xml"
 
 # Generate self-signed cert whose subject matches Publisher="CN=Open3D".
 # Export .cer (public key only) so users can install it to trust the package.
-winapp cert generate `
-    --manifest $manifestPath `
-    --output (Join-Path $OutDir "Open3D.pfx") `
-    --export-cer `
-    --if-exists overwrite
-
-# Pack and sign the MSIX.
 $MSIX_NAME = "Open3DViewer-$OPEN3D_VERSION-x64.msix"
 $MSIX_PATH = Join-Path $OutDir $MSIX_NAME
-winapp pack $STAGING `
-    --output $MSIX_PATH `
-    --cert (Join-Path $OutDir "Open3D.pfx")
+$PFX_PATH = Join-Path $OutDir "Open3D.pfx"
+try {
+    winapp cert generate `
+        --manifest $manifestPath `
+        --output $PFX_PATH `
+        --export-cer `
+        --if-exists overwrite
+
+    # Pack and sign the MSIX. The private key is removed immediately after use.
+    winapp pack $STAGING `
+        --output $MSIX_PATH `
+        --cert $PFX_PATH
+}
+finally {
+    Remove-Item $PFX_PATH -Force -ErrorAction SilentlyContinue
+}
 
 # If running in GitHub Actions, export the MSIX name and path to the environment.
 if ($env:GITHUB_ENV) {

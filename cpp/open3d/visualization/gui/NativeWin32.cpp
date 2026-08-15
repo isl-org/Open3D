@@ -24,20 +24,20 @@ void SetNativeWindowIcon(GLFWwindow* glfw_window) {
     HWND window = glfwGetWin32Window(glfw_window);
     HINSTANCE instance = GetModuleHandle(nullptr);
     HICON small_icon = static_cast<HICON>(LoadImage(
-        instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),
-        GetSystemMetrics(SM_CYSMICON), 0));
+            instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),
+            GetSystemMetrics(SM_CYSMICON), 0));
     HICON large_icon = static_cast<HICON>(LoadImage(
-        instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXICON),
-        GetSystemMetrics(SM_CYICON), 0));
+            instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXICON),
+            GetSystemMetrics(SM_CYICON), 0));
     if (small_icon && large_icon) {
         SendMessage(window, WM_SETICON, ICON_SMALL,
-            reinterpret_cast<LPARAM>(small_icon));
+                    reinterpret_cast<LPARAM>(small_icon));
         SendMessage(window, WM_SETICON, ICON_BIG,
-            reinterpret_cast<LPARAM>(large_icon));
-    SetClassLongPtr(window, GCLP_HICON,
-            reinterpret_cast<LONG_PTR>(large_icon));
-    SetClassLongPtr(window, GCLP_HICONSM,
-            reinterpret_cast<LONG_PTR>(small_icon));
+                    reinterpret_cast<LPARAM>(large_icon));
+        SetClassLongPtr(window, GCLP_HICON,
+                        reinterpret_cast<LONG_PTR>(large_icon));
+        SetClassLongPtr(window, GCLP_HICONSM,
+                        reinterpret_cast<LONG_PTR>(small_icon));
     }
 }
 
