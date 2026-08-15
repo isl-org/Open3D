@@ -161,10 +161,9 @@ endif()
 # add additional optional compiled modules
 if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
-    # Semicolon-separated DLL search paths for Windows ops wrapper generation.
-    set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>;$<TARGET_FILE_DIR:Open3D::Open3D>")
+    set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>")
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}" --open3d_lib_dir "$<TARGET_FILE_DIR:Open3D::Open3D>"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )

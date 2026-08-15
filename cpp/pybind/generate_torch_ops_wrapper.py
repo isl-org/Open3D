@@ -135,6 +135,12 @@ def main():
                         type=str,
                         required=True,
                         help="PyTorch dependencies directory")
+    parser.add_argument(
+        "--open3d_lib_dir",
+        type=str,
+        default="",
+        help="Directory containing Open3D.dll (Windows torch ops wrapper gen)",
+    )
 
     args = parser.parse_args()
     print(args)
@@ -148,10 +154,9 @@ def main():
                 _dll_dir_handles.append(os.add_dll_directory(path))
 
         _dll_search_paths = []
-        for _dep in args.dependencies_dir.split(';'):
-            _dep = _dep.strip()
-            if _dep:
-                _dll_search_paths.append(_dep)
+        _dll_search_paths.append(args.dependencies_dir)
+        if args.open3d_lib_dir:
+            _dll_search_paths.append(args.open3d_lib_dir)
         _dll_search_paths.append(os.path.dirname(os.path.abspath(args.lib)))
         for _env_name in ('OPEN3D_INSTALL_ROOT', 'Open3D_ROOT'):
             _root = os.environ.get(_env_name)
