@@ -137,7 +137,8 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
         set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
         if (MSVC)
             target_link_options(${TARGET_NAME} PRIVATE "/ENTRY:mainCRTStartup")
-        else # (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" or "Clang")
+        else()
+            # IntelLLVM and Clang on Windows use the standard main entry point.
             target_link_options(${TARGET_NAME} PRIVATE
                                 "-Xlinker" "/ENTRY:mainCRTStartup")
         endif()
