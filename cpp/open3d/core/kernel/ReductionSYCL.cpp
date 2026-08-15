@@ -75,9 +75,6 @@ inline size_t ReduceTreeInitialStride(size_t sz) {
 /// the built-in fast path via \c if \c constexpr dispatch on this trait.
 /// File the driver bug upstream and drop this once fixed (URL below).
 ///
-/// TODO(open3d): file an Intel driver bug for
-/// sycl::reduce_over_group<sycl::multiplies<int64_t>> returning 0 on Arc
-/// A770 and link the issue here; remove this workaround once fixed upstream.
 template <class Op>
 struct UseManualGroupReduce : std::false_type {};
 template <class T>

@@ -12,7 +12,9 @@
 /// Included only from \ref KnnSearchOpsSYCL.cpp (not public API). Algorithm
 /// matches CUDA `FixedRadiusSearchImpl.cuh`; shared geometry in \ref
 /// NeighborSearchCommon.h
-/// (`SpatialHash`, `ComputeVoxelIndex`). See `nns/SYCL_DESIGN.md` for overview.
+/// (`SpatialHash`, `ComputeVoxelIndex`). Cross-backend NNS notes:
+/// `docs/nns_hashmap_cpu_cuda_sycl.md`. See `KnnSearchOpsSYCL.cpp` for the KNN
+/// driver overview.
 ///
 /// \section FrsSyclGrid Grid build (\ref BuildSpatialHashTableSYCL)
 ///
@@ -182,7 +184,7 @@ struct SortKey {
 /// waiting host-side. Note that Pass 3's `sycl::buffer` scratch (see the
 /// comment above it) still forces a host block at its own scope exit, so
 /// this function is not fully async yet; the event is still returned for API
-/// consistency and because Pass 1/2 no longer add their own redundant waits.
+/// consistency and to chain Pass 1/2 without redundant host waits.
 template <class T>
 sycl::event BuildSpatialHashTableSYCLRaw(sycl::queue& queue,
                                          const T* points_ptr,

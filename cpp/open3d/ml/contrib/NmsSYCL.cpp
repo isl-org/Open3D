@@ -92,9 +92,7 @@ int NmsSYCLKernel(sycl::queue &queue,
 
         cgh.parallel_for(
                 sycl::nd_range<1>(global, local),
-                // Item 7b.4: boxes and sort_indices are distinct, never-
-                // aliasing raw pointers, so this kernel can safely take the
-                // no-alias hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const int group_id = static_cast<int>(item.get_group(0));
                     const int block_row_idx = group_id / num_block_cols;

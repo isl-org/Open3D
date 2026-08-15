@@ -6,17 +6,13 @@
 // ----------------------------------------------------------------------------
 
 // SYCL implementation of BallQuery — ports BallQuery.cu (ball_query_kernel).
-// One work-group per (batch, query point); work-items grid-stride over the n
-// candidate points in parallel and use an exclusive_scan_over_group-based
-// compaction to claim output slots, instead of the CUDA/original-SYCL
-// version's single-work-item serial scan. This changes which points are
-// selected when more than nsample points are in range (the parallel scan is
-// not guaranteed to visit points in strict ascending-index order the way a
-// single serial scan does) -- see docs/dev/sycl_ml_ops_followups.md, this was
-// intentionally deferred until the caller confirmed ordering doesn't matter
-// (python/test/ml_ops/test_query_pts.py now compares neighbor sets, not
-// order). The "cnt==0 -> pad idx_out with the first match" duplicate-padding
-// behavior is preserved exactly for the < nsample case.
+// One work-group per (batch, query); work-items grid-stride over candidates
+// and use exclusive_scan_over_group to claim output slots. When more than
+// nsample points are in range, the in-range neighbor set is correct but slot
+// order may differ from CUDA; python/test/ml_ops/test_query_pts.py compares
+// neighbor sets, not order. A serial-scan kernel would preserve CUDA index
+// order but is not required today. Padding when total matches < nsample still duplicates
+// idx_out[0] into remaining slots (CUDA contract).
 #pragma once
 
 #include <sycl/sycl.hpp>
@@ -66,9 +62,7 @@ inline void BallQuerySYCL(sycl::queue& queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(size_t(b) * m * wg),
                                   sycl::range<1>(wg)),
-                // Item 7b.4: new_xyz/xyz/idx are 3 distinct, never-aliasing
-                // pointers, so this kernel can safely take the no-alias
-                // hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / m);
@@ -135,20 +129,8 @@ inline void BallQuerySYCL(sycl::queue& queue,
                         }
                     }
 
-                    // Padding (fewer than nsample matches found): every
-                    // unwritten slot is filled with the value at idx_out[0]
-                    // (some already-selected in-range match), so all nsample
-                    // slots hold valid indices -- the same padding
-                    // *mechanism* the serial kernel uses ("if (cnt==0) fill
-                    // all nsample slots with the [then-]first match", after
-                    // which slots beyond cnt-1 are never touched again). This
-                    // parallel version's idx_out[0] is not guaranteed to be
-                    // the same specific match the serial kernel would have
-                    // picked (slot assignment order differs, see file header
-                    // comment), which is fine since ordering is no longer
-                    // required to match. idx_out[0] may have been written by
-                    // a different work-item than the one doing the padding,
-                    // so a barrier is required before reading it back.
+                    // Pad slots [total_count, nsample) with idx_out[0]; barrier
+                    // so work-item 0 reads a value another lane may have written.
                     sycl::group_barrier(group);
                     if (lid == 0 && total_count < nsample) {
                         const int first_value = idx_out[0];

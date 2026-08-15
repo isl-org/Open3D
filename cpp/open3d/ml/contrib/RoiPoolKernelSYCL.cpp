@@ -9,22 +9,14 @@
 // pipeline (assign_pts_to_box3d -> get_pooled_idx -> roipool3d_forward),
 // reusing the shared pt_in_box3d from RoiPoolKernel.h. pts_assign / pts_idx
 // are kernel-private scratch (never touched by PyTorch, oneDPL, or
-// sycl-tla), so they are backed by sycl::buffer rather than
-// malloc_device/free: the buffer destructor blocks until its last reader
-// completes and releases the memory, which is exactly the lifetime this
-// scratch needs and removes the free-before-last-kernel-completes hazard a
-// manual USM free would risk.
+// sycl-tla), backed by sycl::buffer so release waits for the last reader
+// (USM malloc/free would need explicit sync across the three kernels).
 //
-// Kernel 2 (get_pooled_idx) uses one work-group per (batch, box); work-items
-// grid-stride over pts_num in parallel and use an
-// exclusive_scan_over_group-based compaction to claim output slots, instead
-// of the CUDA/original-SYCL version's single-work-item serial scan. This
-// changes which of the >sampled_pts_num assigned points are kept (the
-// parallel scan does not visit points in strict ascending-index order the
-// way a single serial scan does) -- see docs/dev/sycl_ml_ops_followups.md,
-// intentionally deferred until the caller confirmed ordering doesn't matter
-// (python/test/ml_ops/test_roi_pool.py now compares pooled feature sets per
-// box, not slot-for-slot order).
+// get_pooled_idx: one work-group per (batch, box); parallel grid-stride over
+// pts_num with exclusive_scan_over_group slot assignment. When more than
+// sampled_pts_num points are assigned, kept indices may differ in order from
+// a serial scan; python/test/ml_ops/test_roi_pool.py compares per-box pooled
+// feature sets, not slot-for-slot indices.
 
 #include "open3d/ml/contrib/RoiPoolKernel.h"
 
@@ -68,9 +60,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                 sycl::range<3>(static_cast<size_t>(batch_size),
                                static_cast<size_t>(pts_num),
                                static_cast<size_t>(boxes_num)),
-                // Item 7b.4: xyz and boxes3d are distinct, never-aliasing
-                // raw pointers, so this kernel can safely take the
-                // no-alias hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::item<3> item) [[intel::kernel_args_restrict]] {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int pt_idx = static_cast<int>(item.get_id(1));
@@ -111,9 +101,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                         sycl::range<1>(static_cast<size_t>(batch_size) *
                                        boxes_num * wg2),
                         sycl::range<1>(wg2)),
-                // Item 7b.4: pooled_empty_flag is the only raw pointer this
-                // kernel touches (pts_assign/pts_idx go through accessors),
-                // so the no-alias hint is safe here too.
+                // pooled_empty_flag is the only raw USM pointer here.
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / boxes_num);
@@ -180,11 +168,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                 });
     });
 
-    // Kernel 3: gather xyz + features for each sampled point into the
-    // output tensor; boxes with no assigned points are left as zeros.
-    // Needs an explicit dependency on event2 because pooled_empty_flag is
-    // raw USM (its RAW hazard is not runtime-tracked); pts_idx_buf's
-    // dependency is tracked automatically via the accessor below.
+    // Kernel 3 depends on kernel 2 explicitly: pooled_empty_flag is raw USM.
     queue.submit([&](sycl::handler &cgh) {
         cgh.depends_on(event2);
         sycl::accessor pts_idx_acc(pts_idx_buf, cgh, sycl::read_only);
@@ -192,10 +176,7 @@ void roipool3dLauncherSYCL(sycl::queue &queue,
                 sycl::range<3>(static_cast<size_t>(batch_size),
                                static_cast<size_t>(boxes_num),
                                static_cast<size_t>(sampled_pts_num)),
-                // Item 7b.4: xyz/pts_feature/pooled_features/
-                // pooled_empty_flag are distinct, never-aliasing raw
-                // pointers, so this kernel can safely take the no-alias
-                // hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::item<3> item) [[intel::kernel_args_restrict]] {
                     const int bs_idx = static_cast<int>(item.get_id(0));
                     const int box_idx = static_cast<int>(item.get_id(1));

@@ -99,9 +99,10 @@ void SparseConvBackpropFilterSYCL(sycl::queue& queue,
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     // Every chunk's GEMM accumulates (beta=1) into the SAME filter_backprop
     // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM completion
-    // event (GemmColumnMajorSYCL no longer blocks -- see GemmSYCL.h). Chunk
-    // N+1's FillColumn also depends on it, since it reuses the same
-    // `columns` scratch buffer that the previous GEMM was still reading.
+    // event (GemmColumnMajorSYCL returns a completion event without blocking —
+    // GemmSYCL.h). Chunk N+1's FillColumn also depends on it, since it reuses
+    // the same `columns` scratch buffer that the previous GEMM was still
+    // reading.
     sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);

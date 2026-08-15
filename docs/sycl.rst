@@ -69,6 +69,10 @@ types.
      - Most
      - Partial (unproject, normals, NNS-based ops; some methods still CPU-only)
 
+For routing, algorithms, and backend-specific semantics of ``core::nns`` and
+``core::HashMap`` on CPU vs CUDA vs SYCL, see :doc:`nns_hashmap_cpu_cuda_sycl`
+and the tutorial page :ref:`core_nns_hashmap_backends`.
+
 Known numerical differences vs. CPU/CUDA
 -----------------------------------------
 

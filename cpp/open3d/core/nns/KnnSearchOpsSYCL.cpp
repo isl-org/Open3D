@@ -22,10 +22,9 @@
 /// tensors use NanoFlann.
 ///
 /// **Includes:** KNN device code in `kernel/KnnSearchSYCLImpl.h`; uniform-grid
-/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Short index:
-/// `nns/SYCL_DESIGN.md`.
-/// **This file header** is the maintainer reference for path selection and
-/// end-to-end flow.
+/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Cross-backend CPU/CUDA/SYCL
+/// overview: `docs/nns_hashmap_cpu_cuda_sycl.md`. **This file header** is the
+/// maintainer reference for path selection and end-to-end flow.
 ///
 /// \section KnnSyclOverview Three search modes in this file
 ///
@@ -274,15 +273,6 @@ T FixedRadiusThreshold(Metric metric, T radius) {
 
 }  // namespace
 
-// Batched KNN search.
-///
-/// For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair.
-///     The running max-heap is maintained in global memory between tile
-///     iterations and finalized (sorted + |q|² added) once per query batch.
-///
-// For k > kSYCLKnnMidKMax: legacy Select + Merge path with P2 fix.
-//
-// C5 fix: batch_knn = min(knn, num_points_i) per batch.
 template <class T, class TIndex>
 void KnnSearchSYCL(const Tensor& points,
                    const Tensor& points_row_splits,
@@ -309,12 +299,9 @@ void KnnSearchSYCL(const Tensor& points,
     Tensor points_c, queries_c;
     bool centered = false;
 
-    // @AGENT: Why do we need to go through the host? Isn't this supposed to be
-    // always on the gpu? neighbors_row_splits may be device-only USM memory
-    // (e.g. when the caller allocated it on a GPU device), so it cannot be
-    // dereferenced directly from the host. Accumulate values in a host-side
-    // buffer and copy the whole thing to neighbors_row_splits in one shot
-    // below.
+    // CSR row_splits are tiny metadata with a fixed batch_knn stride per query;
+    // build them on the host and upload once. neighbors_row_splits may be
+    // device-only USM and is not host-dereferenceable.
     std::vector<int64_t> row_splits_host(neighbors_row_splits.GetShape(0));
     int64_t last_neighbors_count = 0;
     int64_t batch_knn = 0;

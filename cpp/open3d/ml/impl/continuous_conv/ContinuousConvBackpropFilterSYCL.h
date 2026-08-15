@@ -109,8 +109,8 @@ void CConvBackpropFilterSYCL(sycl::queue& queue,
     // if we cannot process all data at once we need multiple runs. Every
     // chunk's GEMM accumulates (beta=1) into the same filter_backprop
     // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM event, not
-    // just on its own FillColumn (GemmColumnMajorSYCL no longer blocks --
-    // see GemmSYCL.h). FillColumn also depends on the previous GEMM since it
+    // just on its own FillColumn (GemmColumnMajorSYCL returns a completion
+    // event without blocking — GemmSYCL.h). FillColumn also depends on the previous GEMM since it
     // reuses the `columns` scratch buffer that GEMM was still reading.
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     sycl::event prev_gemm_event;

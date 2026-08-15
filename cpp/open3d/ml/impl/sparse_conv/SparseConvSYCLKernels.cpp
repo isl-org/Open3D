@@ -51,9 +51,7 @@ sycl::event FillColumnSYCL(sycl::queue& queue,
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(num_columns * kWGSize),
                                   sycl::range<1>(kWGSize)),
-                // Item 7b.4: this kernel takes many distinct, never-
-                // aliasing raw pointer args, so it can safely take the
-                // no-alias hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const TIndex out_idx =
                             begin_idx + static_cast<TIndex>(item.get_group(0));
@@ -150,9 +148,7 @@ sycl::event FillColumnTransposeSYCL(
         cgh.parallel_for(
                 sycl::nd_range<1>(sycl::range<1>(num_columns * kWGSize),
                                   sycl::range<1>(kWGSize)),
-                // Item 7b.4: this kernel takes many distinct, never-
-                // aliasing raw pointer args, so it can safely take the
-                // no-alias hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const TIndex out_idx =
                             begin_idx + static_cast<TIndex>(item.get_group(0));

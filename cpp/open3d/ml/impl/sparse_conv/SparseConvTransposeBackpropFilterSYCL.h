@@ -109,10 +109,10 @@ void SparseConvTransposeBackpropFilterSYCL(
     size_t num_runs = DivUp(num_out, num_cols_per_run);
     // Every chunk's GEMM accumulates (beta=1) into the same filter_backprop
     // buffer, so chunk N+1's GEMM must depend on chunk N's GEMM completion
-    // event (GemmColumnMajorSYCL no longer blocks -- see GemmSYCL.h).
-    // FillColumnTranspose and (when present) MultiplyAndCopyColumnsSYCL also
-    // depend on the previous GEMM since they reuse the `columns`/`gradient`
-    // scratch that GEMM was still reading.
+    // event (GemmColumnMajorSYCL returns a completion event without blocking —
+    // GemmSYCL.h).  FillColumnTranspose and (when present)
+    // MultiplyAndCopyColumnsSYCL also depend on the previous GEMM since they
+    // reuse the `columns`/`gradient` scratch that GEMM was still reading.
     sycl::event prev_gemm_event;
     for (size_t run_i = 0; run_i < num_runs; ++run_i) {
         const TIndex begin_idx = TIndex(run_i * num_cols_per_run);

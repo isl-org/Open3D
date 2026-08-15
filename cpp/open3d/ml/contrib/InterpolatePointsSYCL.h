@@ -8,18 +8,15 @@
 // SYCL implementation of three_nn / three_interpolate(_grad) — ports
 // InterpolatePoints.cu.
 //
-// ThreeNNSYCL uses one work-group per (batch, query) pair: work-items
-// grid-stride over the m candidate points in parallel, each keeping a local
-// top-3 (by ascending distance), then work-item 0 merges the up-to-3*wg
-// per-work-item candidates (staged in SLM) into the final top-3. This
-// changes which of several equal-distance candidates is picked, and the
-// order-of-discovery tie-breaking, versus the original single-work-item
-// serial scan -- see docs/dev/sycl_ml_ops_followups.md, intentionally
-// deferred until the caller confirmed exact tie-breaking doesn't need to
-// match (python/test/ml_ops/test_three_nn.py and test_three_interp.py now
-// tolerate this). three_interpolate is an order-independent weighted gather
-// and its gradient uses atomic scatter (proven pattern from
-// InvertNeighborsList); both are launched via core::ParallelFor.
+// ThreeNNSYCL: one work-group per (batch, query); work-items grid-stride over
+// candidates, merge per-lane top-3 in SLM, then work-item 0 merges to the
+// final top-3. Equal-distance tie-breaking differs from a single-work-item
+// serial scan (CUDA reference); python/test/ml_ops tests check distances and
+// the three neighbor indices, not CUDA's exact tie order. A serial-scan port
+// would match CUDA tie order but is not required today.
+//
+// three_interpolate / _grad: order-independent gather and atomic scatter
+// (InvertNeighborsList pattern), launched via core::ParallelFor.
 
 #pragma once
 
@@ -69,9 +66,7 @@ inline void ThreeNNSYCL(sycl::queue& queue,
                 sycl::nd_range<1>(
                         sycl::range<1>(static_cast<size_t>(b) * n * wg),
                         sycl::range<1>(wg)),
-                // Item 7b.4: unknown/known/dist2/idx are 4 distinct, never-
-                // aliasing pointers, so this kernel can safely take the
-                // no-alias hint.
+                // Distinct buffers — safe for [[intel::kernel_args_restrict]].
                 [=](sycl::nd_item<1> item) [[intel::kernel_args_restrict]] {
                     const size_t group_id = item.get_group(0);
                     const int bs_idx = static_cast<int>(group_id / n);

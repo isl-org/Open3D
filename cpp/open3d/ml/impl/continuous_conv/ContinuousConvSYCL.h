@@ -111,7 +111,8 @@ void CConvComputeFeaturesSYCL(sycl::queue& queue,
     TFeat* columns = (TFeat*)mem_columns.first;
 
     // if we cannot process all data at once we need multiple runs. Since
-    // GemmColumnMajorSYCL no longer blocks, chunk N+1's FillColumn (which
+    // GemmColumnMajorSYCL returns a completion event without blocking
+    // (GemmSYCL.h); chunk N+1's FillColumn (which
     // overwrites the shared `columns` scratch buffer) must explicitly depend
     // on chunk N's GEMM event -- otherwise FillColumn could start
     // overwriting `columns` while the previous GEMM is still reading it.
