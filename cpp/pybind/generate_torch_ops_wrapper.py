@@ -148,8 +148,15 @@ def main():
                 _dll_dir_handles.append(os.add_dll_directory(path))
 
         _dll_search_paths = []
-        _dll_search_paths.append(args.dependencies_dir)
+        for _dep in args.dependencies_dir.split(';'):
+            _dep = _dep.strip()
+            if _dep:
+                _dll_search_paths.append(_dep)
         _dll_search_paths.append(os.path.dirname(os.path.abspath(args.lib)))
+        for _env_name in ('OPEN3D_INSTALL_ROOT', 'Open3D_ROOT'):
+            _root = os.environ.get(_env_name)
+            if _root:
+                _dll_search_paths.append(os.path.join(_root, 'bin'))
         _dll_search_paths.append(os.path.join(os.path.dirname(torch.__file__),
                                               "lib"))
         _dll_search_paths.append(os.path.join(sys.prefix, "Library", "bin"))
