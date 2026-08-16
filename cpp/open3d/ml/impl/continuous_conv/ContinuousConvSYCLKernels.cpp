@@ -247,7 +247,6 @@ sycl::event FillColumnKernelSYCL(sycl::queue& queue,
                                 interp_weights, interp_indices, x, y, z,
                                 filter_size_x, filter_size_y, filter_size_z);
 
-                        TFeat infeat = 0;
                         TFeat importance = 1;
                         if (point_importance)
                             importance = inp_importance[inp_idx];
@@ -257,7 +256,7 @@ sycl::event FillColumnKernelSYCL(sycl::queue& queue,
 
                         for (int ic = static_cast<int>(lid); ic < in_channels;
                              ic += static_cast<int>(lsize)) {
-                            infeat =
+                            TFeat infeat =
                                     importance *
                                     inp_features[size_t(inp_idx) * in_channels +
                                                  ic];

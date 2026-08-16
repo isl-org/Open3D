@@ -43,7 +43,6 @@ def test_nms_multiblock(ml):
     # NMS_BLOCK_SIZE (cpp/open3d/ml/contrib/IoUImpl.h) is 64: build >64 boxes
     # so the SYCL/CUDA kernel's bitmask exercises more than one block both
     # row- and column-wise.
-    rng = np.random.RandomState(0)
     num_clusters = 20
     boxes_per_cluster = 5
     nms_overlap_thresh = 0.3

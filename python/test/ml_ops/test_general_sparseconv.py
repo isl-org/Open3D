@@ -265,7 +265,7 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
                                   ml.ops.sparse_conv_transpose,
                                   filters.transpose([0, 2, 1]),
                                   inp_importance,
-                                  inp_features,
+                                  y_arr,
                                   neighbors_index,
                                   neighbors_importance_sum,
                                   neighbors_row_splits,
@@ -277,7 +277,7 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
                                   **conv_attrs)
         y_tr_ref = mltest.run_op(
             ml, ml.device, True, ml.ops.sparse_conv_transpose,
-            filters.transpose([0, 2, 1]), inp_importance, inp_features,
+            filters.transpose([0, 2, 1]), inp_importance, y_arr,
             neighbors_index, neighbors_importance_sum, neighbors_row_splits,
             inv_neighbors_index, inv_neighbors_kernel_index,
             inv_neighbors_importance, inv_neighbors_row_splits, **conv_attrs)
