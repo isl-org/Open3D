@@ -11,8 +11,8 @@
 // nsample points are in range, the in-range neighbor set is correct but slot
 // order may differ from CUDA; python/test/ml_ops/test_query_pts.py compares
 // neighbor sets, not order. A serial-scan kernel would preserve CUDA index
-// order but is not required today. Padding when total matches < nsample still duplicates
-// idx_out[0] into remaining slots (CUDA contract).
+// order but is not required today. Padding when total matches < nsample still
+// duplicates idx_out[0] into remaining slots (CUDA contract).
 #pragma once
 
 #include <sycl/sycl.hpp>
@@ -130,7 +130,8 @@ inline void BallQuerySYCL(sycl::queue& queue,
                     }
 
                     // Pad slots [total_count, nsample) with idx_out[0]; barrier
-                    // so work-item 0 reads a value another lane may have written.
+                    // so work-item 0 reads a value another lane may have
+                    // written.
                     sycl::group_barrier(group);
                     if (lid == 0 && total_count < nsample) {
                         const int first_value = idx_out[0];

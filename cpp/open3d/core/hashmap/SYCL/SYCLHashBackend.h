@@ -11,8 +11,8 @@
 ///
 /// Open3D's tensor \ref HashMap and \ref HashSet share one backend API on CPU
 /// (TBB), CUDA (stdgpu default, slab optional), and SYCL (this file). Cross-
-/// backend design notes: `docs/nns_hashmap_cpu_cuda_sycl.md`. **This file header
-/// is the SYCL maintainer reference.**
+/// backend design notes: `docs/nns_hashmap_cpu_cuda_sycl.md`. **This file
+/// header is the SYCL maintainer reference.**
 ///
 /// \section SYCLHashRole Role in the stack
 ///

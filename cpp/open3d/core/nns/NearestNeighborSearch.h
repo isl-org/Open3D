@@ -21,7 +21,8 @@ namespace nns {
 
 /// \class NearestNeighborSearch
 ///
-/// \brief Facade for batched KNN, fixed-radius, hybrid, and multi-radius search.
+/// \brief Facade for batched KNN, fixed-radius, hybrid, and multi-radius
+/// search.
 ///
 /// Device routing (CPU NanoFlann vs CUDA/SYCL grid + GEMM KNN) is documented in
 /// `docs/nns_hashmap_cpu_cuda_sycl.md`.

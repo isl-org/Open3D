@@ -324,12 +324,11 @@ def test_sparseconv_allow_tf32(ml):
     assert y_tf32.shape == y_ref.shape
     np.testing.assert_allclose(y_tf32, y_ref, **tf32_tol)
 
-    conv_transpose = ml.layers.SparseConvTranspose(
-        in_channels=in_channels,
-        filters=out_channels,
-        kernel_size=kernel_size,
-        normalize=False,
-        allow_tf32=False)
+    conv_transpose = ml.layers.SparseConvTranspose(in_channels=in_channels,
+                                                   filters=out_channels,
+                                                   kernel_size=kernel_size,
+                                                   normalize=False,
+                                                   allow_tf32=False)
     conv_transpose.to(ml.device)
 
     def run_sparse_conv_transpose(allow_tf32):

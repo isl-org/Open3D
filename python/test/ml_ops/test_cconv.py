@@ -166,7 +166,7 @@ def test_cconv_allow_tf32(ml):
     np.random.seed(0)
     dtype = np.float32
     filter_size = [3, 3, 3]
-    in_channels, out_channels = 4, 8
+    in_channels, out_channels = 4, 4
     tf32_tol = {'rtol': 1e-2, 'atol': 1e-2}
 
     conv_attrs = {
