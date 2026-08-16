@@ -163,6 +163,11 @@ is set at creation time and cannot be added retroactively.
    (`PlatformGLX` on Linux, `PlatformWGL` on Windows).
 5. Both contexts share the same GL object namespace; texture handles are valid in both.
 
+On Linux, `GLFWWindowSystem::Initialize()` initializes the Vulkan interop device
+and applies PRIME steering before calling `glfwInit()`. GLFW/GLX caches the
+vendor selection during initialization, so steering after `glfwInit()` can make
+NVIDIA GLX fail to find a compatible framebuffer configuration.
+
 ### Backend Abstraction
 
 ```
