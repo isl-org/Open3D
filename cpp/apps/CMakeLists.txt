@@ -135,10 +135,12 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
         # Suppress the console window while keeping the standard main() entry point (no WinMain).
         set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
-        if (MSVC)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+            target_link_options(${TARGET_NAME} PRIVATE
+                                "-Xlinker" "/ENTRY:mainCRTStartup")
+        elseif (MSVC)
             target_link_options(${TARGET_NAME} PRIVATE "/ENTRY:mainCRTStartup")
         else()
-            # IntelLLVM and Clang on Windows use the standard main entry point.
             target_link_options(${TARGET_NAME} PRIVATE
                                 "-Xlinker" "/ENTRY:mainCRTStartup")
         endif()
