@@ -74,6 +74,11 @@ jobs:
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
 
+      - name: Remove exported tarballs from workspace
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        run: |
+          rm -f open3d-devel-*.tar.xz open3d-ci-sycl.tar.xz open3d*.whl
+
       - name: Docker test (C++)
         # C++ only here; Python runs in build-wheel via docker_test.sh python
         # inside the per-Python-version image (see docker/docker_test.sh).
@@ -153,7 +158,9 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: zstd -d --stdout open3d-lib-sycl-shared.tar.zst | docker load
+        run: |
+          zstd -d --stdout open3d-lib-sycl-shared.tar.zst | docker load
+          rm -f open3d-lib-sycl-shared.tar.zst
 
       - name: Docker build
         run: |

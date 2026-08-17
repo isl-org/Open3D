@@ -828,3 +828,32 @@ maximize_ubuntu_github_actions_build_space() {
     $SUDO rm -rf "$AGENT_TOOLSDIRECTORY"
     df -h . # => 53GB
 }
+
+# Drop paths already exported to the host from the SYCL shared lib image before
+# `docker save`. Wheel stages only need the toolchain, ~/.cache/ccache, and
+# /root/Open3D sources from build-lib—not devel/wheel tarballs at /.
+#
+# Note: `docker commit` adds a layer; it does not remove bytes from lower layers
+# inside `docker save`. Flattening (export/import) would shrink the tarball but
+# drops Dockerfile ENV/CMD unless re-applied—avoid for oneAPI images. The main
+# win for wheel jobs is keeping CI artifacts out of the build context
+# (.dockerignore) and skipping the 2.8G ccache GCS download when the cache
+# directory is already populated in BASE_IMAGE.
+ci_slim_sycl_lib_docker_image() {
+    local tag="${1:?docker image tag}"
+    local container="open3d-sycl-lib-slim-$$"
+    docker rm -f "${container}" >/dev/null 2>&1 || true
+    docker create --name "${container}" "${tag}" >/dev/null
+    docker start "${container}" >/dev/null
+    docker exec "${container}" bash -c 'set -euo pipefail
+        rm -f /open3d-devel*.tar.xz /open3d-devel*.tar.gz /open3d*.whl
+        CCACHE_DIR=$(ccache -p 2>/dev/null | grep cache_dir | grep -oE "[^ ]+$" || true)
+        if [ -n "${CCACHE_DIR}" ] && [ -d "${CCACHE_DIR}" ] \
+                && [ -n "$(ls -A "${CCACHE_DIR}" 2>/dev/null)" ]; then
+            rm -f /open3d-ci-*.tar.xz /open3d-ci-*.tar.gz
+        fi
+        rm -rf /root/Open3D/build
+    '
+    docker commit "${container}" "${tag}" >/dev/null
+    docker rm -f "${container}" >/dev/null
+}
