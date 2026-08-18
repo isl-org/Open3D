@@ -62,6 +62,23 @@ struct VoxelGaussian {
 
 using VoxelMap = std::unordered_map<VoxelKey, VoxelGaussian, VoxelKeyHash>;
 
+struct VoxelAccumulator {
+    int count = 0;
+    Eigen::Vector3d mean = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance_accumulator = Eigen::Matrix3d::Zero();
+
+    void AddPoint(const Eigen::Vector3d &point) {
+        ++count;
+        const Eigen::Vector3d delta = point - mean;
+        mean += delta / static_cast<double>(count);
+        const Eigen::Vector3d delta_after_update = point - mean;
+        covariance_accumulator += delta * delta_after_update.transpose();
+    }
+};
+
+using VoxelAccumulatorMap =
+        std::unordered_map<VoxelKey, VoxelAccumulator, VoxelKeyHash>;
+
 struct NDTLinearSystem {
     Eigen::Matrix6d JTJ = Eigen::Matrix6d::Zero();
     Eigen::Vector6d JTr = Eigen::Vector6d::Zero();
@@ -152,39 +169,24 @@ void ValidateNDTOption(const NormalDistributionsTransformOption &option) {
 VoxelMap BuildVoxelGaussians(const geometry::PointCloud &target,
                              const NormalDistributionsTransformOption &option) {
     const double inv_voxel_size = 1.0 / option.voxel_size_;
-    std::unordered_map<VoxelKey, std::vector<int>, VoxelKeyHash> voxel_indices;
-    for (int i = 0; i < static_cast<int>(target.points_.size()); ++i) {
-        voxel_indices[GetVoxelKey(target.points_[i], inv_voxel_size)].push_back(
-                i);
+    VoxelAccumulatorMap voxel_accumulators;
+    for (const Eigen::Vector3d &point : target.points_) {
+        voxel_accumulators[GetVoxelKey(point, inv_voxel_size)].AddPoint(point);
     }
 
     VoxelMap voxel_map;
-    for (const auto &item : voxel_indices) {
-        const auto &indices = item.second;
-        if (static_cast<int>(indices.size()) < option.min_points_per_voxel_) {
+    for (const auto &item : voxel_accumulators) {
+        const VoxelAccumulator &accumulator = item.second;
+        if (accumulator.count < option.min_points_per_voxel_) {
             continue;
         }
 
         VoxelGaussian gaussian;
-        gaussian.count = static_cast<int>(indices.size());
-        for (const int idx : indices) {
-            gaussian.mean += target.points_[idx];
-        }
-        gaussian.mean /= static_cast<double>(indices.size());
-
-        Eigen::Matrix3d covariance = Eigen::Matrix3d::Zero();
-        double representative_distance2 = std::numeric_limits<double>::max();
-        for (const int idx : indices) {
-            const Eigen::Vector3d centered =
-                    target.points_[idx] - gaussian.mean;
-            covariance += centered * centered.transpose();
-            const double distance2 = centered.squaredNorm();
-            if (distance2 < representative_distance2) {
-                representative_distance2 = distance2;
-                gaussian.representative_index = idx;
-            }
-        }
-        covariance /= static_cast<double>(indices.size() - 1);
+        gaussian.count = accumulator.count;
+        gaussian.mean = accumulator.mean;
+        const Eigen::Matrix3d covariance =
+                accumulator.covariance_accumulator /
+                static_cast<double>(accumulator.count - 1);
 
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(covariance);
         if (solver.info() != Eigen::Success) {
@@ -204,6 +206,22 @@ VoxelMap BuildVoxelGaussians(const geometry::PointCloud &target,
                                eigenvalues.cwiseInverse().asDiagonal() *
                                solver.eigenvectors().transpose();
         voxel_map.emplace(item.first, gaussian);
+    }
+
+    for (int i = 0; i < static_cast<int>(target.points_.size()); ++i) {
+        const Eigen::Vector3d &point = target.points_[i];
+        auto voxel_itr = voxel_map.find(GetVoxelKey(point, inv_voxel_size));
+        if (voxel_itr == voxel_map.end()) {
+            continue;
+        }
+        VoxelGaussian &gaussian = voxel_itr->second;
+        const double distance2 = (point - gaussian.mean).squaredNorm();
+        if (gaussian.representative_index < 0 ||
+            distance2 < (target.points_[gaussian.representative_index] -
+                         gaussian.mean)
+                                .squaredNorm()) {
+            gaussian.representative_index = i;
+        }
     }
     return voxel_map;
 }

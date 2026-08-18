@@ -418,18 +418,8 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
     py::detail::bind_copy_functions<NormalDistributionsTransformOption>(
             ndt_option);
     ndt_option
-            .def(py::init([](double voxel_size, int min_points_per_voxel,
-                             double covariance_regularization,
-                             double transformation_epsilon,
-                             double relative_objective, int max_iteration,
-                             double outlier_threshold,
-                             int neighbor_search_type) {
-                     return new NormalDistributionsTransformOption(
-                             voxel_size, min_points_per_voxel,
-                             covariance_regularization, transformation_epsilon,
-                             relative_objective, max_iteration,
-                             outlier_threshold, neighbor_search_type);
-                 }),
+            .def(py::init<double, int, double, double, double, int, double,
+                          int>(),
                  "voxel_size"_a = 1.0, "min_points_per_voxel"_a = 6,
                  "covariance_regularization"_a = 1e-3,
                  "transformation_epsilon"_a = 1e-6,
@@ -773,8 +763,6 @@ must hold true for all edges.)");
                      "the "
                      "source point's correspondence is itself."},
                     {"option", "Registration option"},
-                    {"ndt_option",
-                     "Normal Distributions Transform registration option."},
                     {"ransac_n",
                      "Fit ransac with ``ransac_n`` correspondences"},
                     {"source_feature", "Source point cloud feature."},
@@ -834,8 +822,11 @@ must hold true for all edges.)");
                        "source"_a, "target"_a,
                        "option"_a = NormalDistributionsTransformOption(),
                        "init"_a = Eigen::Matrix4d::Identity());
+    auto ndt_argument_docstrings = map_shared_argument_docstrings;
+    ndt_argument_docstrings["option"] =
+            "Normal Distributions Transform registration option.";
     docstring::FunctionDocInject(m_registration, "registration_ndt",
-                                 map_shared_argument_docstrings);
+                                 ndt_argument_docstrings);
 
     m_registration.def(
             "registration_ransac_based_on_correspondence",

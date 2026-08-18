@@ -79,7 +79,9 @@ public:
 ///
 /// This implementation builds a voxelized Gaussian model from the target point
 /// cloud and optimizes the rigid source-to-target transformation with
-/// Gauss-Newton iterations.
+/// Gauss-Newton iterations. The returned correspondence set uses the target
+/// point closest to each accepted voxel mean as its representative, and the
+/// inlier RMSE is computed from those representative point correspondences.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.

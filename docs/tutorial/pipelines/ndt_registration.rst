@@ -15,7 +15,10 @@ Open3D exposes NDT through
 collected in ``NormalDistributionsTransformOption``, including both voxel
 Gaussian model parameters and convergence criteria. Optimization stops when
 the pose update is small or the relative change in mean Mahalanobis objective
-falls below the configured threshold:
+falls below the configured threshold. In the returned ``RegistrationResult``,
+each accepted voxel is represented by the target point closest to its mean,
+and ``inlier_rmse`` is the Euclidean RMSE over those representative point
+correspondences:
 
 .. literalinclude:: ../../../examples/python/pipelines/ndt_registration.py
    :language: python
