@@ -318,6 +318,51 @@ Return:
             "max_nn parameter is provided, Radius search (Not recommended to "
             "use on GPU) if only radius is provided and Hybrid Search "
             "(Recommended) if radius parameter is also provided.");
+    pointcloud.def("smooth_mls", &PointCloud::SmoothMLS,
+                   py::call_guard<py::gil_scoped_release>(), "radius"_a = 0.05,
+                   "max_nn"_a = 30, R"doc(
+Smooth point cloud using weighted Moving Least Squares (MLS).
+
+For each point, hybrid radius/k-NN neighbors are weighted by a Gaussian,
+weighted PCA estimates a local tangent plane, and the point is projected onto
+that plane. Points with fewer than three neighbors are unchanged. Related to
+Alexa et al., *Computing and Rendering Point Set Surfaces*, 2003; unlike that
+work, this method does not construct a point-set surface or resample points.
+)doc");
+    pointcloud.def("smooth_laplacian", &PointCloud::SmoothLaplacian,
+                   py::call_guard<py::gil_scoped_release>(),
+                   "iterations"_a = 10, "lambda_"_a = 0.5, "max_nn"_a = 20,
+                   "use_fixed_neighborhoods"_a = false, R"doc(
+Smooth point cloud with explicit uniform k-nearest-neighbor Laplacian passes.
+
+Each pass updates ``x_i <- x_i + lambda * (mean(neighbors) - x_i)``, excluding
+the point itself. The k-NN graph is recomputed after each pass unless
+``use_fixed_neighborhoods`` is set. Related to Pauly et al., *Spectral
+Processing of Point-Sampled Geometry*, 2001; this implementation uses an
+explicit uniform k-NN graph rather than a spectral operator.
+)doc");
+    pointcloud.def("smooth_taubin", &PointCloud::SmoothTaubin,
+                   py::call_guard<py::gil_scoped_release>(),
+                   "iterations"_a = 10, "lambda_"_a = 0.5, "mu"_a = -0.53,
+                   "max_nn"_a = 20, "use_fixed_neighborhoods"_a = false, R"doc(
+Smooth point cloud using Taubin smoothing.
+
+Each iteration applies a Laplacian pass with ``lambda`` and then ``mu``.
+Related to Taubin, *Curve and Surface Smoothing Without Shrinkage*, 1995; this
+implementation uses a uniform point-cloud k-NN graph rather than a mesh
+Laplacian.
+)doc");
+    pointcloud.def("smooth_bilateral", &PointCloud::SmoothBilateral,
+                   py::call_guard<py::gil_scoped_release>(), "radius"_a = 0.05,
+                   "max_nn"_a = 30, "sigma_s"_a = 0.05, "sigma_r"_a = 0.05,
+                   R"doc(
+Smooth point cloud using bilateral filtering.
+
+Neighbors are weighted by spatial and normal-direction range Gaussians, and
+the output is their weighted centroid. Missing normals are estimated. Related
+to Jones et al., *Non-Iterative, Feature-Preserving Mesh Smoothing*, 2003;
+this implementation filters unstructured points rather than a mesh.
+)doc");
     pointcloud.def("orient_normals_to_align_with_direction",
                    &PointCloud::OrientNormalsToAlignWithDirection,
                    "Function to orient the normals of a point cloud.",

@@ -162,11 +162,12 @@ def make_posegraph_for_scene(ply_file_names, config):
             matching_results[s * n_files + t] = matching_result(s, t)
 
     if config["python_multi_threading"] is True:
-        os.environ['OMP_NUM_THREADS'] = '1'
         max_workers = max(
             1, min(multiprocessing.cpu_count() - 1, len(matching_results)))
         mp_context = multiprocessing.get_context('spawn')
-        with mp_context.Pool(processes=max_workers) as pool:
+        # Run Open3D single-threaded per worker to avoid CPU oversubscription.
+        with mp_context.Pool(processes=max_workers,
+                             initializer=limit_open3d_threads) as pool:
             args = [(ply_file_names, v.s, v.t, config)
                     for k, v in matching_results.items()]
             results = pool.starmap(register_point_cloud_pair, args)

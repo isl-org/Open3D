@@ -99,12 +99,11 @@ public:
     /// the plain (non-atomic) heap_[] reads/writes tied to it, so a
     /// concurrent Allocate/Free pair could still observe or overwrite each
     /// other's heap_[] slot out of order and corrupt the free list.
-    /// SYCLHashBackend::Insert avoids this by bulk-reserving all of a
-    /// batch's slots via plain index arithmetic before launching its kernel
-    /// (so DeviceAllocate() is never called from within a kernel that also
-    /// calls DeviceFree()); Erase() only ever calls DeviceFree(). Concurrent
-    /// calls to DeviceFree() alone (as in Insert's leak-recovery path) are
-    /// safe: each fetch_sub returns a unique index, so writes never collide.
+    /// SYCLHashBackend::Insert avoids this by staging all bulk-reserved indices
+    /// outside the insertion kernel, which then only calls DeviceFree().
+    /// Erase() likewise only calls DeviceFree(). Concurrent DeviceFree() calls
+    /// are safe: each fetch_sub returns a unique index, so writes never
+    /// collide.
     buf_index_t DeviceAllocate() const {
         sycl::atomic_ref<int, sycl::memory_order::seq_cst,
                          sycl::memory_scope::device>

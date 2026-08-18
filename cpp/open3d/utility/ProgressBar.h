@@ -7,39 +7,39 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
 
 namespace open3d {
 namespace utility {
 
+/// Thread-safe progress bar. Progress updates use relaxed atomics, so callers
+/// do not need to hold a mutex while incrementing it from parallel work.
 class ProgressBar {
 public:
-    ProgressBar(size_t expected_count,
-                const std::string &progress_info,
+    ProgressBar(std::size_t expected_count,
+                std::string progress_info,
                 bool active = false);
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
+    ProgressBar(const ProgressBar& other);
+    ProgressBar& operator=(const ProgressBar& other);
+    void Reset(std::size_t expected_count,
+               std::string progress_info,
                bool active);
-    virtual ProgressBar &operator++();
+    inline ProgressBar& operator++() { return *this += 1; };
+    virtual ProgressBar& operator+=(std::size_t n);
     void SetCurrentCount(size_t n);
-    size_t GetCurrentCount() const;
+    void UpdateBar();
+    std::size_t GetCurrentCount() const;
     virtual ~ProgressBar() = default;
 
 protected:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
+    static constexpr size_t resolution_ = 40;
+    std::size_t expected_count_;
+    std::atomic<std::size_t> current_count_{0};
     std::string progress_info_;
-    size_t progress_pixel_;
+    std::atomic<std::size_t> progress_pixel_{0};
     bool active_;
-};
-
-class OMPProgressBar : public ProgressBar {
-public:
-    OMPProgressBar(size_t expected_count,
-                   const std::string &progress_info,
-                   bool active = false);
-    ProgressBar &operator++() override;
+    std::atomic<bool> finalized_{false};
 };
 
 }  // namespace utility

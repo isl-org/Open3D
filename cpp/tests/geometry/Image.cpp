@@ -8,6 +8,7 @@
 #include "open3d/geometry/Image.h"
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/utility/Parallel.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -935,6 +936,18 @@ TEST(Image, Dilate) {
     EXPECT_EQ(num_of_channels, output->num_of_channels_);
     EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
     ExpectEQ(ref, output->data_);
+}
+
+TEST(Image, DilateLargeKernel) {
+    geometry::Image image;
+    image.Prepare(1, 1, 1, 1);
+    image.data_[0] = 255;
+
+    const int half_kernel_size =
+            static_cast<int>(utility::DefaultGrainSizeTBB() / 2);
+    auto output = image.Dilate(half_kernel_size);
+
+    EXPECT_EQ(255, output->data_[0]);
 }
 
 TEST(Image, LinearTransform) {

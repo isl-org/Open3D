@@ -13,9 +13,19 @@ endif()
 
 # ext_zlib exists only when Open3D builds zlib (NOT USE_SYSTEM_PNG). System zlib
 # has no ExternalProject target, so DEPENDS must not list it.
-set(spz_depends ext_zstd)
+# ext_zstd exists only when Open3D builds zstd (NOT USE_SYSTEM_ZSTD).
+set(spz_depends "")
+if(NOT USE_SYSTEM_ZSTD)
+    list(APPEND spz_depends ext_zstd)
+endif()
 if(TARGET ext_zlib)
     list(APPEND spz_depends ext_zlib)
+endif()
+
+if(USE_SYSTEM_ZSTD)
+    set(spz_zstd_args "")
+else()
+    set(spz_zstd_args "-Dzstd_DIR:PATH=${ZSTD_CONFIG_DIR}")
 endif()
 
 ExternalProject_Add(
@@ -34,7 +44,7 @@ ExternalProject_Add(
         -DSPZ_BUILD_EXTENSIONS=OFF
         -DZLIB_INCLUDE_DIR:PATH=${ZLIB_INCLUDE_DIRS}
         -DZLIB_LIBRARY:FILEPATH=${spz_zlib_library}
-        -DCMAKE_PREFIX_PATH:PATH=${ZSTD_INSTALL_DIR}
+        ${spz_zstd_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}spz${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -48,3 +58,4 @@ set(SPZ_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(SPZ_LIBRARIES spz)
 unset(spz_depends)
 unset(spz_zlib_library)
+unset(spz_zstd_args)

@@ -1,4 +1,8 @@
 ## Main
+-   Replace OpenMP with oneAPI TBB for all CPU parallelism; Open3D no longer depends on OpenMP. This removes the `libomp` / `libgomp` runtime dependency and the thread oversubscription and crashes caused by loading multiple OpenMP runtimes in one process (e.g. alongside PyTorch in Python). The `WITH_OPENMP` CMake option is removed, oneTBB >= 2021.4.0 is required, and `OMP_NUM_THREADS` is replaced by `open3d.utility.set_max_threads()` (C++: `utility::SetMaxThreads()` or a `tbb::task_arena`). `utility::OMPProgressBar` is removed in favor of the thread-safe `utility::ProgressBar`; `utility::GetThreadNum()` and `utility::InParallel()` are removed (PR #6626) (issues #6196, #6544, #6750)
+-   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
+-   Add vcpkg support for easier dependency management (PR #7386)
+-   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
@@ -83,6 +87,7 @@
 -   Python 3.13+3.14 support
 -   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
+-   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13

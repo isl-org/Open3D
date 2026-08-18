@@ -3,6 +3,7 @@
 Reference
 -------------------------------------
 
+.. [Alexa2003] M. Alexa, J. Behr, D. Cohen-Or, S. Fleishman, D. Levin, and C. T. Silva, Computing and rendering point set surfaces, IEEE Transactions on Visualization and Computer Graphics, 9(1), 3-15, 2003
 .. [ArujoAndOliveira2020] A. Araújo and M. Oliveira, A robust statistics approach for plane detection in unorganized point clouds, Pattern Recognition, 2020
 .. [Bernardini1999] F. Bernardini and J. Mittleman and HRushmeier and C. Silva and G. Taubin: The ball-pivoting algorithm for surface reconstruction, IEEE transactions on visualization and computer graphics, 5(4), 349-359, 1999
 .. [BeslAndMcKay1992] Paul J. Besl and Neil D. McKay, A Method for Registration of 3D Shapes, PAMI, 1992.
@@ -20,6 +21,7 @@ Reference
 .. [Loop1987] C. Loop: Smooth Subdivision Surfaces Based on Triangles, M.S. Mathematics thesis, University of Utah, 1987
 .. [LorensenAndCline1987] W. E. Lorensen and H. E. Cline, Marching cubes: A high resolution 3d surface construction algorithm, ACM Computer Graphics, 1987
 .. [Newcombe2011] R. A. Newcombe, S. Izadi, O. Hilliges, D. Molyneaux, D. Kim, A. J. Davison, P. Kohli, J. Shotton, S. Hodges, and A. Fitzgibbon. KinectFusion: Real-time dense surface mapping and tracking. In ISMAR, 2011.
+.. [Pauly2001] M. Pauly, R. Keiser, L. Kobbelt, and M. Gross, Spectral processing of point-sampled geometry, Proceedings of SIGGRAPH, 2001
 .. [Park2017] J. Park, Q.-Y. Zhou, and V. Koltun, Colored Point Cloud Registration Revisited, ICCV, 2017.
 .. [Rasu2009] R. Rusu, N. Blodow, and M. Beetz, Fast Point Feature Histograms (FPFH) for 3D registration, ICRA, 2009.
 .. [Rusinkiewicz2001] S. Rusinkiewicz and M. Levoy. Efficient variants of the ICP algorithm. In 3-D Digital Imaging and Modeling, 2001.
@@ -28,9 +30,11 @@ Reference
 .. [SorkineAndAlexa2007] O. Sorkine and M. Alexa, As-rigid-as-possible surface modeling, Symposium on Geometry processing, 2007.
 .. [Steinbrucker2011] F. Steinbrucker, J. Sturm, and D. Cremers, Real-time visual odometry from dense RGB-D images, In ICCV Workshops, 2011.
 .. [Strum2012] J. Sturm, N. Engelhard, F. Endres, W. Burgard and D. Cremers, A Benchmark for the Evaluation of RGB-D SLAM Systems, IROS, 2012.
-.. [Taubin1995] G. Taubin: Curve and surface smoothing without shrinkage, ICCV, 1995.
+.. [Taubin1995] G. Taubin, Curve and surface smoothing without shrinkage, Proceedings of IEEE International Conference on Computer Vision (ICCV), 1995
+.. [Vollmer1999] J. Vollmer, R. Mencl, and H. Müller, Improved Laplacian smoothing of noisy surface meshes, Computer Graphics Forum, 18(3), 131-138, 1999
 .. [Zhou2014] Q.-Y. Zhou, and V. Koltun, Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras, SIGGRAPH, 2014.
 .. [Zhou2016] Q.-Y. Zhou, J. Park, and V. Koltun, Fast Global Registration, ECCV, 2016.
 .. [Babin2019] P. Babin, P. Giguère and F. Pomerleau: Analysis of Robust Functions for Registration Algorithms, ICRA, 2019.
 .. [Segal2009] A. Segal, D. Haehnel and S. Thrun: Generalized-icp, RSS, 2009.
 .. [Dong2021] W. Dong, Y. Lao, M. Kaess and V. Koltun: ASH: A Modern Framework for Parallel Spatial Hashing in 3D Perception, arXiv, 2021.
+.. [Jones2003] T. Jones, F. Durand, and M. Desbrun, Non-iterative, feature-preserving mesh smoothing, ACM Transactions on Graphics (SIGGRAPH), 22(3), 943-949, 2003

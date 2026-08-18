@@ -8,6 +8,10 @@
 #include <atomic>
 #include <cmath>
 
+#if !defined(__CUDACC__)
+#include <tbb/spin_mutex.h>
+#endif
+
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -479,10 +483,21 @@ void EstimateRangeCPU
                           range_ptr[1] = depth_min;
                       });
 
+    // CUDA and SYCL device paths use device atomics; only the plain CPU
+    // fallback needs the mutex. SYCL_LANGUAGE_VERSION is defined by the SYCL
+    // compiler for *both* its host and device compilation passes of the same
+    // translation unit.
+#if !defined(__CUDACC__) && !defined(SYCL_LANGUAGE_VERSION)
+    tbb::spin_mutex estimate_range_mutex;
+    tbb::profiling::set_name(estimate_range_mutex, "EstimateRangeCPU");
+#define LOCAL_LAMBDA_CAPTURE =, &estimate_range_mutex
+#else
+#define LOCAL_LAMBDA_CAPTURE =
+#endif
     // Pass 1: iterate over rendering fragment array, fill-in range
     core::ParallelFor(
             block_keys.GetDevice(), frag_count * fragment_size * fragment_size,
-            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            [LOCAL_LAMBDA_CAPTURE] OPEN3D_DEVICE(int64_t workload_idx) {
                 int frag_idx = workload_idx / (fragment_size * fragment_size);
                 int local_idx = workload_idx % (fragment_size * fragment_size);
                 int dv = local_idx / fragment_size;
@@ -517,8 +532,8 @@ void EstimateRangeCPU
                         range_ptr[1])
                         .fetch_max(z_max);
 #else
-#pragma omp critical(EstimateRangeCPU)
                 {
+                    tbb::spin_mutex::scoped_lock lock(estimate_range_mutex);
                     range_ptr[0] = min(z_min, range_ptr[0]);
                     range_ptr[1] = max(z_max, range_ptr[1]);
                 }
@@ -528,6 +543,7 @@ void EstimateRangeCPU
 #if defined(__CUDACC__)
     core::cuda::Synchronize();
 #endif
+#undef LOCAL_LAMBDA_CAPTURE
 
     if (needed_frag_count != frag_count) {
         utility::LogInfo("Reallocating {} fragments for EstimateRange (was {})",
@@ -1646,7 +1662,9 @@ void ExtractTriangleMeshCPU
             index_t linear_idx_e =
                     GetLinearIdx(xv + (e == 0), yv + (e == 1), zv + (e == 2),
                                  workload_block_idx);
-            OPEN3D_ASSERT_MSG(linear_idx_e > 0,
+            // DeviceGetLinearIdx returns -1 when the neighbour block is not
+            // allocated; 0 is a valid linear index.
+            OPEN3D_ASSERT_MSG(linear_idx_e >= 0,
                               "Internal error: GetVoxelAt returns nullptr.");
             float tsdf_e = tsdf_base_ptr[linear_idx_e];
             float ratio = (0 - tsdf_o) / (tsdf_e - tsdf_o);

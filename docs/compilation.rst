@@ -56,6 +56,39 @@ Cloning Open3D
 
     git clone https://github.com/isl-org/Open3D
 
+Using vcpkg dependencies
+------------------------
+
+The repository contains a ``vcpkg.json`` manifest for the C++ dependencies.
+Configure with the vcpkg toolchain to install the manifest dependencies and
+prefer them over Open3D's bundled copies:
+
+On Linux, first install the host build and graphics packages with
+``util/install_deps_ubuntu.sh`` (or their distribution equivalents).
+
+.. code-block:: bash
+
+    cmake -S . -B build \
+        -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DBUILD_PYTHON_MODULE=OFF \
+        -DBUILD_GUI=OFF
+    cmake --build build --config Release
+
+A custom toolchain that includes vcpkg cannot be detected from its filename;
+add ``-DOPEN3D_USE_VCPKG=ON`` in that case. Individual dependencies can still
+use the bundled copy with ``-DUSE_SYSTEM_<PACKAGE>=OFF``.
+
+The ``tests`` and ``minizip`` manifest features install their dependencies but
+do not change Open3D build options. Pair them with the corresponding CMake
+options, for example
+``-DVCPKG_MANIFEST_FEATURES="tests;minizip" -DBUILD_UNIT_TESTS=ON
+-DWITH_MINIZIP=ON``. CUDA also requires a separately installed CUDA toolkit
+and ``-DBUILD_CUDA_MODULE=ON``.
+
+When using a static system libcurl outside vcpkg, pass
+``-DUSE_SYSTEM_CURL_STATIC=ON`` so consumers compile with
+``CURL_STATICLIB``. vcpkg's curl port supplies this configuration itself.
+
 .. _compilation_unix:
 
 Ubuntu/macOS
@@ -258,27 +291,33 @@ not part of the shared devel package.
 The default (``OPEN3D_USE_INSTALLED_LIBRARY=OFF``) remains a full in-tree build
 with ``make pip-package``.
 
-OpenMP
-``````
+Multi-threading (oneAPI TBB)
+````````````````````````````
 
-We automatically detect if the C++ compiler supports OpenMP and compile Open3D
-with it if the compilation option ``WITH_OPENMP`` is ``ON``.
-OpenMP can greatly accelerate computation on a multi-core CPU.
+Open3D uses `oneAPI Threading Building Blocks
+<https://github.com/uxlfoundation/oneTBB>`_ (oneTBB) for CPU parallelism.
+OpenMP is not used: it is poorly supported by MSVC, and loading several OpenMP
+runtimes into one process (which happens easily in Python, e.g. alongside
+PyTorch or NumPy) leads to thread oversubscription and crashes.
 
-The default LLVM compiler on OS X does not support OpenMP.
-A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
-then use it to compile Open3D. For example, starting from a clean build
-directory, run
+TBB is built from source and shipped with Open3D by default. To build against a
+system oneTBB instead, configure with ``-DUSE_SYSTEM_TBB=ON``. oneTBB
+**2021.4.0 or newer** is required.
 
-.. code-block:: bash
+Unlike OpenMP, TBB has no ``OMP_NUM_THREADS`` environment variable. Thread
+usage is controlled by the calling code's task arena. To bound the number of
+threads Open3D uses, wrap the call in a ``tbb::task_arena`` (or install a
+process-wide ``tbb::global_control``):
 
-    brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
-    make -j
+.. code-block:: cpp
 
-.. note:: This workaround has some compatibility issues with the source code of
-    GLFW included in ``3rdparty``.
-    Make sure Open3D is linked against GLFW installed on the OS.
+    #include <tbb/task_arena.h>
+
+    tbb::task_arena arena(4);  // at most 4 worker threads
+    arena.execute([&] { pcd.EstimateNormals(); });
+
+Because TBB shares one thread pool across nested parallel regions, calling
+Open3D from your own TBB code does not oversubscribe the machine.
 
 Filament
 ````````
