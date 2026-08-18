@@ -327,14 +327,6 @@ ci_build() {
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d* /opt/mount \
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
-
-    # SYCL build-lib: artifacts are on the host; slim the image before CI saves it.
-    if [[ "${DOCKER_TAG}" == "open3d-ci:sycl-shared" && "${PACKAGE}" == "ON" \
-            && "${BUILD_SHARED_LIBS}" == "ON" ]]; then
-        # shellcheck source=util/ci_utils.sh
-        source "${HOST_OPEN3D_ROOT}/util/ci_utils.sh"
-        ci_slim_sycl_lib_docker_image "${DOCKER_TAG}"
-    fi
 }
 
 2-noble_export_env() {

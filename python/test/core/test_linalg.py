@@ -176,8 +176,10 @@ def test_det(device, dtype):
 @pytest.mark.parametrize("dtype",
                          [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
 def test_lu(device, dtype):
-    # Full row-rank 3x4 (rank 2 matrices fail getrf on strict LAPACK backends).
-    a = o3c.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 13]],
+    # Keep this matrix full rank: getrf reports a singular matrix on a zero
+    # pivot, and whether a rank deficient fixture produces an exact zero varies
+    # by LAPACK backend and precision (MKL float32 hits it, float64 does not).
+    a = o3c.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 13]],
                    dtype=dtype,
                    device=device)
 
