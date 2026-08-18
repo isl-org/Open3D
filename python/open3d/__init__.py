@@ -5,22 +5,15 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# Workaround when multiple copies of the OpenMP runtime have been linked to
-# the program, which happens when PyTorch loads OpenMP runtime first. Not that
-# this method is "unsafe, unsupported, undocumented", but we found it to be
-# generally safe to use. This should be deprecated once we found a way to
-# "ensure that only a single OpenMP runtime is linked into the process".
-#
-# https://github.com/llvm-mirror/openmp/blob/8453ca8594e1a5dd8a250c39bf8fcfbfb1760e60/runtime/src/i18n/en_US.txt#L449
-# https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
 import site
 import warnings
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-# Enable thread composability manager to coordinate Intel OpenMP and TBB
-# threads. Only works with Intel OpenMP.  TBB must not be already loaded.
+# Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism. Other packages (e.g. SciPy, MKL) may
+# still bring their own Intel OpenMP; enabling the thread composability manager
+# lets it share a thread pool with TBB instead of oversubscribing the machine.
+# Only works with Intel OpenMP, and TBB must not be already loaded.
 os.environ["TCM_ENABLE"] = "1"
 from pathlib import Path
 

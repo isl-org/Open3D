@@ -178,10 +178,11 @@ def run(config):
 
     if config["python_multi_threading"] is True:
         max_workers = min(max(1, multiprocessing.cpu_count() - 1), n_fragments)
-        # Prevent over allocation of open mp threads in child processes
-        os.environ['OMP_NUM_THREADS'] = '1'
         mp_context = multiprocessing.get_context('spawn')
-        with mp_context.Pool(processes=max_workers) as pool:
+        # Each worker process runs Open3D single-threaded, so the pool does not
+        # oversubscribe the CPU (Open3D parallelizes with TBB internally).
+        with mp_context.Pool(processes=max_workers,
+                             initializer=limit_open3d_threads) as pool:
             args = [(fragment_id, color_files, depth_files, n_files,
                      n_fragments, config) for fragment_id in range(n_fragments)]
             pool.starmap(process_single_fragment, args)

@@ -14,6 +14,5 @@ _build_config = {
     "CUDA_VERSION" : "@CUDA_VERSION@",
     "CUDA_GENCODES" : "@CUDA_GENCODES@",
     "Tensorflow_VERSION" : "@Tensorflow_VERSION@",
-    "Pytorch_VERSION" : "@Pytorch_VERSION@",
-    "WITH_OPENMP" : $<IF:$<BOOL:@WITH_OPENMP@>,True,False>
+    "Pytorch_VERSION" : "@Pytorch_VERSION@"
 }

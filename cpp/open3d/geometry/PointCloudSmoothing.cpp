@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
 // cppcheck-suppress missingIncludeSystem
 #include <Eigen/Eigenvalues>
 
@@ -143,23 +146,28 @@ FixedKNNNeighborhoods BuildFixedKNNNeighborhoods(
     const PointCloud point_only_cloud(points);
     const KDTreeFlann kdtree(point_only_cloud);
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int point_index = 0; point_index < n_points; ++point_index) {
-        std::vector<int> local_indices;
-        const int neighbor_count = SearchKNNWithoutSelf(
-                kdtree, points, point_index, knn, local_indices);
-        neighborhoods.counts[point_index] = neighbor_count;
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, n_points,
+                                    utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int point_index = range.begin(); point_index < range.end();
+                     ++point_index) {
+                    std::vector<int> local_indices;
+                    const int neighbor_count = SearchKNNWithoutSelf(
+                            kdtree, points, point_index, knn, local_indices);
+                    neighborhoods.counts[point_index] = neighbor_count;
 
-        const size_t offset =
-                static_cast<size_t>(point_index) * static_cast<size_t>(knn);
-        for (int neighbor_index = 0; neighbor_index < neighbor_count;
-             ++neighbor_index) {
-            neighborhoods
-                    .indices[offset + static_cast<size_t>(neighbor_index)] =
-                    local_indices[neighbor_index];
-        }
-    }
+                    const size_t offset = static_cast<size_t>(point_index) *
+                                          static_cast<size_t>(knn);
+                    for (int neighbor_index = 0;
+                         neighbor_index < neighbor_count; ++neighbor_index) {
+                        neighborhoods
+                                .indices[offset +
+                                         static_cast<size_t>(neighbor_index)] =
+                                local_indices[neighbor_index];
+                    }
+                }
+            });
 
     return neighborhoods;
 }
@@ -265,69 +273,78 @@ PointCloud PointCloud::SmoothMLS(const KDTreeSearchParam& search_param) const {
     // Precompute Gaussian factor once
     double inv_sigma2 = (radius > 0.0) ? 1.0 / (radius * radius) : 0.0;
 
-#pragma omp parallel for schedule(static, 64) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)points_.size(); i++) {
-        const Eigen::Vector3d& p = points_[i];
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, points_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    const Eigen::Vector3d& p = points_[i];
 
-        std::vector<int> indices;
-        std::vector<double> distances2;
-        int nb_neighbors = 0;
+                    std::vector<int> indices;
+                    std::vector<double> distances2;
+                    int nb_neighbors = 0;
 
-        // ----------------------------
-        // 3. Neighborhood search
-        // ----------------------------
-        if (radius > 0.0 && k > 0) {
-            // hybrid: radius + max_nn
-            nb_neighbors =
-                    kdtree.SearchHybrid(p, radius, k, indices, distances2);
-        } else if (k > 0) {
-            nb_neighbors = kdtree.SearchKNN(p, k, indices, distances2);
-        } else {
-            nb_neighbors = kdtree.SearchRadius(p, radius, indices, distances2);
-        }
+                    // ----------------------------
+                    // 3. Neighborhood search
+                    // ----------------------------
+                    if (radius > 0.0 && k > 0) {
+                        // hybrid: radius + max_nn
+                        nb_neighbors = kdtree.SearchHybrid(p, radius, k,
+                                                           indices, distances2);
+                    } else if (k > 0) {
+                        nb_neighbors =
+                                kdtree.SearchKNN(p, k, indices, distances2);
+                    } else {
+                        nb_neighbors = kdtree.SearchRadius(p, radius, indices,
+                                                           distances2);
+                    }
 
-        // ----------------------------
-        // 4. Not enough neighbors
-        // ----------------------------
-        if (nb_neighbors < 3) {
-            smoothed_cloud.points_[i] = p;
-            if (has_normals) {
-                smoothed_cloud.normals_[i] = normals_[i].normalized();
-            }
-            continue;
-        }
+                    // ----------------------------
+                    // 4. Not enough neighbors
+                    // ----------------------------
+                    if (nb_neighbors < 3) {
+                        smoothed_cloud.points_[i] = p;
+                        if (has_normals) {
+                            smoothed_cloud.normals_[i] =
+                                    normals_[i].normalized();
+                        }
+                        continue;
+                    }
 
-        // ----------------------------
-        // 5. Compute weights
-        // ----------------------------
-        std::vector<double> w(nb_neighbors);
-        for (int j = 0; j < nb_neighbors; ++j) {
-            w[j] = std::exp(-distances2[j] * inv_sigma2);
-        }
+                    // ----------------------------
+                    // 5. Compute weights
+                    // ----------------------------
+                    std::vector<double> w(nb_neighbors);
+                    for (int j = 0; j < nb_neighbors; ++j) {
+                        w[j] = std::exp(-distances2[j] * inv_sigma2);
+                    }
 
-        // ----------------------------
-        // 6. Centroid + covariance
-        // ----------------------------
-        Eigen::Vector3d centroid = ComputeWeightedCentroid(*this, indices, w);
-        Eigen::Matrix3d C =
-                ComputeWeightedCovariance(*this, indices, w, centroid);
+                    // ----------------------------
+                    // 6. Centroid + covariance
+                    // ----------------------------
+                    Eigen::Vector3d centroid =
+                            ComputeWeightedCentroid(*this, indices, w);
+                    Eigen::Matrix3d C = ComputeWeightedCovariance(
+                            *this, indices, w, centroid);
 
-        // ----------------------------
-        // 7. PCA -> normal
-        // ----------------------------
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(C);
-        Eigen::Vector3d normal = solver.eigenvectors().col(0).normalized();
+                    // ----------------------------
+                    // 7. PCA -> normal
+                    // ----------------------------
+                    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(C);
+                    Eigen::Vector3d normal =
+                            solver.eigenvectors().col(0).normalized();
 
-        // ----------------------------
-        // 8. Project onto tangent plane
-        // ----------------------------
-        smoothed_cloud.points_[i] = ProjectOntoPlane(p, centroid, normal);
+                    // ----------------------------
+                    // 8. Project onto tangent plane
+                    // ----------------------------
+                    smoothed_cloud.points_[i] =
+                            ProjectOntoPlane(p, centroid, normal);
 
-        if (has_normals) {
-            smoothed_cloud.normals_[i] = normal;
-        }
-    }
+                    if (has_normals) {
+                        smoothed_cloud.normals_[i] = normal;
+                    }
+                }
+            });
 
     // ----------------------------
     // 9. Make normals consistent
@@ -416,39 +433,44 @@ PointCloud PointCloud::SmoothBilateral(const KDTreeSearchParam& search_param,
 
     int n_points = static_cast<int>(points_.size());
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < n_points; ++i) {
-        std::vector<int> indices;
-        std::vector<double> dists2;
-        int nb_neighbors =
-                kdtree.Search(points_[i], search_param, indices, dists2);
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, n_points,
+                                    utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> indices;
+                    std::vector<double> dists2;
+                    int nb_neighbors = kdtree.Search(points_[i], search_param,
+                                                     indices, dists2);
 
-        if (nb_neighbors > 1) {
-            const Eigen::Vector3d& p_i = points_[i];
-            const double normal_norm = smoothed_cloud.normals_[i].norm();
-            if (normal_norm <= 0.0) {
-                continue;
-            }
-            const Eigen::Vector3d n_i =
-                    smoothed_cloud.normals_[i] / normal_norm;
+                    if (nb_neighbors > 1) {
+                        const Eigen::Vector3d& p_i = points_[i];
+                        const double normal_norm =
+                                smoothed_cloud.normals_[i].norm();
+                        if (normal_norm <= 0.0) {
+                            continue;
+                        }
+                        const Eigen::Vector3d n_i =
+                                smoothed_cloud.normals_[i] / normal_norm;
 
-            std::vector<double> weights(nb_neighbors);
+                        std::vector<double> weights(nb_neighbors);
 
-            for (int k = 0; k < nb_neighbors; ++k) {
-                const Eigen::Vector3d& p_k = points_[indices[k]];
-                double spatial_weight = std::exp(-dists2[k] * inv_sigma_s2);
-                double range_dist = (p_i - p_k).dot(n_i);
-                double range_weight =
-                        std::exp(-(range_dist * range_dist) * inv_sigma_r2);
-                weights[k] = spatial_weight * range_weight;
-            }
+                        for (int k = 0; k < nb_neighbors; ++k) {
+                            const Eigen::Vector3d& p_k = points_[indices[k]];
+                            double spatial_weight =
+                                    std::exp(-dists2[k] * inv_sigma_s2);
+                            double range_dist = (p_i - p_k).dot(n_i);
+                            double range_weight = std::exp(
+                                    -(range_dist * range_dist) * inv_sigma_r2);
+                            weights[k] = spatial_weight * range_weight;
+                        }
 
-            Eigen::Vector3d new_point =
-                    ComputeWeightedCentroid(*this, indices, weights);
-            smoothed_cloud.points_[i] = new_point;
-        }
-    }
+                        Eigen::Vector3d new_point = ComputeWeightedCentroid(
+                                *this, indices, weights);
+                        smoothed_cloud.points_[i] = new_point;
+                    }
+                }
+            });
 
     return smoothed_cloud;
 }

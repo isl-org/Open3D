@@ -45,10 +45,10 @@
 /// then a
 ///   **single CAS** `EMPTY`/`DELETED` → `OCCUPIED` (no lock spin — on Intel Xe,
 ///   a waiting subgroup lane can hang the device).
-/// - Duplicate-key races: loser gets `masks=false` and **DeviceFree**'s its
-/// unused
-///   buffer slot ⇒ returned **buf_indices are valid gather indices but not
-///   necessarily dense in `[0, Size())`** (see \ref HashMap user docs).
+/// - Bulk-reserved buffer indices are staged before launch so duplicate-key
+///   losers can safely return unused slots with `DeviceFree()` in the kernel.
+///   Returned **buf_indices are valid gather indices but not necessarily dense
+///   in `[0, Size())`** (see \ref HashMap user docs).
 ///
 /// **Find / Erase**
 /// - Same probe; `EMPTY` ends the chain.
@@ -346,30 +346,32 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
         values_soa.ptrs[i] = input_values_soa[i];
     }
 
-    // Bulk-reserve `count` heap slots up front, one per thread, via plain
-    // index arithmetic (no atomics) -- mirrors CUDA's SlabHashBackend::Insert
-    // (see InsertKernelPass0). This is what makes the DeviceFree() call below
-    // safe: since this kernel never calls DeviceAllocate() itself, its
-    // DeviceFree() calls cannot race with a concurrent allocation of the same
-    // slot. Interleaving DeviceAllocate() (lazily, inside the probe loop) and
-    // DeviceFree() (on the leak path) within the same kernel invocation was
-    // tried first, but heap_top_ fetch_add/fetch_sub pairs only order the
-    // atomic counter itself, not the plain heap_[] array reads/writes tied to
-    // it, so concurrent Allocate/Free calls could still observe/overwrite
-    // each other's heap_[] slot before the intended visibility order was
-    // established, corrupting the free list (observed as extra/duplicate
-    // buf_indices ending up marked valid).
+    // Bulk-reserve one heap slot per thread, mirroring CUDA's
+    // SlabHashBackend::Insert (see InsertKernelPass0). Stage the indices in
+    // the output buffer before advancing heap_top_: losing threads may then
+    // call DeviceFree() without overwriting heap entries that another thread
+    // in this kernel has yet to read.
     const int prev_heap_top = this->buffer_->GetHeapTopIndex();
+    const int64_t capacity = buffer_accessor_.capacity_;
+    if (count > capacity - prev_heap_top) {
+        utility::LogError(
+                "SYCL hashmap insertion requires {} free buffer slots, but "
+                "only {} are available.",
+                count, capacity - prev_heap_top);
+    }
     {
+        queue_.memcpy(output_buf_indices,
+                      buffer_accessor_.heap_ + prev_heap_top,
+                      count * sizeof(buf_index_t))
+                .wait_and_throw();
         const int new_heap_top = prev_heap_top + static_cast<int>(count);
         queue_.memcpy(buffer_accessor_.heap_top_, &new_heap_top, sizeof(int))
-                .wait();
+                .wait_and_throw();
     }
 
     SYCLHashBackendBufferAccessor accessor = buffer_accessor_;
     uint64_t* slot_data = slot_data_;
     const int64_t bucket_count = bucket_count_;
-    const int64_t capacity = accessor.capacity_;
     int* occupied_count = occupied_count_;
     int* non_empty_count = non_empty_count_;
     constexpr int kMaxOuterIter = 1 << 20;  // Termination if table is full.
@@ -388,6 +390,7 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
             sycl::atomic_fence(sycl::memory_order::seq_cst,
                                sycl::memory_scope::device);
 
+            const buf_index_t my_bi = output_buf_indices[tid];
             const Key key = keys[tid];
             output_buf_indices[tid] = 0;
             output_masks[tid] = false;
@@ -398,16 +401,6 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
             const uint32_t my_fingerprint =
                     static_cast<uint32_t>((hash >> 16) & 0xfffffffULL);
 
-            // Slot for this thread was bulk-reserved on the host before
-            // kernel launch (see prev_heap_top above): no atomic is needed
-            // here, and no other thread can read/write this exact heap_[]
-            // entry, since every tid maps to a disjoint reserved_index.
-            const int64_t reserved_index =
-                    static_cast<int64_t>(prev_heap_top) + tid;
-            buf_index_t my_bi =
-                    (reserved_index < capacity)
-                            ? accessor.heap_[reserved_index]
-                            : SYCLHashBackendBufferAccessor::kInvalidBufIndex;
             bool key_published = false;
             if (my_bi != SYCLHashBackendBufferAccessor::kInvalidBufIndex) {
                 // Publish key/values immediately: whether this slot is
@@ -528,14 +521,10 @@ void SYCLHashBackend<Key, Hash, Eq>::Insert(
                 }
             }
 
-            // This thread's reserved slot was published (key/values written)
-            // but never won the CAS that installs it into the table --
-            // either because a concurrent insert of the same key won the
-            // race first (duplicate found on a post-restart probe) or
-            // kMaxOuterIter was exhausted. Return it to the heap so capacity
-            // is not silently reduced. This DeviceFree() cannot race with a
-            // concurrent DeviceAllocate(), since slots are only ever
-            // allocated in bulk on the host before this kernel is launched.
+            // Return a published-but-unowned reservation after losing a
+            // duplicate-key CAS race or exhausting kMaxOuterIter. All
+            // reservations were staged before launch, so this heap write
+            // cannot overwrite another thread's pending reservation read.
             if (key_published && !output_masks[tid]) {
                 accessor.DeviceFree(my_bi);
             }
