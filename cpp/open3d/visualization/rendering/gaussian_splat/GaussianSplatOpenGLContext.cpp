@@ -20,7 +20,6 @@
 
 #if !defined(__APPLE__)
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 

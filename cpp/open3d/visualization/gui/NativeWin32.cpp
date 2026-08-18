@@ -22,6 +22,9 @@ void* GetNativeDrawable(GLFWwindow* glfw_window) {
 
 void SetNativeWindowIcon(GLFWwindow* glfw_window) {
     HWND window = glfwGetWin32Window(glfw_window);
+    if (!window) {
+        return;
+    }
     HINSTANCE instance = GetModuleHandle(nullptr);
     HICON small_icon = static_cast<HICON>(LoadImage(
             instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),

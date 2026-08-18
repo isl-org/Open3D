@@ -38,7 +38,6 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <GL/glew.h>
-#include <fmt/format.h>
 
 #include <cstdlib>
 #include <cstring>

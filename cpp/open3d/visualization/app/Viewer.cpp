@@ -24,8 +24,6 @@ static const int width = 1280;
 static const int height = 960;
 
 void RunViewer(int argc, const char *argv[]) {
-    utility::Logger::GetInstance().SetVerbosityLevel(
-            utility::VerbosityLevel::Debug);
     std::function<void(const std::string &)> print_fcn =
             utility::Logger::GetInstance().GetPrintFunction();
     utility::Logger::GetInstance().ResetPrintFunction();
