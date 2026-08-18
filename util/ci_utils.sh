@@ -843,7 +843,7 @@ ci_slim_sycl_lib_docker_image() {
     local tag="${1:?docker image tag}"
     local container="open3d-sycl-lib-slim-$$"
     docker rm -f "${container}" >/dev/null 2>&1 || true
-    docker create --name "${container}" "${tag}" >/dev/null
+    docker create --name "${container}" "${tag}" sleep infinity >/dev/null
     docker start "${container}" >/dev/null
     docker exec "${container}" bash -c 'set -euo pipefail
         rm -f /open3d-devel*.tar.xz /open3d-devel*.tar.gz /open3d*.whl
