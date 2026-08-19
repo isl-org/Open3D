@@ -6,6 +6,7 @@
 -   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
 -   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
