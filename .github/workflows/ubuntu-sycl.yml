@@ -171,6 +171,13 @@ jobs:
           # We execute docker buildscript with python version argument.
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
 
+          # Wheel produced by the Docker build matches the matrix Python version
+          # via -DPython3_EXECUTABLE in Dockerfile.ci. Keep only that wheel.
+          PYTHON_ABI="cp${PYTHON_VERSION/./}"
+          find . -maxdepth 1 -name 'open3d*.whl' \
+            ! -name "*${PYTHON_ABI}-${PYTHON_ABI}-*.whl" -delete
+          compgen -G "open3d*${PYTHON_ABI}-${PYTHON_ABI}-*.whl" > /dev/null
+
       - name: Docker test (Python)
         run: docker/docker_test.sh sycl-shared python
 

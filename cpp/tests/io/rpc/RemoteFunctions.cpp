@@ -23,11 +23,7 @@ using namespace open3d::io::rpc;
 namespace open3d {
 namespace tests {
 
-#ifdef _WIN32
-const std::string connection_address = "tcp://127.0.0.1:51454";
-#else
-const std::string connection_address = "ipc:///tmp/open3d_ipc";
-#endif
+const std::string connection_address = "tcp://localhost:0";
 
 class RemoteFunctions : public testing::Test {
 public:
@@ -36,69 +32,64 @@ public:
 
 TEST_F(RemoteFunctions, SendReceiveUnpackMessages) {
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         ASSERT_TRUE(SetPointCloud(pcd, "", 0, "", connection));
         receiver.Stop();
     }
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
         geometry::TriangleMesh mesh;
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.vertices_.push_back(Eigen::Vector3d(1, 2, 3));
         mesh.triangles_.push_back(Eigen::Vector3i(0, 1, 2));
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         ASSERT_TRUE(SetTriangleMesh(mesh, "", 0, "", connection));
         receiver.Stop();
     }
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
         camera::PinholeCameraParameters cam;
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         ASSERT_TRUE(SetLegacyCamera(cam, "", 0, "", connection));
         receiver.Stop();
     }
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         ASSERT_TRUE(SetTime(0, connection));
         receiver.Stop();
     }
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         ASSERT_TRUE(SetActiveCamera("group/mycam", connection));
         receiver.Stop();
     }
 
     // chain multiple messages to test if the receiver can handle this
     {
-        // start receiver
         DummyReceiver receiver(connection_address, 500);
         receiver.Start();
+        const std::string addr = receiver.GetLastEndpoint();
 
         geometry::PointCloud pcd;
         pcd.points_.push_back(Eigen::Vector3d(1, 2, 3));
@@ -110,8 +101,7 @@ TEST_F(RemoteFunctions, SendReceiveUnpackMessages) {
 
         ASSERT_TRUE(SetTime(0, buf_connection));
 
-        auto connection =
-                std::make_shared<Connection>(connection_address, 500, 500);
+        auto connection = std::make_shared<Connection>(addr, 500, 500);
         std::string buf = buf_connection->buffer().str();
         auto reply = connection->Send(buf.data(), buf.size());
 
@@ -141,13 +131,14 @@ TEST_F(RemoteFunctions, SendGarbage) {
     // start receiver
     DummyReceiver receiver(connection_address, 500);
     receiver.Start();
+    const std::string addr = receiver.GetLastEndpoint();
 
     // send invalid msg id
     {
         std::string data = CreateSerializedRequestMessage("bla123");
 
         // send to receiver
-        Connection connection(connection_address, 500, 500);
+        Connection connection(addr, 500, 500);
         auto reply = connection.Send(data.data(), data.size());
         const void* reply_data;
         size_t reply_size;
@@ -176,7 +167,7 @@ TEST_F(RemoteFunctions, SendGarbage) {
         buf_connection.Send(data.data(), data.size());
 
         // send to receiver
-        Connection connection(connection_address, 500, 500);
+        Connection connection(addr, 500, 500);
         std::string buf = buf_connection.buffer().str();
         auto reply = connection.Send(buf.data(), buf.size());
         const void* reply_data;
@@ -204,7 +195,7 @@ TEST_F(RemoteFunctions, SendGarbage) {
         buf_connection.Send(data.data(), data.size());
 
         // send to receiver
-        Connection connection(connection_address, 500, 500);
+        Connection connection(addr, 500, 500);
         std::string buf = buf_connection.buffer().str();
         auto reply = connection.Send(buf.data(), buf.size());
         const void* reply_data;
