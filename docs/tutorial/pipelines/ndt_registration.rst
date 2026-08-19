@@ -6,9 +6,12 @@ a target point cloud represented as a voxel grid of local Gaussian
 distributions. The method can be useful when a smooth target distribution is
 preferred over point-to-point nearest-neighbor correspondences.
 
-This implementation follows the Normal Distributions Transform introduced by
-Biber and Straßer [BiberAndStrasser2003]_ and the 3D NDT formulation described
-by Gao [Gao2023]_.
+This implementation is a Gauss-Newton point-to-distribution variant of the
+Normal Distributions Transform. It is based on the voxel model and practical
+3D formulation described by Gao [Gao2023]_, while the original NDT method was
+introduced by Biber and Straßer [BiberAndStrasser2003]_. Unlike the original
+Newton optimization of a Gaussian score, this variant minimizes squared
+Mahalanobis residuals.
 
 Open3D exposes NDT through
 ``open3d.pipelines.registration.registration_ndt``. The main parameters are

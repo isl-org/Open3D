@@ -7,14 +7,17 @@
 
 #include "open3d/pipelines/registration/NormalDistributionsTransform.h"
 
-// This implementation follows the same 3D NDT registration formulation used in
-// https://github.com/gaoxiang12/slam_in_autonomous_driving/blob/master/src/ch7/ndt_3d.cc:
-// target voxel Gaussian modeling, center/six-neighbor voxel residuals,
-// covariance eigenvalue regularization, Mahalanobis outlier rejection, and
-// Gauss-Newton SE(3) updates adapted to Open3D's registration API.
+// This implements a Gauss-Newton point-to-distribution NDT variant based on
+// the 3D formulation described in
+// https://github.com/gaoxiang12/slam_in_autonomous_driving/blob/master/src/ch7/ndt_3d.cc.
+// It models target voxels as regularized Gaussians, rejects outliers by their
+// Mahalanobis distance, and applies left-perturbation SE(3) updates.
 
 #include <Eigen/Dense>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -26,6 +29,7 @@
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -64,11 +68,13 @@ using VoxelMap = std::unordered_map<VoxelKey, VoxelGaussian, VoxelKeyHash>;
 
 struct VoxelAccumulator {
     int count = 0;
+    std::vector<int> point_indices;
     Eigen::Vector3d mean = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance_accumulator = Eigen::Matrix3d::Zero();
 
-    void AddPoint(const Eigen::Vector3d &point) {
+    void AddPoint(const Eigen::Vector3d &point, int point_index) {
         ++count;
+        point_indices.push_back(point_index);
         const Eigen::Vector3d delta = point - mean;
         mean += delta / static_cast<double>(count);
         const Eigen::Vector3d delta_after_update = point - mean;
@@ -84,9 +90,23 @@ struct NDTLinearSystem {
     Eigen::Vector6d JTr = Eigen::Vector6d::Zero();
     double residual2 = 0.0;
     int residual_count = 0;
+    double euclidean_error2 = 0.0;
+    int correspondence_count = 0;
 
     double MeanObjective() const {
         return residual2 / static_cast<double>(residual_count);
+    }
+
+    double Fitness(std::size_t source_size) const {
+        return static_cast<double>(correspondence_count) /
+               static_cast<double>(source_size);
+    }
+
+    double InlierRMSE() const {
+        return correspondence_count == 0
+                       ? 0.0
+                       : std::sqrt(euclidean_error2 /
+                                   static_cast<double>(correspondence_count));
     }
 };
 
@@ -119,15 +139,16 @@ VoxelKey GetVoxelKey(const Eigen::Vector3d &point, double inv_voxel_size) {
                     static_cast<std::int64_t>(rounded.z())};
 }
 
-std::vector<VoxelKey> GetNeighborOffsets(int neighbor_search_type) {
-    std::vector<VoxelKey> offsets{{0, 0, 0}};
+using NeighborOffsets = std::array<VoxelKey, 7>;
+
+NeighborOffsets GetNeighborOffsets(int neighbor_search_type,
+                                   std::size_t &offset_count) {
+    NeighborOffsets offsets{{{0, 0, 0}, {-1, 0, 0}, {1, 0, 0},
+                             {0, -1, 0}, {0, 1, 0}, {0, 0, -1},
+                             {0, 0, 1}}};
+    offset_count = 1;
     if (neighbor_search_type == 1) {
-        offsets.push_back({-1, 0, 0});
-        offsets.push_back({1, 0, 0});
-        offsets.push_back({0, -1, 0});
-        offsets.push_back({0, 1, 0});
-        offsets.push_back({0, 0, -1});
-        offsets.push_back({0, 0, 1});
+        offset_count = offsets.size();
     }
     return offsets;
 }
@@ -170,8 +191,9 @@ VoxelMap BuildVoxelGaussians(const geometry::PointCloud &target,
                              const NormalDistributionsTransformOption &option) {
     const double inv_voxel_size = 1.0 / option.voxel_size_;
     VoxelAccumulatorMap voxel_accumulators;
-    for (const Eigen::Vector3d &point : target.points_) {
-        voxel_accumulators[GetVoxelKey(point, inv_voxel_size)].AddPoint(point);
+    for (int i = 0; i < static_cast<int>(target.points_.size()); ++i) {
+        voxel_accumulators[GetVoxelKey(target.points_[i], inv_voxel_size)]
+                .AddPoint(target.points_[i], i);
     }
 
     VoxelMap voxel_map;
@@ -205,64 +227,214 @@ VoxelMap BuildVoxelGaussians(const geometry::PointCloud &target,
         gaussian.information = solver.eigenvectors() *
                                eigenvalues.cwiseInverse().asDiagonal() *
                                solver.eigenvectors().transpose();
-        voxel_map.emplace(item.first, gaussian);
-    }
-
-    for (int i = 0; i < static_cast<int>(target.points_.size()); ++i) {
-        const Eigen::Vector3d &point = target.points_[i];
-        auto voxel_itr = voxel_map.find(GetVoxelKey(point, inv_voxel_size));
-        if (voxel_itr == voxel_map.end()) {
-            continue;
-        }
-        VoxelGaussian &gaussian = voxel_itr->second;
-        const double distance2 = (point - gaussian.mean).squaredNorm();
-        if (gaussian.representative_index < 0 ||
-            distance2 < (target.points_[gaussian.representative_index] -
+        for (const int point_index : accumulator.point_indices) {
+            const double distance2 =
+                    (target.points_[point_index] - gaussian.mean).squaredNorm();
+            if (gaussian.representative_index < 0 ||
+                distance2 <
+                        (target.points_[gaussian.representative_index] -
                          gaussian.mean)
                                 .squaredNorm()) {
-            gaussian.representative_index = i;
+                gaussian.representative_index = point_index;
+            }
         }
+        voxel_map.emplace(item.first, gaussian);
     }
     return voxel_map;
 }
 
-NDTLinearSystem ComputeNDTLinearSystem(
-        const geometry::PointCloud &source_transformed,
-        const VoxelMap &voxel_map,
-        const NormalDistributionsTransformOption &option) {
+struct NDTLinearSystemReducer {
+    const geometry::PointCloud &source_transformed;
+    const geometry::PointCloud &target;
+    const VoxelMap &voxel_map;
+    const NeighborOffsets &offsets;
+    std::size_t offset_count;
+    double inv_voxel_size;
+    double outlier_threshold;
     NDTLinearSystem system;
-    const double inv_voxel_size = 1.0 / option.voxel_size_;
-    const auto offsets = GetNeighborOffsets(option.neighbor_search_type_);
-    for (const Eigen::Vector3d &point : source_transformed.points_) {
-        const VoxelKey key = GetVoxelKey(point, inv_voxel_size);
-        for (const auto &offset : offsets) {
-            const VoxelKey neighbor{key.x + offset.x, key.y + offset.y,
-                                    key.z + offset.z};
-            const auto voxel_itr = voxel_map.find(neighbor);
-            if (voxel_itr == voxel_map.end()) {
-                continue;
+
+    NDTLinearSystemReducer(const geometry::PointCloud &source_transformed_,
+                           const geometry::PointCloud &target_,
+                           const VoxelMap &voxel_map_,
+                           const NeighborOffsets &offsets_,
+                           std::size_t offset_count_,
+                           double inv_voxel_size_,
+                           double outlier_threshold_)
+        : source_transformed(source_transformed_),
+                    target(target_),
+          voxel_map(voxel_map_),
+          offsets(offsets_),
+          offset_count(offset_count_),
+          inv_voxel_size(inv_voxel_size_),
+          outlier_threshold(outlier_threshold_) {}
+
+    NDTLinearSystemReducer(NDTLinearSystemReducer &other, tbb::split)
+        : source_transformed(other.source_transformed),
+                    target(other.target),
+          voxel_map(other.voxel_map),
+          offsets(other.offsets),
+          offset_count(other.offset_count),
+          inv_voxel_size(other.inv_voxel_size),
+          outlier_threshold(other.outlier_threshold) {}
+
+    void operator()(const tbb::blocked_range<std::size_t> &range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            const Eigen::Vector3d &point = source_transformed.points_[i];
+            const VoxelKey key = GetVoxelKey(point, inv_voxel_size);
+            double best_residual2 = outlier_threshold;
+            int best_target_index = -1;
+            for (std::size_t j = 0; j < offset_count; ++j) {
+                const VoxelKey neighbor{key.x + offsets[j].x,
+                                        key.y + offsets[j].y,
+                                        key.z + offsets[j].z};
+                const auto voxel_itr = voxel_map.find(neighbor);
+                if (voxel_itr == voxel_map.end()) {
+                    continue;
+                }
+
+                const Eigen::Vector3d diff = point - voxel_itr->second.mean;
+                const Eigen::Matrix3d &information =
+                        voxel_itr->second.information;
+                const double distance =
+                        diff.transpose() * information * diff;
+                if (!std::isfinite(distance) || distance > outlier_threshold) {
+                    continue;
+                }
+
+                if (distance <= best_residual2) {
+                    best_residual2 = distance;
+                    best_target_index = voxel_itr->second.representative_index;
+                }
+
+                Eigen::Matrix<double, 3, 6> jacobian;
+                jacobian.block<3, 3>(0, 0) = -utility::SkewMatrix(point);
+                jacobian.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
+                system.JTJ.noalias() +=
+                        jacobian.transpose() * information * jacobian;
+                system.JTr.noalias() +=
+                        jacobian.transpose() * information * diff;
+                system.residual2 += distance;
+                ++system.residual_count;
             }
-
-            const Eigen::Vector3d diff = point - voxel_itr->second.mean;
-            const Eigen::Matrix3d &information = voxel_itr->second.information;
-            const double distance = diff.transpose() * information * diff;
-            if (!std::isfinite(distance) ||
-                distance > option.outlier_threshold_) {
-                continue;
+            if (best_target_index >= 0) {
+                system.euclidean_error2 +=
+                        (point - target.points_[best_target_index])
+                                .squaredNorm();
+                ++system.correspondence_count;
             }
-
-            Eigen::Matrix<double, 3, 6> jacobian;
-            jacobian.block<3, 3>(0, 0) = -utility::SkewMatrix(point);
-            jacobian.block<3, 3>(0, 3) = Eigen::Matrix3d::Identity();
-
-            system.JTJ += jacobian.transpose() * information * jacobian;
-            system.JTr += jacobian.transpose() * information * diff;
-            system.residual2 += distance;
-            ++system.residual_count;
         }
     }
-    return system;
+
+    void join(NDTLinearSystemReducer &other) {
+        system.JTJ += other.system.JTJ;
+        system.JTr += other.system.JTr;
+        system.residual2 += other.system.residual2;
+        system.residual_count += other.system.residual_count;
+        system.euclidean_error2 += other.system.euclidean_error2;
+        system.correspondence_count += other.system.correspondence_count;
+    }
+};
+
+NDTLinearSystem ComputeNDTLinearSystem(
+        const geometry::PointCloud &source_transformed,
+    const geometry::PointCloud &target,
+        const VoxelMap &voxel_map,
+        const NormalDistributionsTransformOption &option) {
+    const double inv_voxel_size = 1.0 / option.voxel_size_;
+    std::size_t offset_count;
+    const auto offsets =
+        GetNeighborOffsets(option.neighbor_search_type_, offset_count);
+    NDTLinearSystemReducer reducer(source_transformed, target, voxel_map,
+                                   offsets,
+                   offset_count,
+                                   inv_voxel_size, option.outlier_threshold_);
+    tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(
+                    0, source_transformed.points_.size(),
+                    utility::DefaultGrainSizeTBB()),
+            reducer);
+    return std::move(reducer.system);
 }
+
+struct NDTResultReducer {
+    const geometry::PointCloud &source_transformed;
+    const geometry::PointCloud &target;
+    const VoxelMap &voxel_map;
+    const NeighborOffsets &offsets;
+    std::size_t offset_count;
+    double inv_voxel_size;
+    double outlier_threshold;
+    CorrespondenceSet correspondences;
+    double euclidean_error2 = 0.0;
+
+    NDTResultReducer(const geometry::PointCloud &source_transformed_,
+                     const geometry::PointCloud &target_,
+                     const VoxelMap &voxel_map_,
+                                         const NeighborOffsets &offsets_,
+                                         std::size_t offset_count_,
+                     double inv_voxel_size_,
+                     double outlier_threshold_)
+        : source_transformed(source_transformed_),
+          target(target_),
+          voxel_map(voxel_map_),
+          offsets(offsets_),
+                    offset_count(offset_count_),
+          inv_voxel_size(inv_voxel_size_),
+          outlier_threshold(outlier_threshold_) {}
+
+    NDTResultReducer(NDTResultReducer &other, tbb::split)
+        : source_transformed(other.source_transformed),
+          target(other.target),
+          voxel_map(other.voxel_map),
+          offsets(other.offsets),
+                    offset_count(other.offset_count),
+          inv_voxel_size(other.inv_voxel_size),
+          outlier_threshold(other.outlier_threshold) {}
+
+    void operator()(const tbb::blocked_range<std::size_t> &range) {
+        for (std::size_t i = range.begin(); i < range.end(); ++i) {
+            const Eigen::Vector3d &point = source_transformed.points_[i];
+            const VoxelKey key = GetVoxelKey(point, inv_voxel_size);
+            bool has_inlier = false;
+            double best_residual2 = outlier_threshold;
+            double best_euclidean_error2 = 0.0;
+            int best_target_index = -1;
+                        for (std::size_t j = 0; j < offset_count; ++j) {
+                                const VoxelKey neighbor{key.x + offsets[j].x,
+                                                                                key.y + offsets[j].y,
+                                                                                key.z + offsets[j].z};
+                const auto voxel_itr = voxel_map.find(neighbor);
+                if (voxel_itr == voxel_map.end()) {
+                    continue;
+                }
+                const Eigen::Vector3d diff = point - voxel_itr->second.mean;
+                const double distance =
+                        diff.transpose() * voxel_itr->second.information * diff;
+                if (std::isfinite(distance) && distance <= best_residual2) {
+                    has_inlier = true;
+                    best_residual2 = distance;
+                    best_target_index = voxel_itr->second.representative_index;
+                    best_euclidean_error2 =
+                            (point - target.points_[best_target_index])
+                                    .squaredNorm();
+                }
+            }
+
+            if (has_inlier) {
+                correspondences.emplace_back(static_cast<int>(i),
+                                             best_target_index);
+                euclidean_error2 += best_euclidean_error2;
+            }
+        }
+    }
+
+    void join(NDTResultReducer &other) {
+        correspondences.insert(correspondences.end(),
+                               other.correspondences.begin(),
+                               other.correspondences.end());
+        euclidean_error2 += other.euclidean_error2;
+    }
+};
 
 RegistrationResult EvaluateNDTResult(
         const geometry::PointCloud &source_transformed,
@@ -271,49 +443,19 @@ RegistrationResult EvaluateNDTResult(
         const VoxelMap &voxel_map,
         const NormalDistributionsTransformOption &option) {
     RegistrationResult result(transformation);
-    if (source_transformed.points_.empty()) {
-        return result;
-    }
-
     const double inv_voxel_size = 1.0 / option.voxel_size_;
-    const auto offsets = GetNeighborOffsets(option.neighbor_search_type_);
-    double euclidean_error2 = 0.0;
-    for (int i = 0; i < static_cast<int>(source_transformed.points_.size());
-         ++i) {
-        const Eigen::Vector3d &point = source_transformed.points_[i];
-        const VoxelKey key = GetVoxelKey(point, inv_voxel_size);
-
-        bool has_inlier = false;
-        double best_residual2 = option.outlier_threshold_;
-        double best_euclidean_error2 = 0.0;
-        int best_target_index = -1;
-        for (int j = 0; j < static_cast<int>(offsets.size()); ++j) {
-            const VoxelKey neighbor{key.x + offsets[j].x, key.y + offsets[j].y,
-                                    key.z + offsets[j].z};
-            const auto voxel_itr = voxel_map.find(neighbor);
-            if (voxel_itr == voxel_map.end()) {
-                continue;
-            }
-            const Eigen::Vector3d diff = point - voxel_itr->second.mean;
-            const double distance =
-                    diff.transpose() * voxel_itr->second.information * diff;
-            if (std::isfinite(distance) && distance <= best_residual2) {
-                has_inlier = true;
-                best_residual2 = distance;
-                best_target_index = voxel_itr->second.representative_index;
-                best_euclidean_error2 =
-                        (point - target.points_[best_target_index])
-                                .squaredNorm();
-            }
-        }
-
-        if (has_inlier) {
-            result.correspondence_set_.push_back(
-                    Eigen::Vector2i(i, best_target_index));
-            euclidean_error2 += best_euclidean_error2;
-        }
-    }
-
+    std::size_t offset_count;
+    const auto offsets =
+            GetNeighborOffsets(option.neighbor_search_type_, offset_count);
+    NDTResultReducer reducer(source_transformed, target, voxel_map, offsets,
+                             offset_count,
+                             inv_voxel_size, option.outlier_threshold_);
+    tbb::parallel_reduce(
+            tbb::blocked_range<std::size_t>(
+                    0, source_transformed.points_.size(),
+                    utility::DefaultGrainSizeTBB()),
+            reducer);
+    result.correspondence_set_ = std::move(reducer.correspondences);
     if (!result.correspondence_set_.empty()) {
         const double correspondence_count =
                 static_cast<double>(result.correspondence_set_.size());
@@ -321,7 +463,7 @@ RegistrationResult EvaluateNDTResult(
                 correspondence_count /
                 static_cast<double>(source_transformed.points_.size());
         result.inlier_rmse_ =
-                std::sqrt(euclidean_error2 / correspondence_count);
+                std::sqrt(reducer.euclidean_error2 / correspondence_count);
     }
     return result;
 }
@@ -371,13 +513,11 @@ RegistrationResult RegistrationNDT(
         pcd.Transform(init);
     }
 
-    RegistrationResult result =
-            EvaluateNDTResult(pcd, target, transformation, voxel_map, option);
     double previous_objective = std::numeric_limits<double>::infinity();
 
     for (int i = 0; i < option.max_iteration_; ++i) {
         const NDTLinearSystem system =
-                ComputeNDTLinearSystem(pcd, voxel_map, option);
+                ComputeNDTLinearSystem(pcd, target, voxel_map, option);
 
         if (system.residual_count < 6) {
             utility::LogWarning(
@@ -390,7 +530,8 @@ RegistrationResult RegistrationNDT(
         utility::LogDebug(
                 "NDT Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}, "
                 "mean Mahalanobis objective {:.4f}",
-                i, result.fitness_, result.inlier_rmse_, objective);
+                i, system.Fitness(pcd.points_.size()), system.InlierRMSE(),
+                objective);
         if (i > 0) {
             const double relative_objective_change =
                     std::abs(previous_objective - objective) /
@@ -455,15 +596,12 @@ RegistrationResult RegistrationNDT(
         transformation = candidate_transformation;
         pcd.Transform(update);
 
-        result = EvaluateNDTResult(pcd, target, transformation, voxel_map,
-                                   option);
-
         if (update_vector.norm() < option.transformation_epsilon_) {
             break;
         }
     }
 
-    return result;
+    return EvaluateNDTResult(pcd, target, transformation, voxel_map, option);
 }
 
 }  // namespace registration

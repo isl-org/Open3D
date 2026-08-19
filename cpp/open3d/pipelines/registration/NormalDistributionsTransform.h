@@ -20,8 +20,6 @@ class PointCloud;
 namespace pipelines {
 namespace registration {
 
-class RegistrationResult;
-
 /// \class NormalDistributionsTransformOption
 ///
 /// \brief Class that defines options for 3D Normal Distributions Transform
