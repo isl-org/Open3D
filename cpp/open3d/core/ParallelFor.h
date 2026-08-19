@@ -21,6 +21,12 @@
 #include <cuda_runtime.h>
 
 #include "open3d/core/CUDAUtils.h"
+#else
+#include <tbb/parallel_for.h>
+#endif
+
+#if defined(SYCL_LANGUAGE_VERSION)
+#include "open3d/core/SYCLUtils.h"
 #endif
 
 namespace open3d {
@@ -68,9 +74,16 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
 
 #else
 
-/// Run a function in parallel on CPU.
+/// Run a function in parallel on CPU, with an explicit grain size.
+///
+/// \param grain_size Minimum number of iterations TBB will give to one worker.
+/// A range shorter than \p grain_size is never split, so callers that have
+/// already blocked the work themselves must pass 1.
 template <typename func_t>
-void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
+void ParallelForCPU_(const Device& device,
+                     int64_t n,
+                     int64_t grain_size,
+                     const func_t& func) {
     if (!device.IsCPU()) {
         utility::LogError("ParallelFor for CPU cannot run on device {}.",
                           device.ToString());
@@ -79,10 +92,82 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
         return;
     }
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int64_t i = 0; i < n; ++i) {
-        func(i);
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, n, grain_size),
+                      [&func](const tbb::blocked_range<int64_t>& range) {
+                          for (int64_t i = range.begin(); i < range.end();
+                               ++i) {
+                              func(i);
+                          }
+                      });
+}
+
+/// Run a function in parallel on CPU.
+///
+/// Element-wise kernels are cheap per item (a few flops, often memory bound),
+/// so use the smaller 2D grain size rather than DefaultGrainSizeTBB(): a
+/// larger grain leaves threads idle for medium-sized tensors.
+template <typename func_t>
+void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
+    ParallelForCPU_(device, n,
+                    static_cast<int64_t>(utility::DefaultGrainSizeTBB2D()),
+                    func);
+}
+
+#endif
+
+#if defined(SYCL_LANGUAGE_VERSION)
+
+/// Single real SYCL launch body: builds an nd_range from \p queue's
+/// preferred work-group size, submits with \p deps, and returns the
+/// completion event without blocking. Every other SYCL ParallelFor overload
+/// below (Device- or queue-based, blocking or not) forwards here -- this is
+/// the only place that computes an nd_range or calls queue.parallel_for.
+template <typename func_t>
+sycl::event ParallelForSYCLImpl_(sycl::queue& queue,
+                                 int64_t n,
+                                 const func_t& func,
+                                 const std::vector<sycl::event>& deps) {
+    if (n == 0) {
+        return sycl::event();
     }
+    size_t wg = core::sy::PreferredWorkGroupSize(queue.get_device());
+    const size_t global_size = ((static_cast<size_t>(n) + wg - 1) / wg) * wg;
+    sycl::nd_range<1> nd_range{sycl::range<1>(global_size), sycl::range<1>(wg)};
+    return queue.parallel_for(nd_range, deps, [=](sycl::nd_item<1> item) {
+        int64_t i = item.get_global_id(0);
+        if (i < n) {
+            func(i);
+        }
+    });
+}
+
+/// Run a function in parallel on SYCL (blocking).
+template <typename func_t>
+void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    auto queue = core::sy::GetQueue(device);
+    ParallelForSYCLImpl_(queue, n, func, {}).wait_and_throw();
+}
+
+/// SYCL-only: depends on \p deps before launching the kernel and returns its
+/// completion event instead of blocking. Shared implementation behind the
+/// public core::ParallelFor(..., std::initializer_list<sycl::event>) overload
+/// below; also called directly by ml/ impl code that already holds a
+/// `std::vector<sycl::event>` of dependencies.
+template <typename func_t>
+sycl::event ParallelForSYCL_(const Device& device,
+                             int64_t n,
+                             const func_t& func,
+                             const std::vector<sycl::event>& deps) {
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    auto queue = core::sy::GetQueue(device);
+    return ParallelForSYCLImpl_(queue, n, func, deps);
 }
 
 #endif
@@ -99,19 +184,77 @@ void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
 /// \note If you use a lambda function, capture only the required variables
 /// instead of all to prevent accidental race conditions. If you want the
 /// kernel to be used on both CPU and CUDA, capture the variables by value.
-/// \note This does not dispatch to SYCL, since SYCL has extra constraints:
-///      - Lambdas may capture by value only.
-///      - No function pointers / virtual functions.
-/// Auto dispatch to SYCL will enforce these conditions even on CPU devices. Use
-/// ParallelForSYCL instead.
+/// \note This dispatches to SYCL when called on a SYCL device. Lambdas must
+/// capture by value only. No function pointers or virtual functions.
 template <typename func_t>
 void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
 #else
     ParallelForCPU_(device, n, func);
 #endif
 }
+
+#if defined(SYCL_LANGUAGE_VERSION)
+/// SYCL-only overload: waits on \p deps before launching the kernel and
+/// returns its completion event instead of blocking, so this call can be
+/// ordered against unrelated async work on the same (possibly out-of-order)
+/// queue -- e.g. a preceding oneDPL async algorithm -- without a redundant
+/// host-side wait. Only meaningful for \p device.IsSYCL(); use the plain
+/// core::ParallelFor(device, n, func) on CPU/CUDA.
+///
+/// Example:
+/// \code
+/// sycl::event scan_event = oneapi::dpl::experimental::inclusive_scan_async(
+///         policy, first, last, d_first).event();
+/// sycl::event kernel_event = core::ParallelFor(
+///         device, n, [=](int64_t i) { ... }, {scan_event});
+/// \endcode
+template <typename func_t>
+sycl::event ParallelFor(const Device& device,
+                        int64_t n,
+                        const func_t& func,
+                        std::initializer_list<sycl::event> deps) {
+    return ParallelForSYCL_(device, n, func, std::vector<sycl::event>(deps));
+}
+
+/// Run a function in parallel directly on the given SYCL queue, bypassing
+/// Open3D's Device/SYCLContext machinery entirely. Use this at boundaries
+/// where the queue's actual bound device cannot be reliably mapped back to
+/// one of Open3D's own enumerated Devices (e.g. PyTorch's current XPU stream
+/// queue on a multi-GPU machine, where torch's device index has no
+/// guaranteed correspondence to Open3D's own -- currently single-GPU --
+/// device enumeration; see core/SYCLContext.cpp). Work-group size is derived
+/// directly from the queue's own device, so this is always correct
+/// regardless of enumeration-order mismatches.
+template <typename func_t>
+void ParallelFor(sycl::queue& queue, int64_t n, const func_t& func) {
+    ParallelForSYCLImpl_(queue, n, func, {}).wait_and_throw();
+}
+
+/// Non-blocking, event-dependency variant of the above.
+template <typename func_t>
+sycl::event ParallelFor(sycl::queue& queue,
+                        int64_t n,
+                        const func_t& func,
+                        const std::vector<sycl::event>& deps) {
+    return ParallelForSYCLImpl_(queue, n, func, deps);
+}
+
+template <typename func_t>
+sycl::event ParallelFor(sycl::queue& queue,
+                        int64_t n,
+                        const func_t& func,
+                        std::initializer_list<sycl::event> deps) {
+    return ParallelFor(queue, n, func, std::vector<sycl::event>(deps));
+}
+#endif
 
 /// Run a potentially vectorized function in parallel on CPU or CUDA.
 ///
@@ -168,9 +311,24 @@ void ParallelFor(const Device& device,
 
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        // The work is already blocked into num_threads chunks here, so the
+        // grain size must be 1: a larger grain would exceed the range and
+        // make TBB run every chunk on a single thread.
+        int num_threads = utility::EstimateMaxThreads();
+        ParallelForCPU_(device, num_threads, /*grain_size=*/1, [&](int64_t i) {
+            int64_t start = n * i / num_threads;
+            int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
+            vec_func(start, end);
+        });
+    }
 #else
+    // See the comment above: the range is already one item per thread.
     int num_threads = utility::EstimateMaxThreads();
-    ParallelForCPU_(device, num_threads, [&](int64_t i) {
+    ParallelForCPU_(device, num_threads, /*grain_size=*/1, [&](int64_t i) {
         int64_t start = n * i / num_threads;
         int64_t end = std::min<int64_t>(n * (i + 1) / num_threads, n);
         vec_func(start, end);
@@ -181,6 +339,12 @@ void ParallelFor(const Device& device,
 
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
+#elif defined(SYCL_LANGUAGE_VERSION)
+    if (device.IsSYCL()) {
+        ParallelForSYCL_(device, n, func);
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
 #else
     ParallelForCPU_(device, n, func);
 #endif

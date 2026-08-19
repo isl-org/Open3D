@@ -8,6 +8,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <vector>
@@ -41,19 +42,13 @@ static void ComputePosePointToPlaneKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
-                for (int workload_idx = r.begin(); workload_idx < r.end();
-                     ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
+            [&](const tbb::blocked_range<int> &range,
+                std::vector<scalar_t> A_reduction) {
+                for (int workload_idx = range.begin();
+                     workload_idx < range.end(); ++workload_idx) {
                     scalar_t J_ij[6];
                     scalar_t r = 0;
 
@@ -78,7 +73,6 @@ static void ComputePosePointToPlaneKernelCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -89,7 +83,6 @@ static void ComputePosePointToPlaneKernelCPU(
                 }
                 return result;
             });
-#endif
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -129,6 +122,102 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
 }
 
 template <typename scalar_t, typename funct_t>
+static void ComputePoseSymmetricKernelCPU(const scalar_t *source_points_ptr,
+                                          const scalar_t *target_points_ptr,
+                                          const scalar_t *source_normals_ptr,
+                                          const scalar_t *target_normals_ptr,
+                                          const int64_t *correspondence_indices,
+                                          const scalar_t *source_mean_ptr,
+                                          const scalar_t *target_mean_ptr,
+                                          const int n,
+                                          scalar_t *global_sum,
+                                          funct_t GetWeightFromRobustKernel) {
+    using Reduction = std::array<scalar_t, 29>;
+    const Reduction A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), Reduction{},
+            [&](tbb::blocked_range<int> r, Reduction A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     ++workload_idx) {
+                    scalar_t J_ij[6] = {0};
+                    scalar_t centered_residual = 0;
+                    scalar_t objective_residual = 0;
+                    const bool valid = GetJacobianSymmetric<scalar_t>(
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            source_normals_ptr, target_normals_ptr,
+                            correspondence_indices, source_mean_ptr,
+                            target_mean_ptr, J_ij, centered_residual,
+                            objective_residual);
+
+                    if (valid) {
+                        const scalar_t weight =
+                                GetWeightFromRobustKernel(objective_residual);
+
+                        int i = 0;
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
+                                A_reduction[i++] += J_ij[j] * weight * J_ij[k];
+                            }
+                            A_reduction[21 + j] +=
+                                    J_ij[j] * weight * centered_residual;
+                        }
+                        A_reduction[27] +=
+                                objective_residual * objective_residual;
+                        A_reduction[28] += 1;
+                    }
+                }
+                return A_reduction;
+            },
+            [](Reduction a, const Reduction &b) {
+                for (int j = 0; j < 29; ++j) {
+                    a[j] += b[j];
+                }
+                return a;
+            });
+
+    for (int i = 0; i < 29; ++i) {
+        global_sum[i] = A_1x29[i];
+    }
+}
+
+void ComputePoseSymmetricCPU(const core::Tensor &source_points,
+                             const core::Tensor &target_points,
+                             const core::Tensor &source_normals,
+                             const core::Tensor &target_normals,
+                             const core::Tensor &correspondence_indices,
+                             const core::Tensor &source_mean,
+                             const core::Tensor &target_mean,
+                             core::Tensor &pose,
+                             float &residual,
+                             int &inlier_count,
+                             const core::Dtype &dtype,
+                             const core::Device &device,
+                             const registration::RobustKernel &kernel) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePoseSymmetricKernelCPU(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            source_normals.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            source_mean.GetDataPtr<scalar_t>(),
+                            target_mean.GetDataPtr<scalar_t>(), n,
+                            global_sum_ptr, GetWeightFromRobustKernel);
+                });
+    });
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
+template <typename scalar_t, typename funct_t>
 static void ComputePoseColoredICPKernelCPU(
         const scalar_t *source_points_ptr,
         const scalar_t *source_colors_ptr,
@@ -148,19 +237,13 @@ static void ComputePoseColoredICPKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
-            [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
+            [&](const tbb::blocked_range<int> &r,
+                std::vector<scalar_t> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
                     scalar_t J_G[6] = {0}, J_I[6] = {0};
                     scalar_t r_G = 0, r_I = 0;
 
@@ -190,7 +273,6 @@ static void ComputePoseColoredICPKernelCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -201,7 +283,6 @@ static void ComputePoseColoredICPKernelCPU(
                 }
                 return result;
             });
-#endif
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -278,19 +359,12 @@ static void ComputePoseDopplerICPKernelCPU(
     // and 28th as inlier_count.
     std::vector<scalar_t> A_1x29(29, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_29(29, 0.0);
     A_1x29 = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_29,
             [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      ++workload_idx) {
-#else
-    scalar_t *A_reduction = A_1x29.data();
-#pragma omp parallel for reduction(+ : A_reduction[ : 29]) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
-#endif
                     scalar_t J_G[6] = {0}, J_D[6] = {0};
                     scalar_t r_G = 0, r_D = 0;
 
@@ -323,7 +397,6 @@ static void ComputePoseDopplerICPKernelCPU(
                         A_reduction[28] += 1;
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -334,7 +407,6 @@ static void ComputePoseDopplerICPKernelCPU(
                 }
                 return result;
             });
-#endif
 
     for (int i = 0; i < 29; ++i) {
         global_sum[i] = A_1x29[i];
@@ -588,19 +660,12 @@ void ComputeInformationMatrixKernelCPU(const scalar_t *target_points_ptr,
     // As, AtA is a symmetric matrix, we only need 21 elements instead of 36.
     std::vector<scalar_t> AtA(21, 0.0);
 
-#ifdef _WIN32
     std::vector<scalar_t> zeros_21(21, 0.0);
     AtA = tbb::parallel_reduce(
             tbb::blocked_range<int>(0, n), zeros_21,
             [&](tbb::blocked_range<int> r, std::vector<scalar_t> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      ++workload_idx) {
-#else
-    scalar_t *A_reduction = AtA.data();
-#pragma omp parallel for reduction(+ : A_reduction[ : 21]) schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
-#endif
                     scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
 
                     bool valid = GetInformationJacobians<scalar_t>(
@@ -619,7 +684,6 @@ void ComputeInformationMatrixKernelCPU(const scalar_t *target_points_ptr,
                         }
                     }
                 }
-#ifdef _WIN32
                 return A_reduction;
             },
             // TBB: Defining reduction operation.
@@ -630,7 +694,6 @@ void ComputeInformationMatrixKernelCPU(const scalar_t *target_points_ptr,
                 }
                 return result;
             });
-#endif
 
     for (int i = 0; i < 21; ++i) {
         global_sum[i] = AtA[i];

@@ -18,6 +18,7 @@ void pybind_logging_declarations(py::module &m);
 void pybind_utility_definitions(py::module &m);
 void pybind_eigen_definitions(py::module &m);
 void pybind_logging_definitions(py::module &m);
+void pybind_parallel_definitions(py::module &m);
 
 namespace random {
 void pybind_random(py::module &m);

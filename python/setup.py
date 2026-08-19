@@ -151,9 +151,13 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# open3d-cpu wheel for Linux x86_64
+# open3d-cpu wheel for Linux x86_64; open3d-cuda wheel for Windows (CUDA is
+# dynamically linked on Windows, requiring the nvidia-*-cu12 runtime pip
+# packages, so it is named/distributed separately from the CPU wheel).
 if "@BUILD_CUDA_MODULE@" == "ON":
     classifiers.append("Environment :: GPU :: NVIDIA CUDA")
+    if sys.platform == "win32":
+        name += "-cuda"
 elif (sys.platform.startswith("linux") and
       platform.machine() in ("i386", "x86_64", "AMD64") and
       "@BUILD_SYCL_MODULE@" == "OFF"):
@@ -192,7 +196,7 @@ setup_args = dict(
     long_description=long_description,
     long_description_content_type="text/x-rst",
     obsoletes_dist=["open3d_python"],
-    provides_dist=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
+    provides_dist=["open3d", "open3d_cpu", "open3d_cuda", "open3d_xpu"],
 )
 
 setup(**setup_args)

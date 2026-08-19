@@ -74,6 +74,12 @@ Pip (PyPI)
     pip install open3d        # or
     pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
 
+.. note::
+
+   On Windows, ``open3d`` is the CPU wheel; ``pip install open3d-cuda`` and
+   ``pip install open3d-xpu`` install the CUDA- and SYCL-accelerated wheels
+   respectively (CUDA runtime dependencies are installed automatically).
+
 .. warning::
 
    Versions of ``numpy>=2.0.0`` require ``Open3D>0.18.0`` or the latest development

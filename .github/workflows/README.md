@@ -8,13 +8,59 @@ possible. For jobs that use docker, or auxiliary jobs (e.g. uploading artifacts
 to google cloud), use ubuntu-latest to avoid changing the version on GitHub
 actions updates. On macOS and Windows, using Ubuntu reduces CI cost.
 
+## CI test layout
+
+Open3D splits **C++** and **Python** testing so each configuration is exercised
+once, without re-running the full suite in every wheel matrix cell. Docker-based
+workflows use `docker/docker_test.sh`; see `docker/docker_test.sh` usage for tag
+names.
+
+### `docker_test.sh` phases
+
+Optional second argument (default `all`):
+
+| Phase | Runs |
+|-------|------|
+| `cpp` | C++ gtest only (`./bin/tests --gtest_shuffle`) |
+| `lib` | `cpp` + command-line tools + C++ linking example + `make uninstall` |
+| `python` | `pytest python/test` inside the CI image |
+| `all` | `lib` + `python` (full suite) |
+
+SYCL, CPU (`cpu-static`, `cpu-shared-ml`, …), and OpenBLAS docker tags support
+all phases. CUDA ML configs on GCE (`ubuntu-cuda.yml`) call `docker_test.sh`
+with one argument only → **`all`** on a GPU VM.
+
+### Where tests run
+
+| Area | C++ / integration | Python | Notes |
+|------|-------------------|--------|--------|
+| **ubuntu.yml** | `lib` per matrix leg | `python` in same image | All in Docker |
+| **ubuntu-sycl.yml** | `cpp` in **build-lib** (ON/OFF) | `python` in **build-wheel** after `docker_build.sh sycl-shared py*` | No duplicate bare `docker run` gtest |
+| **ubuntu-openblas.yml** | `lib` once on **build-lib-arm64** (reference image); amd64 `lib` in single job | `python` once per Python version in wheel job (`"${DOCKER_TAG}"`) | Wheel matrix does not re-run C++ |
+| **ubuntu-cuda.yml** | **`all`** on GCE per `CI_CONFIG` | same step | Only workflow with CUDA GPUs in tests |
+| **ubuntu-wheel.yml** | **Once** in **test-cpp** (gtest bundle from **build-lib**) | **test-wheel-cpu**: host `test_wheel` + `run_python_tests` per Python (CUDA + CPU wheel smoke); wheels built in Docker, tests on `ubuntu-22.04` runner | No GPU on GitHub |
+| **windows.yml** / **macos.yml** | gtest in **build-lib** | **test-wheel** on runner | Native builds, not docker |
+
+GitHub-hosted runners have **no CUDA GPU**. SYCL jobs rely on SYCL-CPU / skips;
+Windows **test-wheel** skips pytest on the `cuda` device matrix leg.
+
+### Downstream jobs when build-lib fails
+
+**build-wheel** (and related jobs such as **test-wheel**, **test-cpp** on
+ubuntu-wheel) use `if: ${{ always() && !cancelled() }}` with `needs: build-lib`
+so wheel builds and tests still run when a lib job failed (e.g. flaky gtest).
+Steps may fail if required artifacts were never uploaded.
+
 ## Documentation deployment
 
 ### Directory structure
 
--   `.github/workflows/documentation.yml`: Github Actions workflow file to
-    create and deploy documentation. Documentation is created for every branch
-    as a CI test, but deployed only for `main`.
+-   `.github/workflows/ubuntu.yml`: The `build-docs` job creates and deploys
+    documentation, using the Open3D Python wheel built by the `ubuntu` job in
+    the same workflow (EGL-based offscreen rendering means the standard wheel
+    supports headless notebook execution, so no separate headless build is
+    needed). Documentation is created for every branch as a CI test, but
+    deployed only for `main`.
 -   `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to build documentation.
 -   `unpack_docs.sh`: Called by the documentation server to deploy the docs into
     the website.
@@ -80,7 +126,7 @@ Now `~/open3d-ci-sa-key.json` should have been created.
 
 ### CI Procedure
 
-The GCE CI workflow `.github/workflows/gce-ubuntu-docker.yml` performs these steps:
+The GCE CI workflow `.github/workflows/ubuntu-cuda.yml` performs these steps:
 
 -   Clone the repository
 -   Build docker image, starting with a an NVIDIA base devel image with CUDA and
@@ -89,10 +135,8 @@ The GCE CI workflow `.github/workflows/gce-ubuntu-docker.yml` performs these ste
 -   On Google Compute Engine (GCE), in parallel (up to GPU quota limit - currently
     4):
 -   Create a new VM instance with a custom OS image
--   Run docker image on GCE (Google Compute Engine) with environment variables
-    set for specific build config.
--   The docker image entrypoint is the `run-ci.sh` script: build, install, run
-    tests and uninstall.
+-   Build the docker image on the VM, then run `docker/docker_test.sh` for the
+    config (full `all` phase: C++ gtest, Python pytest, linking, uninstall).
 -   Delete the VM instance.
 
 A separate VM instance is created for each commit and build option. The VM

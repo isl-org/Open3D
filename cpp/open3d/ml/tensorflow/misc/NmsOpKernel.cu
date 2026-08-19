@@ -20,17 +20,28 @@ public:
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& boxes,
                 const tensorflow::Tensor& scores) {
-        std::vector<int64_t> keep_indices = open3d::ml::contrib::NmsCUDAKernel(
-                boxes.flat<float>().data(), scores.flat<float>().data(),
-                boxes.dim_size(0), this->nms_overlap_thresh);
+        // NmsCUDAKernel() writes into a caller-allocated device buffer of
+        // capacity >= n and only returns the final `count` (the actual
+        // output size is not known ahead of time). TF's output tensor size
+        // must be fixed at allocation time, so first write into a scratch
+        // device buffer sized for the worst case (n), then allocate the
+        // real (exactly `count`-sized) output tensor and copy the valid
+        // prefix into it.
+        const int n = boxes.dim_size(0);
+        int64_t* scratch_keep_indices = nullptr;
+        OPEN3D_CUDA_CHECK(
+                cudaMalloc(&scratch_keep_indices, n * sizeof(int64_t)));
+        int count = open3d::ml::contrib::NmsCUDAKernel(
+                boxes.flat<float>().data(), scores.flat<float>().data(), n,
+                this->nms_overlap_thresh, scratch_keep_indices);
 
         OutputAllocator output_allocator(context);
         int64_t* ret_keep_indices = nullptr;
-        output_allocator.AllocKeepIndices(&ret_keep_indices,
-                                          keep_indices.size());
-        OPEN3D_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
-                                     keep_indices.size() * sizeof(int64_t),
-                                     cudaMemcpyHostToDevice));
+        output_allocator.AllocKeepIndices(&ret_keep_indices, count);
+        OPEN3D_CUDA_CHECK(cudaMemcpy(ret_keep_indices, scratch_keep_indices,
+                                     count * sizeof(int64_t),
+                                     cudaMemcpyDeviceToDevice));
+        OPEN3D_CUDA_CHECK(cudaFree(scratch_keep_indices));
     }
 };
 

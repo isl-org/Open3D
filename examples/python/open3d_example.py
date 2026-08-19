@@ -27,6 +27,15 @@ else:
     from urllib2 import Request, urlopen
 
 
+def limit_open3d_threads(num_threads=1):
+    """Restrict Open3D to `num_threads` CPU threads in the calling process.
+
+    Use as a multiprocessing.Pool initializer so that worker processes do not
+    each spin up a full-width TBB thread pool and oversubscribe the CPU.
+    """
+    o3d.utility.set_max_threads(num_threads)
+
+
 def edges_to_lineset(mesh, edges, color):
     ls = o3d.geometry.LineSet()
     ls.points = mesh.vertices

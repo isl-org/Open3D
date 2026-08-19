@@ -229,6 +229,107 @@ void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
+template <typename scalar_t, typename func_t>
+__global__ void ComputePoseSymmetricKernelCUDA(
+        const scalar_t *source_points_ptr,
+        const scalar_t *target_points_ptr,
+        const scalar_t *source_normals_ptr,
+        const scalar_t *target_normals_ptr,
+        const int64_t *correspondence_indices,
+        const scalar_t *source_mean_ptr,
+        const scalar_t *target_mean_ptr,
+        const int n,
+        scalar_t *global_sum,
+        func_t GetWeightFromRobustKernel) {
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
+
+    const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (workload_idx < n) {
+        scalar_t J_ij[6] = {0};
+        scalar_t centered_residual = 0;
+        scalar_t objective_residual = 0;
+        const bool valid = GetJacobianSymmetric<scalar_t>(
+                workload_idx, source_points_ptr, target_points_ptr,
+                source_normals_ptr, target_normals_ptr, correspondence_indices,
+                source_mean_ptr, target_mean_ptr, J_ij, centered_residual,
+                objective_residual);
+
+        if (valid) {
+            const scalar_t weight =
+                    GetWeightFromRobustKernel(objective_residual);
+
+            int i = 0;
+            for (int j = 0; j < 6; ++j) {
+                for (int k = 0; k <= j; ++k) {
+                    local_sum[i++] += J_ij[j] * weight * J_ij[k];
+                }
+                local_sum[21 + j] += J_ij[j] * weight * centered_residual;
+            }
+            local_sum[27] += objective_residual * objective_residual;
+            local_sum[28] += 1;
+        }
+    }
+
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
+}
+
+void ComputePoseSymmetricCUDA(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &source_normals,
+                              const core::Tensor &target_normals,
+                              const core::Tensor &correspondence_indices,
+                              const core::Tensor &source_mean,
+                              const core::Tensor &target_mean,
+                              core::Tensor &pose,
+                              float &residual,
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device,
+                              const registration::RobustKernel &kernel) {
+    core::CUDAScopedDevice scoped_device(source_points.GetDevice());
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+    const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
+    const dim3 threads(kThread1DUnit);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePoseSymmetricKernelCUDA<<<blocks, threads, 0,
+                                                     core::cuda::GetStream()>>>(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            source_normals.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            source_mean.GetDataPtr<scalar_t>(),
+                            target_mean.GetDataPtr<scalar_t>(), n,
+                            global_sum_ptr, GetWeightFromRobustKernel);
+                });
+    });
+
+    core::cuda::Synchronize();
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
 template <typename scalar_t, typename funct1_t, typename funct2_t>
 __global__ void ComputePoseDopplerICPKernelCUDA(
         const scalar_t *source_points_ptr,

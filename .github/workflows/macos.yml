@@ -67,6 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ccache glslang spirv-cross gcc
+          # Fix gfortran not found issue
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
@@ -102,7 +103,7 @@ jobs:
           ccache -s
 
       - name: Generate package attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/attest@v4
         with:
           subject-path: build/package/${{ env.DEVEL_PKG_NAME }}
@@ -116,7 +117,7 @@ jobs:
           if-no-files-found: error
 
       - name: Generate viewer attestation
-        if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v4
         with:
           subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
@@ -142,6 +143,7 @@ jobs:
 
   build-wheel:
     needs: build-lib
+    if: ${{ always() && !cancelled() }}
     name: Build wheel
     permissions:
       contents: write  # upload
@@ -170,7 +172,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -181,7 +183,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download build artifact
@@ -237,6 +241,7 @@ jobs:
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
       - name: Generate wheel attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
@@ -262,6 +267,7 @@ jobs:
       contents: read
     runs-on: ${{ matrix.os }}
     needs: [build-wheel]
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -282,7 +288,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -293,7 +299,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

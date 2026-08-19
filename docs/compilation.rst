@@ -25,12 +25,17 @@ System requirements
   * macOS: Install with Homebrew: ``brew install cmake``
   * Windows: Download from: `CMake download page <https://cmake.org/download/>`_
 
-* CUDA 11.5+ (optional): Open3D supports GPU acceleration through CUDA on Linux.
-  Prebuilt wheels statically link the CUDA runtime libraries directly into
-  ``libOpen3D``, so no separate NVIDIA runtime pip packages are required at
-  import time. For building from source, install the CUDA toolkit
+* CUDA 11.5+ (optional): Open3D supports GPU acceleration through CUDA on Linux
+  and Windows. On Linux, prebuilt wheels statically link the CUDA runtime
+  libraries directly into ``libOpen3D``, so no separate NVIDIA runtime pip
+  packages are required at import time. On Windows, NVIDIA does not provide
+  static CUDA libraries, so the CUDA runtime is linked dynamically and the
+  ``open3d-cuda`` wheel depends on the ``nvidia-*-cu12`` runtime pip packages
+  (see ``python/requirements-win-cuda.txt``), installed automatically as wheel
+  dependencies. For building from source, install the CUDA toolkit
   (``nvidia-smi``, ``nvcc -V``) and configure with ``-DBUILD_CUDA_MODULE=ON``
-  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default). We recommend using CUDA 13+
+  (``-DBUILD_WITH_CUDA_STATIC=ON`` by default on Linux; ignored on Windows,
+  where CUDA is always linked dynamically). We recommend using CUDA 13+
   for the best compatibility with recent GPUs and optional external
   dependencies such as Tensorflow or PyTorch.
 
@@ -50,6 +55,39 @@ Cloning Open3D
 .. code-block:: bash
 
     git clone https://github.com/isl-org/Open3D
+
+Using vcpkg dependencies
+------------------------
+
+The repository contains a ``vcpkg.json`` manifest for the C++ dependencies.
+Configure with the vcpkg toolchain to install the manifest dependencies and
+prefer them over Open3D's bundled copies:
+
+On Linux, first install the host build and graphics packages with
+``util/install_deps_ubuntu.sh`` (or their distribution equivalents).
+
+.. code-block:: bash
+
+    cmake -S . -B build \
+        -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DBUILD_PYTHON_MODULE=OFF \
+        -DBUILD_GUI=OFF
+    cmake --build build --config Release
+
+A custom toolchain that includes vcpkg cannot be detected from its filename;
+add ``-DOPEN3D_USE_VCPKG=ON`` in that case. Individual dependencies can still
+use the bundled copy with ``-DUSE_SYSTEM_<PACKAGE>=OFF``.
+
+The ``tests`` and ``minizip`` manifest features install their dependencies but
+do not change Open3D build options. Pair them with the corresponding CMake
+options, for example
+``-DVCPKG_MANIFEST_FEATURES="tests;minizip" -DBUILD_UNIT_TESTS=ON
+-DWITH_MINIZIP=ON``. CUDA also requires a separately installed CUDA toolkit
+and ``-DBUILD_CUDA_MODULE=ON``.
+
+When using a static system libcurl outside vcpkg, pass
+``-DUSE_SYSTEM_CURL_STATIC=ON`` so consumers compile with
+``CURL_STATICLIB``. vcpkg's curl port supplies this configuration itself.
 
 .. _compilation_unix:
 
@@ -253,27 +291,33 @@ not part of the shared devel package.
 The default (``OPEN3D_USE_INSTALLED_LIBRARY=OFF``) remains a full in-tree build
 with ``make pip-package``.
 
-OpenMP
-``````
+Multi-threading (oneAPI TBB)
+````````````````````````````
 
-We automatically detect if the C++ compiler supports OpenMP and compile Open3D
-with it if the compilation option ``WITH_OPENMP`` is ``ON``.
-OpenMP can greatly accelerate computation on a multi-core CPU.
+Open3D uses `oneAPI Threading Building Blocks
+<https://github.com/uxlfoundation/oneTBB>`_ (oneTBB) for CPU parallelism.
+OpenMP is not used: it is poorly supported by MSVC, and loading several OpenMP
+runtimes into one process (which happens easily in Python, e.g. alongside
+PyTorch or NumPy) leads to thread oversubscription and crashes.
 
-The default LLVM compiler on OS X does not support OpenMP.
-A workaround is to install a C++ compiler with OpenMP support, such as ``gcc``,
-then use it to compile Open3D. For example, starting from a clean build
-directory, run
+TBB is built from source and shipped with Open3D by default. To build against a
+system oneTBB instead, configure with ``-DUSE_SYSTEM_TBB=ON``. oneTBB
+**2021.4.0 or newer** is required.
 
-.. code-block:: bash
+Unlike OpenMP, TBB has no ``OMP_NUM_THREADS`` environment variable. Thread
+usage is controlled by the calling code's task arena. To bound the number of
+threads Open3D uses, wrap the call in a ``tbb::task_arena`` (or install a
+process-wide ``tbb::global_control``):
 
-    brew install gcc --without-multilib
-    cmake -DCMAKE_C_COMPILER=gcc-6 -DCMAKE_CXX_COMPILER=g++-6 ..
-    make -j
+.. code-block:: cpp
 
-.. note:: This workaround has some compatibility issues with the source code of
-    GLFW included in ``3rdparty``.
-    Make sure Open3D is linked against GLFW installed on the OS.
+    #include <tbb/task_arena.h>
+
+    tbb::task_arena arena(4);  // at most 4 worker threads
+    arena.execute([&] { pcd.EstimateNormals(); });
+
+Because TBB shares one thread pool across nested parallel regions, calling
+Open3D from your own TBB code does not oversubscribe the machine.
 
 Filament
 ````````
@@ -361,10 +405,14 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
               -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
 
     CUDA runtime libraries are statically linked into ``libOpen3D`` by default
-    (``-DBUILD_WITH_CUDA_STATIC=ON``), so CUDA wheels do not need any NVIDIA
-    redistributable pip packages at import time. Pass
+    on Linux (``-DBUILD_WITH_CUDA_STATIC=ON``), so CUDA wheels do not need any
+    NVIDIA redistributable pip packages at import time. Pass
     ``-DBUILD_WITH_CUDA_STATIC=OFF`` to dynamically link the CUDA runtime
-    instead. For development, ensure the CUDA toolkit is available:
+    instead. On Windows, NVIDIA does not provide static CUDA libraries, so
+    ``BUILD_WITH_CUDA_STATIC`` is ignored and CUDA is always linked
+    dynamically; the ``open3d-cuda`` wheel depends on the ``nvidia-*-cu12``
+    runtime pip packages instead (see ``python/requirements_win_cuda.txt``).
+    For development, ensure the CUDA toolkit is available:
 
     .. code-block:: bash
 
@@ -456,7 +504,7 @@ sycl-rt (Intel oneAPI DPC++ Runtime)
 * **Compatibility Guarantees**:
   * **oneAPI Runtime Compatibility**: Intel oneAPI guarantees backward compatibility for the DPC++ runtime (``dpcpp-cpp-rt``). A newer runtime can execute binaries compiled with an older oneAPI compiler. Forward compatibility is not supported.
   * **Strict Version Matching**: Due to rapid development in SYCL standards and implementations, it is highly recommended to use matching major and minor versions of the DPC++ compiler and runtime.
-  * Open3D's SYCL wheels pin the runtime dependency in ``python/requirements_sycl.txt`` (e.g., ``dpcpp-cpp-rt==2025.3.1``). When compiling Open3D with SYCL support, ensure your Intel oneAPI Base Toolkit version is compatible with this runtime.
+  * Open3D's SYCL wheels pin the runtime dependency in ``python/requirements_sycl.txt`` (e.g., ``dpcpp-cpp-rt==2026.0.0``). When compiling Open3D with SYCL support, ensure your Intel oneAPI Toolkit version is compatible with this runtime.
 
 WebRTC remote visualization
 ```````````````````````````

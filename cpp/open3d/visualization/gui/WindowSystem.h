@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "open3d/visualization/gui/Gui.h"
 
 namespace open3d {
@@ -94,6 +96,11 @@ public:
     /// The default implementation is a no-op for window systems that do not
     /// support the clipboard.
     virtual void SetClipboardText(OSWindow w, const char* text) {}
+
+    /// Gets text from the system clipboard.
+    /// The default implementation returns an empty string for window systems
+    /// that do not support the clipboard.
+    virtual std::string GetClipboardText(OSWindow w) { return ""; }
 };
 
 }  // namespace gui

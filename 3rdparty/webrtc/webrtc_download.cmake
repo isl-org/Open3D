@@ -59,13 +59,14 @@ else()  # Linux
     set(WEBRTC_URL
         ${WEBRTC_BASE_URL}/webrtc_${WEBRTC_VER}_linux_cxx-abi-1.tar.xz
     )
-    set(WEBRTC_SHA256 0209f722974fa7b9da9d1c8e279694cf2c4db81e079a325bcadb1b6e0c3b6981) # 1b529bf448d5abd07ec1f8d310ee5c94bd79e84fe563ae1562420f8e478cc202
+    set(WEBRTC_SHA256 0209f722974fa7b9da9d1c8e279694cf2c4db81e079a325bcadb1b6e0c3b6981)
 endif()
 
 if(WIN32 AND WEBRTC_MULTI_CONFIG)
     # ExternalProject_Add cannot vary URL per config; use add_custom_command + webrtc_fetch_variant.cmake.
     set(WEBRTC_PREBUILT_ROOT "${CMAKE_BINARY_DIR}/webrtc/$<CONFIG>")
     set(WEBRTC_STAMP "${WEBRTC_PREBUILT_ROOT}/webrtc_fetch.stamp")
+    set(WEBRTC_LIB_DIR "${WEBRTC_PREBUILT_ROOT}/lib")
     add_custom_command(
         OUTPUT "${WEBRTC_STAMP}"
         COMMAND ${CMAKE_COMMAND}
@@ -74,11 +75,13 @@ if(WIN32 AND WEBRTC_MULTI_CONFIG)
             "-DDEST=${WEBRTC_PREBUILT_ROOT}"
             "-DSTAMP=${WEBRTC_STAMP}"
             -P "${CMAKE_CURRENT_LIST_DIR}/webrtc_fetch_variant.cmake"
+        BYPRODUCTS
+            ${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}
         COMMENT "Downloading prebuilt WebRTC ($<CONFIG>)"
         VERBATIM
     )
     add_custom_target(ext_webrtc_all DEPENDS "${WEBRTC_STAMP}")
-    set(WEBRTC_LIB_DIR "${WEBRTC_PREBUILT_ROOT}/lib")
 else()
     ExternalProject_Add(
         ext_webrtc
@@ -90,13 +93,14 @@ else()
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ""
+        BUILD_BYPRODUCTS
+                <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
+                <SOURCE_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
     ExternalProject_Get_Property(ext_webrtc SOURCE_DIR)
     # Prebuilt layout: flat include/ and lib/ at archive root (M149 packages).
     set(WEBRTC_PREBUILT_ROOT ${SOURCE_DIR})
     set(WEBRTC_LIB_DIR ${WEBRTC_PREBUILT_ROOT}/lib)
-
     add_custom_target(ext_webrtc_all)
     add_dependencies(ext_webrtc_all ext_webrtc)
 endif()

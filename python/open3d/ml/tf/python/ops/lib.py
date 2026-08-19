@@ -8,8 +8,30 @@
 
 import os as _os
 import sys as _sys
+from packaging.version import parse as _verp
 import tensorflow as _tf
 from open3d import _build_config
+
+if _build_config["Tensorflow_VERSION"] and (_verp(
+        _tf.__version__).release[:2] != _verp(
+            _build_config["Tensorflow_VERSION"]).release[:2]):
+    print("Warning: Open3D was built with TensorFlow {}, but version {} is "
+          "installed. The TensorFlow ops may fail to load or behave "
+          "incorrectly.".format(_build_config["Tensorflow_VERSION"],
+                                _tf.__version__))
+
+# Single open3d_tf_ops.so now serves all backends (CPU/CUDA/SYCL); warn
+# (don't fail, there's no other variant to fall back to) if the installed
+# TensorFlow's CUDA runtime doesn't match what Open3D's ops were built
+# against, since loading may still succeed but behave incorrectly downstream.
+_tf_cuda_version = _tf.sysconfig.get_build_info().get("cuda_version")
+if (_build_config["BUILD_CUDA_MODULE"] and _tf_cuda_version and
+        _tf_cuda_version != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but TensorFlow was built "
+          "with CUDA {}. The TensorFlow ops may fail to load or behave "
+          "incorrectly. Consider installing a TensorFlow build with CUDA "
+          "{}.".format(_build_config["CUDA_VERSION"], _tf_cuda_version,
+                       _build_config["CUDA_VERSION"]))
 
 _lib_path = []
 # allow overriding the path to the op library with an env var.
@@ -22,6 +44,11 @@ _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
 _lib_path.append(
     _os.path.join(_package_root, 'open3d_tf_ops' + _lib_suffix + _lib_ext))
+
+# On Windows add the package root so Open3D.dll is found when TF loads the ops.
+_dll_dir = None
+if _sys.platform == 'win32':
+    _dll_dir = _os.add_dll_directory(_os.path.abspath(_package_root))
 
 _load_except = None
 _loaded = False
@@ -36,6 +63,9 @@ for _lp in _lib_path:
             print('The op library at "{}" was not found. Make sure that '
                   'BUILD_TENSORFLOW_OPS was enabled.'.format(
                       _os.path.realpath(_lp)))
+
+if _dll_dir:
+    _dll_dir.close()
 
 if not _loaded:
     raise _load_except

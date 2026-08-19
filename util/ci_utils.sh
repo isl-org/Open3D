@@ -29,14 +29,27 @@ BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE:-ON}
 # CUDA: see docker/docker_build.sh
 # ML
 TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.10"
+TORCH_VER="2.13"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="25.3"
 PROTOBUF_VER="6.31.1"
+# Node.js (Jupyter extension build on Linux Docker CI)
+NODEJS_VERSION="${NODEJS_VERSION:-v24.18.0}"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+
+# Open3D-ML/ml3d deps (scikit-learn, etc.) needed when stubgen imports open3d with
+# BUNDLE_OPEN3D_ML (wheel builds with OPEN3D_ML_ROOT and ML ops enabled).
+install_open3d_ml_python_requirements() {
+    if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements.txt" ]]; then
+        echo "OPEN3D_ML_ROOT not set or missing requirements.txt; skipping Open3D-ML pip deps"
+        return 0
+    fi
+    echo "Installing Open3D-ML Python requirements from ${OPEN3D_ML_ROOT}/requirements.txt"
+    python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
+}
 
 install_python_dependencies() {
 
@@ -52,6 +65,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+    elif [[ "with-xpu" =~ ^($options)$ ]]; then
+        # No PyTorch xpu wheels for macOS; this option is Linux-only.
+        # torch+torchvision+xpu are pinned and installed together from
+        # Open3D-ML's requirements-torch-xpu.txt (extra-index-url + exact
+        # versions), so no separate torch install is needed below.
+        TF_ARCH_NAME=tensorflow-cpu
+        TF_ARCH_DISABLE_NAME=tensorflow
+        TORCH_GLNX=""
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -76,7 +97,13 @@ install_python_dependencies() {
         python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ "with-xpu" =~ ^($options)$ ]]; then
+            if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt" ]]; then
+                echo "OPEN3D_ML_ROOT not set or missing requirements-torch-xpu.txt; cannot install torch+xpu"
+                exit 1
+            fi
+            python -m pip install -U -r "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt"
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -92,11 +119,44 @@ install_python_dependencies() {
         # https://stackoverflow.com/a/72493690/1255535
         # https://github.com/protocolbuffers/protobuf/issues/10051
         python -m pip install -U protobuf=="$PROTOBUF_VER"
+        install_open3d_ml_python_requirements
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
         python -m pip cache purge 2>/dev/null || true
     fi
+}
+
+# Install Node.js and Yarn on Linux for BUILD_JUPYTER_EXTENSION. 
+# NodeSource apt is unreliable in CI.  macOS does not use this: CI wheels
+# disable the Jupyter extension; local macOS builds expect node/yarn on PATH
+# (typically brew install node; npm install -g yarn).
+install_nodejs_linux() {
+    if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+        echo "install_nodejs_linux is for Linux only (current OSTYPE=$OSTYPE)"
+        exit 1
+    fi
+
+    echo "Installing Node.js ${NODEJS_VERSION} and Yarn"
+    local arch node_arch tarball
+    arch="$(uname -m)"
+    case "$arch" in
+        x86_64) node_arch=linux-x64 ;;
+        aarch64) node_arch=linux-arm64 ;;
+        *)
+            echo "Unsupported architecture for Node.js install: ${arch}"
+            exit 1
+            ;;
+    esac
+
+    tarball="node-${NODEJS_VERSION}-${node_arch}.tar.xz"
+    # wget is available in CI Docker images; curl is not always installed.
+    wget -qO- "https://nodejs.org/dist/${NODEJS_VERSION}/${tarball}" \
+        | tar -xJ -C /usr/local --strip-components=1
+
+    npm install -g yarn
+    node --version
+    yarn --version
 }
 
 build_all() {
@@ -202,59 +262,63 @@ build_pip_package() {
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
         "-DBUILD_SHARED_LIBS=ON"
+        "-DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}"
+        "-DPython3_EXECUTABLE=$(command -v python3)"
     )
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
-        install_python_dependencies with-cuda purge-cache
-        cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
-    else
-        cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
-    fi
-    set -x
-    # Always rerun cmake and unset Python cache variables to update cache for
-    # the current Python and build options.  This avoids incorrect/inherited
-    # Python config and ensures all paths are correct.  Do not use --fresh: it
-    # unnecessarily wipes build objects and wastes disk/CI time.
-    cmake -U 'Python3*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' \
-        -DBUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
-        -DPython3_EXECUTABLE="$(command -v python3)" \
-        "${cmakeOptions[@]}" ..
-    set +x
+    # Clear Python/Torch CMake cache vars for the current interpreter. Include
+    # '_Python3_*' (FindPython3 internals; not matched by 'Python3*') so a reused
+    # build dir from another Python (e.g. macOS build-lib @ 3.12) does not break
+    # Development.Module detection. Avoid --fresh: it wipes build objects.
+    cacheClear=(-U 'Python3*' -U '_Python3_*' -U 'PYTHON_*' -U 'Pytorch*' -U 'Torch*' -U 'Tensorflow*')
+
     if [ "$BUILD_PYTHON_MODULE" == "OFF" ]; then
+        # C++ core only: single configure with the requested device.
+        if [ "$BUILD_CUDA_MODULE" == ON ]; then
+            cmakeOptions+=("-DBUILD_CUDA_MODULE=ON" "-DBUILD_COMMON_CUDA_ARCHS=ON")
+        else
+            cmakeOptions+=("-DBUILD_CUDA_MODULE=OFF")
+        fi
+        set -x
+        cmake "${cacheClear[@]}" "${cmakeOptions[@]}" ..
+        set +x
         echo "Building Open3D C++ Core only..."
         make VERBOSE=1 -j"$NPROC"
-    else
-        echo "Packaging Open3D pip wheel (single configure)..."
+        popd
+        echo
+        return 0
+    fi
+
+    # Wheel build. Build the CPU wheel first, against the CPU torch/tf in the
+    # current environment. A CPU-only build (e.g. macOS) is already the final
+    # wheel and skips the CUDA pass below; the CPU wheel is saved and restored
+    # unchanged alongside the CUDA wheel.
+    echo "Packaging Open3D CPU pip wheel..."
+    set -x
+    cmake "${cacheClear[@]}" "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
+    set +x
+    make VERBOSE=1 -j"$NPROC" pip-package
+
+    if [ "$BUILD_CUDA_MODULE" == ON ]; then
+        echo
+        echo "Packaging Open3D CUDA pip wheel..."
+        # Save the CPU (open3d-cpu) wheel; the CUDA repackage reuses pip_package.
+        mkdir -p ../pip_package_backup
+        cp lib/python_package/pip_package/*.whl ../pip_package_backup/
+        # CUDA ops must link against CUDA torch/tf.
+        install_python_dependencies with-cuda purge-cache
+        # Reconfigure CUDA ON in place and rebuild the single
+        # open3d_{torch,tf}_ops.so with CUDA support (dispatch is internal to
+        # this one library; no separate cpu/cuda subdirs to merge).
+        set -x
+        cmake "${cacheClear[@]}" "${cmakeOptions[@]}" \
+            -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON ..
+        set +x
         make VERBOSE=1 -j"$NPROC" pip-package
+        # Restore the CPU wheel alongside the CUDA wheel.
+        mv ../pip_package_backup/*.whl lib/python_package/pip_package/
+        rm -rf ../pip_package_backup
     fi
     popd
-
-    # A CUDA-enabled build also gets a companion CPU-only "open3d-cpu" wheel
-    # built alongside it (for users without a CUDA GPU); a CPU-only build IS
-    # already the CPU wheel, so there is nothing extra to build in that case.
-    # Prefer build_pip_package_from_installed() in CI (separate devel prefixes).
-    if [ "$BUILD_PYTHON_MODULE" != "OFF" ] && [ "$BUILD_CUDA_MODULE" == ON ]; then
-        echo
-        echo "Building open3d-cpu wheel (reusing single build folder)..."
-        # 1. Back up the CUDA-enabled wheel(s) to a temporary directory outside build/
-        mkdir -p pip_package_backup
-        cp build/lib/python_package/pip_package/*.whl pip_package_backup/
-
-        # 2. Reconfigure the existing build directory with CUDA disabled
-        pushd build
-        # We must make sure BUILD_CUDA_MODULE=OFF overrides any ON from cmakeOptions.
-        # Repeating -D left-to-right makes the last one win, so we place it after cmakeOptions.
-        set -x
-        cmake "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
-        set +x
-
-        # 3. Build the CPU companion wheel
-        make VERBOSE=1 -j"$NPROC" pip-package
-        popd
-
-        # 4. Restore the backed-up CUDA wheel(s) into the pip_package directory
-        mv pip_package_backup/*.whl build/lib/python_package/pip_package/
-        rm -rf pip_package_backup
-    fi
     echo
 }
 
@@ -457,11 +521,14 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    # Match main's build_pip_package() ML-ops ABI while building the CPU and CUDA
-    # wheels in separate dirs. The wheel image already ships CPU torch/tf, so the
-    # CPU wheel links its ops against CPU torch. Before the CUDA wheel we install
-    # CUDA torch/tf (see below) so its ops link against CUDA torch. Both wheels
-    # build torch/tf ops per BUILD_{PYTORCH,TENSORFLOW}_OPS.
+    # Match main's build_pip_package(): build the CPU and CUDA wheels in
+    # separate dirs, each with its own single open3d_{torch,tf}_ops.so (no
+    # cpu/cuda arch subdirs -- CPU/CUDA/SYCL dispatch is internal to one .so,
+    # see cpp/open3d/ml/pytorch/CMakeLists.txt). The wheel image already ships
+    # CPU torch/tf, so the CPU wheel links its ops against CPU torch. Before
+    # the CUDA wheel we install CUDA torch/tf (see below) so its ops link
+    # against CUDA torch. Both wheels build torch/tf ops per
+    # BUILD_{PYTORCH,TENSORFLOW}_OPS.
     if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]] &&
         ! python -c "import torch" >/dev/null 2>&1; then
         install_python_dependencies purge-cache
@@ -589,7 +656,15 @@ test_wheel() {
     HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
         HAVE_PYTORCH_OPS=ON
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_SYCL_MODULE'])"; then
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-xpu.txt"
+        elif python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_CUDA_MODULE'])"; then
+            # Install CUDA-enabled PyTorch matching the CUDA version Open3D was
+            # built against.
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
+        else
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        fi
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
@@ -614,11 +689,11 @@ run_python_tests() {
     source open3d_test.venv/bin/activate
     python -m pip install -U -r "$OPEN3D_SOURCE_ROOT/python/requirements_test.txt"
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
+    # python/test/ml_ops/ is always collected: mltest.py self-gates each op's
+    # backends (torch cpu/cuda/xpu, tf) on actual runtime availability, so
+    # tests silently produce zero cases when a backend/GPU isn't present.
+    # This means a GPU-equipped runner works with no CI config changes.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
-    fi
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
     rm -rf open3d_test.venv     # cleanup for testing the next wheel
@@ -662,11 +737,16 @@ test_cpp_example() {
     # Now I am in Open3D/build/
 }
 
-# Install dependencies needed for building documentation
+# Install dependencies needed for building documentation. This no longer
+# needs a compiler toolchain: docs are built against a pre-built Open3D wheel
+# (see build_docs() below), which already includes GUI/rendering and, on
+# Linux, GPU-accelerated EGL offscreen rendering for notebook execution.
 # Usage: install_docs_dependencies "${OPEN3D_ML_ROOT}"
 install_docs_dependencies() {
     echo
     echo Install ubuntu dependencies from $(pwd)
+    # Provides runtime OpenGL/EGL libraries needed by the legacy visualizer
+    # for GPU-accelerated headless rendering of notebook outputs.
     util/install_deps_ubuntu.sh assume-yes
     $SUDO apt-get install --yes \
         libxml2-dev libxslt-dev \
@@ -675,15 +755,12 @@ install_docs_dependencies() {
         texlive \
         texlive-latex-extra \
         ghostscript \
-        pandoc \
-        ccache
+        pandoc
     echo
     echo Install Python dependencies for building docs
     command -v python
     python -V
     python -m pip install -U -q "pip==$PIP_VER"
-    which cmake || python -m pip install -U -q cmake
-    python -m pip install -U -q -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
@@ -699,71 +776,44 @@ install_docs_dependencies() {
         -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
-# Build documentation
+# Build documentation (Sphinx + Doxygen + Jupyter notebooks) against an
+# already-installed Open3D Python wheel (built by the standard cpu-shared-ml
+# job; see .github/workflows/ubuntu.yml). A single pass now covers notebook
+# execution and visualization.{gui,rendering} API docs, since the standard
+# binary supports both GUI and (on Linux) GPU-accelerated EGL headless
+# rendering; there is no separate headless build.
 # Usage: build_docs $DEVELOPER_BUILD
 build_docs() {
-    echo "Using cmake: $(command -v cmake)"
-    cmake --version
-    echo NPROC="$NPROC"
-    mkdir -p build
-    cd build
     set +u
     DEVELOPER_BUILD="$1"
     set -u
     if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-        DEVELOPER_BUILD=ON
         DOC_ARGS=""
     else
         DOC_ARGS="--is_release"
         echo "Building docs for a new Open3D release"
-        echo
-        echo "Building Open3D with ENABLE_HEADLESS_RENDERING=ON for Jupyter notebooks"
-        echo
     fi
-    cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
-        "-DCMAKE_BUILD_TYPE=Release"
-        "-DWITH_OPENMP=ON"
-        "-DBUILD_AZURE_KINECT=ON"
-        "-DBUILD_LIBREALSENSE=ON"
-        "-DBUILD_TENSORFLOW_OPS=ON"
-        "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_EXAMPLES=OFF"
-    )
-    set -x # Echo commands on
-    cmake "${cmakeOptions[@]}" \
-        -DENABLE_HEADLESS_RENDERING=ON \
-        -DBUNDLE_OPEN3D_ML=OFF \
-        -DBUILD_GUI=OFF \
-        -DBUILD_WEBRTC=OFF \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
-        ..
-    make python-package -j$NPROC
-    make -j$NPROC
-    bin/GLInfo
-    export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}:$PWD/lib/python_package"
     python -c "from open3d import *; import open3d; print(open3d)"
-    cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never --py_example_rst=never
-    python -m pip uninstall --yes open3d
-    cd ../build
-    set +x # Echo commands off
-    echo
-    echo "Building Open3D with BUILD_GUI=ON for visualization.{gui,rendering} documentation"
-    echo
     set -x # Echo commands on
-    cmake "${cmakeOptions[@]}" \
-        -DENABLE_HEADLESS_RENDERING=OFF \
-        -DBUNDLE_OPEN3D_ML=ON \
-        -DBUILD_GUI=ON \
-        -DBUILD_WEBRTC=ON \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
-        ..
-    make python-package -j$NPROC
-    make -j$NPROC
-    bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
-    python -c "from open3d import *; import open3d; print(open3d)"
-    cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --py_api_rst=always --py_example_rst=always --execute_notebooks=never --sphinx --doxygen
+    cd "${OPEN3D_SOURCE_ROOT}/docs" # Works regardless of caller's cwd.
+    # docs/Doxyfile, getting_started.rst and docker.rst are normally generated
+    # by docs/CMakeLists.txt's configure_file() calls during a full `cmake ..`
+    # configure. Since this build only installs a pre-built wheel (no cmake
+    # configure step), generate them here instead by substituting
+    # @OPEN3D_VERSION_FULL@ (full version incl. dev hash) and @OPEN3D_VERSION@
+    # (release version only), taken from the installed wheel.
+    OPEN3D_VERSION_FULL="$(python -c 'import open3d; print(open3d.__version__)')"
+    OPEN3D_VERSION="${OPEN3D_VERSION_FULL%%+*}"
+    subst_version() { # subst_version <input> <output>
+        sed -e "s|@OPEN3D_VERSION_FULL@|${OPEN3D_VERSION_FULL}|g" \
+            -e "s|@OPEN3D_VERSION@|${OPEN3D_VERSION}|g" "$1" >"$2"
+    }
+    subst_version Doxyfile.in Doxyfile
+    subst_version getting_started.in.rst getting_started.rst
+    subst_version docker.in.rst docker.rst
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
+        --py_api_rst=always --py_example_rst=always --sphinx --doxygen
+    cd - >/dev/null
     set +x # Echo commands off
 }
 

@@ -23,6 +23,7 @@ void SparseConvTransposeCPU(const torch::Tensor& filters,
                             const torch::Tensor& neighbors_row_splits,
                             const bool normalize,
                             const int64_t max_temp_mem_MB,
+                            const bool allow_tf32,
                             torch::Tensor& out_features);
 
 #ifdef BUILD_CUDA_MODULE
@@ -38,5 +39,23 @@ void SparseConvTransposeCUDA(const torch::Tensor& filters,
                              const torch::Tensor& neighbors_row_splits,
                              const bool normalize,
                              const int64_t max_temp_mem_MB,
+                             const bool allow_tf32,
+                             torch::Tensor& out_features);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class TFeat, class TOut, class TIndex, class TKernelIndex>
+void SparseConvTransposeSYCL(const torch::Tensor& filters,
+                             const torch::Tensor& out_importance,
+                             const torch::Tensor& inp_features,
+                             const torch::Tensor& inp_neighbors_importance_sum,
+                             const torch::Tensor& inp_neighbors_row_splits,
+                             const torch::Tensor& neighbors_index,
+                             const torch::Tensor& neighbors_kernel_index,
+                             const torch::Tensor& neighbors_importance,
+                             const torch::Tensor& neighbors_row_splits,
+                             const bool normalize,
+                             const int64_t max_temp_mem_MB,
+                             const bool allow_tf32,
                              torch::Tensor& out_features);
 #endif

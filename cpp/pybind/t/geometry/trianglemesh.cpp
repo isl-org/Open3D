@@ -563,8 +563,11 @@ Example:
     triangle_mesh.def_static(
             "create_from_oriented_bounding_ellipsoid",
             &TriangleMesh::CreateFromOrientedBoundingEllipsoid, "ellipsoid"_a,
-            "scale"_a = core::Tensor::Ones({3}, core::Float64,
-                                           core::Device("CPU:0")),
+            py::arg_v("scale",
+                      core::Tensor::Ones({3}, core::Float64,
+                                         core::Device("CPU:0")),
+                      "open3d.core.Tensor.ones(3, "
+                      "dtype=open3d.core.Dtype.Float64)"),
             "resolution"_a = 20, "float_dtype"_a = core::Float32,
             "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"),
             R"(Create a solid TriangleMesh representing the surface of an OrientedBoundingEllipsoid.

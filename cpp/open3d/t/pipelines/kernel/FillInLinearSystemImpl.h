@@ -5,6 +5,10 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#if !defined(__CUDACC__)
+#include <tbb/spin_mutex.h>
+#endif
+
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
@@ -13,6 +17,27 @@ namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+
+// Computes the 12-element point-to-plane rigid alignment Jacobian for a
+// correspondence pair (frame i, frame j), given the transformed target point
+// q_prime and the rotated source normal normal_p_prime. J_ij[0:6] is the
+// Jacobian w.r.t. frame i's 6-DoF pose; J_ij[6:12] w.r.t. frame j's pose is
+// its negation. Shared by the CPU/CUDA path below and
+// FillInLinearSystemSYCL.cpp.
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void ComputeRigidAlignmentJacobian(
+        const float *q_prime, const float *normal_p_prime, float *J_ij) {
+    J_ij[0] = -q_prime[2] * normal_p_prime[1] + q_prime[1] * normal_p_prime[2];
+    J_ij[1] = q_prime[2] * normal_p_prime[0] - q_prime[0] * normal_p_prime[2];
+    J_ij[2] = -q_prime[1] * normal_p_prime[0] + q_prime[0] * normal_p_prime[1];
+    J_ij[3] = normal_p_prime[0];
+    J_ij[4] = normal_p_prime[1];
+    J_ij[5] = normal_p_prime[2];
+    for (int k = 0; k < 6; ++k) {
+        J_ij[k + 6] = -J_ij[k];
+    }
+}
+
+#ifndef OPEN3D_SKIP_FILL_IN_LS_MAIN
 #if defined(__CUDACC__)
 void FillInRigidAlignmentTermCUDA
 #else
@@ -48,9 +73,20 @@ void FillInRigidAlignmentTermCPU
     const float *Tj_qs_ptr = static_cast<const float *>(Tj_qs.GetDataPtr());
     const float *Ri_normal_ps_ptr =
             static_cast<const float *>(Ri_normal_ps.GetDataPtr());
+// The mutexes below are compiled only for the host fallback; the SYCL path
+// uses its own work-group and global atomic reductions.
+#if !defined(__CUDACC__)
+    tbb::spin_mutex fill_alignment_mutex;
+    tbb::profiling::set_name(fill_alignment_mutex,
+                             "FillInRigidAlignmentTermCPU");
+#define LOCAL_LAMBDA_CAPTURE =, &fill_alignment_mutex
+#else
+#define LOCAL_LAMBDA_CAPTURE =
+#endif
 
     core::ParallelFor(
-            AtA.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            AtA.GetDevice(), n,
+            [LOCAL_LAMBDA_CAPTURE] OPEN3D_DEVICE(int64_t workload_idx) {
                 const float *p_prime = Ti_ps_ptr + 3 * workload_idx;
                 const float *q_prime = Tj_qs_ptr + 3 * workload_idx;
                 const float *normal_p_prime =
@@ -62,18 +98,7 @@ void FillInRigidAlignmentTermCPU
                 if (abs(r) > threshold) return;
 
                 float J_ij[12];
-                J_ij[0] = -q_prime[2] * normal_p_prime[1] +
-                          q_prime[1] * normal_p_prime[2];
-                J_ij[1] = q_prime[2] * normal_p_prime[0] -
-                          q_prime[0] * normal_p_prime[2];
-                J_ij[2] = -q_prime[1] * normal_p_prime[0] +
-                          q_prime[0] * normal_p_prime[1];
-                J_ij[3] = normal_p_prime[0];
-                J_ij[4] = normal_p_prime[1];
-                J_ij[5] = normal_p_prime[2];
-                for (int k = 0; k < 6; ++k) {
-                    J_ij[k + 6] = -J_ij[k];
-                }
+                ComputeRigidAlignmentJacobian(q_prime, normal_p_prime, J_ij);
 
         // Not optimized; Switch to reduction if necessary.
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
@@ -86,19 +111,20 @@ void FillInRigidAlignmentTermCPU
                 }
                 atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical(FillInRigidAlignmentTermCPU)
-        {
-            for (int i_local = 0; i_local < 12; ++i_local) {
-                for (int j_local = 0; j_local < 12; ++j_local) {
-                    AtA_local_ptr[i_local * 12 + j_local]
-                      += J_ij[i_local] * J_ij[j_local];
-                 }
-                 Atb_local_ptr[i_local] += J_ij[i_local] * r;
-            }
-            *residual_ptr += r * r;
-        }
+                {
+                    tbb::spin_mutex::scoped_lock lock(fill_alignment_mutex);
+                    for (int i_local = 0; i_local < 12; ++i_local) {
+                        for (int j_local = 0; j_local < 12; ++j_local) {
+                            AtA_local_ptr[i_local * 12 + j_local] +=
+                                    J_ij[i_local] * J_ij[j_local];
+                        }
+                        Atb_local_ptr[i_local] += J_ij[i_local] * r;
+                    }
+                    *residual_ptr += r * r;
+                }
 #endif
             });
+#undef LOCAL_LAMBDA_CAPTURE
 
     // Then fill-in the large linear system
     std::vector<int64_t> indices_vec(12);
@@ -182,8 +208,18 @@ void FillInSLACAlignmentTermCPU
     const float *cgrid_ratio_qs_ptr =
             static_cast<const float *>(cgrid_ratio_qs.GetDataPtr());
 
+#if !defined(__CUDACC__)
+    tbb::spin_mutex fill_alignment_mutex;
+    tbb::profiling::set_name(fill_alignment_mutex,
+                             "FillInSLACAlignmentTermCPU");
+#define LOCAL_LAMBDA_CAPTURE =, &fill_alignment_mutex
+#else
+#define LOCAL_LAMBDA_CAPTURE =
+#endif
+
     core::ParallelFor(
-            AtA.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            AtA.GetDevice(), n,
+            [LOCAL_LAMBDA_CAPTURE] OPEN3D_DEVICE(int64_t workload_idx) {
                 const float *Ti_Cp = Ti_Cps_ptr + 3 * workload_idx;
                 const float *Tj_Cq = Tj_Cqs_ptr + 3 * workload_idx;
                 const float *Cnormal_p = Cnormal_ps_ptr + 3 * workload_idx;
@@ -259,19 +295,20 @@ void FillInSLACAlignmentTermCPU
                 }
                 atomicAdd(residual_ptr, r * r);
 #else
-#pragma omp critical(FillInSLACAlignmentTermCPU)
-        {
-            for (int ki = 0; ki < 60; ++ki) {
-                for (int kj = 0; kj < 60; ++kj) {
-                    AtA_ptr[idx[ki] * n_vars + idx[kj]]
-                      += J[ki] * J[kj];
-                 }
-                 Atb_ptr[idx[ki]] += J[ki] * r;
-            }
-            *residual_ptr += r * r;
-        }
+                {
+                    tbb::spin_mutex::scoped_lock lock(fill_alignment_mutex);
+                    for (int ki = 0; ki < 60; ++ki) {
+                        for (int kj = 0; kj < 60; ++kj) {
+                            AtA_ptr[idx[ki] * n_vars + idx[kj]] +=
+                                    J[ki] * J[kj];
+                        }
+                        Atb_ptr[idx[ki]] += J[ki] * r;
+                    }
+                    *residual_ptr += r * r;
+                }
 #endif
             });
+#undef LOCAL_LAMBDA_CAPTURE
 }
 
 #if defined(__CUDACC__)
@@ -309,8 +346,18 @@ void FillInSLACRegularizerTermCPU
     const float *positions_curr_ptr =
             static_cast<const float *>(positions_curr.GetDataPtr());
 
+#if !defined(__CUDACC__)
+    tbb::spin_mutex fill_alignment_mutex;
+    tbb::profiling::set_name(fill_alignment_mutex,
+                             "FillInSLACRegularizerTermCPU");
+#define LOCAL_LAMBDA_CAPTURE =, &fill_alignment_mutex
+#else
+#define LOCAL_LAMBDA_CAPTURE =
+#endif
+
     core::ParallelFor(
-            AtA.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+            AtA.GetDevice(), n,
+            [LOCAL_LAMBDA_CAPTURE] OPEN3D_DEVICE(int64_t workload_idx) {
                 // Enumerate 6 neighbors
                 int idx_i = grid_idx_ptr[workload_idx];
 
@@ -442,35 +489,40 @@ void FillInSLACRegularizerTermCPU
                                       -weight * local_r[axis]);
                         }
 #else
-#pragma omp critical(FillInSLACRegularizerTermCPU)
-                {
-                    // Update residual
-                    *residual_ptr += weight * (local_r[0] * local_r[0] +
-                                               local_r[1] * local_r[1] +
-                                               local_r[2] * local_r[2]);
+                        {
+                            tbb::spin_mutex::scoped_lock lock(
+                                    fill_alignment_mutex);
+                            // Update residual
+                            *residual_ptr += weight * (local_r[0] * local_r[0] +
+                                                       local_r[1] * local_r[1] +
+                                                       local_r[2] * local_r[2]);
 
-                    for (int axis = 0; axis < 3; ++axis) {
-                        // Update AtA: 2x2
-                        AtA_ptr[(offset_idx_i + axis) * n_vars +
-                                 offset_idx_i + axis] += weight;
-                        AtA_ptr[(offset_idx_k + axis) * n_vars +
-                                 offset_idx_k + axis] += weight;
+                            for (int axis = 0; axis < 3; ++axis) {
+                                // Update AtA: 2x2
+                                AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                        offset_idx_i + axis] += weight;
+                                AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                        offset_idx_k + axis] += weight;
 
-                        AtA_ptr[(offset_idx_i + axis) * n_vars +
-                                 offset_idx_k + axis] -= weight;
-                        AtA_ptr[(offset_idx_k + axis) * n_vars +
-                                 offset_idx_i + axis] -= weight;
+                                AtA_ptr[(offset_idx_i + axis) * n_vars +
+                                        offset_idx_k + axis] -= weight;
+                                AtA_ptr[(offset_idx_k + axis) * n_vars +
+                                        offset_idx_i + axis] -= weight;
 
-                        // Update Atb: 2x1
-                        Atb_ptr[offset_idx_i + axis] += weight * local_r[axis];
-                        Atb_ptr[offset_idx_k + axis] -= weight * local_r[axis];
-                    }
-                }
+                                // Update Atb: 2x1
+                                Atb_ptr[offset_idx_i + axis] +=
+                                        weight * local_r[axis];
+                                Atb_ptr[offset_idx_k + axis] -=
+                                        weight * local_r[axis];
+                            }
+                        }
 #endif
                     }
                 }
             });
+#undef LOCAL_LAMBDA_CAPTURE
 }
+#endif  // OPEN3D_SKIP_FILL_IN_LS_MAIN
 }  // namespace kernel
 }  // namespace pipelines
 }  // namespace t

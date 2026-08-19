@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include <json/json.h>
+#include <tbb/parallel_invoke.h>
 
 #include <chrono>
 #include <fstream>
@@ -203,23 +204,20 @@ int main(int argc, char *argv[]) {
             }
 
             ++idx;
-            if (write_image)
-#pragma omp parallel sections
-            {
-#pragma omp section
-                {
-                    auto color_file = fmt::format("{0}/color/{1:05d}.jpg",
-                                                  output_path, idx);
-                    utility::LogInfo("Writing to {}", color_file);
-                    io::WriteImage(color_file, im_rgbd.color_);
-                }
-#pragma omp section
-                {
-                    auto depth_file = fmt::format("{0}/depth/{1:05d}.png",
-                                                  output_path, idx);
-                    utility::LogInfo("Writing to {}", depth_file);
-                    io::WriteImage(depth_file, im_rgbd.depth_);
-                }
+            if (write_image) {
+                tbb::parallel_invoke(
+                        [&]() {
+                            auto color_file = fmt::format(
+                                    "{0}/color/{1:05d}.jpg", output_path, idx);
+                            utility::LogInfo("Writing to {}", color_file);
+                            io::WriteImage(color_file, im_rgbd.color_);
+                        },
+                        [&]() {
+                            auto depth_file = fmt::format(
+                                    "{0}/depth/{1:05d}.png", output_path, idx);
+                            utility::LogInfo("Writing to {}", depth_file);
+                            io::WriteImage(depth_file, im_rgbd.depth_);
+                        });
             }
             vis.UpdateGeometry();
             vis.UpdateRender();

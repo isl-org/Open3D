@@ -10,11 +10,27 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+
+namespace {
+
+std::tuple<core::Tensor, core::Tensor> SelectCorrespondingPoints(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices) {
+    core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
+    core::Tensor target_indices =
+            correspondence_indices.IndexGet({valid}).Reshape({-1});
+    return std::make_tuple(source_points.IndexGet({valid}),
+                           target_points.IndexGet({target_indices}));
+}
+
+}  // namespace
 
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
@@ -41,6 +57,16 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
                   inlier_count, source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePosePointToPlaneSYCL(
+                source_points.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
+                inlier_count, source_points.GetDtype(), device, kernel);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -49,6 +75,63 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                       residual, inlier_count);
 
     return pose;
+}
+
+core::Tensor ComputeTransformationSymmetric(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &source_normals,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        const registration::RobustKernel &kernel) {
+    const core::Device device = source_points.GetDevice();
+    core::Tensor source_selected, target_selected;
+    std::tie(source_selected, target_selected) = SelectCorrespondingPoints(
+            source_points, target_points, correspondence_indices);
+    if (source_selected.GetLength() == 0) {
+        return core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
+    }
+
+    core::Tensor source_mean = source_selected.Mean({0});
+    core::Tensor target_mean = target_selected.Mean({0});
+    core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
+    float residual = 0;
+    int inlier_count = 0;
+
+    if (source_points.IsCPU()) {
+        ComputePoseSymmetricCPU(
+                source_points.Contiguous(), target_points.Contiguous(),
+                source_normals.Contiguous(), target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                target_mean.Contiguous(), pose, residual, inlier_count,
+                source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
+        CUDA_CALL(ComputePoseSymmetricCUDA, source_points.Contiguous(),
+                  target_points.Contiguous(), source_normals.Contiguous(),
+                  target_normals.Contiguous(),
+                  correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                  target_mean.Contiguous(), pose, residual, inlier_count,
+                  source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseSymmetricSYCL(
+                source_points.Contiguous(), target_points.Contiguous(),
+                source_normals.Contiguous(), target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                target_mean.Contiguous(), pose, residual, inlier_count,
+                source_points.GetDtype(), device, kernel);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    utility::LogDebug("Symmetric Transform: residual {}, inlier_count {}",
+                      residual, inlier_count);
+
+    return PoseToSymmetricTransformation(pose, source_mean, target_mean);
 }
 
 core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
@@ -85,6 +168,18 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                   correspondence_indices.Contiguous(), pose, residual,
                   inlier_count, source_points.GetDtype(), device, kernel,
                   lambda_geometric);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseColoredICPSYCL(
+                source_points.Contiguous(), source_colors.Contiguous(),
+                target_points.Contiguous(), target_normals.Contiguous(),
+                target_colors.Contiguous(), target_color_gradients.Contiguous(),
+                correspondence_indices.Contiguous(), pose, residual,
+                inlier_count, source_points.GetDtype(), device, kernel,
+                lambda_geometric);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -191,6 +286,21 @@ core::Tensor ComputePoseDopplerICP(
                   v_v_in_V.Contiguous(), period, reject_outliers,
                   doppler_outlier_threshold, kernel_geometric, kernel_doppler,
                   lambda_doppler);
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseDopplerICPSYCL(
+                source_points.Contiguous(), source_dopplers.Contiguous(),
+                source_directions.Contiguous(), target_points.Contiguous(),
+                target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), output_pose, residual,
+                inlier_count, dtype, device, R_S_to_V.Contiguous(),
+                r_v_to_s_in_V.Contiguous(), w_v_in_V.Contiguous(),
+                v_v_in_V.Contiguous(), period, reject_outliers,
+                doppler_outlier_threshold, kernel_geometric, kernel_doppler,
+                lambda_doppler);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -201,6 +311,56 @@ core::Tensor ComputePoseDopplerICP(
 
     return output_pose;
 }
+
+#if defined(BUILD_CUDA_MODULE) || defined(BUILD_SYCL_MODULE)
+namespace {
+
+// Horn point-to-point alignment from correspondences using tensor ops on \p
+// input device, then SVD on CPU Float64 (same path as legacy CUDA/SYCL code).
+std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPointTensor(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices,
+        int &inlier_count) {
+    core::Tensor source_select, target_select;
+    std::tie(source_select, target_select) = SelectCorrespondingPoints(
+            source_points, target_points, correspondence_indices);
+    if (source_select.GetLength() == 0) {
+        utility::LogError("No valid correspondence present.");
+    }
+
+    // Number of good correspondences (C).
+    inlier_count = source_select.GetLength();
+
+    // https://ieeexplore.ieee.org/document/88573
+    core::Tensor mean_s = source_select.Mean({0}, true);
+    core::Tensor mean_t = target_select.Mean({0}, true);
+
+    // Compute linear system on CPU as Float64.
+    core::Device host("CPU:0");
+    core::Tensor Sxy = (target_select - mean_t)
+                               .T()
+                               .Matmul(source_select - mean_s)
+                               .Div_(static_cast<float>(inlier_count))
+                               .To(host, core::Float64);
+
+    mean_s = mean_s.To(host, core::Float64);
+    mean_t = mean_t.To(host, core::Float64);
+
+    core::Tensor U, D, VT;
+    std::tie(U, D, VT) = Sxy.SVD();
+    core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
+    core::Tensor R, t;
+    if (U.Det() * (VT.T()).Det() < 0) {
+        S[-1][-1] = -1;
+    }
+    R = U.Matmul(S.Matmul(VT));
+    t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+    return std::make_tuple(R, t);
+}
+
+}  // namespace
+#endif  // BUILD_CUDA_MODULE || BUILD_SYCL_MODULE
 
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         const core::Tensor &source_points,
@@ -223,53 +383,19 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 #ifdef BUILD_CUDA_MODULE
         core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
-        core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
-        // correpondence_set : (i, corres[i]).
-
-        if (valid.GetLength() == 0) {
-            utility::LogError("No valid correspondence present.");
-        }
-
-        // source[i] and target[corres[i]] is a correspondence.
-        core::Tensor source_indices =
-                core::Tensor::Arange(0, source_points.GetShape()[0], 1,
-                                     core::Int64, device)
-                        .IndexGet({valid});
-        // Only take valid indices.
-        core::Tensor target_indices =
-                correspondence_indices.IndexGet({valid}).Reshape({-1});
-
-        // Number of good correspondences (C).
-        inlier_count = source_indices.GetLength();
-
-        core::Tensor source_select = source_points.IndexGet({source_indices});
-        core::Tensor target_select = target_points.IndexGet({target_indices});
-
-        // https://ieeexplore.ieee.org/document/88573
-        core::Tensor mean_s = source_select.Mean({0}, true);
-        core::Tensor mean_t = target_select.Mean({0}, true);
-
-        // Compute linear system on CPU as Float64.
-        core::Device host("CPU:0");
-        core::Tensor Sxy = (target_select - mean_t)
-                                   .T()
-                                   .Matmul(source_select - mean_s)
-                                   .Div_(static_cast<float>(inlier_count))
-                                   .To(host, core::Float64);
-
-        mean_s = mean_s.To(host, core::Float64);
-        mean_t = mean_t.To(host, core::Float64);
-
-        core::Tensor U, D, VT;
-        std::tie(U, D, VT) = Sxy.SVD();
-        core::Tensor S = core::Tensor::Eye(3, core::Float64, host);
-        if (U.Det() * (VT.T()).Det() < 0) {
-            S[-1][-1] = -1;
-        }
-        R = U.Matmul(S.Matmul(VT));
-        t = mean_t.Reshape({-1}) - R.Matmul(mean_s.T()).Reshape({-1});
+        std::tie(R, t) = ComputeRtPointToPointTensor(
+                source_points, target_points, correspondence_indices,
+                inlier_count);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        std::tie(R, t) = ComputeRtPointToPointTensor(
+                source_points, target_points, correspondence_indices,
+                inlier_count);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");
@@ -294,6 +420,14 @@ core::Tensor ComputeInformationMatrix(
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
                   target_points.GetDtype(), device);
+    } else if (target_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputeInformationMatrixSYCL(
+                target_points.Contiguous(), correspondence_indices.Contiguous(),
+                information_matrix, target_points.GetDtype(), device);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }

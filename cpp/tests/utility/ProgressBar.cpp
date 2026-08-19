@@ -7,6 +7,8 @@
 
 #include "open3d/utility/ProgressBar.h"
 
+#include <tbb/parallel_for.h>
+
 #include <chrono>
 #include <thread>
 
@@ -27,18 +29,33 @@ TEST(ProgressBar, ProgressBar) {
     EXPECT_EQ(iterations, static_cast<int>(progress_bar.GetCurrentCount()));
 }
 
-TEST(ProgressBar, OMPProgressBar) {
+TEST(ProgressBar, Parallel) {
     int iterations = 1000;
-    utility::OMPProgressBar progress_bar(iterations,
-                                         "OMPProgressBar test: ", true);
+    utility::ProgressBar progress_bar(iterations, "ProgressBar test: ", true);
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, iterations, 10),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int i = range.begin(); i < range.end(); ++i) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    ++progress_bar;
+                }
+            });
+    EXPECT_EQ(static_cast<int>(progress_bar.GetCurrentCount()), iterations);
+}
 
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < iterations; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        ++progress_bar;
-    }
-    EXPECT_TRUE(static_cast<int>(progress_bar.GetCurrentCount()) >= iterations);
+TEST(ProgressBar, ParallelBatched) {
+    int iterations = 1000;
+    utility::ProgressBar progress_bar(iterations,
+                                      "Batched ProgressBar test: ", true);
+    tbb::parallel_for(
+            tbb::blocked_range<int>(0, iterations, 10),
+            [&](const tbb::blocked_range<int>& range) {
+                for (int i = range.begin(); i < range.end(); ++i) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+                progress_bar += (range.end() - range.begin());
+            });
+    EXPECT_EQ(static_cast<int>(progress_bar.GetCurrentCount()), iterations);
 }
 
 }  // namespace tests

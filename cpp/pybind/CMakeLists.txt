@@ -119,26 +119,10 @@ if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
     endif()
 endif()
-if (WITH_OPENMP AND APPLE)
-# Package libomp v11.1.0, if it is not installed. Later version cause crash on
-# x86_64 if PyTorch is already imported.
-# https://github.com/microsoft/LightGBM/issues/4229
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
-    execute_process(COMMAND brew list --versions libomp
-        COMMAND cut "-d\ " -f2
-        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
-        message(WARNING "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
-    endif()
-    file(GENERATE OUTPUT update_pybind_libomp.sh
-        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
-grep libomp | tr -d '[:space:]')
-install_name_tool -change $libomp_library @rpath/$(basename $libomp_library) \
-"$<TARGET_FILE:pybind>"]=])
-    add_custom_command(TARGET pybind POST_BUILD
-        COMMAND bash update_pybind_libomp.sh
-        COMMENT "Updating pybind to use packaged libomp")
-endif()
+# Note: Open3D no longer links libomp. TBB (packaged above via
+# PYTHON_EXTRA_LIBRARIES) is the only threading runtime shipped in the wheel,
+# which avoids the multiple-OpenMP-runtime crashes seen when another Python
+# package (e.g. PyTorch) loads its own libomp.
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
@@ -179,7 +163,7 @@ if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>")
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}" --open3d_lib_dir "$<TARGET_FILE_DIR:Open3D::Open3D>"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -235,6 +219,8 @@ add_custom_target(python-package
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
+            -DWITH_STUBGEN=${WITH_STUBGEN}
+            -DIGNORE_STUBGEN_ERRORS=${IGNORE_STUBGEN_ERRORS}
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
@@ -253,6 +239,7 @@ add_custom_target(python-package
             -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
+            -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
     VERBATIM
     DEPENDS ${GENERATED_OUTPUTS}

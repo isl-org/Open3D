@@ -1,7 +1,27 @@
 if(BUILD_CUDA_MODULE)
     message(STATUS "Building PyTorch ops with CUDA")
+elseif(BUILD_SYCL_MODULE)
+    message(STATUS "Building PyTorch ops with SYCL")
 else()
     message(STATUS "Building PyTorch ops")
+endif()
+
+if(BUILD_SYCL_MODULE)
+    # Work around an upstream variable-name collision: oneMKL's MKLConfig.cmake
+    # (pulled in transitively while configuring Open3D's own SYCL core target)
+    # sets a directory-scope (non-cache) variable literally named
+    # `SYCL_COMPILER` to the boolean ON as an internal MKL feature flag. This
+    # shadows the unrelated `SYCL_COMPILER` *cache* variable (the SYCL
+    # compiler executable path) that both Open3D's IntelSYCL detection and
+    # PyTorch's own FindSYCLToolkit.cmake (invoked below via
+    # find_package(Pytorch) -> find_package(Torch) -> Caffe2Config.cmake ->
+    # public/xpu.cmake) rely on. With the shadow in place,
+    # FindSYCLToolkit.cmake's `execute_process(COMMAND ${SYCL_COMPILER}
+    # --version ...)` runs "ON --version" instead of the compiler, producing
+    # an empty version string and a hard CMake error. Unsetting the local
+    # shadow here lets `${SYCL_COMPILER}` fall back to the correct cached
+    # compiler path again.
+    unset(SYCL_COMPILER)
 endif()
 
 find_package(Pytorch REQUIRED)
@@ -59,14 +79,18 @@ target_sources(open3d_torch_ops PRIVATE
     ragged_tensor/RaggedTensor.cpp)
 
 target_sources(open3d_torch_ops PRIVATE
+    pointnet/BallQueryKernelCPU.cpp
     pointnet/BallQueryOps.cpp
+    pointnet/InterpolateKernelCPU.cpp
     pointnet/InterpolateOps.cpp
+    pointnet/SamplingKernelCPU.cpp
     pointnet/SamplingOps.cpp
     pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_torch_ops PRIVATE
     ../contrib/Nms.cpp
+    ../contrib/RoiPool.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -114,15 +138,76 @@ if (BUILD_CUDA_MODULE)
     )
 endif()
 
+if (BUILD_SYCL_MODULE)
+    # Convolution op SYCL kernels (use sycl-tla for GEMM)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        continuous_conv/ContinuousConvBackpropFilterOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvTransposeBackpropFilterOpKernelSYCL.cpp
+        continuous_conv/ContinuousConvTransposeOpKernelSYCL.cpp
+    )
+
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        sparse_conv/SparseConvBackpropFilterOpKernelSYCL.cpp
+        sparse_conv/SparseConvOpKernelSYCL.cpp
+        sparse_conv/SparseConvTransposeBackpropFilterOpKernelSYCL.cpp
+        sparse_conv/SparseConvTransposeOpKernelSYCL.cpp
+    )
+
+    # Misc op SYCL kernels (use oneDPL for scan/sort)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        misc/BuildSpatialHashTableOpKernelSYCL.cpp
+        misc/FixedRadiusSearchOpKernelSYCL.cpp
+        misc/InvertNeighborsListOpKernelSYCL.cpp
+        misc/KnnSearchOpKernelSYCL.cpp
+        misc/RaggedToDenseOpKernelSYCL.cpp
+        misc/ReduceSubarraysSumOpKernelSYCL.cpp
+        misc/VoxelizeOpKernelSYCL.cpp
+    )
+
+    # PointNet and PVCNN SYCL kernels
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        pointnet/BallQueryKernelSYCL.cpp
+        pointnet/InterpolateKernelSYCL.cpp
+        pointnet/SamplingKernelSYCL.cpp
+        pvcnn/TrilinearDevoxelizeKernelSYCL.cpp
+    )
+
+    # Contrib SYCL kernels (nms, roi_pool)
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        ../contrib/NmsSYCL.cpp
+        ../contrib/RoiPoolKernelSYCL.cpp
+    )
+
+    # Shared impl SYCL kernel files (GEMM shim, im2col, normalizer reductions).
+    # GemmSYCL.cpp holds the only sycl-tla template instantiation, keeping the
+    # heavy CUTLASS/CuTe compile cost out of the conv op TUs above.
+    open3d_sycl_target_sources(open3d_torch_ops PRIVATE
+        ../impl/GemmSYCL.cpp
+        ../impl/continuous_conv/ContinuousConvSYCLKernels.cpp
+        ../impl/sparse_conv/SparseConvSYCLKernels.cpp
+    )
+
+    target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_sycl_tla
+        Open3D::3rdparty_sycl
+        ${TORCH_LIBRARIES}
+    )
+endif()
+
 open3d_show_and_abort_on_warning(open3d_torch_ops)
 open3d_set_global_properties(open3d_torch_ops)
+
+# PyTorch 2.13+ requires C++20
+set_property(TARGET open3d_torch_ops PROPERTY CXX_STANDARD 20)
+set_property(TARGET open3d_torch_ops PROPERTY CXX_STANDARD_REQUIRED ON)
 
 if (MSVC)
     # PyTorch's bundled fmt (v11+) requires /utf-8 for Unicode support on MSVC.
     target_compile_options(open3d_torch_ops PRIVATE /utf-8)
 endif()
 
-# Set output directory according to architecture (cpu/cuda)
+# One open3d_torch_ops.so per configure; CPU/CUDA/SYCL paths dispatch inside *Ops.cpp.
 get_target_property(TORCH_OPS_DIR open3d_torch_ops LIBRARY_OUTPUT_DIRECTORY)
 set_target_properties(open3d_torch_ops PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${TORCH_OPS_DIR}"
@@ -132,12 +217,11 @@ set_target_properties(open3d_torch_ops PROPERTIES
 # Do not add "lib" prefix
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
-# Set BUILD_RPATH to find tbb. We don't install through cmake.
-if (APPLE)
-    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "@loader_path/..")
-elseif (UNIX)
-    set_target_properties(open3d_torch_ops PROPERTIES BUILD_RPATH "$ORIGIN/..")
-endif()
+# Note: BUILD_RPATH/INSTALL_RPATH are already set by open3d_set_global_properties()
+# above, matching libOpen3D/pybind. This lets open3d_torch_ops (and the SYCL/oneAPI
+# runtime DSOs it needs, e.g. libsycl.so, libsvml.so) resolve against the same
+# Python virtual env lib/ folder that libOpen3D and pybind use, instead of only
+# the narrower "$ORIGIN/.." (used to just find TBB) that used to be set here.
 
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp

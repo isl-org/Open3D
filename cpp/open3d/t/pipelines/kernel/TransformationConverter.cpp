@@ -11,8 +11,10 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/pipelines/registration/SymmetricICPImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Logging.h"
 
@@ -64,6 +66,13 @@ static void PoseToTransformationDevice(
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        PoseToTransformationSYCL<scalar_t>(transformation_ptr, pose_ptr,
+                                           transformation.GetDevice());
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
@@ -94,6 +103,35 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     return transformation;
 }
 
+core::Tensor PoseToSymmetricTransformation(const core::Tensor &pose,
+                                           const core::Tensor &source_mean,
+                                           const core::Tensor &target_mean) {
+    core::AssertTensorShape(pose, {6});
+    core::AssertTensorShape(source_mean, {3});
+    core::AssertTensorShape(target_mean, {3});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
+    core::AssertTensorDtypes(source_mean, {core::Float32, core::Float64});
+    core::AssertTensorDtypes(target_mean, {core::Float32, core::Float64});
+
+    const core::Device host("CPU:0");
+    const core::Tensor pose_cpu = pose.To(host, core::Float64).Contiguous();
+    const core::Tensor source_mean_cpu =
+            source_mean.To(host, core::Float64).Contiguous();
+    const core::Tensor target_mean_cpu =
+            target_mean.To(host, core::Float64).Contiguous();
+
+    const Eigen::Vector6d pose_eigen =
+            Eigen::Map<const Eigen::Vector6d>(pose_cpu.GetDataPtr<double>());
+    const Eigen::Vector3d source_mean_eigen = Eigen::Map<const Eigen::Vector3d>(
+            source_mean_cpu.GetDataPtr<double>());
+    const Eigen::Vector3d target_mean_eigen = Eigen::Map<const Eigen::Vector3d>(
+            target_mean_cpu.GetDataPtr<double>());
+    const Eigen::Matrix4d transformation =
+            ::open3d::pipelines::registration::TransformSymmetricPoseToMatrix4d(
+                    pose_eigen, source_mean_eigen, target_mean_eigen);
+    return core::eigen_converter::EigenMatrixToTensor(transformation);
+}
+
 template <typename scalar_t>
 static void TransformationToPoseDevice(
         core::Tensor &pose,
@@ -109,6 +147,13 @@ static void TransformationToPoseDevice(
         TransformationToPoseCUDA<scalar_t>(pose_ptr, transformation_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (device_type == core::Device::DeviceType::SYCL) {
+#ifdef BUILD_SYCL_MODULE
+        TransformationToPoseSYCL<scalar_t>(pose_ptr, transformation_ptr,
+                                           pose.GetDevice());
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("Unimplemented device.");

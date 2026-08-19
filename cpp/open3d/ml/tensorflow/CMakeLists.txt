@@ -57,6 +57,7 @@ target_sources(open3d_tf_ops PRIVATE
 target_sources(open3d_tf_ops PRIVATE
     pointnet/BallQueryOps.cpp
     pointnet/InterpolateOps.cpp
+    pointnet/RoiPoolOpKernelCPU.cpp
     pointnet/RoiPoolOps.cpp
     pointnet/SamplingOps.cpp
     pvcnn/TrilinearDevoxelizeOps.cpp
@@ -71,6 +72,7 @@ target_sources(open3d_tf_ops PRIVATE
     ../contrib/Cloud.cpp
     ../contrib/GridSubsampling.cpp
     ../contrib/Nms.cpp
+    ../contrib/RoiPool.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -124,7 +126,7 @@ open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
 
-# Set output directory according to architecture (cpu/cuda)
+# One open3d_tf_ops.so per configure; CPU/CUDA paths dispatch inside *Ops.cpp.
 get_target_property(TF_OPS_DIR open3d_tf_ops LIBRARY_OUTPUT_DIRECTORY)
 set_target_properties(open3d_tf_ops PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${TF_OPS_DIR}"

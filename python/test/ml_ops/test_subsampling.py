@@ -10,6 +10,15 @@ import open3d as o3d
 import pytest
 import importlib
 
+# NOTE: grid_subsampling / batch_grid_subsampling are exposed here only as
+# TensorFlow ops (open3d.ml.tf.ops); there is no PyTorch (or SYCL/CUDA)
+# binding to mirror, since the underlying open3d/ml/contrib/GridSubsampling.h
+# implementation is CPU-only (no CUDA kernel exists to port to SYCL either).
+# The same CPU implementation is already exercised without any ML framework
+# dependency via python/test/ml/test_contrib_subsample.py (open3d.ml.contrib
+# .subsample / .subsample_batch), so these tests stay gated on
+# BUILD_TENSORFLOW_OPS rather than adding a redundant PyTorch-only op.
+
 
 @pytest.mark.skipif(not o3d._build_config['BUILD_TENSORFLOW_OPS'],
                     reason='tf ops not built')

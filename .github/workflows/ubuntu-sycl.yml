@@ -48,9 +48,9 @@ jobs:
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_build.sh sycl-shared build-lib
             docker tag open3d-ci:sycl-shared open3d-lib-sycl-shared:latest
-            docker save open3d-lib-sycl-shared:latest -o open3d-lib-sycl-shared.tar
-            xz open3d-lib-sycl-shared.tar
-            ls -lhs open3d-lib-sycl-shared.tar.xz
+            docker save open3d-lib-sycl-shared:latest | zstd -T0 --fast=1 \
+              -o open3d-lib-sycl-shared.tar.zst
+            ls -lhs open3d-lib-sycl-shared.tar.zst
           else
             docker/docker_build.sh sycl-static build-lib
             # Static build usually doesn't produce wheels or shared libs for python
@@ -62,8 +62,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: open3d-lib-sycl-shared
-          path: open3d-lib-sycl-shared.tar.xz
+          path: open3d-lib-sycl-shared.tar.zst
           retention-days: 1
+          compression-level: 0
 
       - name: Upload C++ binary package to GitHub artifacts
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -72,6 +73,23 @@ jobs:
           name: open3d-devel-sycl
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+
+      - name: Remove lib image tarball from workspace
+        # Multi-GB and no longer needed once uploaded; frees runner disk for the
+        # C++ tests. The devel / wheel / ccache tarballs stay: the main-branch
+        # release and ccache upload steps below still read them.
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        run: rm -f open3d-lib-sycl-shared.tar.zst
+
+      - name: Docker test (C++)
+        # C++ only here; Python runs in build-wheel via docker_test.sh python
+        # inside the per-Python-version image (see docker/docker_test.sh).
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            docker/docker_test.sh sycl-shared cpp
+          else
+            docker/docker_test.sh sycl-static cpp
+          fi
 
       - name: Update devel release
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -95,7 +113,7 @@ jobs:
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.xz gs://open3d-ci-cache/ || true
 
   build-wheel:
     name: Build Wheel
@@ -106,10 +124,12 @@ jobs:
       artifact-metadata: write
     runs-on: ubuntu-latest
     needs: build-lib
+    # Run even when build-lib failed (e.g. flaky C++ tests) so wheel jobs still execute.
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         is_main:
           - ${{ github.ref == 'refs/heads/main' }}
         exclude:
@@ -119,8 +139,12 @@ jobs:
             python_version: '3.11'
           - is_main: false
             python_version: '3.12'
+          - is_main: false
+            python_version: '3.13'
     env:
       PYTHON_VERSION: ${{ matrix.python_version }}
+      # TensorFlow v2.20 only supports python 3.9-3.13
+      BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -136,16 +160,22 @@ jobs:
           path: .
       
       - name: Load Lib Image
-        run: docker load -i open3d-lib-sycl-shared.tar.xz 
+        run: |
+          zstd -d --stdout open3d-lib-sycl-shared.tar.zst | docker load
+          rm -f open3d-lib-sycl-shared.tar.zst
 
       - name: Docker build
         run: |
           export BASE_IMAGE=open3d-lib-sycl-shared:latest
-          
+
           # We execute docker buildscript with python version argument.
           docker/docker_build.sh sycl-shared py${{ matrix.python_version }}
 
+      - name: Docker test (Python)
+        run: docker/docker_test.sh sycl-shared python
+
       - name: Generate artifact attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: |
@@ -163,6 +193,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload main-devel open3d-*.whl --clobber
-          gh release view main-devel
+          .github/workflows/update_release.sh open3d*.whl
 

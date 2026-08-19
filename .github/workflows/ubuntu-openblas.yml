@@ -31,8 +31,11 @@ jobs:
       - name: Docker build
         run: docker/docker_build.sh openblas-amd64-py312-dev
 
-      - name: Docker test
-        run: docker/docker_test.sh openblas-amd64-py312-dev
+      - name: Docker test (C++ and integration)
+        run: docker/docker_test.sh openblas-amd64-py312-dev lib
+
+      - name: Docker test (Python)
+        run: docker/docker_test.sh openblas-amd64-py312-dev python
 
   build-lib-arm64:
     name: Build Lib ARM64
@@ -68,6 +71,9 @@ jobs:
           path: open3d-lib-arm64.tar.gz
           retention-days: 1
 
+      - name: Docker test (C++ and integration)
+        run: docker/docker_test.sh openblas-arm64-py310-dev lib
+
   build-wheel-arm64:
     name: Build Wheel ARM64
     permissions:
@@ -76,6 +82,7 @@ jobs:
       attestations: write
     runs-on: ubuntu-24.04-arm
     needs: build-lib-arm64
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -128,10 +135,8 @@ jobs:
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d-[0-9]*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
-      - name: Docker test
-        run: docker/docker_test.sh "${DOCKER_TAG}"
-
       - name: Generate wheel attestation
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/attest@v4
         with:
           subject-path: ${{ github.workspace }}/${{ env.PIP_PKG_NAME }}
@@ -149,3 +154,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           .github/workflows/update_release.sh ${{ env.PIP_PKG_NAME }}
+
+      - name: Docker test (Python)
+        run: docker/docker_test.sh "${DOCKER_TAG}" python

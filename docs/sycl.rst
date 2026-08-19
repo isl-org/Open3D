@@ -6,16 +6,96 @@ Cross-platform GPU support (SYCL)
 From v0.19, Open3D provides an experimental SYCL backend for cross-platform GPU
 support. This backend allows Open3D operations to run on many different GPUs,
 including integrated GPUs and discrete GPUs from Intel, Nvidia and AMD. We
-provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+).
+provide pre-built C++ binaries and Python wheels for Linux (Ubuntu 22.04+) and
+Windows 10+.
 
 Enabled features
 -----------------
 
-Many Tensor API operations and Tensor Geometry operations without custom kernels
-can now be offloaded to SYCL devices. In addition, HW accelerated raycasting
-queries in :py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
+Many Tensor API operations and Tensor Geometry operations are supported on SYCL devices.
+This includes custom kernels for:
+
+* **TriangleMesh**: normal normalization, triangle normal computation, vertex normal accumulation, and triangle area computation.
+* **VoxelBlockGrid**: block touch (point cloud / depth), voxel indexing, TSDF integration, range estimation, ray casting, point-cloud extraction, and marching-cubes mesh extraction (SYCL device hash lookup for ray cast).
+
+SYCL does **not** implement CUDA NPP/IPP image filters (``Image::Filter*``,
+``Resize``, ``PyrDown``, etc.). Use CPU preprocessing or APIs that avoid
+device-side filter/pyramid steps when running on ``SYCL:0``.
+
+Element-wise tensor kernels use direct ``sycl::queue::parallel_for`` (there is
+no separate ``ParallelForSYCL`` helper header).
+
+Tensor backend matrix (experimental)
+-----------------------------------
+
+The table summarizes **tensor** API support when tensors live on ``SYCL:0``.
+Legacy ``open3d.geometry`` (Eigen) types are CPU-only unless copied to tensor
+types.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 18 18 36
+
+   * - Area
+     - CPU
+     - CUDA
+     - SYCL
+   * - Core tensor ops (EW, reduce, matmul, …)
+     - Yes
+     - Yes (mutually exclusive build)
+     - Yes
+   * - ``core::HashMap`` (device)
+     - TBB
+     - stdgpu
+     - Native SYCL open-addressing
+   * - ``core::nns`` (KNN / fixed-radius / hybrid)
+     - Yes
+     - Yes
+     - Yes, incl. L1/L2/Linf metrics for fixed-radius and hybrid search
+   * - ``t::geometry::TriangleMesh`` normals / areas
+     - Yes
+     - Yes
+     - Yes
+   * - ``t::geometry::VoxelBlockGrid`` TSDF pipeline
+     - Yes
+     - Yes
+     - Yes (touch → integrate → extract → ray cast)
+   * - ``t::geometry::Image`` NPP-style filters
+     - CPU / IPP
+     - NPP
+     - **No** (use CPU or non-filter paths)
+   * - ``t::geometry::PointCloud`` full API
+     - Yes
+     - Most
+     - Partial (unproject, normals, NNS-based ops; some methods still CPU-only)
+
+For routing, algorithms, and backend-specific semantics of ``core::nns`` and
+``core::HashMap`` on CPU vs CUDA vs SYCL, see :doc:`nns_hashmap_cpu_cuda_sycl`
+and the tutorial page :ref:`core_nns_hashmap_backends`.
+
+Known numerical differences vs. CPU/CUDA
+-----------------------------------------
+
+* **RoiPool point selection:** when more than ``sampled_pts_num`` points fall
+  inside a box, the SYCL backend keeps a different (work-group-strided)
+  subset of point indices than CPU/CUDA, which keep the lowest indices. Both
+  are valid samples of the box interior, so downstream results (e.g. pooled
+  features) may differ numerically between backends for such boxes. The
+  count of pooled points and ``pooled_empty_flag`` are identical across
+  backends.
+* **Convolution ops with** ``allow_tf32=True``: the continuous- and
+  sparse-convolution SYCL kernels only accelerate the GEMM step with Intel
+  Xe XMX tensor operations (TF32-equivalent precision) when every operand's
+  leading dimension and channel-count extents are divisible by 4 (a
+  128-bit/4-element alignment requirement of the underlying GEMM library).
+  If this alignment check fails, Open3D logs a one-time warning and falls
+  back to the IEEE float32 path automatically; results remain correct in
+  both cases, only the acceleration is skipped.
+
+In addition, HW accelerated raycasting queries in
+:py:class:`open3d.t.geometry.RayCastingScene` are also supported. You
 will get an error if an operation is not supported. The implementation is tested
-on Linux on Intel integrated and discrete GPUs. Currently, a single GPU
+on Linux and Windows on Intel integrated and discrete GPUs. Currently, a single GPU
 (`SYCL:0`, if available) and the CPU (`SYCL:1` if a GPU is available, else
 `SYCL:0`) are supported.
 
@@ -30,7 +110,9 @@ and (optionally) SYCL runtime for your `Nvidia
 <https://developer.codeplay.com/products/oneapi/amd/download>`_ GPU.
 
 For Python, the wheels will automatically install the DPC++ runtime package
-(`dpcpp-cpp-rt`).  Make sure to have the `correct drivers installed
+(`dpcpp-cpp-rt`) into the same environment. On Windows, Open3D registers those
+pip-installed DLL directories at import time (system-wide oneAPI runtimes are
+not used). Make sure to have the `correct drivers installed
 <https://dgpu-docs.intel.com/driver/client/overview.html>`_ for your GPU. For
 raycasting on Intel GPUs, you will also need the
 `intel-level-zero-gpu-raytracing` package.
@@ -46,18 +128,26 @@ raycasting on Intel GPUs, you will also need the
       - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
       - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-manylinux_2_31_x86_64.whl>`__
       - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-manylinux_2_31_x86_64.whl>`__
-      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/v0.19.0/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+
+    * - Windows SYCL
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-win_amd64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-win_amd64.whl>`__
+      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-win_amd64.whl>`__
+      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-win_amd64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-win_amd64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-win-x86_64-0.19.0.tar.xz>`__
 
 Usage
 ------
 
 The SYCL backend requires the new CXX11 ABI (Linux, gcc, libstdc++ only). If you
-need to use the Open3D PyTorch extension, you should use cxx11_abi wheels for
-PyTorch:
+need to use the Open3D PyTorch extension on a SYCL/XPU device, install the
+matching PyTorch XPU wheel:
 
 .. code-block:: shell
 
-    pip install torch==2.2.2+cpu.cxx11.abi -i https://download.pytorch.org/whl/cpu/
+    pip install torch==2.13+xpu -i https://download.pytorch.org/whl/xpu/
 
 PyTorch v2.7+ uses the new CXX11 ABI by default.
 
@@ -136,5 +226,5 @@ information about building for specific hardware.
 if you want to use different settings (e.g. AOT compilation for a specific
 device, or build a wheel for a different Python version), you can update the
 ``docker_build.sh`` script, or build directly on host after installing the
-``intel-basekit`` or ``intel-cpp-essentials`` Debian packages from the Intel
-OneAPI repository.
+``intel-oneapi-toolkit`` or ``intel-deep-learning-essentials`` Debian packages
+from the Intel OneAPI repository.

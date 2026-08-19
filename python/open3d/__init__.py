@@ -5,39 +5,77 @@
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
-# Workaround when multiple copies of the OpenMP runtime have been linked to
-# the program, which happens when PyTorch loads OpenMP runtime first. Not that
-# this method is "unsafe, unsupported, undocumented", but we found it to be
-# generally safe to use. This should be deprecated once we found a way to
-# "ensure that only a single OpenMP runtime is linked into the process".
-#
-# https://github.com/llvm-mirror/openmp/blob/8453ca8594e1a5dd8a250c39bf8fcfbfb1760e60/runtime/src/i18n/en_US.txt#L449
-# https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
 import site
 import warnings
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-# Enable thread composability manager to coordinate Intel OpenMP and TBB
-# threads. Only works with Intel OpenMP.  TBB must not be already loaded.
+# Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism. Other packages (e.g. SciPy, MKL) may
+# still bring their own Intel OpenMP; enabling the thread composability manager
+# lets it share a thread pool with TBB instead of oversubscribing the machine.
+# Only works with Intel OpenMP, and TBB must not be already loaded.
 os.environ["TCM_ENABLE"] = "1"
 from pathlib import Path
 
 from open3d._build_config import _build_config
 
 if sys.platform == "win32":
-    # Required for CPU wheel (bundled TBB) and SYCL wheel (SYCL runtime, which
-    # intel-sycl-rt will install in:
-    # - <sys.prefix>/Library/bin # (for standard/virtualenv/conda installs)
-    # - <site.USER_BASE>/Library/bin # (for user-level --user installs)
-    # CUDA runtime is statically linked.
-    _win32_dll_dirs = [os.add_dll_directory(str(Path(__file__).parent))]
-    _site_dirs = [*site.PREFIXES, *site.getsitepackages(), site.USER_BASE]
+    # Required for CPU wheel (bundled TBB) and SYCL wheel (SYCL runtime from
+    # pip-installed dpcpp-cpp-rt / intel-sycl-rt). Runtimes may appear under
+    # <sys.prefix>/Library/bin, <site>/Library/bin, or pip's
+    # <site>/*.data/data/Library/bin layout (see 3rdparty/README_SYCL.md).
+    # CUDA runtime is linked dynamically on Windows and is installed by the
+    # nvidia-*-cu* pip packages into <site-packages>/nvidia/<component>/bin.
+    def _maybe_add_dll_dir(path, handles, seen):
+        path = os.path.abspath(path)
+        if path in seen or not os.path.isdir(path):
+            return
+        seen.add(path)
+        handles.append(os.add_dll_directory(path))
+
+    _win32_dll_dirs = []
+    _seen_dll_dirs = set()
+    _path_candidates = [str(Path(__file__).parent)]
+    _path_candidates.append(os.path.join(sys.prefix, "Library", "bin"))
+
+    _site_dirs = set(site.PREFIXES) | set(site.getsitepackages())
+    if site.USER_BASE:
+        _site_dirs.add(site.USER_BASE)
     for _site_dir in _site_dirs:
-        if os.path.isdir(os.path.join(_site_dir, "Library", "bin")):
-            _win32_dll_dirs.append(
-                os.add_dll_directory(os.path.join(_site_dir, "Library", "bin")))
+        if not _site_dir:
+            continue
+        _path_candidates.append(os.path.join(_site_dir, "Library", "bin"))
+        _site_path = Path(_site_dir)
+        if _site_path.is_dir():
+            for _data_root in _site_path.glob("*.data"):
+                _path_candidates.append(
+                    str(_data_root / "data" / "Library" / "bin"))
+        _nvidia_dir = os.path.join(_site_dir, "nvidia")
+        if os.path.isdir(_nvidia_dir):
+            for _nvidia_pkg_dir in os.listdir(_nvidia_dir):
+                _nvidia_bin_dir = os.path.join(_nvidia_dir, _nvidia_pkg_dir,
+                                               "bin")
+                _path_candidates.append(_nvidia_bin_dir)
+
+    if _build_config.get("BUILD_SYCL_MODULE"):
+        import importlib.util
+
+        _torch_spec = importlib.util.find_spec("torch")
+        if _torch_spec and _torch_spec.submodule_search_locations:
+            _path_candidates.append(
+                os.path.join(_torch_spec.submodule_search_locations[0], "lib"))
+
+    for _path in _path_candidates:
+        _maybe_add_dll_dir(_path, _win32_dll_dirs, _seen_dll_dirs)
+
+    # Transitive SYCL/CUDA deps may still be resolved via PATH on Windows.
+    _path_prefix = os.pathsep.join(
+        p for p in _path_candidates if p and os.path.isdir(p))
+    if _path_prefix:
+        os.environ["PATH"] = _path_prefix + os.pathsep + os.environ.get(
+            "PATH", "")
+
+    del _maybe_add_dll_dir, _seen_dll_dirs, _path_candidates, _path_prefix
 
 from open3d.pybind import (
     core,
@@ -160,7 +198,6 @@ def _jupyter_nbextension_paths():
     }]
 
 
-if sys.platform == "win32":
-    for dll_dir in _win32_dll_dirs:
-        dll_dir.close()
 del os, sys, Path, warnings, _insert_pybind_names
+# If this is removed, pybind11_stubgen adds an incomplete "open3d = " to the stub file
+del open3d

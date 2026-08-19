@@ -69,7 +69,7 @@ def to_numpy_dtype(dtype: o3c.Dtype):
 
 
 @pytest.mark.parametrize("dtype", list_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_creation(dtype, device):
     # Shape takes tuple, list or o3c.SizeVector
     t = o3c.Tensor.empty((2, 3), dtype, device=device)
@@ -96,7 +96,7 @@ def test_creation(dtype, device):
 @pytest.mark.parametrize("shape", [(), (0,), (1,), (0, 2), (0, 0, 2),
                                    (2, 0, 3)])
 @pytest.mark.parametrize("dtype", list_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_creation_special_shapes(shape, dtype, device):
     o3_t = o3c.Tensor.full(shape, 3.14, dtype, device=device)
     np_t = np.full(shape, 3.14, dtype=to_numpy_dtype(dtype))
@@ -143,7 +143,7 @@ def test_tensor_to_device_string():
 
 
 @pytest.mark.parametrize("dtype", list_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_tensor_constructor(dtype, device):
     # Numpy array
     np_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=to_numpy_dtype(dtype))
@@ -192,7 +192,7 @@ def test_tensor_constructor(dtype, device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_arange(device):
     # Full parameters.
     setups = [(0, 10, 1), (0, 10, 1), (0.0, 10.0, 2.0), (0.0, -10.0, -2.0)]
@@ -240,7 +240,7 @@ def test_arange(device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_flatten(device):
 
     # Flatten 0-D tensor
@@ -385,7 +385,7 @@ def test_flatten(device):
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_append(dtype, device):
     # Appending 0-D.
     # 0-D can only be appended along axis = null.
@@ -600,7 +600,7 @@ def test_tensor_to_numpy_scope():
 
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_binary_ew_ops(dtype, device):
     a = o3c.Tensor(np.array([4, 6, 8, 10, 12, 14]), dtype=dtype, device=device)
     b = o3c.Tensor(np.array([2, 3, 4, 5, 6, 7]), dtype=dtype, device=device)
@@ -631,7 +631,7 @@ def test_binary_ew_ops(dtype, device):
     np.testing.assert_allclose(a.cpu().numpy(), np.array([2, 2, 2, 2, 2, 2]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_to(device):
     a = o3c.Tensor(np.array([0.1, 1.2, 2.3, 3.4, 4.5, 5.6]).astype(np.float32),
                    device=device)
@@ -643,7 +643,7 @@ def test_to(device):
     assert b.device == a.device
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_unary_ew_ops(device):
     src_vals = np.array([0, 1, 2, 3, 4, 5]).astype(np.float32)
     src = o3c.Tensor(src_vals, device=device)
@@ -676,7 +676,7 @@ def test_unary_ew_ops(device):
                                atol=atol)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_getitem(device):
     np_t = np.array(range(24)).reshape((2, 3, 4))
     o3_t = o3c.Tensor(np_t, device=device)
@@ -718,7 +718,7 @@ def test_getitem(device):
         o3c.Tensor.ones((), device=device)[0:1]
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_setitem(device):
     np_ref = np.array(range(24)).reshape((2, 3, 4))
 
@@ -839,7 +839,7 @@ def test_setitem(device):
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_sum(dim, keepdim, device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
     o3_src = o3c.Tensor(np_src, device=device)
@@ -858,7 +858,7 @@ def test_reduction_sum(dim, keepdim, device):
     ((0, 2), (1)),
 ])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_special_shapes(shape_and_axis, keepdim, device):
     shape, axis = shape_and_axis
     np_src = np.array(np.random.rand(*shape))
@@ -874,7 +874,7 @@ def test_reduction_special_shapes(shape_and_axis, keepdim, device):
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_mean(dim, keepdim, device):
     np_src = np.array(range(24)).reshape((2, 3, 4)).astype(np.float32)
     o3_src = o3c.Tensor(np_src, device=device)
@@ -888,7 +888,7 @@ def test_reduction_mean(dim, keepdim, device):
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_prod(dim, keepdim, device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
     o3_src = o3c.Tensor(np_src, device=device)
@@ -902,7 +902,7 @@ def test_reduction_prod(dim, keepdim, device):
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_min(dim, keepdim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
@@ -918,7 +918,7 @@ def test_reduction_min(dim, keepdim, device):
     "dim",
     [0, 1, 2, (), (0,), (1,), (2,), (0, 1), (0, 2), (1, 2), (0, 1, 2), None])
 @pytest.mark.parametrize("keepdim", [True, False])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_max(dim, keepdim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
@@ -931,7 +931,7 @@ def test_reduction_max(dim, keepdim, device):
 
 
 @pytest.mark.parametrize("dim", [0, 1, 2, None])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_reduction_argmin_argmax(dim, device):
     np_src = np.array(range(24))
     np.random.shuffle(np_src)
@@ -947,7 +947,7 @@ def test_reduction_argmin_argmax(dim, device):
     np.testing.assert_allclose(o3_dst.cpu().numpy(), np_dst)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_advanced_index_get_mixed(device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
     o3_src = o3c.Tensor(np_src, device=device)
@@ -973,7 +973,7 @@ def test_advanced_index_get_mixed(device):
     np.testing.assert_equal(o3_dst.cpu().numpy(), np_dst)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_advanced_index_set_mixed(device):
     np_src = np.array(range(24)).reshape((2, 3, 4))
     o3_src = o3c.Tensor(np_src, device=device)
@@ -1006,7 +1006,7 @@ def test_advanced_index_set_mixed(device):
                                                        ("ceil", "ceil"),
                                                        ("round", "round"),
                                                        ("trunc", "trunc")])
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_unary_elementwise(np_func_name, o3_func_name, device):
     np_t = np.array([-3.4, -2.6, -1.5, 0, 1.4, 2.6, 3.5]).astype(np.float32)
     o3_t = o3c.Tensor(np_t, device=device)
@@ -1028,7 +1028,7 @@ def test_unary_elementwise(np_func_name, o3_func_name, device):
                                    atol=1e-7)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_logical_ops(device):
     np_a = np.array([True, False, True, False])
     np_b = np.array([True, True, False, False])
@@ -1048,7 +1048,7 @@ def test_logical_ops(device):
     np.testing.assert_equal(o3_r.cpu().numpy(), np_r)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_comparision_ops(device):
     np_a = np.array([0, 1, -1])
     np_b = np.array([0, 0, 0])
@@ -1063,7 +1063,7 @@ def test_comparision_ops(device):
     np.testing.assert_equal((o3_a != o3_b).cpu().numpy(), np_a != np_b)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_non_zero(device):
     np_x = np.array([[3, 0, 0], [0, 4, 0], [5, 6, 0]])
     np_nonzero_tuple = np.nonzero(np_x)
@@ -1073,7 +1073,7 @@ def test_non_zero(device):
         np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_boolean_advanced_indexing(device):
     np_a = np.array([1, -1, -2, 3])
     o3_a = o3c.Tensor(np_a, device=device)
@@ -1158,7 +1158,7 @@ def test_boolean_advanced_indexing(device):
                                                             device=device)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_scalar_op(device):
     # +
     a = o3c.Tensor.ones((2, 3), o3c.float32, device=device)
@@ -1408,7 +1408,7 @@ def test_scalar_op(device):
     np.testing.assert_equal(a.cpu().numpy(), np.array([1, 0, 1]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_all_any(device):
     a = o3c.Tensor([False, True, True, True], dtype=o3c.bool, device=device)
     assert not a.all()
@@ -1423,7 +1423,7 @@ def test_all_any(device):
     assert not a.any()
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_allclose_isclose(device):
     a = o3c.Tensor([1, 2], device=device)
     b = o3c.Tensor([1, 3], device=device)
@@ -1448,7 +1448,7 @@ def test_allclose_isclose(device):
     assert not a.allclose(b)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_issame(device):
     dtype = o3c.float32
     a = o3c.Tensor.ones((2, 3), dtype, device=device)
@@ -1466,7 +1466,7 @@ def test_issame(device):
     assert d.issame(e)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_item(device):
     o3_t = o3c.Tensor.ones((2, 3), dtype=o3c.float32, device=device) * 1.5
     assert o3_t[0, 0].item() == 1.5
@@ -1489,7 +1489,7 @@ def test_item(device):
     assert isinstance(o3_t[0, 0].item(), bool)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_save_load(device):
     with tempfile.TemporaryDirectory() as temp_dir:
         file_name = f"{temp_dir}/tensor.npy"
@@ -1553,7 +1553,7 @@ def test_save_load(device):
         np.testing.assert_equal(o3_t_load.cpu().numpy(), np_t)
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_iterator(device):
     # 0-d.
     o3_t = o3c.Tensor.ones((), dtype=o3c.float32, device=device)
@@ -1590,7 +1590,7 @@ def test_iterator(device):
                             np.array([[0, 10, 20], [30, 40, 50]]))
 
 
-@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
+@pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     o3_t = o3c.Tensor.ones((100), dtype=o3c.float32, device=device)
     with tempfile.TemporaryDirectory() as temp_dir:

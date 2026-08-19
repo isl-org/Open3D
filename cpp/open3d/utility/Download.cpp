@@ -22,8 +22,6 @@
 #define USE_OPENSSL
 #endif
 
-#define CURL_STATICLIB
-
 #include <curl/curl.h>
 #include <curl/easy.h>
 // clang-format on

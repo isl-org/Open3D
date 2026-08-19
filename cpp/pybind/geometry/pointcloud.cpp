@@ -20,7 +20,7 @@
 namespace open3d {
 namespace geometry {
 
-void pybind_pointcloud_declarations(py::module &m) {
+void pybind_pointcloud_declarations(py::module& m) {
     py::class_<PointCloud, PyGeometry3D<PointCloud>,
                std::shared_ptr<PointCloud>, Geometry3D>
             pointcloud(m, "PointCloud",
@@ -29,7 +29,7 @@ void pybind_pointcloud_declarations(py::module &m) {
                        "normals.");
 }
 
-void pybind_pointcloud_definitions(py::module &m) {
+void pybind_pointcloud_definitions(py::module& m) {
     auto pointcloud =
             static_cast<py::class_<PointCloud, PyGeometry3D<PointCloud>,
                                    std::shared_ptr<PointCloud>, Geometry3D>>(
@@ -37,10 +37,10 @@ void pybind_pointcloud_definitions(py::module &m) {
     py::detail::bind_default_constructor<PointCloud>(pointcloud);
     py::detail::bind_copy_functions<PointCloud>(pointcloud);
     pointcloud
-            .def(py::init<const std::vector<Eigen::Vector3d> &>(),
+            .def(py::init<const std::vector<Eigen::Vector3d>&>(),
                  "Create a PointCloud from points", "points"_a)
             .def("__repr__",
-                 [](const PointCloud &pcd) {
+                 [](const PointCloud& pcd) {
                      return std::string("PointCloud with ") +
                             std::to_string(pcd.points_.size()) + " points.";
                  })
@@ -98,13 +98,13 @@ void pybind_pointcloud_definitions(py::module &m) {
                  "start_index"_a = 0)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const AxisAlignedBoundingBox &, bool) const) &
+                         const AxisAlignedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
             .def("crop",
                  (std::shared_ptr<PointCloud>(PointCloud::*)(
-                         const OrientedBoundingBox &, bool) const) &
+                         const OrientedBoundingBox&, bool) const) &
                          PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a, "invert"_a = false)
@@ -150,6 +150,50 @@ Returns:
                  "normals exist",
                  "search_param"_a = KDTreeSearchParamKNN(),
                  "fast_normal_computation"_a = true)
+            .def("smooth_mls", &PointCloud::SmoothMLS, R"doc(
+Smooth point cloud using a local tangent-plane projection (MLS-style).
+
+For each point, neighbors are queried with ``search_param``. If there are
+fewer than three neighbors, the point is unchanged. Otherwise Gaussian weights
+``exp(-d^2 / h^2)`` are used (``h`` = search radius; if only KNN is used,
+weights are uniform), a weighted plane is fit via PCA, and the point is
+projected onto that plane. Related to Alexa et al., *Computing and Rendering
+Point Set Surfaces*, 2003; this function does not build a full point-set
+surface or resample points as in that paper.
+)doc",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30))
+            .def("smooth_laplacian", &PointCloud::SmoothLaplacian, R"doc(
+Laplacian smoothing on a k-nearest-neighbor graph.
+
+Each iteration updates ``x_i <- x_i + lambda * (mean(neighbors) - x_i)`` with
+uniform weights over ``knn`` nearest neighbors (excluding self). Optional
+``use_fixed_neighborhoods`` reuses the k-NN graph from the initial positions.
+Related to Pauly et al., *Spectral Processing of Point-Sampled Geometry*, 2001;
+this is an explicit uniform graph Laplacian, not a spectral operator.
+)doc",
+                 "iterations"_a = 10, "lambda_"_a = 0.5, "knn"_a = 20,
+                 py::arg_v("use_fixed_neighborhoods", false, "False"))
+            .def("smooth_taubin", &PointCloud::SmoothTaubin, R"doc(
+Taubin smoothing: two Laplacian passes per iteration (``lambda`` then ``mu``).
+
+Uses the same k-NN Laplacian as :func:`smooth_laplacian`. Related to Taubin,
+*Curve and Surface Smoothing Without Shrinkage*, 1995; differs in using a
+point-cloud k-NN graph with uniform weights.
+)doc",
+                 "iterations"_a = 10, "lambda_"_a = 0.5, "mu"_a = -0.53,
+                 "knn"_a = 20,
+                 py::arg_v("use_fixed_neighborhoods", false, "False"))
+            .def("smooth_bilateral", &PointCloud::SmoothBilateral, R"doc(
+Bilateral smoothing using spatial and normal-direction range weights.
+
+For each point, ``w_k = exp(-d_k^2 / 2 sigma_s^2) * exp(-((p_i - p_k) . n_i)^2 /
+2 sigma_r^2)`` and the new position is the weighted average of neighbors.
+Normals are estimated if missing. Related to Jones et al.,
+*Non-Iterative, Feature-Preserving Mesh Smoothing*, 2003; applied here to
+unstructured points with a weighted centroid update.
+)doc",
+                 "search_param"_a = KDTreeSearchParamHybrid(0.05, 30),
+                 "sigma_s"_a = 0.05, "sigma_r"_a = 0.05)
             .def("orient_normals_to_align_with_direction",
                  &PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
@@ -339,6 +383,35 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "If true, the normal estimation uses a non-iterative method to "
               "extract the eigenvector from the covariance matrix. This is "
               "faster, but is not as numerical stable."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_mls",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_laplacian",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda_", "Smoothing parameter."},
+             {"knn", "Number of nearest neighbors used for smoothing."},
+             {"use_fixed_neighborhoods",
+              "If true, reuse the initial k-NN graph for better performance "
+              "at the cost of quality."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_taubin",
+            {{"iterations", "Number of smoothing iterations."},
+             {"lambda_", "Smoothing parameter for the Laplacian operator."},
+             {"mu", "Smoothing parameter for the inverse Laplacian operator."},
+             {"knn", "Number of nearest neighbors used for smoothing."},
+             {"use_fixed_neighborhoods",
+              "If true, reuse the initial k-NN graph for better performance "
+              "at the cost of quality."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "smooth_bilateral",
+            {{"search_param",
+              "KDTree search parameters for neighborhood search. "
+              "Supports Radius, KNN, or Hybrid search."},
+             {"sigma_s", "Spatial standard deviation."},
+             {"sigma_r", "Range standard deviation."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "orient_normals_to_align_with_direction",
             {{"orientation_reference",

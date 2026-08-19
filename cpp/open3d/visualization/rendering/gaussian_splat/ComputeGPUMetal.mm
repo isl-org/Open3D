@@ -69,6 +69,10 @@ public:
             [geom_cb_ waitUntilCompleted];
             geom_cb_ = nil;
         }
+        if (last_submitted_geom_cb_) {
+            [last_submitted_geom_cb_ waitUntilCompleted];
+            last_submitted_geom_cb_ = nil;
+        }
         if (last_submitted_comp_cb_) {
             [last_submitted_comp_cb_ waitUntilCompleted];
             last_submitted_comp_cb_ = nil;
@@ -475,9 +479,21 @@ public:
             // Commit without waiting: the geometry CB and the subsequent
             // Filament frame CB execute in submission order on the same queue,
             // so Filament's mesh rendering will not begin until geometry
-            // is complete on the GPU.
+            // is complete on the GPU. GPU-side hazard tracking is sufficient
+            // for buffer read/write ordering across command buffers, but CPU
+            // reads of shared-storage buffers (e.g. DownloadBuffer for GPU
+            // error counters) still need an explicit wait; keep a strong ref
+            // so WaitForGeometryPass() can wait for it on demand.
             [geom_cb_ commit];
+            last_submitted_geom_cb_ = geom_cb_;
             geom_cb_ = nil;
+        }
+    }
+
+    void WaitForGeometryPass() override {
+        if (last_submitted_geom_cb_) {
+            [last_submitted_geom_cb_ waitUntilCompleted];
+            last_submitted_geom_cb_ = nil;
         }
     }
 
@@ -714,6 +730,10 @@ private:
 
     id<MTLCommandBuffer> geom_cb_ = nil;
     id<MTLCommandBuffer> comp_cb_ = nil;
+    // Tracks the most recently committed geometry CB so WaitForGeometryPass()
+    // can wait for GPU-error-counter readback correctness (see
+    // EndGeometryPass).
+    id<MTLCommandBuffer> last_submitted_geom_cb_ = nil;
     // Tracks the most recently committed composite CB so the destructor can
     // wait for its completion handler to finish before freeing C++ state.
     id<MTLCommandBuffer> last_submitted_comp_cb_ = nil;

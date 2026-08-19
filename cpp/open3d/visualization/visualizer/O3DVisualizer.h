@@ -161,6 +161,10 @@ public:
 
     void ResetCameraToDefault();
 
+    /// Get menubar from window system. The window came from
+    /// `Application::GetInstance()`
+    std::shared_ptr<gui::MenuBase> GetMenubar();
+
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
     void SetIBL(const std::string& path);
@@ -206,6 +210,9 @@ public:
     /// string with fields: intrinsic_matrix, extrinsic_matrix, near_plane,
     /// far_plane. Field names match draw.py parameters for easy reuse.
     void CopyViewToClipboard();
+
+    /// Pastes camera view parameters from the clipboard in JSON format.
+    void PasteViewFromClipboard();
 
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;

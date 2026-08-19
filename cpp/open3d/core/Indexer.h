@@ -106,7 +106,7 @@ struct TensorRef {
     // The default copy constructor works on __device__ as well so we don't
     // define it explicitly. shape_[MAX_DIMS] and strides[MAX_DIMS] will be
     // copied fully.
-    TensorRef() : data_ptr_(nullptr), ndims_(0), dtype_byte_size_(0) {}
+    TensorRef() : data_ptr_(nullptr) {}
 
     TensorRef(const Tensor& t) {
         if (t.NumDims() > MAX_DIMS) {
@@ -120,6 +120,43 @@ struct TensorRef {
             shape_[i] = t.GetShape(i);
             byte_strides_[i] = t.GetStride(i) * dtype_byte_size_;
         }
+        UpdateByteOffsetBounds();
+    }
+
+    /// Inclusive min and span \p total_byte_size_ cover all element byte
+    /// offsets relative to \p data_ptr_ (supports negative strides and sliced
+    /// views). Computed in O(ndims_) from per-dimension min/max of
+    /// c_d * byte_strides_[d] for c_d in [0, shape_[d] - 1].
+    void UpdateByteOffsetBounds() {
+        int64_t num_elements = 1;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            num_elements *= shape_[i];
+        }
+        min_byte_offset_ = 0;
+        total_byte_size_ = 0;
+        if (num_elements == 0) {
+            return;
+        }
+        int64_t min_o = 0;
+        int64_t max_o = 0;
+        for (int64_t d = 0; d < ndims_; ++d) {
+            const int64_t max_coord = shape_[d] - 1;
+            const int64_t stride = byte_strides_[d];
+            const int64_t dim_min = stride >= 0 ? 0 : max_coord * stride;
+            const int64_t dim_max = stride >= 0 ? max_coord * stride : 0;
+            min_o += dim_min;
+            max_o += dim_max;
+        }
+        min_byte_offset_ = min_o;
+        total_byte_size_ = max_o - min_o + dtype_byte_size_;
+    }
+
+    OPEN3D_HOST_DEVICE bool ContainsByteOffset(int64_t offset) const {
+        if (total_byte_size_ == 0) {
+            return offset == min_byte_offset_;
+        }
+        return offset >= min_byte_offset_ &&
+               offset + dtype_byte_size_ <= min_byte_offset_ + total_byte_size_;
     }
 
     /// \brief Permute (dimension shuffle) the reference to a Tensor.
@@ -175,6 +212,8 @@ struct TensorRef {
         rc = rc && (data_ptr_ == other.data_ptr_);
         rc = rc && (ndims_ == other.ndims_);
         rc = rc && (dtype_byte_size_ == other.dtype_byte_size_);
+        rc = rc && (min_byte_offset_ == other.min_byte_offset_);
+        rc = rc && (total_byte_size_ == other.total_byte_size_);
         for (int64_t i = 0; i < ndims_; ++i) {
             rc = rc && (shape_[i] == other.shape_[i]);
             rc = rc && (byte_strides_[i] == other.byte_strides_[i]);
@@ -192,6 +231,8 @@ struct TensorRef {
     void* data_ptr_;
     int64_t ndims_ = 0;
     int64_t dtype_byte_size_ = 0;
+    int64_t min_byte_offset_ = 0;
+    int64_t total_byte_size_ = 0;
     int64_t shape_[MAX_DIMS];
     int64_t byte_strides_[MAX_DIMS];
 };
@@ -205,7 +246,11 @@ enum class DtypePolicy {
                             // have bool dtype.
 };
 
-/// Indexer to one Tensor
+/// Indexer to one Tensor.
+///
+/// \p workload_idx is a row-major linear element index. Contiguous tensors use
+/// a fast path in GetPtr(); general strided layouts decode per-dimension
+/// coordinates from byte strides.
 ///
 /// Example usage:
 ///
@@ -221,7 +266,17 @@ enum class DtypePolicy {
 class TensorIterator {
 public:
     TensorIterator(const Tensor& tensor)
-        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {}
+        : input_(TensorRef(tensor)), ndims_(tensor.NumDims()) {
+        is_contiguous_ = true;
+        int64_t expected_byte_stride = input_.dtype_byte_size_;
+        for (int64_t d = ndims_ - 1; d >= 0; --d) {
+            if (input_.byte_strides_[d] != expected_byte_stride) {
+                is_contiguous_ = false;
+                break;
+            }
+            expected_byte_stride *= input_.shape_[d];
+        }
+    }
 
     OPEN3D_HOST_DEVICE int64_t NumWorkloads() const {
         int64_t num_workloads = 1;
@@ -231,17 +286,25 @@ public:
         return num_workloads;
     }
 
+    /// Pointer to the element at linear index \p workload_idx, or nullptr.
     OPEN3D_HOST_DEVICE void* GetPtr(int64_t workload_idx) const {
         if (workload_idx < 0 || workload_idx >= NumWorkloads()) {
             return nullptr;
         }
-        int64_t offset = 0;
-        workload_idx = workload_idx * input_.dtype_byte_size_;
-        for (int64_t i = 0; i < ndims_; ++i) {
-            offset += workload_idx / input_.byte_strides_[i] *
-                      input_.byte_strides_[i];
-            workload_idx = workload_idx % input_.byte_strides_[i];
+        int64_t offset;
+        if (is_contiguous_) {
+            offset = workload_idx * input_.dtype_byte_size_;
+        } else {
+            offset = 0;
+            int64_t remaining = workload_idx;
+            for (int64_t d = ndims_ - 1; d >= 0; --d) {
+                const int64_t coord = remaining % input_.shape_[d];
+                remaining /= input_.shape_[d];
+                offset += coord * input_.byte_strides_[d];
+            }
         }
+        OPEN3D_ASSERT(input_.ContainsByteOffset(offset),
+                      "Index operation data pointer is out of range.");
         return static_cast<void*>(static_cast<char*>(input_.data_ptr_) +
                                   offset);
     }
@@ -249,6 +312,7 @@ public:
 protected:
     TensorRef input_;
     int64_t ndims_;
+    bool is_contiguous_;
 };
 
 /// Indexing engine for elementwise ops with broadcasting support.
@@ -546,18 +610,41 @@ protected:
         if (workload_idx < 0) {
             return nullptr;
         }
-        if (tr_contiguous) {
-            return static_cast<char*>(tr.data_ptr_) +
-                   workload_idx * tr.dtype_byte_size_;
+
+        int64_t offset = 0;
+        bool use_linear = tr_contiguous;
+        for (int64_t i = 0; i < ndims_; ++i) {
+            if (tr.byte_strides_[i] == 0) {
+                use_linear = false;
+                break;
+            }
+        }
+        if (use_linear) {
+            int64_t tr_elements = 1;
+            for (int64_t i = 0; i < tr.ndims_; ++i) {
+                tr_elements *= tr.shape_[i];
+            }
+            int64_t primary_elements = 1;
+            for (int64_t i = 0; i < ndims_; ++i) {
+                primary_elements *= primary_shape_[i];
+            }
+            if (tr_elements != primary_elements) {
+                use_linear = false;
+            }
+        }
+        if (use_linear) {
+            offset = workload_idx * tr.dtype_byte_size_;
         } else {
-            int64_t offset = 0;
             for (int64_t i = 0; i < ndims_; ++i) {
                 offset += workload_idx / primary_strides_[i] *
                           tr.byte_strides_[i];
                 workload_idx = workload_idx % primary_strides_[i];
             }
-            return static_cast<char*>(tr.data_ptr_) + offset;
         }
+
+        OPEN3D_ASSERT(tr.ContainsByteOffset(offset),
+                      "Index operation data pointer is out of range.");
+        return static_cast<char*>(tr.data_ptr_) + offset;
     }
 
     /// Get data pointer from a TensorRef with \p workload_idx.
@@ -570,23 +657,11 @@ protected:
     OPEN3D_HOST_DEVICE T* GetWorkloadDataPtr(const TensorRef& tr,
                                              bool tr_contiguous,
                                              int64_t workload_idx) const {
-        // For 0-sized input reduction op, the output Tensor
-        // workload_idx == 1 > NumWorkloads() == 0.
-        if (workload_idx < 0) {
-            return nullptr;
-        }
-        if (tr_contiguous) {
-            return static_cast<T*>(tr.data_ptr_) + workload_idx;
-        } else {
-            int64_t offset = 0;
-            for (int64_t i = 0; i < ndims_; ++i) {
-                offset += workload_idx / primary_strides_[i] *
-                          tr.byte_strides_[i];
-                workload_idx = workload_idx % primary_strides_[i];
-            }
-            return static_cast<T*>(static_cast<void*>(
-                    static_cast<char*>(tr.data_ptr_) + offset));
-        }
+        // See note of this function.
+        // If sizeof(T) == tr.dtype_byte_size_, then we can just static cast the
+        // byte pointer.
+        return static_cast<T*>(static_cast<void*>(
+                GetWorkloadDataPtr(tr, tr_contiguous, workload_idx)));
     }
 
     /// Number of input and output Tensors.
