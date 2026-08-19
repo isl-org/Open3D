@@ -44,7 +44,8 @@ public:
                             const std::string& coordinate_mapping_str,
                             const bool normalize,
                             const std::string& interpolation_str,
-                            const int64_t max_temp_mem_MB) {
+                            const int64_t max_temp_mem_MB,
+                            const bool allow_tf32) {
         CoordinateMapping coordinate_mapping =
                 ParseCoordinateMappingStr(coordinate_mapping_str);
 
@@ -117,6 +118,7 @@ public:
         ctx->saved_data["normalize"] = normalize;
         ctx->saved_data["interpolation_str"] = interpolation_str;
         ctx->saved_data["max_temp_mem_MB"] = max_temp_mem_MB;
+        ctx->saved_data["allow_tf32"] = allow_tf32;
 
         ctx->save_for_backward({filters, out_positions, out_importance, extents,
                                 offset, inp_positions, inp_features,
@@ -136,7 +138,8 @@ public:
             inp_features, inp_neighbors_index, inp_neighbors_importance_sum, \
             inp_neighbors_row_splits, neighbors_index, neighbors_importance, \
             neighbors_row_splits, align_corners, coordinate_mapping,         \
-            normalize, interpolation, max_temp_mem_MB, out_features
+            normalize, interpolation, max_temp_mem_MB, allow_tf32,           \
+            out_features
 
 #define CALL(feat_t, out_t, real_t, index_t, fn)           \
     if (CompareTorchDtype<feat_t>(feat_dtype) &&           \
@@ -152,6 +155,14 @@ public:
 #else
             TORCH_CHECK(false,
                         "ContinuousConvTranspose was not compiled with CUDA "
+                        "support")
+#endif
+        } else if (inp_features.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+            CALL(float, float, float, int32_t, ::ContinuousConvTransposeSYCL)
+#else
+            TORCH_CHECK(false,
+                        "ContinuousConvTranspose was not compiled with SYCL "
                         "support")
 #endif
         } else {
@@ -178,6 +189,7 @@ public:
                 ctx->saved_data["interpolation_str"].toStringRef();
         const int64_t max_temp_mem_MB =
                 ctx->saved_data["max_temp_mem_MB"].toInt();
+        const bool allow_tf32 = ctx->saved_data["allow_tf32"].toBool();
 
         CoordinateMapping coordinate_mapping =
                 ParseCoordinateMappingStr(coordinate_mapping_str);
@@ -211,41 +223,42 @@ public:
         torch::Tensor filters_backprop;
         torch::Tensor inp_features_backprop;
 
-#define CALL(feat_t, out_t, real_t, index_t, fn_suffix)                       \
-    if (CompareTorchDtype<feat_t>(feat_dtype) &&                              \
-        CompareTorchDtype<real_t>(real_dtype) &&                              \
-        CompareTorchDtype<index_t>(index_dtype)) {                            \
-        filters_backprop = torch::empty(                                      \
-                filters.sizes(), torch::dtype(real_dtype).device(device));    \
-        ContinuousConvTransposeBackpropFilter##fn_suffix<feat_t, out_t,       \
-                                                         real_t, index_t>(    \
-                filters, out_positions, out_importance, extents, offset,      \
-                inp_positions, inp_features, inp_neighbors_importance_sum,    \
-                inp_neighbors_row_splits, neighbors_index,                    \
-                neighbors_importance, neighbors_row_splits,                   \
-                out_features_gradient, align_corners, coordinate_mapping,     \
-                normalize, interpolation, max_temp_mem_MB, filters_backprop); \
-                                                                              \
-        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,         \
-                inv_neighbors_importance;                                     \
-        std::tie(inv_neighbors_index, _inv_neighbors_row_splits,              \
-                 inv_neighbors_importance) =                                  \
-                InvertNeighborsList(inp_positions.size(0), neighbors_index,   \
-                                    neighbors_row_splits,                     \
-                                    neighbors_importance);                    \
-        inp_features_backprop =                                               \
-                torch::ones(inp_features.sizes(),                             \
-                            torch::dtype(real_dtype).device(device));         \
-        auto filters_transposed = filters.transpose(3, 4).contiguous();       \
-                                                                              \
-        ContinuousConv##fn_suffix<feat_t, out_t, real_t, index_t>(            \
-                filters_transposed, inp_positions, extents, offset,           \
-                out_positions, out_features_gradient, out_importance,         \
-                inv_neighbors_index, inv_neighbors_importance,                \
-                inp_neighbors_row_splits, align_corners, coordinate_mapping,  \
-                normalize, interpolation, max_temp_mem_MB,                    \
-                inp_features_backprop);                                       \
-        dispatch_success = true;                                              \
+#define CALL(feat_t, out_t, real_t, index_t, fn_suffix)                      \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                             \
+        CompareTorchDtype<real_t>(real_dtype) &&                             \
+        CompareTorchDtype<index_t>(index_dtype)) {                           \
+        filters_backprop = torch::empty(                                     \
+                filters.sizes(), torch::dtype(real_dtype).device(device));   \
+        ContinuousConvTransposeBackpropFilter##fn_suffix<feat_t, out_t,      \
+                                                         real_t, index_t>(   \
+                filters, out_positions, out_importance, extents, offset,     \
+                inp_positions, inp_features, inp_neighbors_importance_sum,   \
+                inp_neighbors_row_splits, neighbors_index,                   \
+                neighbors_importance, neighbors_row_splits,                  \
+                out_features_gradient, align_corners, coordinate_mapping,    \
+                normalize, interpolation, max_temp_mem_MB, allow_tf32,       \
+                filters_backprop);                                           \
+                                                                             \
+        torch::Tensor inv_neighbors_index, _inv_neighbors_row_splits,        \
+                inv_neighbors_importance;                                    \
+        std::tie(inv_neighbors_index, _inv_neighbors_row_splits,             \
+                 inv_neighbors_importance) =                                 \
+                InvertNeighborsList(inp_positions.size(0), neighbors_index,  \
+                                    neighbors_row_splits,                    \
+                                    neighbors_importance);                   \
+        inp_features_backprop =                                              \
+                torch::ones(inp_features.sizes(),                            \
+                            torch::dtype(real_dtype).device(device));        \
+        auto filters_transposed = filters.transpose(3, 4).contiguous();      \
+                                                                             \
+        ContinuousConv##fn_suffix<feat_t, out_t, real_t, index_t>(           \
+                filters_transposed, inp_positions, extents, offset,          \
+                out_positions, out_features_gradient, out_importance,        \
+                inv_neighbors_index, inv_neighbors_importance,               \
+                inp_neighbors_row_splits, align_corners, coordinate_mapping, \
+                normalize, interpolation, max_temp_mem_MB, allow_tf32,       \
+                inp_features_backprop);                                      \
+        dispatch_success = true;                                             \
     }
 
         bool dispatch_success = false;
@@ -257,6 +270,14 @@ public:
                         "ContinuousConvTranspose backward was not compiled "
                         "with CUDA support")
 #endif
+        } else if (inp_features.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+            CALL(float, float, float, int32_t, SYCL)
+#else
+            TORCH_CHECK(false,
+                        "ContinuousConvTranspose backward was not compiled "
+                        "with SYCL support")
+#endif
         } else {
             CALL(float, float, float, int32_t, CPU)
         }
@@ -266,6 +287,7 @@ public:
                             " as input for inp_features and " +
                             neighbors_index.toString() +
                             " as input for neighbors_index")
+#undef CALL
 
         return {filters_backprop,
                 Variable(),
@@ -274,6 +296,7 @@ public:
                 Variable(),
                 Variable(),
                 inp_features_backprop,
+                Variable(),
                 Variable(),
                 Variable(),
                 Variable(),
@@ -306,14 +329,15 @@ torch::Tensor ContinuousConvTranspose(
         const std::string& coordinate_mapping_str,
         const bool normalize,
         const std::string& interpolation_str,
-        const int64_t max_temp_mem_MB) {
+        const int64_t max_temp_mem_MB,
+        const bool allow_tf32) {
     auto ans = ContinuousConvTransposeFunction::apply(
             filters, out_positions, out_importance, extents, offset,
             inp_positions, inp_features, inp_neighbors_index,
             inp_neighbors_importance_sum, inp_neighbors_row_splits,
             neighbors_index, neighbors_importance, neighbors_row_splits,
             align_corners, coordinate_mapping_str, normalize, interpolation_str,
-            max_temp_mem_MB);
+            max_temp_mem_MB, allow_tf32);
     return ans;
 }
 
@@ -326,5 +350,5 @@ static auto registry = torch::RegisterOperators(
         "neighbors_importance, Tensor neighbors_row_splits, bool "
         "align_corners=False, str coordinate_mapping=\"ball_to_cube_radial\", "
         "bool normalize=False, str interpolation=\"linear\", int "
-        "max_temp_mem_MB=64) -> Tensor",
+        "max_temp_mem_MB=64, bool allow_tf32=False) -> Tensor",
         &::ContinuousConvTranspose);

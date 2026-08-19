@@ -54,16 +54,27 @@ jobs:
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cpu-shared-ml-release
           fi
-      - name: Docker test
+      - name: Docker test (C++ and integration)
         run: |
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
-            docker/docker_test.sh cpu-static
+            docker/docker_test.sh cpu-static lib
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_test.sh cpu-static-release
+            docker/docker_test.sh cpu-static-release lib
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_test.sh cpu-shared-ml
+            docker/docker_test.sh cpu-shared-ml lib
           elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_test.sh cpu-shared-ml-release
+            docker/docker_test.sh cpu-shared-ml-release lib
+          fi
+      - name: Docker test (Python)
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
+            docker/docker_test.sh cpu-static python
+          elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-static-release python
+          elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_test.sh cpu-shared-ml python
+          elif [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON"  ] && [ "${{ env.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-shared-ml-release python
           fi
       - name: Generate package attestation
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}
@@ -149,7 +160,9 @@ jobs:
           name: open3d-wheel-linux-x86_64
 
       - name: Checkout Open3D-ML
-        run: git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main /tmp/Open3D-ML
+        # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+        # requirements-torch.txt bump on ss/xpu is merged upstream.
+        run: git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b ss/xpu /tmp/Open3D-ML
 
       - name: Install doc dependencies
         run: |

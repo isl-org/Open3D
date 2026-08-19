@@ -7,6 +7,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SYCLContext.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/utility/Logging.h"
 
@@ -52,9 +53,13 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
     // Each work-group processes TILE_ROWS rows and WG_X columns. Within a row
     // tile, consecutive runs of identical destination indices are reduced into
     // one atomic add per (column, run), reducing atomic pressure while
-    // preserving index_add semantics.
-    constexpr int WG_X = 256;
+    // preserving index_add semantics. `l_idx`'s SLM usage (TILE_ROWS int64_t)
+    // is fixed per work-group, not per work-item, so slm_bytes_per_wi=0;
+    // sg_size=16 matches the kernel's reqd_sub_group_size below.
+    constexpr int kRequiredSubgroupSize = 16;
     constexpr int TILE_ROWS = 8;
+    const int WG_X = static_cast<int>(sy::MaxWorkGroupSizeForSLM(
+            queue.get_device(), 0, kRequiredSubgroupSize));
     const int64_t num_row_tiles = ceil_div(index_length, int64_t(TILE_ROWS));
     const int64_t global_x = round_up(broadcasting_elems, int64_t(WG_X));
     sycl::nd_range<2> launch(sycl::range<2>(num_row_tiles, global_x),
@@ -67,7 +72,7 @@ void LaunchIndexAddContiguousSYCLKernel(sycl::queue& queue,
              cgh.parallel_for<IndexAddContiguousKernel<scalar_t>>(
                      launch,
                      [=](sycl::nd_item<2> it) [[sycl::reqd_sub_group_size(
-                             16)]] {
+                             kRequiredSubgroupSize)]] {
                          const int lid_x = int(it.get_local_id(1));
                          const int64_t group_y = it.get_group(0);
                          const int64_t col = it.get_global_id(1);
@@ -145,8 +150,7 @@ void IndexAddSYCL_(int64_t dim,
 
     const int64_t index_length = index_contiguous.GetLength();
 
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(src.GetDevice());
+    sycl::queue queue = sy::GetQueue(src.GetDevice());
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
         LaunchIndexAddContiguousSYCLKernel<scalar_t>(

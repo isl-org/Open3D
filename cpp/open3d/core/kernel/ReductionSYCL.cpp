@@ -13,6 +13,7 @@
 /// \c SYCLArgReductionEngine uses a local tree reduction for argmin/argmax.
 
 #include <limits>
+#include <type_traits>
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
@@ -65,6 +66,19 @@ inline size_t ReduceTreeInitialStride(size_t sz) {
     if (sz <= 1) return 0;
     return size_t{1} << (sizeof(size_t) * 8 - sycl::clz(sz - 1) - 1);
 }
+
+/// Item 19: restrict the manual SLM tree reduction (see the multi-output
+/// path below) to ONLY the operator observed to be broken with the driver's
+/// built-in \c sycl::reduce_over_group on Arc A770 (\c
+/// sycl::multiplies<int64_t>, which silently returns 0 -- see the file-level
+/// comment). Every other operator (sum, min, max, logical_and/or) restores
+/// the built-in fast path via \c if \c constexpr dispatch on this trait.
+/// File the driver bug upstream and drop this once fixed (URL below).
+///
+template <class Op>
+struct UseManualGroupReduce : std::false_type {};
+template <class T>
+struct UseManualGroupReduce<sycl::multiplies<T>> : std::true_type {};
 
 template <typename scalar_t>
 struct ArgMinReduction {
@@ -188,7 +202,7 @@ template <class ReductionOp, typename scalar_t>
 void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto queue = sy::GetQueue(device);
     size_t work_group_size =
             std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;
@@ -202,11 +216,15 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         // dimension). Favors one launch over per-output submits; inner loop is
         // a simple strided scan with per-element GetInputPtrDevice.
         //
-        // The group is reduced with a manual local-memory tree (matching
-        // SYCLArgReductionEngine below) rather than sycl::reduce_over_group: on
-        // Arc A770, reduce_over_group with a sycl::multiplies<int64_t> for
-        // Prod) was observed to silently return 0 instead of the correct
-        // product, even though each work-item's partial result was correct.
+        // Item 19: the group reduction uses the built-in sycl::reduce_over_
+        // group for every operator EXCEPT sycl::multiplies (see
+        // UseManualGroupReduce above), which falls back to a manual
+        // local-memory tree (matching SYCLArgReductionEngine below): on Arc
+        // A770, reduce_over_group with sycl::multiplies<int64_t> (for Prod)
+        // was observed to silently return 0 instead of the correct product,
+        // even though each work-item's partial result was correct. Dispatch
+        // is compile-time (if constexpr on UseManualGroupReduce<ReductionOp>),
+        // so sum/min/max/logical_and/logical_or pay no extra SLM/barrier cost.
         //
         // num_outputs can exceed 2^31 / work_group_size, so the launch is
         // capped at kMaxSafeLaunchSize total work-items (comfortably under the
@@ -214,7 +232,16 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
         // work-group grid-strides over multiple outputs.
         int64_t num_work_groups = std::min<int64_t>(
                 num_outputs, kMaxSafeLaunchSize / int64_t(work_group_size));
+        constexpr bool kUseManualGroupReduce =
+                UseManualGroupReduce<ReductionOp>::value;
         queue.submit([&](sycl::handler& cgh) {
+                 // local_vals is only read/written on the manual-tree path;
+                 // sycl::local_accessor requires a compile-time-known
+                 // element count either way, and an unused local_accessor
+                 // costs nothing at runtime, so it's simplest to always
+                 // declare it (avoids duplicating the whole kernel body for
+                 // a per-instantiation branch that is already resolved by
+                 // if constexpr below).
                  sycl::local_accessor<scalar_t, 1> local_vals(
                          sycl::range<1>(work_group_size), cgh);
                  cgh.parallel_for(
@@ -237,28 +264,37 @@ void SYCLReductionEngine(Device device, Indexer indexer, scalar_t identity) {
                                          item_out = red_op(item_out, *val_ptr);
                                      }
                                  }
-                                 //  scalar_t grp_val = sycl::reduce_over_group(
-                                 //     item.get_group(), item_out, red_op);
-                                 local_vals[local_id] = item_out;
-                                 item.barrier(sycl::access::fence_space::
-                                                      local_space);
 
-                                 const size_t local_sz =
-                                         item.get_local_range(0);
-                                 for (size_t stride =
-                                              ReduceTreeInitialStride(local_sz);
-                                      stride > 0; stride >>= 1) {
-                                     if (local_id < stride &&
-                                         local_id + stride <
-                                                 item.get_local_range(0)) {
-                                         local_vals[local_id] = red_op(
-                                                 local_vals[local_id],
-                                                 local_vals[local_id + stride]);
-                                     }
+                                 scalar_t grp_val;
+                                 if constexpr (kUseManualGroupReduce) {
+                                     local_vals[local_id] = item_out;
                                      item.barrier(sycl::access::fence_space::
                                                           local_space);
+
+                                     const size_t local_sz =
+                                             item.get_local_range(0);
+                                     for (size_t stride =
+                                                  ReduceTreeInitialStride(
+                                                          local_sz);
+                                          stride > 0; stride >>= 1) {
+                                         if (local_id < stride &&
+                                             local_id + stride <
+                                                     item.get_local_range(0)) {
+                                             local_vals[local_id] = red_op(
+                                                     local_vals[local_id],
+                                                     local_vals[local_id +
+                                                                stride]);
+                                         }
+                                         item.barrier(
+                                                 sycl::access::fence_space::
+                                                         local_space);
+                                     }
+                                     grp_val = local_vals[0];
+                                 } else {
+                                     grp_val = sycl::reduce_over_group(
+                                             item.get_group(), item_out,
+                                             red_op);
                                  }
-                                 scalar_t grp_val = local_vals[0];
 
                                  if (local_id == 0) {
                                      scalar_t* out_ptr =
@@ -347,7 +383,7 @@ template <class ReductionOp, typename scalar_t>
 void SYCLArgReductionEngine(Device device, Indexer indexer, scalar_t identity) {
     auto device_props =
             sy::SYCLContext::GetInstance().GetDeviceProperties(device);
-    auto queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    auto queue = sy::GetQueue(device);
     size_t work_group_size =
             std::min<size_t>(256, device_props.max_work_group_size);
     ReductionOp red_op;

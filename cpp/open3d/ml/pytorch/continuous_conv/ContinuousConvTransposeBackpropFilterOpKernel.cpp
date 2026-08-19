@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTransposeBackpropFilter.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
@@ -33,7 +34,9 @@ void ContinuousConvTransposeBackpropFilterCPU(
         const bool normalize,
         const InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop) {
+    WarnIfTF32NotSupported(allow_tf32);
     const bool individual_extents = extents.size(0) > 1;
     const bool isotropic_extents = extents.size(1) == 1;
     std::vector<int> filter_dims;
@@ -75,6 +78,7 @@ void ContinuousConvTransposeBackpropFilterCPU(
             const bool align_corners,                                          \
             const CoordinateMapping coordinate_mapping, const bool normalize,  \
             const InterpolationMode interpolation,                             \
-            const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)

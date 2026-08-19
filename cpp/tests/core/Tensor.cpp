@@ -2223,6 +2223,24 @@ TEST_P(TensorPermuteDevices, ReduceProd) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({0.f}));
 }
 
+// Regression test for a SYCL driver bug on Arc A770: multi-output Prod
+// reduction (num_outputs > 1) over Int64 uses sycl::multiplies<int64_t> as
+// the reduction operator, which reduce_over_group was observed to silently
+// return 0 for instead of the correct product. See ReductionSYCL.cpp's
+// UseManualGroupReduce trait, which forces this case through a manual
+// local-memory tree reduction instead of the built-in group reduce.
+TEST_P(TensorPermuteDevices, ReduceProdInt64MultiOutput) {
+    core::Device device = GetParam();
+    // Shape {3, 4}, reduce along dim 0 -> 4 outputs (multi-output path),
+    // each output is a product of 3 small positive int64 values.
+    core::Tensor src = core::Tensor::Init<int64_t>(
+            {{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}}, device);
+    core::Tensor dst = src.Prod({0}, false);
+    EXPECT_EQ(dst.GetShape(), core::SizeVector({4}));
+    EXPECT_EQ(dst.ToFlatVector<int64_t>(),
+              std::vector<int64_t>({45, 120, 231, 384}));
+}
+
 TEST_P(TensorPermuteDevices, ReduceMin) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init<float>({{{22.f, 23.f, 20.f, 9.f},

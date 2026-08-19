@@ -6,6 +6,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SYCLContext.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Arange.h"
@@ -19,16 +20,15 @@ void ArangeSYCL(const Tensor& start,
                 const Tensor& step,
                 Tensor& dst) {
     Dtype dtype = start.GetDtype();
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(start.GetDevice());
+    sycl::queue queue = sy::GetQueue(start.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t sstart = start.Item<scalar_t>();
         scalar_t sstep = step.Item<scalar_t>();
         scalar_t* __restrict__ dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
-        queue.parallel_for(n, [=](int64_t i) [[intel::kernel_args_restrict]] {
-                 dst_ptr[i] = sstart + static_cast<scalar_t>(sstep * i);
-             }).wait_and_throw();
+        core::ParallelFor(queue, n, [=](int64_t i) {
+            dst_ptr[i] = sstart + static_cast<scalar_t>(sstep * i);
+        });
     });
 }
 

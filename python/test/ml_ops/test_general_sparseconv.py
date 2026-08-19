@@ -43,6 +43,9 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
     conv_attrs = {
         'normalize': with_normalization,
     }
+    torch_tf32_kw = {
+        'allow_tf32': False
+    } if ml.module.__name__ == 'torch' else {}
 
     filters = rng.random(size=(kernel_size, in_channels,
                                out_channels)).astype(dtype)
@@ -100,13 +103,15 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
         return mltest.run_op(ml, ml.device, True, ml.ops.sparse_conv, filters,
                              inp_features, inp_importance, neighbors_index,
                              neighbors_kernel_index, neighbors_importance,
-                             neighbors_row_splits, **conv_attrs)
+                             neighbors_row_splits, **conv_attrs,
+                             **torch_tf32_kw)
 
     def sparse_conv_filter(filters):
         return mltest.run_op(ml, ml.device, True, ml.ops.sparse_conv, filters,
                              inp_features, inp_importance, neighbors_index,
                              neighbors_kernel_index, neighbors_importance,
-                             neighbors_row_splits, **conv_attrs)
+                             neighbors_row_splits, **conv_attrs,
+                             **torch_tf32_kw)
 
     def sparse_conv_filter_backprop(out_features_gradient, filters):
         return mltest.run_op_grad(ml,
@@ -235,3 +240,45 @@ def test_sparseconv_gradient(ml, dtype, kernel_size, out_channels, in_channels,
         debug_outputs=dbg,
         **tolerance)
     assert transpose_feature_gradient_OK
+
+    if ml.module.__name__ == 'torch' and ml.device_is_gpu:
+        tf32_tol = {'rtol': 1e-2, 'atol': 1e-2}
+        y_tf32 = mltest.run_op(ml,
+                               ml.device,
+                               True,
+                               ml.ops.sparse_conv,
+                               filters,
+                               inp_features,
+                               inp_importance,
+                               neighbors_index,
+                               neighbors_kernel_index,
+                               neighbors_importance,
+                               neighbors_row_splits,
+                               allow_tf32=True,
+                               **conv_attrs)
+        y_ref = sparse_conv_infeats(inp_features)
+        np.testing.assert_allclose(y_tf32, y_ref, **tf32_tol)
+
+        y_tr_tf32 = mltest.run_op(ml,
+                                  ml.device,
+                                  True,
+                                  ml.ops.sparse_conv_transpose,
+                                  filters.transpose([0, 2, 1]),
+                                  inp_importance,
+                                  y_arr,
+                                  neighbors_index,
+                                  neighbors_importance_sum,
+                                  neighbors_row_splits,
+                                  inv_neighbors_index,
+                                  inv_neighbors_kernel_index,
+                                  inv_neighbors_importance,
+                                  inv_neighbors_row_splits,
+                                  allow_tf32=True,
+                                  **conv_attrs)
+        y_tr_ref = mltest.run_op(
+            ml, ml.device, True, ml.ops.sparse_conv_transpose,
+            filters.transpose([0, 2, 1]), inp_importance, y_arr,
+            neighbors_index, neighbors_importance_sum, neighbors_row_splits,
+            inv_neighbors_index, inv_neighbors_kernel_index,
+            inv_neighbors_importance, inv_neighbors_row_splits, **conv_attrs)
+        np.testing.assert_allclose(y_tr_tf32, y_tr_ref, **tf32_tol)

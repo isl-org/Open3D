@@ -136,6 +136,7 @@ private:
 class CUDAScopedStream {
 private:
     struct CreateNewStreamTag {
+        constexpr CreateNewStreamTag() = default;
         CreateNewStreamTag(const CreateNewStreamTag&) = delete;
         CreateNewStreamTag& operator=(const CreateNewStreamTag&) = delete;
         CreateNewStreamTag(CreateNewStreamTag&&) = delete;

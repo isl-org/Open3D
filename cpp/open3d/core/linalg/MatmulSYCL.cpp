@@ -24,7 +24,7 @@ void MatmulSYCL(void* A_data,
                 Dtype dtype,
                 const Device& device) {
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
         blas::column_major::gemm(queue, transpose::N, transpose::N, m, n, k,

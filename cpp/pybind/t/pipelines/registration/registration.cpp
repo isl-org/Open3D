@@ -62,8 +62,9 @@ static const std::unordered_map<std::string, std::string>
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
                  "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationSymmetric``, "
                  "``TransformationEstimationForColoredICP``, "
-                 "``TransformationEstimationForGeneralizedICP``)"},
+                 "``TransformationEstimationForDopplerICP``)"},
                 {"init_source_to_target", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
@@ -120,6 +121,13 @@ void pybind_registration_declarations(py::module &m) {
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to "
                    "plane distance.");
+    py::class_<TransformationEstimationSymmetric,
+               PyTransformationEstimation<TransformationEstimationSymmetric>,
+               TransformationEstimation>
+            te_sym(m_registration, "TransformationEstimationSymmetric",
+                   "Class to estimate a source-to-target transformation with "
+                   "symmetric point-to-plane ICP. Both point clouds must "
+                   "have normals.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
@@ -291,6 +299,28 @@ void pybind_registration_definitions(py::module &m) {
                            &TransformationEstimationPointToPlane::kernel_,
                            "Robust Kernel used in the Optimization");
 
+    // open3d.t.pipelines.registration.TransformationEstimationSymmetric
+    // TransformationEstimation
+    auto te_sym = static_cast<py::class_<
+            TransformationEstimationSymmetric,
+            PyTransformationEstimation<TransformationEstimationSymmetric>,
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationSymmetric"));
+    py::detail::bind_default_constructor<TransformationEstimationSymmetric>(
+            te_sym);
+    py::detail::bind_copy_functions<TransformationEstimationSymmetric>(te_sym);
+    te_sym.def(py::init([](const RobustKernel &kernel) {
+                   return new TransformationEstimationSymmetric(kernel);
+               }),
+               "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationSymmetric &te) {
+                     return std::string("TransformationEstimationSymmetric");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationSymmetric::kernel_,
+                           "Robust Kernel used in the Optimization");
+
     // open3d.t.pipelines.registration.TransformationEstimationForColoredICP
     // TransformationEstimation
     auto te_col = static_cast<py::class_<
@@ -456,6 +486,22 @@ void pybind_registration_definitions(py::module &m) {
             "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m_registration, "icp",
                                  map_shared_argument_docstrings);
+
+    auto map_symmetric_icp_argument_docstrings = map_shared_argument_docstrings;
+    map_symmetric_icp_argument_docstrings["estimation_method"] =
+            "Only ``TransformationEstimationSymmetric`` is supported.";
+    m_registration.def(
+            "registration_symmetric_icp", &SymmetricICP,
+            py::call_guard<py::gil_scoped_release>(),
+            "Register source to target with symmetric point-to-plane ICP. "
+            "Both point clouds must have normals.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "init_source_to_target"_a =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            "estimation_method"_a = TransformationEstimationSymmetric(),
+            "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m_registration, "registration_symmetric_icp",
+                                 map_symmetric_icp_argument_docstrings);
 
     m_registration.def(
             "multi_scale_icp", &MultiScaleICP,

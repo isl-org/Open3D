@@ -53,52 +53,70 @@ struct BlockCopy64 {
 };
 
 /// Pick a CUDA \c block_t type from \ref kBlockCopyDivisors (bytes per block).
-#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...) \
-    [&] {                                              \
-        if (DIVISOR == 64) {                           \
-            using block_t = BlockCopy64;               \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 16) {                    \
-            using block_t = int4;                      \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 12) {                    \
-            using block_t = int3;                      \
-            return __VA_ARGS__();                      \
-        } else if (DIVISOR == 4) {                     \
-            using block_t = int;                       \
-            return __VA_ARGS__();                      \
-        } else {                                       \
-            using block_t = uint8_t;                   \
-            return __VA_ARGS__();                      \
-        }                                              \
+#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T(DIVISOR, ...)                     \
+    [&] {                                                                  \
+        if (DIVISOR == 64) {                                               \
+            using block_t = BlockCopy64;                                   \
+            static_assert(sizeof(block_t) == 64, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 16) {                                        \
+            using block_t = int4;                                          \
+            static_assert(sizeof(block_t) == 16, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 12) {                                        \
+            using block_t = int3;                                          \
+            static_assert(sizeof(block_t) == 12, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 4) {                                         \
+            using block_t = int;                                           \
+            static_assert(sizeof(block_t) == 4, "block_t size mismatch");  \
+            return __VA_ARGS__();                                          \
+        } else {                                                           \
+            using block_t = uint8_t;                                       \
+            static_assert(sizeof(block_t) == 1, "block_t size mismatch");  \
+            return __VA_ARGS__();                                          \
+        }                                                                  \
     }()
 #endif  // __CUDACC__
 
 #ifdef SYCL_LANGUAGE_VERSION
+
+// sycl::vec<uint32_t, 3> is NOT 12 bytes: the SYCL spec requires 3-element
+// vectors to have the same size/alignment as the 4-element vector (16 bytes,
+// 16-byte aligned), so it cannot be used for the 12-byte divisor. Use a
+// plain POD struct instead, which packs to exactly 12 bytes.
+struct BlockCopy12 {
+    uint32_t v[3];
+};
 
 /// Reinterpret object byte arrays as \c sycl::vec / scalar block arrays for
 /// wide vector loads/stores (mirrors CUDA \c DISPATCH_DIVISOR_SIZE_TO_BLOCK_T).
 ///
 /// Must be a macro (not a template) so \c using block_t = ... is local to the
 /// caller's scope.
-#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(DIVISOR, ...) \
-    [&] {                                                   \
-        if (DIVISOR == 64) {                                \
-            using block_t = sycl::vec<uint32_t, 16>;        \
-            return __VA_ARGS__();                           \
-        } else if (DIVISOR == 16) {                         \
-            using block_t = sycl::vec<uint32_t, 4>;         \
-            return __VA_ARGS__();                           \
-        } else if (DIVISOR == 12) {                         \
-            using block_t = sycl::vec<uint32_t, 3>;         \
-            return __VA_ARGS__();                           \
-        } else if (DIVISOR == 4) {                          \
-            using block_t = uint32_t;                       \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            using block_t = uint8_t;                        \
-            return __VA_ARGS__();                           \
-        }                                                   \
+#define DISPATCH_DIVISOR_SIZE_TO_BLOCK_T_SYCL(DIVISOR, ...)                \
+    [&] {                                                                  \
+        if (DIVISOR == 64) {                                               \
+            using block_t = sycl::vec<uint32_t, 16>;                       \
+            static_assert(sizeof(block_t) == 64, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 16) {                                        \
+            using block_t = sycl::vec<uint32_t, 4>;                        \
+            static_assert(sizeof(block_t) == 16, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 12) {                                        \
+            using block_t = BlockCopy12;                                   \
+            static_assert(sizeof(block_t) == 12, "block_t size mismatch"); \
+            return __VA_ARGS__();                                          \
+        } else if (DIVISOR == 4) {                                         \
+            using block_t = uint32_t;                                      \
+            static_assert(sizeof(block_t) == 4, "block_t size mismatch");  \
+            return __VA_ARGS__();                                          \
+        } else {                                                           \
+            using block_t = uint8_t;                                       \
+            static_assert(sizeof(block_t) == 1, "block_t size mismatch");  \
+            return __VA_ARGS__();                                          \
+        }                                                                  \
     }()
 
 #endif  // SYCL_LANGUAGE_VERSION

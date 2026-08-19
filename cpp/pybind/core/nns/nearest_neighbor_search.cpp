@@ -28,6 +28,10 @@ search operations for a dataset of points with shape {n,d} with `n` as the numbe
 of points and `d` as the dimension of the points. The class supports knn search,
 fixed-radius search, multi-radius search, and hybrid search.
 
+For CPU vs CUDA vs SYCL routing and algorithm differences, see the Open3D
+documentation page *NNS and HashMap backends (CPU / CUDA / SYCL)*
+(``docs/nns_hashmap_cpu_cuda_sycl.md``).
+
 Example:
     The following example demonstrates how to perform knn search using the class::
         

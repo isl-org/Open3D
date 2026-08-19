@@ -274,6 +274,81 @@ def test_compare_to_conv3d_batches(ml, dtype, kernel_size, out_channels,
         np.testing.assert_allclose(y_out, y_conv3d, rtol=1e-3, atol=1e-5)
 
 
+@mltest.parametrize.ml_torch_only
+def test_sparseconv_allow_tf32(ml):
+    if not ml.device_is_gpu:
+        pytest.skip('allow_tf32 tests require a GPU ml backend')
+
+    np.random.seed(0)
+    dtype = np.float32
+    kernel_size = [3, 3, 3]
+    in_channels, out_channels = 4, 8
+    tf32_tol = {'rtol': 1e-2, 'atol': 1e-2}
+
+    max_grid_extent = 10
+    inp_positions = np.unique(np.random.randint(0, max_grid_extent,
+                                                (256, 3)).astype(dtype),
+                              axis=0)
+    out_positions = np.unique(np.random.randint(
+        np.max(kernel_size) // 2, max_grid_extent - np.max(kernel_size) // 2,
+        (5, 3)).astype(dtype),
+                              axis=0)
+    inp_importance = np.empty((0,), dtype=dtype)
+    out_importance = np.empty((0,), dtype=dtype)
+    voxel_size = 0.2
+
+    inp_features = np.random.uniform(size=inp_positions.shape[0:1] +
+                                     (in_channels,)).astype(dtype)
+
+    conv = ml.layers.SparseConv(in_channels=in_channels,
+                                filters=out_channels,
+                                kernel_size=kernel_size,
+                                normalize=False,
+                                allow_tf32=False)
+    conv.to(ml.device)
+
+    def run_sparse_conv(allow_tf32):
+        conv.allow_tf32 = allow_tf32
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             conv,
+                             inp_features,
+                             inp_positions * voxel_size,
+                             out_positions * voxel_size,
+                             voxel_size=voxel_size,
+                             inp_importance=inp_importance)
+
+    y_ref = run_sparse_conv(False)
+    y_tf32 = run_sparse_conv(True)
+    assert y_tf32.shape == y_ref.shape
+    np.testing.assert_allclose(y_tf32, y_ref, **tf32_tol)
+
+    conv_transpose = ml.layers.SparseConvTranspose(in_channels=in_channels,
+                                                   filters=out_channels,
+                                                   kernel_size=kernel_size,
+                                                   normalize=False,
+                                                   allow_tf32=False)
+    conv_transpose.to(ml.device)
+
+    def run_sparse_conv_transpose(allow_tf32):
+        conv_transpose.allow_tf32 = allow_tf32
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             conv_transpose,
+                             inp_features,
+                             inp_positions * voxel_size,
+                             out_positions * voxel_size,
+                             voxel_size=voxel_size,
+                             out_importance=out_importance)
+
+    y_tr_ref = run_sparse_conv_transpose(False)
+    y_tr_tf32 = run_sparse_conv_transpose(True)
+    assert y_tr_tf32.shape == y_tr_ref.shape
+    np.testing.assert_allclose(y_tr_tf32, y_tr_ref, **tf32_tol)
+
+
 # yapf: disable
 @pytest.mark.parametrize("kernel_size, out_channels, in_channels, with_out_importance, with_normalization",[
                              ([1,1,1],            2,           7,                True,              False),

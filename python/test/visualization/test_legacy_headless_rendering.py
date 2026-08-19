@@ -9,11 +9,45 @@ open3d.visualization.Visualizer, used when no display is available. See also
 test_cpu_rendering.py, which covers the new Filament-based
 open3d.visualization.rendering.OffscreenRenderer's CPU (software) rendering."""
 
+import ctypes
 import platform
 import os
 import multiprocessing
 import numpy as np
 import pytest
+
+# Child process exit code reporting that this machine has no EGL driver able to
+# render desktop OpenGL, e.g. a GPU-less container without a software rasterizer.
+NO_EGL_EXIT_CODE = 77
+
+
+def egl_desktop_gl_available():
+    """Returns whether libEGL can bind the desktop OpenGL API, which the legacy
+    Visualizer's offscreen context requires (see EGLOffscreenContext.cpp).
+    Drivers exposing OpenGL ES only, or no driver at all, cannot provide it."""
+    EGL_OPENGL_API = 0x30A2
+    try:
+        egl = ctypes.CDLL("libEGL.so.1")
+    except OSError:
+        return False
+    egl.eglGetDisplay.restype = ctypes.c_void_p
+    egl.eglGetDisplay.argtypes = [ctypes.c_void_p]
+    egl.eglInitialize.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.POINTER(ctypes.c_int)
+    ]
+    egl.eglTerminate.argtypes = [ctypes.c_void_p]
+
+    display = egl.eglGetDisplay(None)  # EGL_DEFAULT_DISPLAY
+    if not display:
+        return False
+    major, minor = ctypes.c_int(), ctypes.c_int()
+    if not egl.eglInitialize(display, ctypes.byref(major), ctypes.byref(minor)):
+        return False
+    available = bool(egl.eglBindAPI(EGL_OPENGL_API))
+    egl.eglTerminate(display)
+    return available
 
 
 def capture_headless():
@@ -21,6 +55,8 @@ def capture_headless():
     the Visualizer to fall back to its offscreen EGL context."""
     os.environ.pop("DISPLAY", None)
     os.environ.pop("WAYLAND_DISPLAY", None)
+    if not egl_desktop_gl_available():
+        raise SystemExit(NO_EGL_EXIT_CODE)
     import open3d as o3d
 
     mesh = o3d.geometry.TriangleMesh.create_sphere(radius=1.0)
@@ -59,4 +95,7 @@ def test_legacy_visualizer_headless_capture():
         proc.kill()
         proc.join()  # Reap the killed process to avoid leaving a zombie.
         pytest.fail(__name__ + " did not complete.")
+    if proc.exitcode == NO_EGL_EXIT_CODE:
+        pytest.skip(
+            "No EGL driver with desktop OpenGL support on this machine.")
     assert proc.exitcode == 0
