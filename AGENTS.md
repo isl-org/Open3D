@@ -39,6 +39,8 @@ functionality is out of scope.
 - Tooling/style/CI helpers: `util/`
 - Docs: `docs/` and inline docs in C++ headers (Doxygen) and Python bindings.
 
+## Read computer local environment information from AGENTS.local.md
+
 ## Build
 
 - `mkdir -p build && cd build`

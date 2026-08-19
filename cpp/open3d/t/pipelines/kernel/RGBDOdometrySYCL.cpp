@@ -60,9 +60,10 @@ void ComputeOdometryResultPointToPlaneSYCL(
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: PersistentReduce uses local_accessor + barriers (large-WG
+    // SLM/barrier policy).
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     core::sy::PersistentReduce<kReduceDimOdometry, float>(
             queue, n, wgs, global_sum_ptr,
@@ -129,9 +130,10 @@ void ComputeOdometryResultIntensitySYCL(
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: PersistentReduce uses local_accessor + barriers (large-WG
+    // SLM/barrier policy).
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     core::sy::PersistentReduce<kReduceDimOdometry, float>(
             queue, n, wgs, global_sum_ptr,
@@ -206,9 +208,10 @@ void ComputeOdometryResultHybridSYCL(const core::Tensor &source_depth,
             core::Tensor::Zeros({kReduceDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: PersistentReduce uses local_accessor + barriers (large-WG
+    // SLM/barrier policy).
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     core::sy::PersistentReduce<kReduceDimOdometry, float>(
             queue, n, wgs, global_sum_ptr,
@@ -268,9 +271,10 @@ void ComputeOdometryInformationMatrixSYCL(const core::Tensor &source_vertex_map,
             core::Tensor::Zeros({kJtJDimOdometry}, core::Float32, device);
     float *global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: PersistentReduce uses local_accessor + barriers (large-WG
+    // SLM/barrier policy).
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     core::sy::PersistentReduce<kJtJDimOdometry, float>(
             queue, n, wgs, global_sum_ptr,

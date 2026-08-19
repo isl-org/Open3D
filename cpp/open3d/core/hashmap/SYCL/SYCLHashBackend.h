@@ -10,9 +10,9 @@
 /// in-tree).
 ///
 /// Open3D's tensor \ref HashMap and \ref HashSet share one backend API on CPU
-/// (TBB), CUDA (stdgpu default, slab optional), and SYCL (this file). See also
-/// `hashmap/SYCL_DESIGN.md` for a short overview; **this file header is the
-/// maintainer reference.**
+/// (TBB), CUDA (stdgpu default, slab optional), and SYCL (this file). Cross-
+/// backend design notes: `docs/nns_hashmap_cpu_cuda_sycl.md`. **This file
+/// header is the SYCL maintainer reference.**
 ///
 /// \section SYCLHashRole Role in the stack
 ///
@@ -270,7 +270,7 @@ SYCLHashBackend<Key, Hash, Eq>::SYCLHashBackend(
         int64_t wg_size)
     : DeviceHashBackend(init_capacity, key_dsize, value_dsizes, device),
       wg_size_(wg_size),
-      queue_(sy::SYCLContext::GetInstance().GetDefaultQueue(device)) {
+      queue_(sy::GetQueue(device)) {
     const int64_t device_max_wg_size = static_cast<int64_t>(
             queue_.get_device()
                     .get_info<sycl::info::device::max_work_group_size>());
@@ -701,7 +701,11 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 
     int* d_count = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
-    queue_.memset(d_count, 0, sizeof(int)).wait_and_throw();
+    // scan_kernel below touches d_count via raw USM, so on an out-of-order
+    // queue the SYCL runtime cannot infer the ordering on its own -- an
+    // explicit depends_on() is required for correctness, but nothing needs the
+    // zeroed value host-side, so a device-side dependency suffices.
+    sycl::event memset_event = queue_.memset(d_count, 0, sizeof(int));
 
     const int64_t kWgSize = wg_size_;
 
@@ -742,6 +746,7 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 
     int64_t global_size = ((bucket_count + kWgSize - 1) / kWgSize) * kWgSize;
     queue_.submit([&](sycl::handler& cgh) {
+              cgh.depends_on(memset_event);
               cgh.parallel_for(sycl::nd_range<1>(global_size, kWgSize),
                                scan_kernel);
           }).wait_and_throw();
@@ -755,14 +760,17 @@ int64_t SYCLHashBackend<Key, Hash, Eq>::GetActiveIndices(
 template <typename Key, typename Hash, typename Eq>
 void SYCLHashBackend<Key, Hash, Eq>::Clear() {
     this->buffer_->ResetHeap();
-    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t))
-            .wait_and_throw();
+    // These three memsets touch disjoint USM allocations, so their relative
+    // order doesn't matter for correctness; queue::wait() blocks on *all*
+    // command groups previously submitted to the queue.
+    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t));
     if (occupied_count_) {
-        queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
+        queue_.memset(occupied_count_, 0, sizeof(int));
     }
     if (non_empty_count_) {
-        queue_.memset(non_empty_count_, 0, sizeof(int)).wait_and_throw();
+        queue_.memset(non_empty_count_, 0, sizeof(int));
     }
+    queue_.wait_and_throw();
 }
 
 template <typename Key, typename Hash, typename Eq>
@@ -778,15 +786,17 @@ void SYCLHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
 
     slot_data_ = static_cast<uint64_t*>(MemoryManager::Malloc(
             bucket_count_ * sizeof(uint64_t), this->device_));
-    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t))
-            .wait_and_throw();
+    queue_.memset(slot_data_, 0, bucket_count_ * sizeof(uint64_t));
 
     occupied_count_ = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
-    queue_.memset(occupied_count_, 0, sizeof(int)).wait_and_throw();
+    queue_.memset(occupied_count_, 0, sizeof(int));
 
     non_empty_count_ = static_cast<int*>(
             MemoryManager::Malloc(sizeof(int), this->device_));
+    // As in Clear() above: these three memsets are on disjoint USM
+    // allocations, so there is a single wait at the end (blocking on all
+    // command groups previously submitted to the queue).
     queue_.memset(non_empty_count_, 0, sizeof(int)).wait_and_throw();
 }
 

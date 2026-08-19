@@ -21,7 +21,11 @@ namespace nns {
 
 /// \class NearestNeighborSearch
 ///
-/// \brief A Class for nearest neighbor search.
+/// \brief Facade for batched KNN, fixed-radius, hybrid, and multi-radius
+/// search.
+///
+/// Device routing (CPU NanoFlann vs CUDA/SYCL grid + GEMM KNN) is documented in
+/// `docs/nns_hashmap_cpu_cuda_sycl.md`.
 class NearestNeighborSearch {
 public:
     /// Constructor.

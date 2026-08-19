@@ -156,6 +156,141 @@ def test_compare_to_conv3d(ml, feat_out_type, real_type, filter_size,
     np.testing.assert_allclose(y, y_conv3d, **tol[feat_type])
 
 
+@mltest.parametrize.ml_torch_only
+def test_cconv_allow_tf32(ml):
+    # allow_tf32 is a torch-op kwarg; meaningful on GPU (SYCL XMX). CUDA ignores
+    # it (full fp32) but the flag must still run through the op stack.
+    if not ml.device_is_gpu:
+        pytest.skip('allow_tf32 tests require a GPU ml backend')
+
+    np.random.seed(0)
+    dtype = np.float32
+    filter_size = [3, 3, 3]
+    in_channels, out_channels = 4, 4
+    tf32_tol = {'rtol': 1e-2, 'atol': 1e-2}
+
+    conv_attrs = {
+        'align_corners': False,
+        'coordinate_mapping': 'identity',
+        'normalize': False,
+        'interpolation': 'nearest_neighbor',
+    }
+
+    filters = np.random.random(size=(*filter_size, in_channels,
+                                     out_channels)).astype(dtype)
+    inp_positions = np.random.rand(128, 3).astype(dtype)
+    inp_importance = np.empty((0,), dtype=dtype)
+    out_positions = np.random.rand(16, 3).astype(dtype)
+    extent = np.array([[0.4]], dtype=dtype)
+    offset = np.array([0.0, 0.0, 0.0], dtype=dtype)
+    inp_features = np.random.uniform(size=(inp_positions.shape[0],
+                                           in_channels)).astype(dtype)
+
+    fixed_radius_search = ml.layers.FixedRadiusSearch(metric='Linf')
+    neighbors_index, neighbors_row_splits, _ = mltest.run_op(
+        ml, ml.device, False, fixed_radius_search, inp_positions, out_positions,
+        extent[0, 0] / 2)
+    neighbors_importance = np.empty((0,), dtype=dtype)
+
+    inverted_neighbors_index, inverted_neighbors_row_splits, inverted_neighbors_importance = mltest.run_op(
+        ml, ml.device, False, ml.ops.invert_neighbors_list,
+        inp_positions.shape[0], neighbors_index, neighbors_row_splits,
+        neighbors_importance)
+    neighbors_importance_sum = np.empty((0,), dtype=dtype)
+    out_importance = np.empty((0,), dtype=dtype)
+
+    def run_conv(allow_tf32):
+        return mltest.run_op(ml,
+                             ml.device,
+                             True,
+                             ml.ops.continuous_conv,
+                             filters=filters,
+                             out_positions=out_positions,
+                             extents=extent,
+                             offset=offset,
+                             inp_positions=inp_positions,
+                             inp_features=inp_features,
+                             inp_importance=inp_importance,
+                             neighbors_index=neighbors_index,
+                             neighbors_importance=neighbors_importance,
+                             neighbors_row_splits=neighbors_row_splits,
+                             allow_tf32=allow_tf32,
+                             **conv_attrs)
+
+    y_ref = run_conv(False)
+    y_tf32 = run_conv(True)
+    assert y_tf32.shape == y_ref.shape
+    np.testing.assert_allclose(y_tf32, y_ref, **tf32_tol)
+
+    def run_conv_transpose(allow_tf32):
+        return mltest.run_op(
+            ml,
+            ml.device,
+            True,
+            ml.ops.continuous_conv_transpose,
+            filters=filters,
+            out_positions=inp_positions,
+            out_importance=out_importance,
+            extents=extent,
+            offset=offset,
+            inp_positions=out_positions,
+            inp_features=y_ref,
+            inp_neighbors_index=neighbors_index,
+            inp_neighbors_importance_sum=neighbors_importance_sum,
+            inp_neighbors_row_splits=neighbors_row_splits,
+            neighbors_index=inverted_neighbors_index,
+            neighbors_importance=inverted_neighbors_importance,
+            neighbors_row_splits=inverted_neighbors_row_splits,
+            allow_tf32=allow_tf32,
+            **conv_attrs)
+
+    y_tr_ref = run_conv_transpose(False)
+    y_tr_tf32 = run_conv_transpose(True)
+    assert y_tr_tf32.shape == y_tr_ref.shape
+    np.testing.assert_allclose(y_tr_tf32, y_tr_ref, **tf32_tol)
+
+    grad_out = np.ones_like(y_ref, dtype=dtype)
+    g_ref = mltest.run_op_grad(ml,
+                               ml.device,
+                               True,
+                               ml.ops.continuous_conv,
+                               filters,
+                               '',
+                               grad_out,
+                               filters=filters,
+                               out_positions=out_positions,
+                               extents=extent,
+                               offset=offset,
+                               inp_positions=inp_positions,
+                               inp_features=inp_features,
+                               inp_importance=inp_importance,
+                               neighbors_index=neighbors_index,
+                               neighbors_importance=neighbors_importance,
+                               neighbors_row_splits=neighbors_row_splits,
+                               allow_tf32=False,
+                               **conv_attrs)
+    g_tf32 = mltest.run_op_grad(ml,
+                                ml.device,
+                                True,
+                                ml.ops.continuous_conv,
+                                filters,
+                                '',
+                                grad_out,
+                                filters=filters,
+                                out_positions=out_positions,
+                                extents=extent,
+                                offset=offset,
+                                inp_positions=inp_positions,
+                                inp_features=inp_features,
+                                inp_importance=inp_importance,
+                                neighbors_index=neighbors_index,
+                                neighbors_importance=neighbors_importance,
+                                neighbors_row_splits=neighbors_row_splits,
+                                allow_tf32=True,
+                                **conv_attrs)
+    np.testing.assert_allclose(g_tf32, g_ref, **tf32_tol)
+
+
 # @pytest.mark.skip()
 @mltest.parametrize.ml
 # yapf: disable

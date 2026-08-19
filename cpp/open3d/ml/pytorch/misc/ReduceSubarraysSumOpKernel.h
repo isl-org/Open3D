@@ -18,3 +18,9 @@ template <class T>
 torch::Tensor ReduceSubarraysSumCUDA(const torch::Tensor& values,
                                      const torch::Tensor& row_splits);
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class T>
+torch::Tensor ReduceSubarraysSumSYCL(const torch::Tensor& values,
+                                     const torch::Tensor& row_splits);
+#endif

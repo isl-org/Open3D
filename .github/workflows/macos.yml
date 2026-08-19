@@ -143,6 +143,7 @@ jobs:
 
   build-wheel:
     needs: build-lib
+    if: ${{ always() && !cancelled() }}
     name: Build wheel
     permissions:
       contents: write  # upload
@@ -171,7 +172,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -182,7 +183,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download build artifact
@@ -264,6 +267,7 @@ jobs:
       contents: read
     runs-on: ${{ matrix.os }}
     needs: [build-wheel]
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -284,7 +288,7 @@ jobs:
     env:
       # TensorFlow v2.20 only supports macOS-14 (Apple Silicon) and python 3.9-3.13
       BUILD_TENSORFLOW_OPS: ${{ matrix.python_version >= '3.14' && 'OFF' || 'ON' }}
-      # PyTorch 2.10 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
+      # PyTorch 2.13 only supports macOS-14 (Apple Silicon) and python 3.10-3.14
       BUILD_PYTORCH_OPS: 'ON'
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
@@ -295,7 +299,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels

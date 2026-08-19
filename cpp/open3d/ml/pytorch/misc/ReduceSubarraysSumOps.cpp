@@ -45,6 +45,16 @@ torch::Tensor ReduceSubarraysSum(torch::Tensor values,
         TORCH_CHECK(false,
                     "ReduceSubarraysSum was not compiled with CUDA support")
 #endif
+    } else if (values.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL(int32_t, ReduceSubarraysSumSYCL)
+        CALL(int64_t, ReduceSubarraysSumSYCL)
+        CALL(float, ReduceSubarraysSumSYCL)
+        CALL(double, ReduceSubarraysSumSYCL)
+#else
+        TORCH_CHECK(false,
+                    "ReduceSubarraysSum was not compiled with SYCL support")
+#endif
     } else {
         CALL(int32_t, ReduceSubarraysSumCPU)
         CALL(int64_t, ReduceSubarraysSumCPU)

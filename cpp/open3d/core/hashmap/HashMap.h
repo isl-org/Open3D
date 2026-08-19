@@ -21,6 +21,9 @@ enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
 /// Tensor hash map (unique keys) on CPU, CUDA, or SYCL.
 ///
+/// CPU / CUDA / SYCL backend comparison and portable API semantics:
+/// `docs/nns_hashmap_cpu_cuda_sycl.md`.
+///
 /// \section HashMapOverview Overview
 ///
 /// Keys and values are stored in internal **buffers**. \ref Insert and \ref
