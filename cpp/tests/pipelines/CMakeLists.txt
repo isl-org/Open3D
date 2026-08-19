@@ -20,5 +20,6 @@ target_sources(tests PRIVATE
     registration/NormalDistributionsTransform.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp
+    registration/SymmetricICP.cpp
     registration/TransformationEstimation.cpp
 )
