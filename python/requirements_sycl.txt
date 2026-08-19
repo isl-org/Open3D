@@ -1,1 +1,3 @@
-dpcpp-cpp-rt==2025.3.1
+dpcpp-cpp-rt==2026.0.0
+onemkl-sycl-blas==2026.0.0
+onemkl-sycl-lapack==2026.0.0

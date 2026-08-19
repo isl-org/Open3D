@@ -11,8 +11,10 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/pipelines/registration/SymmetricICPImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Logging.h"
 
@@ -99,6 +101,35 @@ core::Tensor PoseToTransformation(const core::Tensor &pose) {
     // Scale [assumed to be 1].
     transformation[3][3] = 1;
     return transformation;
+}
+
+core::Tensor PoseToSymmetricTransformation(const core::Tensor &pose,
+                                           const core::Tensor &source_mean,
+                                           const core::Tensor &target_mean) {
+    core::AssertTensorShape(pose, {6});
+    core::AssertTensorShape(source_mean, {3});
+    core::AssertTensorShape(target_mean, {3});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
+    core::AssertTensorDtypes(source_mean, {core::Float32, core::Float64});
+    core::AssertTensorDtypes(target_mean, {core::Float32, core::Float64});
+
+    const core::Device host("CPU:0");
+    const core::Tensor pose_cpu = pose.To(host, core::Float64).Contiguous();
+    const core::Tensor source_mean_cpu =
+            source_mean.To(host, core::Float64).Contiguous();
+    const core::Tensor target_mean_cpu =
+            target_mean.To(host, core::Float64).Contiguous();
+
+    const Eigen::Vector6d pose_eigen =
+            Eigen::Map<const Eigen::Vector6d>(pose_cpu.GetDataPtr<double>());
+    const Eigen::Vector3d source_mean_eigen = Eigen::Map<const Eigen::Vector3d>(
+            source_mean_cpu.GetDataPtr<double>());
+    const Eigen::Vector3d target_mean_eigen = Eigen::Map<const Eigen::Vector3d>(
+            target_mean_cpu.GetDataPtr<double>());
+    const Eigen::Matrix4d transformation =
+            ::open3d::pipelines::registration::TransformSymmetricPoseToMatrix4d(
+                    pose_eigen, source_mean_eigen, target_mean_eigen);
+    return core::eigen_converter::EigenMatrixToTensor(transformation);
 }
 
 template <typename scalar_t>

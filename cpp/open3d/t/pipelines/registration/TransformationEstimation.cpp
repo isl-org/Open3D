@@ -10,6 +10,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/Registration.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 
 namespace open3d {
 namespace t {
@@ -33,6 +34,67 @@ static void AssertValidCorrespondences(
                 core::SizeVector({source_points.GetLength()}).ToString(),
                 core::SizeVector({source_points.GetLength(), 1}).ToString(),
                 correspondence_indices.GetShape().ToString());
+    }
+}
+
+static void AssertValidSymmetricInputs(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target) {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+
+    const core::Tensor &source_points = source.GetPointPositions();
+    const core::Tensor &target_points = target.GetPointPositions();
+    core::AssertTensorShape(source_points, {std::nullopt, 3});
+    core::AssertTensorShape(target_points, {std::nullopt, 3});
+    if (!source.GetPointAttr().Contains("normals") ||
+        !target.GetPointAttr().Contains("normals")) {
+        utility::LogError(
+                "SymmetricICP requires both source and target to have "
+                "normals.");
+    }
+
+    const core::Tensor &source_normals = source.GetPointNormals();
+    const core::Tensor &target_normals = target.GetPointNormals();
+    if (source_normals.GetShape() != source_points.GetShape()) {
+        utility::LogError(
+                "Source normals shape {} must match source positions shape "
+                "{} for SymmetricICP.",
+                source_normals.GetShape().ToString(),
+                source_points.GetShape().ToString());
+    }
+    if (target_normals.GetShape() != target_points.GetShape()) {
+        utility::LogError(
+                "Target normals shape {} must match target positions shape "
+                "{} for SymmetricICP.",
+                target_normals.GetShape().ToString(),
+                target_points.GetShape().ToString());
+    }
+
+    const core::Dtype dtype = source_points.GetDtype();
+    const core::Device device = source_points.GetDevice();
+    core::AssertTensorDtypes(source_points, {core::Float64, core::Float32});
+    core::AssertTensorDtype(target_points, dtype);
+    core::AssertTensorDtype(source_normals, dtype);
+    core::AssertTensorDtype(target_normals, dtype);
+    core::AssertTensorDevice(target_points, device);
+    core::AssertTensorDevice(source_normals, device);
+    core::AssertTensorDevice(target_normals, device);
+}
+
+static void AssertValidSymmetricCorrespondences(
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &source_points,
+        const core::Tensor &target_points) {
+    AssertValidCorrespondences(correspondence_indices, source_points);
+    const int64_t target_point_count = target_points.GetLength();
+    const core::Tensor invalid = correspondence_indices.Lt(-1).LogicalOr(
+            correspondence_indices.Ge(target_point_count));
+    if (invalid.Any().Item<bool>()) {
+        utility::LogError(
+                "SymmetricICP correspondences must be -1 or a target point "
+                "index in [0, {}), but an out-of-range value was found.",
+                target_point_count);
     }
 }
 
@@ -162,6 +224,71 @@ core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
     // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
     // device, from pose {6}.
     return pipelines::kernel::PoseToTransformation(pose);
+}
+
+double TransformationEstimationSymmetric::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    AssertValidSymmetricInputs(source, target);
+
+    AssertValidSymmetricCorrespondences(correspondences,
+                                        source.GetPointPositions(),
+                                        target.GetPointPositions());
+
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+
+    if (neighbour_indices.GetLength() == 0) {
+        return 0.0;
+    }
+
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor source_normals_indexed =
+            source.GetPointNormals().IndexGet({valid});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
+
+    const core::Tensor normal_dot =
+            source_normals_indexed.Mul(target_normals_indexed).Sum({1}, true);
+    core::Tensor direction =
+            core::Tensor::Ones(normal_dot.GetShape(), normal_dot.GetDtype(),
+                               normal_dot.GetDevice());
+    // Avoid casting a boolean comparison to a number: ISPC may encode true as
+    // 0xff. Boolean indexing preserves the intended floating-point +/-1 sign.
+    direction.IndexSet({normal_dot.Lt(0)},
+                       core::Tensor::Full({}, -1, normal_dot.GetDtype(),
+                                          normal_dot.GetDevice()));
+    core::Tensor normal =
+            source_normals_indexed.Mul(direction) + target_normals_indexed;
+    core::Tensor residual = (source_points_indexed - target_points_indexed)
+                                    .Mul(normal)
+                                    .Sum({1});
+    const double mean_squared_error =
+            residual.Mul(residual).Mean({0}).To(core::Float64).Item<double>();
+    return std::sqrt(mean_squared_error);
+}
+
+core::Tensor TransformationEstimationSymmetric::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const std::size_t iteration) const {
+    AssertValidSymmetricInputs(source, target);
+
+    AssertValidSymmetricCorrespondences(correspondences,
+                                        source.GetPointPositions(),
+                                        target.GetPointPositions());
+
+    return pipelines::kernel::ComputeTransformationSymmetric(
+            source.GetPointPositions(), target.GetPointPositions(),
+            source.GetPointNormals(), target.GetPointNormals(), correspondences,
+            this->kernel_);
 }
 
 double TransformationEstimationForColoredICP::ComputeRMSE(

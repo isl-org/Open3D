@@ -25,6 +25,7 @@ Open3D: A Modern Library for 3D Data Processing
     docker
     arm
     sycl
+    nns_hashmap_cpu_cuda_sycl
     open3d_ml
     poux_book
 

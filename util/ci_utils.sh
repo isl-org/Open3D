@@ -29,7 +29,7 @@ BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE:-ON}
 # CUDA: see docker/docker_build.sh
 # ML
 TENSORFLOW_VER="2.20.0"
-TORCH_VER="2.10"
+TORCH_VER="2.13"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="25.3"
@@ -65,6 +65,14 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+    elif [[ "with-xpu" =~ ^($options)$ ]]; then
+        # No PyTorch xpu wheels for macOS; this option is Linux-only.
+        # torch+torchvision+xpu are pinned and installed together from
+        # Open3D-ML's requirements-torch-xpu.txt (extra-index-url + exact
+        # versions), so no separate torch install is needed below.
+        TF_ARCH_NAME=tensorflow-cpu
+        TF_ARCH_DISABLE_NAME=tensorflow
+        TORCH_GLNX=""
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -89,7 +97,13 @@ install_python_dependencies() {
         python -m pip install -U "$TF_ARCH_NAME"=="$TENSORFLOW_VER" # ML/requirements-tensorflow.txt
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then # ML/requirements-torch.txt
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ "with-xpu" =~ ^($options)$ ]]; then
+            if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt" ]]; then
+                echo "OPEN3D_ML_ROOT not set or missing requirements-torch-xpu.txt; cannot install torch+xpu"
+                exit 1
+            fi
+            python -m pip install -U -r "${OPEN3D_ML_ROOT}/requirements-torch-xpu.txt"
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
             python -m pip install tensorboard
         elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -275,10 +289,9 @@ build_pip_package() {
     fi
 
     # Wheel build. Build the CPU wheel first, against the CPU torch/tf in the
-    # current environment. For a CUDA build this also produces the cpu/ ops that
-    # are bundled into the CUDA wheel below, so a CUDA wheel serves both CPU-only
-    # and CUDA torch users. A CPU-only build (e.g.  macOS) is already the final
-    # wheel and skips the CUDA pass.
+    # current environment. A CPU-only build (e.g. macOS) is already the final
+    # wheel and skips the CUDA pass below; the CPU wheel is saved and restored
+    # unchanged alongside the CUDA wheel.
     echo "Packaging Open3D CPU pip wheel..."
     set -x
     cmake "${cacheClear[@]}" "${cmakeOptions[@]}" -DBUILD_CUDA_MODULE=OFF ..
@@ -287,14 +300,15 @@ build_pip_package() {
 
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
-        echo "Packaging Open3D CUDA pip wheel (bundling CPU + CUDA ops)..."
+        echo "Packaging Open3D CUDA pip wheel..."
         # Save the CPU (open3d-cpu) wheel; the CUDA repackage reuses pip_package.
         mkdir -p ../pip_package_backup
         cp lib/python_package/pip_package/*.whl ../pip_package_backup/
         # CUDA ops must link against CUDA torch/tf.
         install_python_dependencies with-cuda purge-cache
-        # Reconfigure CUDA ON in place. lib/Release/cpu (CPU ops built above) is
-        # preserved and packaged next to the freshly built lib/Release/cuda ops.
+        # Reconfigure CUDA ON in place and rebuild the single
+        # open3d_{torch,tf}_ops.so with CUDA support (dispatch is internal to
+        # this one library; no separate cpu/cuda subdirs to merge).
         set -x
         cmake "${cacheClear[@]}" "${cmakeOptions[@]}" \
             -DBUILD_CUDA_MODULE=ON -DBUILD_COMMON_CUDA_ARCHS=ON ..
@@ -507,11 +521,14 @@ build_pip_package_from_installed() {
     fi
     set -u
 
-    # Match main's build_pip_package() ML-ops ABI while building the CPU and CUDA
-    # wheels in separate dirs. The wheel image already ships CPU torch/tf, so the
-    # CPU wheel links its ops against CPU torch. Before the CUDA wheel we install
-    # CUDA torch/tf (see below) so its ops link against CUDA torch. Both wheels
-    # build torch/tf ops per BUILD_{PYTORCH,TENSORFLOW}_OPS.
+    # Match main's build_pip_package(): build the CPU and CUDA wheels in
+    # separate dirs, each with its own single open3d_{torch,tf}_ops.so (no
+    # cpu/cuda arch subdirs -- CPU/CUDA/SYCL dispatch is internal to one .so,
+    # see cpp/open3d/ml/pytorch/CMakeLists.txt). The wheel image already ships
+    # CPU torch/tf, so the CPU wheel links its ops against CPU torch. Before
+    # the CUDA wheel we install CUDA torch/tf (see below) so its ops link
+    # against CUDA torch. Both wheels build torch/tf ops per
+    # BUILD_{PYTORCH,TENSORFLOW}_OPS.
     if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]] &&
         ! python -c "import torch" >/dev/null 2>&1; then
         install_python_dependencies purge-cache
@@ -586,12 +603,6 @@ build_pip_package_from_installed() {
         echo "ERROR: 3rdparty ExternalProject dirs present in installed-mode build"
         exit 1
     fi
-    # Place CPU-linked ops into lib/Release/cpu beside CUDA ops in lib/Release/cuda
-    # so the CUDA wheel packages both (open3d/{cpu,cuda}); loader picks at runtime.
-    if [[ "$BUILD_PYTORCH_OPS" == "ON" || "$BUILD_TENSORFLOW_OPS" == "ON" ]]; then
-        mkdir -p lib/Release/cpu
-        cp -a ../build_cpu_wheel/lib/Release/cpu/open3d_*_ops* lib/Release/cpu/
-    fi
     make VERBOSE=1 -j"$NPROC" pip-package
     cp -a lib/python_package/pip_package/open3d*.whl "../${wheel_out}/"
     popd
@@ -645,7 +656,15 @@ test_wheel() {
     HAVE_TENSORFLOW_OPS=OFF
     if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_PYTORCH_OPS'])"; then
         HAVE_PYTORCH_OPS=ON
-        python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_SYCL_MODULE'])"; then
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-xpu.txt"
+        elif python -c "import sys, open3d; sys.exit(not open3d._build_config['BUILD_CUDA_MODULE'])"; then
+            # Install CUDA-enabled PyTorch matching the CUDA version Open3D was
+            # built against.
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch-cuda.txt"
+        else
+            python -m pip install -r "$OPEN3D_ML_ROOT/requirements-torch.txt"
+        fi
         python -W default -c \
             "import open3d.ml.torch; print('PyTorch Ops library loaded:', open3d.ml.torch._loaded)"
     fi
@@ -670,11 +689,11 @@ run_python_tests() {
     source open3d_test.venv/bin/activate
     python -m pip install -U -r "$OPEN3D_SOURCE_ROOT/python/requirements_test.txt"
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
+    # python/test/ml_ops/ is always collected: mltest.py self-gates each op's
+    # backends (torch cpu/cuda/xpu, tf) on actual runtime availability, so
+    # tests silently produce zero cases when a backend/GPU isn't present.
+    # This means a GPU-equipped runner works with no CI config changes.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
-    if [ "$BUILD_PYTORCH_OPS" == "OFF" ] && [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
-        echo Testing ML Ops disabled
-        pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
-    fi
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
     rm -rf open3d_test.venv     # cleanup for testing the next wheel

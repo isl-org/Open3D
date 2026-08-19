@@ -42,6 +42,7 @@ enum class TransformationEstimationType {
     PointToPlane = 2,
     ColoredICP = 3,
     DopplerICP = 4,
+    SymmetricICP = 5,
 };
 
 /// \class TransformationEstimation
@@ -213,6 +214,61 @@ public:
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
+};
+
+/// \class TransformationEstimationSymmetric
+///
+/// For each correspondence, \f$p\f$ is the source point and \f$q\f$ is the
+/// target point in the current aligned frame, with corresponding normals
+/// \f$n_p\f$ and \f$n_q\f$. After aligning the normal directions, the
+/// objective uses the single residual \f$(p-q)^T(n_p+n_q)\f$.
+class TransformationEstimationSymmetric : public TransformationEstimation {
+public:
+    /// \brief Constructs a symmetric transformation estimator.
+    /// \param kernel Robust kernel applied to the symmetric residual.
+    explicit TransformationEstimationSymmetric(
+            const RobustKernel &kernel =
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
+        : kernel_(kernel) {}
+    ~TransformationEstimationSymmetric() override {}
+
+public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return TransformationEstimationType::SymmetricICP;
+    };
+
+    /// \brief Computes symmetric point-to-plane RMSE.
+    ///
+    /// \param source Source point cloud in the current aligned frame.
+    /// \param target Target point cloud in the current aligned frame.
+    /// \param correspondences Source-to-target correspondence indices.
+    /// \return The symmetric point-to-plane RMSE.
+    /// \throw std::runtime_error If either point cloud lacks normals.
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
+
+    /// \brief Estimates a symmetric point-to-plane transformation.
+    ///
+    /// \param source Source point cloud in the current aligned frame.
+    /// \param target Target point cloud in the current aligned frame.
+    /// \param correspondences Source-to-target correspondence indices.
+    /// \param current_transform Current source-to-target transformation.
+    /// \param iteration Current ICP iteration.
+    /// \return A source-to-target transformation Tensor of shape {4, 4}, dtype
+    /// Float64, on the CPU device.
+    /// \throw std::runtime_error If either point cloud lacks normals.
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
+
+public:
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
 };
 
 /// \class TransformationEstimationForColoredICP

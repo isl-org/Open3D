@@ -8,6 +8,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include <array>
 #include <cmath>
 #include <functional>
 #include <vector>
@@ -113,6 +114,102 @@ void ComputePosePointToPlaneCPU(const core::Tensor &source_points,
                             target_points.GetDataPtr<scalar_t>(),
                             target_normals.GetDataPtr<scalar_t>(),
                             correspondence_indices.GetDataPtr<int64_t>(), n,
+                            global_sum_ptr, GetWeightFromRobustKernel);
+                });
+    });
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
+template <typename scalar_t, typename funct_t>
+static void ComputePoseSymmetricKernelCPU(const scalar_t *source_points_ptr,
+                                          const scalar_t *target_points_ptr,
+                                          const scalar_t *source_normals_ptr,
+                                          const scalar_t *target_normals_ptr,
+                                          const int64_t *correspondence_indices,
+                                          const scalar_t *source_mean_ptr,
+                                          const scalar_t *target_mean_ptr,
+                                          const int n,
+                                          scalar_t *global_sum,
+                                          funct_t GetWeightFromRobustKernel) {
+    using Reduction = std::array<scalar_t, 29>;
+    const Reduction A_1x29 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), Reduction{},
+            [&](tbb::blocked_range<int> r, Reduction A_reduction) {
+                for (int workload_idx = r.begin(); workload_idx < r.end();
+                     ++workload_idx) {
+                    scalar_t J_ij[6] = {0};
+                    scalar_t centered_residual = 0;
+                    scalar_t objective_residual = 0;
+                    const bool valid = GetJacobianSymmetric<scalar_t>(
+                            workload_idx, source_points_ptr, target_points_ptr,
+                            source_normals_ptr, target_normals_ptr,
+                            correspondence_indices, source_mean_ptr,
+                            target_mean_ptr, J_ij, centered_residual,
+                            objective_residual);
+
+                    if (valid) {
+                        const scalar_t weight =
+                                GetWeightFromRobustKernel(objective_residual);
+
+                        int i = 0;
+                        for (int j = 0; j < 6; ++j) {
+                            for (int k = 0; k <= j; ++k) {
+                                A_reduction[i++] += J_ij[j] * weight * J_ij[k];
+                            }
+                            A_reduction[21 + j] +=
+                                    J_ij[j] * weight * centered_residual;
+                        }
+                        A_reduction[27] +=
+                                objective_residual * objective_residual;
+                        A_reduction[28] += 1;
+                    }
+                }
+                return A_reduction;
+            },
+            [](Reduction a, const Reduction &b) {
+                for (int j = 0; j < 29; ++j) {
+                    a[j] += b[j];
+                }
+                return a;
+            });
+
+    for (int i = 0; i < 29; ++i) {
+        global_sum[i] = A_1x29[i];
+    }
+}
+
+void ComputePoseSymmetricCPU(const core::Tensor &source_points,
+                             const core::Tensor &target_points,
+                             const core::Tensor &source_normals,
+                             const core::Tensor &target_normals,
+                             const core::Tensor &correspondence_indices,
+                             const core::Tensor &source_mean,
+                             const core::Tensor &target_mean,
+                             core::Tensor &pose,
+                             float &residual,
+                             int &inlier_count,
+                             const core::Dtype &dtype,
+                             const core::Device &device,
+                             const registration::RobustKernel &kernel) {
+    int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    ComputePoseSymmetricKernelCPU(
+                            source_points.GetDataPtr<scalar_t>(),
+                            target_points.GetDataPtr<scalar_t>(),
+                            source_normals.GetDataPtr<scalar_t>(),
+                            target_normals.GetDataPtr<scalar_t>(),
+                            correspondence_indices.GetDataPtr<int64_t>(),
+                            source_mean.GetDataPtr<scalar_t>(),
+                            target_mean.GetDataPtr<scalar_t>(), n,
                             global_sum_ptr, GetWeightFromRobustKernel);
                 });
     });

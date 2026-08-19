@@ -26,7 +26,9 @@ void SparseConvBackpropFilterCUDA(const torch::Tensor& filters,
                                   const torch::Tensor& out_features_gradient,
                                   const bool normalize,
                                   const int64_t max_temp_mem_MB,
+                                  const bool allow_tf32,
                                   torch::Tensor& filter_backprop) {
+    WarnIfTF32NotSupported(allow_tf32);
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
         filter_dims.push_back(d);
@@ -88,6 +90,7 @@ void SparseConvBackpropFilterCUDA(const torch::Tensor& filters,
             const torch::Tensor& neighbors_importance,                        \
             const torch::Tensor& neighbors_row_splits,                        \
             const torch::Tensor& out_features_gradient, const bool normalize, \
-            const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,             \
+            torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, int32_t, uint8_t)

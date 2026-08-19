@@ -16,6 +16,14 @@ add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-fno-fast-math>)
 
 FetchContent_MakeAvailable(ext_benchmark)
 
+if (BUILD_SYCL_MODULE)
+    # Google Benchmark 1.5.5 uses __COUNTER__, which IntelLLVM diagnoses as a
+    # C2y extension when warnings are treated as errors. The public header
+    # exposes the macro to benchmark consumers, so they need the suppression.
+    target_compile_options(benchmark PUBLIC
+        $<$<CXX_COMPILER_ID:IntelLLVM>:-Wno-c2y-extensions>)
+endif()
+
 # Set the cache vars introduced by the benchmark lib as advanced to not
 # clutter the CMake interfaces
 mark_as_advanced(

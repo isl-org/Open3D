@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -51,6 +52,13 @@ struct SYCLDevice {
     /// memory.
     bool discrete_gpu = false;
     uint64_t global_mem_size = 0;  ///< Global memory size in bytes.
+    /// Local (SLM/shared) memory size in bytes available per work-group.
+    uint64_t local_mem_size = 0;
+    /// Slices * sub-slices-per-slice (same query CUTLASS's
+    /// kernel_hardware_info.h uses for `sm_count`), falling back to
+    /// `max_compute_units` if partition info is unavailable. Cached here so
+    /// hot paths (e.g. GEMM, PersistentReduce) don't re-query the device.
+    size_t compute_units = 0;
     /// Sub-group (SIMD/wave) widths natively supported by the device, e.g.
     /// {8, 16, 32} on discrete Arc GPUs vs {16, 32} on some integrated Xe
     /// GPUs.
@@ -99,6 +107,15 @@ public:
     /// static destruction alone under OpenCL CPU.
     static void Clear();
 
+#if defined(SYCL_LANGUAGE_VERSION)
+    /// Returns (and memoizes) `sm_count`-equivalent compute-unit count for an
+    /// arbitrary \p sycl_device -- keyed on the SYCL device itself (not an
+    /// Open3D Device), since callers such as GemmColumnMajorSYCL may receive
+    /// a queue/device from a foreign runtime (e.g. PyTorch's XPU queue) that
+    /// is not one of the registered Open3D SYCL devices. Thread-safe.
+    size_t GetComputeUnits(const sycl::device& sycl_device);
+#endif
+
 private:
     SYCLContext();
 
@@ -106,6 +123,46 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+#if defined(SYCL_LANGUAGE_VERSION)
+
+/// Returns the ambient "current" SYCL queue for \p device: whatever a
+/// \ref SYCLScopedQueue installed for this thread and this device, or
+/// SYCLContext::GetInstance().GetDefaultQueue(device) if no override is
+/// active. Kernel-launch code (e.g. core::ParallelFor) should call this
+/// instead of going through SYCLContext directly, so that ML ops can route
+/// work onto a caller-supplied queue (e.g. PyTorch's current XPU queue).
+sycl::queue GetQueue(const Device& device);
+
+/// Switches the ambient current SYCL queue for \p device in the current
+/// scope; the previous queue (or lack thereof) is restored once leaving the
+/// scope. Mirrors core::CUDAScopedStream.
+///
+/// Example:
+/// ```cpp
+/// void my_func(const Device& device, sycl::queue& torch_queue) {
+///     core::sy::SYCLScopedQueue scoped_queue(device, torch_queue);
+///     // GetQueue(device) (and anything built on it, e.g. core::ParallelFor)
+///     // now returns torch_queue until scoped_queue goes out of scope.
+/// }
+/// ```
+class SYCLScopedQueue {
+public:
+    SYCLScopedQueue(const Device& device, sycl::queue queue);
+    ~SYCLScopedQueue();
+
+    SYCLScopedQueue(const SYCLScopedQueue&) = delete;
+    SYCLScopedQueue& operator=(const SYCLScopedQueue&) = delete;
+
+private:
+    Device device_;
+    // Empty if there was no prior override for `device_` (sycl::queue has no
+    // default constructor, so a nullable wrapper is used instead of a bool
+    // flag + default-constructed queue).
+    std::optional<sycl::queue> prev_queue_;
+};
+
+#endif  // SYCL_LANGUAGE_VERSION
 
 #endif  // BUILD_SYCL_MODULE
 

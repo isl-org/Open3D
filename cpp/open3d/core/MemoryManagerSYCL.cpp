@@ -19,8 +19,7 @@ namespace open3d {
 namespace core {
 
 void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
-    const sycl::queue& queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const sycl::queue& queue = sy::GetQueue(device);
 
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
     return static_cast<void*>(sycl::malloc_shared(byte_size, queue));
@@ -31,8 +30,18 @@ void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
 
 void MemoryManagerSYCL::Free(void* ptr, const Device& device) {
     if (ptr) {
-        const sycl::queue& queue =
-                sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+        // SYCLContext::Clear() (registered with Python atexit) may have
+        // already torn down the device/queue map by the time this Blob is
+        // destroyed, e.g. when the Blob is kept alive by a torch::Tensor
+        // whose own destruction is deferred until Python interpreter
+        // finalization (after atexit handlers have run). In that case,
+        // there is nothing safe left to free; just leak (the OS reclaims
+        // the memory at process exit) rather than throwing out of this
+        // destructor call path.
+        if (!sy::SYCLContext::GetInstance().IsDeviceAvailable(device)) {
+            return;
+        }
+        const sycl::queue& queue = sy::GetQueue(device);
         sycl::free(ptr, queue);
     }
 }
@@ -60,8 +69,7 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
                           dst_device.ToString());
     }
 
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(device_with_queue);
+    sycl::queue queue = sy::GetQueue(device_with_queue);
     queue.memcpy(dst_ptr, src_ptr, num_bytes).wait_and_throw();
 }
 

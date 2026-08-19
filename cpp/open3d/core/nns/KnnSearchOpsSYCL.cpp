@@ -22,10 +22,9 @@
 /// tensors use NanoFlann.
 ///
 /// **Includes:** KNN device code in `kernel/KnnSearchSYCLImpl.h`; uniform-grid
-/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Short index:
-/// `nns/SYCL_DESIGN.md`.
-/// **This file header** is the maintainer reference for path selection and
-/// end-to-end flow.
+/// kernels in `kernel/FixedRadiusSearchSYCLImpl.h`. Cross-backend CPU/CUDA/SYCL
+/// overview: `docs/nns_hashmap_cpu_cuda_sycl.md`. **This file header** is the
+/// maintainer reference for path selection and end-to-end flow.
 ///
 /// \section KnnSyclOverview Three search modes in this file
 ///
@@ -224,7 +223,9 @@
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
 #include <sycl/sycl.hpp>
+#include <vector>
 
+#include "open3d/core/MemoryManager.h"
 #include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
@@ -272,15 +273,6 @@ T FixedRadiusThreshold(Metric metric, T radius) {
 
 }  // namespace
 
-// Batched KNN search.
-///
-/// For k ≤ kSYCLKnnMidKMax: one fused kernel per (query-tile, point-tile) pair.
-///     The running max-heap is maintained in global memory between tile
-///     iterations and finalized (sorted + |q|² added) once per query batch.
-///
-// For k > kSYCLKnnMidKMax: legacy Select + Merge path with P2 fix.
-//
-// C5 fix: batch_knn = min(knn, num_points_i) per batch.
 template <class T, class TIndex>
 void KnnSearchSYCL(const Tensor& points,
                    const Tensor& points_row_splits,
@@ -297,7 +289,7 @@ void KnnSearchSYCL(const Tensor& points,
     const Device device = points.GetDevice();
     const Dtype dtype = points.GetDtype();
     const Dtype index_dtype = Dtype::FromType<TIndex>();
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     const int batch_size = points_row_splits.GetShape(0) - 1;
     std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
             batch_size, NeighborSearchAllocator<T, TIndex>(device));
@@ -307,8 +299,10 @@ void KnnSearchSYCL(const Tensor& points,
     Tensor points_c, queries_c;
     bool centered = false;
 
-    int64_t* neighbors_row_splits_ptr =
-            neighbors_row_splits.GetDataPtr<int64_t>();
+    // CSR row_splits are tiny metadata with a fixed batch_knn stride per query;
+    // build them on the host and upload once. neighbors_row_splits may be
+    // device-only USM and is not host-dereferenceable.
+    std::vector<int64_t> row_splits_host(neighbors_row_splits.GetShape(0));
     int64_t last_neighbors_count = 0;
     int64_t batch_knn = 0;
 
@@ -332,9 +326,9 @@ void KnnSearchSYCL(const Tensor& points,
         batch_knn = std::min<int64_t>(knn, num_points_i);
 
         // Populate row_splits for this batch.
-        neighbors_row_splits_ptr[query_begin] = last_neighbors_count;
+        row_splits_host[query_begin] = last_neighbors_count;
         for (int64_t q = 0; q < num_queries_i; ++q) {
-            neighbors_row_splits_ptr[query_begin + q + 1] =
+            row_splits_host[query_begin + q + 1] =
                     last_neighbors_count + (q + 1) * batch_knn;
         }
         last_neighbors_count += num_queries_i * batch_knn;
@@ -541,6 +535,10 @@ void KnnSearchSYCL(const Tensor& points,
         queue.wait_and_throw();
     }
 
+    MemoryManager::MemcpyFromHost(neighbors_row_splits.GetDataPtr<int64_t>(),
+                                  device, row_splits_host.data(),
+                                  row_splits_host.size() * sizeof(int64_t));
+
     // Assemble the final output tensors from per-batch allocators.
     if (batch_size == 1) {
         neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
@@ -562,7 +560,9 @@ void KnnSearchSYCL(const Tensor& points,
     output_allocator.AllocDistances(&neighbors_distance_ptr, neighbors_size);
 
     int64_t offset = 0;
-    for (const auto& alloc : batch_output_allocators) {
+    for (int batch_idx = 0; batch_idx < batch_size; ++batch_idx) {
+        NeighborSearchAllocator<T, TIndex>& alloc =
+                batch_output_allocators[batch_idx];
         const int64_t sz = alloc.NeighborsIndex().GetShape(0);
         if (sz == 0) continue;
         MemoryManager::Memcpy(neighbors_index_ptr + offset, device,
@@ -602,7 +602,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const T* points_ptr = points.GetDataPtr<T>();
     const T* queries_ptr = queries.GetDataPtr<T>();
@@ -692,9 +692,13 @@ void FixedRadiusSearchSYCL(const Tensor& points,
     queue.wait_and_throw();
 
     if (sort && total_neighbors > 0) {
+        // Tensor-API boundary: wait here rather than propagating the event,
+        // matching FixedRadiusSearchSYCL's synchronous contract (same
+        // reasoning as BuildSpatialHashTableSYCL above it).
         SortNeighborsByDistanceSYCL<T, TIndex>(
                 device, neighbors_index_ptr, neighbors_distance_ptr,
-                row_splits_ptr, num_queries, total_neighbors);
+                row_splits_ptr, num_queries, total_neighbors)
+                .wait_and_throw();
     }
 
     neighbors_index = output_allocator.NeighborsIndex();
@@ -708,6 +712,7 @@ void FixedRadiusSearchSYCL(const Tensor& points,
 // corner-adjacent hash bins per query counts all in-radius neighbors while
 // keeping a running top-max_knn (see WriteNeighborsHybridSYCL in
 // FixedRadiusSearchSYCLImpl.h, including its final per-query bubble sort).
+// Supports L1, L2, and Linf, matching CUDA's WriteNeighborsHybridKernel.
 template <class T, class TIndex>
 void HybridSearchSYCL(const Tensor& points,
                       const Tensor& queries,
@@ -723,16 +728,16 @@ void HybridSearchSYCL(const Tensor& points,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance,
                       int64_t /*tile_bytes*/) {
-    if (metric != Metric::L2) {
-        utility::LogError("SYCL hybrid search only supports L2 metric.");
-    }
     const Device device = points.GetDevice();
     const int64_t num_queries = queries.GetShape(0);
     const T radius_t = static_cast<T>(radius);
-    const T threshold = radius_t * radius_t;  // L2: compare squared distances.
+    // L2 compares/returns SQUARED distances; L1/Linf use the metric distance
+    // directly (see FixedRadiusThreshold above and IsNeighbor in
+    // FixedRadiusSearchSYCLImpl.h).
+    const T threshold = FixedRadiusThreshold<T>(metric, radius_t);
     const T voxel_size = T(2) * radius_t;
     const T inv_voxel_size = T(1) / voxel_size;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
 
     const T* points_ptr = points.GetDataPtr<T>();
     const T* queries_ptr = queries.GetDataPtr<T>();
@@ -768,7 +773,7 @@ void HybridSearchSYCL(const Tensor& points,
                 neighbors_count_ptr + query_begin, hash_index_ptr,
                 cell_splits_i, hash_table_size, queries_ptr + 3 * query_begin,
                 query_end - query_begin, points_ptr, inv_voxel_size, radius_t,
-                threshold, max_knn);
+                metric, threshold, max_knn);
     }
     queue.wait_and_throw();
 

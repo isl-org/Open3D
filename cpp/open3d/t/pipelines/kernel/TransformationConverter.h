@@ -30,6 +30,16 @@ core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t);
 /// as pose.
 core::Tensor PoseToTransformation(const core::Tensor &pose);
 
+/// \brief Convert a centered symmetric ICP pose to a rigid transformation.
+///
+/// \param pose Symmetric half-angle pose, a tensor of shape {6}.
+/// \param source_mean Mean of selected source correspondence points, shape {3}.
+/// \param target_mean Mean of selected target correspondence points, shape {3}.
+/// \return Transformation, a tensor of shape {4, 4}, dtype Float64 on CPU:0.
+core::Tensor PoseToSymmetricTransformation(const core::Tensor &pose,
+                                           const core::Tensor &source_mean,
+                                           const core::Tensor &target_mean);
+
 /// \brief Convert transformation matrix to pose.
 ///
 /// \param transformation, a tensor of shape {4, 4}, of dtype Float32

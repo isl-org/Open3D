@@ -217,19 +217,26 @@ function(open3d_set_global_properties target)
     # RPATH handling. Check current folder, one folder above (cpu/pybind ->
     # libtbb) and the lib sibling folder (bin/Open3D -> lib/libOpen3D).  Also
     # check the Python virtual env /lib folder for 3rd party dependency
-    # libraries installed with `pip install`
+    # libraries installed with `pip install` (e.g. Intel oneAPI SYCL runtime
+    # .so's, or venv-installed CUDA runtime libs). "../../../" covers the flat
+    # wheel layout (site-packages/open3d/<module>.so -> <venv>/lib);
+    # "../../../../" covers one extra level of nesting
+    # (site-packages/open3d/<subdir>/<module>.so -> <venv>/lib) in case a
+    # future wheel layout reintroduces a subdirectory (the single flat .so
+    # layout used today doesn't need it, but this RPATH entry is harmless to
+    # keep for forward compatibility).
     if (APPLE)
     # Add options to cover the various ways in which open3d shared lib or apps can be installed wrt dependent DSOs
         set_target_properties(${target} PROPERTIES 
-            INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../"
+            INSTALL_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../:@loader_path/../../../../"
     # pybind with open3d shared lib is copied, not cmake-installed, so we need to add .. to build rpath 
-            BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../../")
+            BUILD_RPATH "@loader_path;@loader_path/../;@loader_path/../lib/:@loader_path/../../../:@loader_path/../../../../")
     elseif(UNIX)
         # INSTALL_RPATH for C++ binaries.
         set_target_properties(${target} PROPERTIES 
-            INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../"
+            INSTALL_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../;$ORIGIN/../../../../"
         # BUILD_RPATH for Python wheel libs and app.
-            BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../../")
+            BUILD_RPATH "$ORIGIN;$ORIGIN/../;$ORIGIN/../lib/;$ORIGIN/../../../;$ORIGIN/../../../../")
     endif()
 
 endfunction()
