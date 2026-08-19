@@ -13,9 +13,10 @@
 // It models target voxels as regularized Gaussians, rejects outliers by their
 // Mahalanobis distance, and applies left-perturbation SE(3) updates.
 
-#include <Eigen/Dense>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
+
+#include <Eigen/Dense>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -143,8 +144,12 @@ using NeighborOffsets = std::array<VoxelKey, 7>;
 
 NeighborOffsets GetNeighborOffsets(int neighbor_search_type,
                                    std::size_t &offset_count) {
-    NeighborOffsets offsets{{{0, 0, 0}, {-1, 0, 0}, {1, 0, 0},
-                             {0, -1, 0}, {0, 1, 0}, {0, 0, -1},
+    NeighborOffsets offsets{{{0, 0, 0},
+                             {-1, 0, 0},
+                             {1, 0, 0},
+                             {0, -1, 0},
+                             {0, 1, 0},
+                             {0, 0, -1},
                              {0, 0, 1}}};
     offset_count = 1;
     if (neighbor_search_type == 1) {
@@ -231,10 +236,9 @@ VoxelMap BuildVoxelGaussians(const geometry::PointCloud &target,
             const double distance2 =
                     (target.points_[point_index] - gaussian.mean).squaredNorm();
             if (gaussian.representative_index < 0 ||
-                distance2 <
-                        (target.points_[gaussian.representative_index] -
-                         gaussian.mean)
-                                .squaredNorm()) {
+                distance2 < (target.points_[gaussian.representative_index] -
+                             gaussian.mean)
+                                    .squaredNorm()) {
                 gaussian.representative_index = point_index;
             }
         }
@@ -261,7 +265,7 @@ struct NDTLinearSystemReducer {
                            double inv_voxel_size_,
                            double outlier_threshold_)
         : source_transformed(source_transformed_),
-                    target(target_),
+          target(target_),
           voxel_map(voxel_map_),
           offsets(offsets_),
           offset_count(offset_count_),
@@ -270,7 +274,7 @@ struct NDTLinearSystemReducer {
 
     NDTLinearSystemReducer(NDTLinearSystemReducer &other, tbb::split)
         : source_transformed(other.source_transformed),
-                    target(other.target),
+          target(other.target),
           voxel_map(other.voxel_map),
           offsets(other.offsets),
           offset_count(other.offset_count),
@@ -295,8 +299,7 @@ struct NDTLinearSystemReducer {
                 const Eigen::Vector3d diff = point - voxel_itr->second.mean;
                 const Eigen::Matrix3d &information =
                         voxel_itr->second.information;
-                const double distance =
-                        diff.transpose() * information * diff;
+                const double distance = diff.transpose() * information * diff;
                 if (!std::isfinite(distance) || distance > outlier_threshold) {
                     continue;
                 }
@@ -337,22 +340,20 @@ struct NDTLinearSystemReducer {
 
 NDTLinearSystem ComputeNDTLinearSystem(
         const geometry::PointCloud &source_transformed,
-    const geometry::PointCloud &target,
+        const geometry::PointCloud &target,
         const VoxelMap &voxel_map,
         const NormalDistributionsTransformOption &option) {
     const double inv_voxel_size = 1.0 / option.voxel_size_;
     std::size_t offset_count;
     const auto offsets =
-        GetNeighborOffsets(option.neighbor_search_type_, offset_count);
+            GetNeighborOffsets(option.neighbor_search_type_, offset_count);
     NDTLinearSystemReducer reducer(source_transformed, target, voxel_map,
-                                   offsets,
-                   offset_count,
-                                   inv_voxel_size, option.outlier_threshold_);
-    tbb::parallel_reduce(
-            tbb::blocked_range<std::size_t>(
-                    0, source_transformed.points_.size(),
-                    utility::DefaultGrainSizeTBB()),
-            reducer);
+                                   offsets, offset_count, inv_voxel_size,
+                                   option.outlier_threshold_);
+    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(
+                                 0, source_transformed.points_.size(),
+                                 utility::DefaultGrainSizeTBB()),
+                         reducer);
     return std::move(reducer.system);
 }
 
@@ -370,15 +371,15 @@ struct NDTResultReducer {
     NDTResultReducer(const geometry::PointCloud &source_transformed_,
                      const geometry::PointCloud &target_,
                      const VoxelMap &voxel_map_,
-                                         const NeighborOffsets &offsets_,
-                                         std::size_t offset_count_,
+                     const NeighborOffsets &offsets_,
+                     std::size_t offset_count_,
                      double inv_voxel_size_,
                      double outlier_threshold_)
         : source_transformed(source_transformed_),
           target(target_),
           voxel_map(voxel_map_),
           offsets(offsets_),
-                    offset_count(offset_count_),
+          offset_count(offset_count_),
           inv_voxel_size(inv_voxel_size_),
           outlier_threshold(outlier_threshold_) {}
 
@@ -387,7 +388,7 @@ struct NDTResultReducer {
           target(other.target),
           voxel_map(other.voxel_map),
           offsets(other.offsets),
-                    offset_count(other.offset_count),
+          offset_count(other.offset_count),
           inv_voxel_size(other.inv_voxel_size),
           outlier_threshold(other.outlier_threshold) {}
 
@@ -399,10 +400,10 @@ struct NDTResultReducer {
             double best_residual2 = outlier_threshold;
             double best_euclidean_error2 = 0.0;
             int best_target_index = -1;
-                        for (std::size_t j = 0; j < offset_count; ++j) {
-                                const VoxelKey neighbor{key.x + offsets[j].x,
-                                                                                key.y + offsets[j].y,
-                                                                                key.z + offsets[j].z};
+            for (std::size_t j = 0; j < offset_count; ++j) {
+                const VoxelKey neighbor{key.x + offsets[j].x,
+                                        key.y + offsets[j].y,
+                                        key.z + offsets[j].z};
                 const auto voxel_itr = voxel_map.find(neighbor);
                 if (voxel_itr == voxel_map.end()) {
                     continue;
@@ -448,13 +449,12 @@ RegistrationResult EvaluateNDTResult(
     const auto offsets =
             GetNeighborOffsets(option.neighbor_search_type_, offset_count);
     NDTResultReducer reducer(source_transformed, target, voxel_map, offsets,
-                             offset_count,
-                             inv_voxel_size, option.outlier_threshold_);
-    tbb::parallel_reduce(
-            tbb::blocked_range<std::size_t>(
-                    0, source_transformed.points_.size(),
-                    utility::DefaultGrainSizeTBB()),
-            reducer);
+                             offset_count, inv_voxel_size,
+                             option.outlier_threshold_);
+    tbb::parallel_reduce(tbb::blocked_range<std::size_t>(
+                                 0, source_transformed.points_.size(),
+                                 utility::DefaultGrainSizeTBB()),
+                         reducer);
     result.correspondence_set_ = std::move(reducer.correspondences);
     if (!result.correspondence_set_.empty()) {
         const double correspondence_count =
