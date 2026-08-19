@@ -95,6 +95,90 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
     DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
 }
 
+void ComputePoseSymmetricSYCL(const core::Tensor &source_points,
+                              const core::Tensor &target_points,
+                              const core::Tensor &source_normals,
+                              const core::Tensor &target_normals,
+                              const core::Tensor &correspondence_indices,
+                              const core::Tensor &source_mean,
+                              const core::Tensor &target_mean,
+                              core::Tensor &pose,
+                              float &residual,
+                              int &inlier_count,
+                              const core::Dtype &dtype,
+                              const core::Device &device,
+                              const registration::RobustKernel &kernel) {
+    const int64_t n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
+
+    sycl::queue queue =
+            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
+
+        DISPATCH_ROBUST_KERNEL_FUNCTION(
+                kernel.type_, scalar_t, kernel.scaling_parameter_,
+                kernel.shape_parameter_, [&]() {
+                    const scalar_t *source_points_ptr =
+                            source_points.GetDataPtr<scalar_t>();
+                    const scalar_t *target_points_ptr =
+                            target_points.GetDataPtr<scalar_t>();
+                    const scalar_t *source_normals_ptr =
+                            source_normals.GetDataPtr<scalar_t>();
+                    const scalar_t *target_normals_ptr =
+                            target_normals.GetDataPtr<scalar_t>();
+                    const int64_t *correspondence_indices_ptr =
+                            correspondence_indices.GetDataPtr<int64_t>();
+                    const scalar_t *source_mean_ptr =
+                            source_mean.GetDataPtr<scalar_t>();
+                    const scalar_t *target_mean_ptr =
+                            target_mean.GetDataPtr<scalar_t>();
+
+                    core::sy::PersistentReduce<kReduceDim, scalar_t>(
+                            queue, n, wgs, global_sum_ptr,
+                            [=](int64_t gid, scalar_t(&local_sum)[kReduceDim]) {
+                                scalar_t J_ij[6] = {0};
+                                scalar_t centered_residual = 0;
+                                scalar_t objective_residual = 0;
+                                const bool valid =
+                                        GetJacobianSymmetric<scalar_t>(
+                                                gid, source_points_ptr,
+                                                target_points_ptr,
+                                                source_normals_ptr,
+                                                target_normals_ptr,
+                                                correspondence_indices_ptr,
+                                                source_mean_ptr,
+                                                target_mean_ptr, J_ij,
+                                                centered_residual,
+                                                objective_residual);
+
+                                if (valid) {
+                                    const scalar_t weight =
+                                            GetWeightFromRobustKernel(
+                                                    objective_residual);
+                                    int i = 0;
+                                    for (int j = 0; j < 6; ++j) {
+                                        for (int k = 0; k <= j; ++k) {
+                                            local_sum[i++] +=
+                                                    J_ij[j] * weight * J_ij[k];
+                                        }
+                                        local_sum[21 + j] += J_ij[j] * weight *
+                                                             centered_residual;
+                                    }
+                                    local_sum[27] += objective_residual *
+                                                     objective_residual;
+                                    local_sum[28] += scalar_t(1);
+                                }
+                            });
+                });
+    });
+
+    DecodeAndSolve6x6(global_sum, pose, residual, inlier_count);
+}
+
 void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
                                const core::Tensor &source_colors,
                                const core::Tensor &target_points,

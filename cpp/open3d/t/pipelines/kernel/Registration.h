@@ -36,6 +36,32 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_positions,
                                      const core::Tensor &correspondence_indices,
                                      const registration::RobustKernel &kernel);
 
+/// \brief Computes the transformation for symmetric ICP registration.
+///
+/// The symmetric objective uses the sign-aligned sum of source and target
+/// normals for each correspondence.
+///
+/// \param source_positions source point positions of Float32 or Float64 dtype.
+/// \param target_positions target point positions of same dtype as source point
+/// positions.
+/// \param source_normals source point normals of same dtype as source point
+/// positions.
+/// \param target_normals target point normals of same dtype as source point
+/// positions.
+/// \param correspondence_indices Tensor of type Int64 containing indices of
+/// corresponding target positions, where the value is the target index and the
+/// index of the value itself is the source index. It contains -1 as value at
+/// index with no correspondence.
+/// \param kernel statistical robust kernel for outlier rejection.
+/// \return Transformation of shape {4, 4}, dtype Float64, on CPU:0.
+core::Tensor ComputeTransformationSymmetric(
+        const core::Tensor &source_positions,
+        const core::Tensor &target_positions,
+        const core::Tensor &source_normals,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        const registration::RobustKernel &kernel);
+
 /// \brief Computes pose for colored-icp registration method.
 ///
 /// \param source_positions source point positions of Float32 or Float64 dtype.

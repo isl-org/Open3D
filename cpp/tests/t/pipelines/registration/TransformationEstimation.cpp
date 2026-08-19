@@ -7,7 +7,12 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+#include <Eigen/Geometry>
+#include <cmath>
+#include <stdexcept>
+
 #include "core/CoreTest.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "tests/Tests.h"
@@ -169,6 +174,239 @@ TEST_P(TransformationEstimationPermuteDevices,
 
         // Compare the new RMSE after transformation.
         EXPECT_NEAR(p2plane_rmse_, 0.601422, 0.0001);
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices, ComputeRMSESymmetric) {
+    const core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        const double tolerance = dtype == core::Float32 ? 1e-6 : 1e-12;
+        t::geometry::PointCloud source(
+                core::Tensor::Init<double>({{1.0, 0.0, 0.0}}, device)
+                        .To(device, dtype));
+        source.SetPointNormals(
+                core::Tensor::Init<double>({{1.0, 0.0, 0.0}}, device)
+                        .To(device, dtype));
+        t::geometry::PointCloud target(
+                core::Tensor::Init<double>({{0.5, std::sqrt(3.0) / 2.0, 0.0}},
+                                           device)
+                        .To(device, dtype));
+        target.SetPointNormals(
+                core::Tensor::Init<double>({{0.5, std::sqrt(3.0) / 2.0, 0.0}},
+                                           device)
+                        .To(device, dtype));
+        const core::Tensor correspondences =
+                core::Tensor::Init<int64_t>({0}, device);
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation;
+
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, correspondences),
+                    0.0, tolerance);
+        target.SetPointNormals(target.GetPointNormals() * -1.0);
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, correspondences),
+                    0.0, tolerance);
+
+        target.SetPointPositions(core::Tensor::Zeros({1, 3}, dtype, device));
+        target.SetPointNormals(source.GetPointNormals().Clone());
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, correspondences),
+                    2.0, tolerance);
+        target.SetPointNormals(target.GetPointNormals() * -1.0);
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, correspondences),
+                    2.0, tolerance);
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices, ComputeTransformationSymmetric) {
+    const core::Device device = GetParam();
+    const core::Device cpu("CPU:0");
+
+    Eigen::Matrix4d expected_eigen = Eigen::Matrix4d::Identity();
+    expected_eigen.block<3, 3>(0, 0) =
+            Eigen::AngleAxisd(0.3, Eigen::Vector3d(1.0, 2.0, -1.0).normalized())
+                    .toRotationMatrix();
+    expected_eigen.block<3, 1>(0, 3) = Eigen::Vector3d(0.2, -0.1, 0.15);
+    const core::Tensor expected =
+            core::eigen_converter::EigenMatrixToTensor(expected_eigen);
+    const core::Tensor robust_expected =
+            core::Tensor::Init<double>({{0.978808528971923, 0.011598608561290,
+                                         -0.204448858865149, 0.374573231881982},
+                                        {-0.033468146467010, 0.994030976876383,
+                                         -0.103837855246761, 0.105509532797345},
+                                        {0.202024124262134, 0.108479902699193,
+                                         0.973354182159039, -0.112542276940963},
+                                        {0.0, 0.0, 0.0, 1.0}},
+                                       cpu);
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        const double tolerance = dtype == core::Float32 ? 1e-4 : 1e-8;
+        t::geometry::PointCloud source(
+                core::Tensor::Init<double>({{0.0, 0.0, 0.0},
+                                            {1.0, 0.0, 0.0},
+                                            {0.0, 1.0, 0.0},
+                                            {0.0, 0.0, 1.0},
+                                            {1.0, 1.0, 0.0},
+                                            {1.0, 0.0, 1.0}},
+                                           device)
+                        .To(device, dtype));
+        source.SetPointNormals(core::Tensor::Init<double>({{1.0, 2.0, 3.0},
+                                                           {2.0, -1.0, 1.0},
+                                                           {-1.0, 3.0, 2.0},
+                                                           {3.0, 1.0, -2.0},
+                                                           {-2.0, -1.0, 3.0},
+                                                           {1.0, -3.0, 2.0}},
+                                                          device)
+                                       .To(device, dtype));
+        source.NormalizeNormals();
+
+        t::geometry::PointCloud target = source.Clone();
+        target.Transform(expected.To(device, dtype));
+        const core::Tensor correspondences =
+                core::Tensor::Arange(0, 6, 1, core::Int64, device);
+        t::pipelines::registration::TransformationEstimationSymmetric
+                estimation;
+        const auto expect_transform = [&](const core::Tensor& actual) {
+            EXPECT_EQ(actual.GetShape(), core::SizeVector({4, 4}));
+            EXPECT_EQ(actual.GetDtype(), core::Float64);
+            EXPECT_EQ(actual.GetDevice(), cpu);
+            EXPECT_TRUE(actual.AllClose(expected, tolerance, tolerance));
+        };
+
+        expect_transform(estimation.ComputeTransformation(source, target,
+                                                          correspondences));
+
+        const core::Tensor alternating_signs =
+                core::Tensor::Init<double>(
+                        {{-1.0}, {1.0}, {-1.0}, {1.0}, {-1.0}, {1.0}}, device)
+                        .To(device, dtype);
+        target.SetPointNormals(target.GetPointNormals() * alternating_signs);
+        expect_transform(estimation.ComputeTransformation(source, target,
+                                                          correspondences));
+
+        const core::Tensor no_correspondences =
+                core::Tensor::Full({6}, -1, core::Int64, device);
+        const core::Tensor identity = estimation.ComputeTransformation(
+                source, target, no_correspondences);
+        EXPECT_EQ(identity.GetDtype(), core::Float64);
+        EXPECT_EQ(identity.GetDevice(), cpu);
+        EXPECT_TRUE(identity.AllClose(core::Tensor::Eye(4, core::Float64, cpu),
+                                      0.0, 0.0));
+
+        const auto expect_direct_methods_throw =
+                [&](const t::geometry::PointCloud& checked_source,
+                    const t::geometry::PointCloud& checked_target,
+                    const core::Tensor& checked_correspondences) {
+                    EXPECT_THROW(estimation.ComputeRMSE(
+                                         checked_source, checked_target,
+                                         checked_correspondences),
+                                 std::runtime_error);
+                    EXPECT_THROW(estimation.ComputeTransformation(
+                                         checked_source, checked_target,
+                                         checked_correspondences),
+                                 std::runtime_error);
+                };
+
+        core::Tensor correspondence_below_range = correspondences.Clone();
+        correspondence_below_range[0] = -2;
+        expect_direct_methods_throw(source, target, correspondence_below_range);
+        core::Tensor correspondence_above_range = correspondences.Clone();
+        correspondence_above_range[0] = target.GetPointPositions().GetLength();
+        expect_direct_methods_throw(source, target, correspondence_above_range);
+
+        t::geometry::PointCloud malformed_source_normals = source.Clone();
+        malformed_source_normals.GetPointNormals() =
+                core::Tensor::Zeros({6, 1}, dtype, device);
+        expect_direct_methods_throw(malformed_source_normals, target,
+                                    correspondences);
+        t::geometry::PointCloud malformed_target_normals = target.Clone();
+        malformed_target_normals.GetPointNormals() =
+                core::Tensor::Zeros({6, 1}, dtype, device);
+        expect_direct_methods_throw(source, malformed_target_normals,
+                                    correspondences);
+        t::geometry::PointCloud malformed_source_positions = source.Clone();
+        malformed_source_positions.GetPointPositions() =
+                core::Tensor::Zeros({6, 1}, dtype, device);
+        expect_direct_methods_throw(malformed_source_positions, target,
+                                    correspondences);
+        t::geometry::PointCloud malformed_target_positions = target.Clone();
+        malformed_target_positions.GetPointPositions() =
+                core::Tensor::Zeros({6, 1}, dtype, device);
+        expect_direct_methods_throw(source, malformed_target_positions,
+                                    correspondences);
+
+        t::geometry::PointCloud robust_source(
+                core::Tensor::Init<double>({{0.0, 0.0, 0.0},
+                                            {1.0, 0.0, 0.0},
+                                            {0.0, 1.0, 0.0},
+                                            {0.0, 0.0, 1.0},
+                                            {1.0, 1.0, 0.0},
+                                            {1.0, 0.0, 1.0},
+                                            {0.0, 1.0, 1.0},
+                                            {1.0, 1.0, 1.0},
+                                            {2.0, -1.0, 0.5},
+                                            {-0.5, 1.5, 2.0}},
+                                           device)
+                        .To(device, dtype));
+        robust_source.SetPointNormals(
+                core::Tensor::Init<double>({{1.0, 2.0, 3.0},
+                                            {2.0, -1.0, 1.0},
+                                            {-1.0, 3.0, 2.0},
+                                            {3.0, 1.0, -2.0},
+                                            {-2.0, -1.0, 3.0},
+                                            {1.0, -3.0, 2.0},
+                                            {-3.0, 2.0, 1.0},
+                                            {2.0, 3.0, -1.0},
+                                            {1.0, 1.0, -2.0},
+                                            {-2.0, 1.0, -3.0}},
+                                           device)
+                        .To(device, dtype));
+        robust_source.NormalizeNormals();
+        t::geometry::PointCloud robust_target = robust_source.Clone();
+        robust_target.Transform(expected.To(device, dtype));
+        const core::Tensor robust_noise =
+                core::Tensor::Init<double>({{0.02, -0.01, 0.0},
+                                            {-0.03, 0.02, 0.01},
+                                            {0.0, 0.04, -0.02},
+                                            {0.01, -0.03, 0.03},
+                                            {-0.04, 0.0, 0.02},
+                                            {0.03, 0.01, -0.04},
+                                            {-0.02, -0.02, 0.03},
+                                            {0.04, -0.03, -0.01},
+                                            {0.85, -0.55, 0.45},
+                                            {-0.65, 0.70, -0.50}},
+                                           device)
+                        .To(device, dtype);
+        robust_target.SetPointPositions(robust_target.GetPointPositions() +
+                                        robust_noise);
+        const core::Tensor robust_correspondences =
+                core::Tensor::Arange(0, 10, 1, core::Int64, device);
+        const t::pipelines::registration::TransformationEstimationSymmetric
+                robust_estimation(t::pipelines::registration::RobustKernel(
+                        t::pipelines::registration::RobustKernelMethod::
+                                CauchyLoss,
+                        0.5, 1.0));
+        // The independently calculated centered-residual-weight transform
+        // differs by more than 0.12, making this a raw-weight discriminator.
+        EXPECT_TRUE(robust_estimation
+                            .ComputeTransformation(robust_source, robust_target,
+                                                   robust_correspondences)
+                            .AllClose(robust_expected, tolerance, tolerance));
+
+        const core::Tensor source_normals = source.GetPointNormals().Clone();
+        source.RemovePointAttr("normals");
+        EXPECT_THROW(estimation.ComputeRMSE(source, target, correspondences),
+                     std::runtime_error);
+        EXPECT_THROW(estimation.ComputeTransformation(source, target,
+                                                      correspondences),
+                     std::runtime_error);
+
+        source.SetPointNormals(source_normals);
+        target.RemovePointAttr("normals");
+        EXPECT_THROW(estimation.ComputeRMSE(source, target, correspondences),
+                     std::runtime_error);
+        EXPECT_THROW(estimation.ComputeTransformation(source, target,
+                                                      correspondences),
+                     std::runtime_error);
     }
 }
 

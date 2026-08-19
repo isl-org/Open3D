@@ -10,11 +10,27 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
+
+namespace {
+
+std::tuple<core::Tensor, core::Tensor> SelectCorrespondingPoints(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &correspondence_indices) {
+    core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
+    core::Tensor target_indices =
+            correspondence_indices.IndexGet({valid}).Reshape({-1});
+    return std::make_tuple(source_points.IndexGet({valid}),
+                           target_points.IndexGet({target_indices}));
+}
+
+}  // namespace
 
 core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const core::Tensor &target_points,
@@ -59,6 +75,63 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                       residual, inlier_count);
 
     return pose;
+}
+
+core::Tensor ComputeTransformationSymmetric(
+        const core::Tensor &source_points,
+        const core::Tensor &target_points,
+        const core::Tensor &source_normals,
+        const core::Tensor &target_normals,
+        const core::Tensor &correspondence_indices,
+        const registration::RobustKernel &kernel) {
+    const core::Device device = source_points.GetDevice();
+    core::Tensor source_selected, target_selected;
+    std::tie(source_selected, target_selected) = SelectCorrespondingPoints(
+            source_points, target_points, correspondence_indices);
+    if (source_selected.GetLength() == 0) {
+        return core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
+    }
+
+    core::Tensor source_mean = source_selected.Mean({0});
+    core::Tensor target_mean = target_selected.Mean({0});
+    core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
+    float residual = 0;
+    int inlier_count = 0;
+
+    if (source_points.IsCPU()) {
+        ComputePoseSymmetricCPU(
+                source_points.Contiguous(), target_points.Contiguous(),
+                source_normals.Contiguous(), target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                target_mean.Contiguous(), pose, residual, inlier_count,
+                source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
+        CUDA_CALL(ComputePoseSymmetricCUDA, source_points.Contiguous(),
+                  target_points.Contiguous(), source_normals.Contiguous(),
+                  target_normals.Contiguous(),
+                  correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                  target_mean.Contiguous(), pose, residual, inlier_count,
+                  source_points.GetDtype(), device, kernel);
+    } else if (source_points.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ComputePoseSymmetricSYCL(
+                source_points.Contiguous(), target_points.Contiguous(),
+                source_normals.Contiguous(), target_normals.Contiguous(),
+                correspondence_indices.Contiguous(), source_mean.Contiguous(),
+                target_mean.Contiguous(), pose, residual, inlier_count,
+                source_points.GetDtype(), device, kernel);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+
+    utility::LogDebug("Symmetric Transform: residual {}, inlier_count {}",
+                      residual, inlier_count);
+
+    return PoseToSymmetricTransformation(pose, source_mean, target_mean);
 }
 
 core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
@@ -243,33 +316,21 @@ core::Tensor ComputePoseDopplerICP(
 namespace {
 
 // Horn point-to-point alignment from correspondences using tensor ops on \p
-// device, then SVD on CPU Float64 (same path as legacy CUDA/SYCL code).
+// input device, then SVD on CPU Float64 (same path as legacy CUDA/SYCL code).
 std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPointTensor(
         const core::Tensor &source_points,
         const core::Tensor &target_points,
         const core::Tensor &correspondence_indices,
-        const core::Device &device,
         int &inlier_count) {
-    core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
-    // correpondence_set : (i, corres[i]).
-    if (valid.GetLength() == 0) {
+    core::Tensor source_select, target_select;
+    std::tie(source_select, target_select) = SelectCorrespondingPoints(
+            source_points, target_points, correspondence_indices);
+    if (source_select.GetLength() == 0) {
         utility::LogError("No valid correspondence present.");
     }
 
-    // source[i] and target[corres[i]] is a correspondence.
-    core::Tensor source_indices =
-            core::Tensor::Arange(0, source_points.GetShape()[0], 1, core::Int64,
-                                 device)
-                    .IndexGet({valid});
-    // Only take valid indices.
-    core::Tensor target_indices =
-            correspondence_indices.IndexGet({valid}).Reshape({-1});
-
     // Number of good correspondences (C).
-    inlier_count = source_indices.GetLength();
-
-    core::Tensor source_select = source_points.IndexGet({source_indices});
-    core::Tensor target_select = target_points.IndexGet({target_indices});
+    inlier_count = source_select.GetLength();
 
     // https://ieeexplore.ieee.org/document/88573
     core::Tensor mean_s = source_select.Mean({0}, true);
@@ -323,7 +384,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
         core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
         std::tie(R, t) = ComputeRtPointToPointTensor(
-                source_points, target_points, correspondence_indices, device,
+                source_points, target_points, correspondence_indices,
                 inlier_count);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -331,7 +392,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
     } else if (source_points.IsSYCL()) {
 #ifdef BUILD_SYCL_MODULE
         std::tie(R, t) = ComputeRtPointToPointTensor(
-                source_points, target_points, correspondence_indices, device,
+                source_points, target_points, correspondence_indices,
                 inlier_count);
 #else
         utility::LogError("Not compiled with SYCL, but SYCL device is used.");
