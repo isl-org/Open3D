@@ -82,7 +82,7 @@ opening a bag file. Filters are applied in dictionary order before the depth
 frame is aligned to the color frame. Supported filters are ``decimation``,
 ``spatial``, ``temporal``, and ``hole_filling``.
 
-.. code-block:: Python
+.. code-block:: python
 
     import open3d as o3d
     bag_reader = o3d.t.io.RSBagReader()

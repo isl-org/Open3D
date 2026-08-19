@@ -109,6 +109,22 @@ def test_RSBagReader_post_processing_filters():
                   raw_rgbd.depth.as_tensor().numpy())
 
 
+@pytest.mark.skipif(not hasattr(o3d.t.io, 'RSBagReader'),
+                    reason="Not built with librealsense")
+def test_RSBagReader_post_processing_filter_validation():
+    # These inputs are rejected before bag playback starts, so this test is
+    # safe to run in CI despite the historical RSBagReader playback hang.
+    bag_reader = o3d.t.io.RSBagReader()
+    with pytest.raises(RuntimeError,
+                       match="Unsupported RealSense post-processing filter"):
+        bag_reader.open("unused.bag", {"unsupported": {}})
+    with pytest.raises(RuntimeError,
+                       match="Unsupported RealSense post-processing option"):
+        bag_reader.open("unused.bag", {"decimation": {"unsupported": 1}})
+    with pytest.raises(RuntimeError, match="options must be a dict"):
+        bag_reader.open("unused.bag", {"decimation": []})
+
+
 # Test recording from a RealSense camera, if one is connected
 @pytest.mark.skipif(not hasattr(o3d.t.io, 'RealSenseSensor'),
                     reason="Not built with librealsense")
