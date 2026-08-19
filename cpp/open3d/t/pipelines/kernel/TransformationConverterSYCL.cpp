@@ -22,8 +22,7 @@ template <typename scalar_t>
 void PoseToTransformationSYCL(scalar_t *transformation_ptr,
                               const scalar_t *pose_ptr,
                               const core::Device &device) {
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     queue.single_task([=]() {
              PoseToTransformationImpl(transformation_ptr, pose_ptr);
          }).wait_and_throw();
@@ -33,8 +32,7 @@ template <typename scalar_t>
 void TransformationToPoseSYCL(scalar_t *pose_ptr,
                               const scalar_t *transformation_ptr,
                               const core::Device &device) {
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = core::sy::GetQueue(device);
     queue.single_task([=]() {
              TransformationToPoseImpl(pose_ptr, transformation_ptr);
          }).wait_and_throw();

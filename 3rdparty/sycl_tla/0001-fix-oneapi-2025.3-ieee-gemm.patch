@@ -1,0 +1,207 @@
+diff --git a/include/cutlass/arch/cache_operation.h b/include/cutlass/arch/cache_operation.h
+index 5128ee02..7f607199 100644
+--- a/include/cutlass/arch/cache_operation.h
++++ b/include/cutlass/arch/cache_operation.h
+@@ -42,7 +42,7 @@ namespace arch {
+ 
+ /// Controls PTX cache operations
+ struct CacheOperation {
+-  enum Kind {
++  enum Kind : unsigned char {
+     /// Cache at all levels - accessed again
+     Always,
+     /// Cache at global level
+diff --git a/include/cutlass/arch/mma.h b/include/cutlass/arch/mma.h
+index 40c8200f..0604bf7e 100644
+--- a/include/cutlass/arch/mma.h
++++ b/include/cutlass/arch/mma.h
+@@ -206,7 +206,7 @@ struct Mma<gemm::GemmShape<1, 1, 1>, 1, ElementA, LayoutA, ElementB, LayoutB, El
+ 
+ /// Specifies internal data type for computation
+ struct SPFormatType {
+-  enum Kind {
++  enum Kind : unsigned char {
+     Thread
+   };
+ };
+diff --git a/include/cutlass/epilogue/thread/scale_type.h b/include/cutlass/epilogue/thread/scale_type.h
+index beed8bf7..c0868392 100644
+--- a/include/cutlass/epilogue/thread/scale_type.h
++++ b/include/cutlass/epilogue/thread/scale_type.h
+@@ -49,7 +49,7 @@ namespace thread {
+ ///  1. Scalar means alpha/beta is a single value from host(constant param) or device memory.
+ ///  2. Vector means alpha/beta is a vector always from device memory.
+ struct ScaleType {
+-  enum Kind {
++  enum Kind : unsigned char {
+     Default,                           // D = scalar_alpha x Acc + scalar_beta x C
+     NoBetaScaling,                     // D = scalar_alpha x Acc + C
+     OnlyAlphaScaling,                  // D = scalar_alpha x Acc
+diff --git a/include/cutlass/gemm/device/gemm_universal_adapter.h b/include/cutlass/gemm/device/gemm_universal_adapter.h
+index 90839e5e..781bd0d6 100644
+--- a/include/cutlass/gemm/device/gemm_universal_adapter.h
++++ b/include/cutlass/gemm/device/gemm_universal_adapter.h
+@@ -605,10 +605,13 @@ public:
+           sycl_grid, sycl_block, launch_props, kernel_props
+         };
+ #if defined(CUTLASS_SYCL_PROFILING_ENABLED)
+-        auto event = compat::experimental::launch<device_kernel<GemmKernel>, GemmKernel>(policy, q, params);
++        auto event = compat::experimental::launch<device_kernel<GemmKernel>>(
++            policy, q, params);
+         EventManager::getInstance().addEvent(event);
+ #else
+-        compat::experimental::launch<device_kernel<GemmKernel>, GemmKernel, false>(policy, q, params);
++        compat::experimental::launch<device_kernel<GemmKernel>,
++                                     sycl::detail::auto_name, false>(policy,
++                                                                     q, params);
+ #endif
+ #endif // !defined(SYCL_EXT_ONEAPI_WORK_GROUP_SCRATCH_MEMORY)
+ #else
+diff --git a/include/cutlass/arch/memory.h b/include/cutlass/arch/memory.h
+index ac6cf11..1c0b8c1 100644
+--- a/include/cutlass/arch/memory.h
++++ b/include/cutlass/arch/memory.h
+@@ -109,6 +109,8 @@ struct global_load<AccessType,
+         : "l"(ptr), "r"((int)pred_guard), "r"(data[0].x), "r"(data[0].y),
+           "r"(data[0].z), "r"(data[0].w), "r"(data[1].x), "r"(data[1].y),
+           "r"(data[1].z), "r"(data[1].w), "l"(((uint8_t *)ptr) + 16));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -145,6 +147,8 @@ struct global_load<AccessType,
+         : "l"(ptr), "r"((int)pred_guard), "r"(data[0].x), "r"(data[0].y),
+           "r"(data[0].z), "r"(data[0].w), "r"(data[1].x), "r"(data[1].y),
+           "r"(data[1].z), "r"(data[1].w), "l"(((uint8_t *)ptr) + 16));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -177,6 +181,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data.x), "=r"(data.y), "=r"(data.z), "=r"(data.w)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data.x), "r"(data.y), "r"(data.z), "r"(data.w));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -205,6 +211,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data.x), "=r"(data.y), "=r"(data.z), "=r"(data.w)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data.x), "r"(data.y), "r"(data.z), "r"(data.w));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -235,6 +243,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data.x), "=r"(data.y)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data.x), "r"(data.y));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -261,6 +271,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data.x), "=r"(data.y)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data.x), "r"(data.y));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -290,6 +302,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -315,6 +329,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=r"(data)
+         : "l"(ptr), "r"((int)pred_guard), "r"(data));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -344,6 +360,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=h"(data)
+         : "l"(ptr), "r"((int)pred_guard), "h"(data));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -369,6 +387,8 @@ struct global_load<AccessType,
+         "}\n"
+         : "=h"(data)
+         : "l"(ptr), "r"((int)pred_guard), "h"(data));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) D = *(reinterpret_cast<AccessType const *>(ptr));
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -427,6 +447,8 @@ struct global_store<AccessType, 64> {
+         "r"(data[2].x), "r"(data[2].y), "r"(data[2].z), "r"(data[2].w),
+         "l"(((uint8_t *)ptr) + 48),
+         "r"(data[3].x), "r"(data[3].y), "r"(data[3].z), "r"(data[3].w));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -452,6 +474,8 @@ struct global_store<AccessType, 32> {
+       : "l"(ptr), "r"(data[0].x), "r"(data[0].y), "r"(data[0].z),
+         "r"(data[0].w), "r"((int)pred_guard), "l"(((uint8_t *)ptr) + 16),
+         "r"(data[1].x), "r"(data[1].y), "r"(data[1].z), "r"(data[1].w));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -473,6 +497,8 @@ struct global_store<AccessType, 16> {
+       "}\n"
+       :
+       : "l"(ptr), "r"(data.x), "r"(data.y), "r"(data.z), "r"(data.w), "r"((int)pred_guard));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -494,6 +520,8 @@ struct global_store<AccessType, 8> {
+       "}\n"
+       :
+       : "l"(ptr), "r"(data.x), "r"(data.y), "r"((int)pred_guard));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -515,6 +543,8 @@ struct global_store<AccessType, 4> {
+       "}\n"
+       :
+       : "l"(ptr), "r"(data), "r"((int)pred_guard));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");
+@@ -536,6 +566,8 @@ struct global_store<AccessType, 2> {
+       "}\n"
+       :
+       : "l"(ptr), "h"(data), "r"((int)pred_guard));
++#elif defined(__SYCL_DEVICE_ONLY__)
++  if (pred_guard) *(reinterpret_cast<AccessType *>(ptr)) = D;
+ #else
+   CUTE_INVALID_CONTROL_PATH(
+       "Attempting to use Nvidia-specific code path on non-Nvidia hardware.");

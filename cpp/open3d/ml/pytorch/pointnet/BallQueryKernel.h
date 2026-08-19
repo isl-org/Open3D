@@ -41,3 +41,23 @@ void ball_query_launcher(int b,
                          const float *xyz,
                          const float *new_xyz,
                          int *idx);
+
+void ball_query_launcher_cpu(int b,
+                             int n,
+                             int m,
+                             float radius,
+                             int nsample,
+                             const float *xyz,
+                             const float *new_xyz,
+                             int *idx);
+
+#ifdef BUILD_SYCL_MODULE
+void ball_query_launcher_sycl(int b,
+                              int n,
+                              int m,
+                              float radius,
+                              int nsample,
+                              const float *xyz,
+                              const float *new_xyz,
+                              int *idx);
+#endif

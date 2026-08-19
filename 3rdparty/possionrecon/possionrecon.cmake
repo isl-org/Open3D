@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_poisson
     PREFIX poisson
-    URL https://github.com/isl-org/Open3D-PoissonRecon/archive/6ddec9a69f4aeb7a715e8f496310929d9f493041.tar.gz
-    URL_HASH SHA256=3e02bebd1b22f76bb8874be6ff7ab60a0f74ed690829befe0f90e0f2b70bbbe6
+    URL https://github.com/isl-org/Open3D-PoissonRecon/archive/24c9c88c1404edc43c29b9e770fc4cb8155c15b2.tar.gz
+    URL_HASH SHA256=a8409aa218bedc239d0768299fa7e63287e00b1cc632457a051bc3a91e372cab
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/poisson"
     SOURCE_DIR "poisson/src/ext_poisson/PoissonRecon" # Add extra directory level for POISSON_INCLUDE_DIRS.
     UPDATE_COMMAND ""

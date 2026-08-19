@@ -46,10 +46,11 @@ OPTION:
     cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
 
     # Sycl CPU CI (Dockerfile.ci)
-    sycl-shared [cpp|python]   : SYCL (oneAPI) with shared lib. Optional 2nd
-                                 arg runs only the C++ or Python tests
-                                 (default: full test suite).
-    sycl-static [cpp|python]   : SYCL (oneAPI) with static lib. See above.
+    sycl-shared [phase]        : SYCL (oneAPI) with shared lib. Optional 2nd
+                                 arg: cpp, python, lib, or all (default).
+    sycl-static [phase]        : SYCL (oneAPI) with static lib. See above.
+
+    CPU and OpenBLAS docker tags accept the same optional phase argument.
 
     # ML CIs (Dockerfile.ci)
     2-noble                   : CUDA CI, 2-noble, developer mode
@@ -150,23 +151,10 @@ cpp_test() {
     restart_docker_daemon_if_on_gcloud
 
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        # SYCL CPU tests can time out due to kernel compilation time. Keep the
-        # test shard count independent from the host CPU count so every CI run
-        # executes the same four GoogleTest shards.
-        gtest_shards=4
-        echo "[cpp_test()] Running sharded gtests with GNU parallel."
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -euo pipefail -c " \
-            cd build \
-         && seq 0 $((${gtest_shards} - 1)) | parallel -k --jobs ${gtest_shards} --halt never \
-            'GTEST_TOTAL_SHARDS=${gtest_shards} GTEST_SHARD_INDEX={} ./bin/tests --gtest_shuffle' \
-        "
-    else
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
-            cd build \
-         && ./bin/tests --gtest_shuffle \
-        "
-    fi
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
+        cd build \
+     && ./bin/tests --gtest_shuffle \
+    "
     restart_docker_daemon_if_on_gcloud
 }
 
@@ -267,6 +255,13 @@ uninstall_test() {
     "
 }
 
+lib_test() {
+    # C++ unit tests plus command-line / C++ linking and uninstall checks.
+    cpp_test
+    linking_test
+    uninstall_test
+}
+
 cpp_python_linking_uninstall_test() {
     # Runs the full test suite: C++ unit tests, Python unit tests,
     # command-line tools + C++ linking tests, and the uninstall test.
@@ -278,10 +273,22 @@ cpp_python_linking_uninstall_test() {
     # - BUILD_TENSORFLOW_OPS
     # - BUILD_SYCL_MODULE
     # - NPROC (optional)
-    cpp_test
+    lib_test
     python_test
-    linking_test
-    uninstall_test
+}
+
+run_docker_test_phases() {
+    local phase="${1:-all}"
+    case "${phase}" in
+        cpp) cpp_test ;;
+        python) python_test ;;
+        lib) lib_test ;;
+        all) cpp_python_linking_uninstall_test ;;
+        *)
+            echo "Error: invalid test phase: ${phase}." >&2
+            print_usage_and_exit_docker_test
+            ;;
+    esac
 }
 
 if [[ "$#" -lt 1 ]]; then
@@ -295,175 +302,155 @@ case "$1" in
 openblas-amd64-py310-dev)
     openblas_export_env amd64 py310 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py311-dev)
     openblas_export_env amd64 py311 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py312-dev)
     openblas_export_env amd64 py312 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py313-dev)
     openblas_export_env amd64 py313 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py314-dev)
     openblas_export_env amd64 py314 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py310)
     openblas_export_env amd64 py310
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py311)
     openblas_export_env amd64 py311
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py312)
     openblas_export_env amd64 py312
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py313)
     openblas_export_env amd64 py313
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py314)
     openblas_export_env amd64 py314
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 
 # OpenBLAS ARM64
 openblas-arm64-py310-dev)
     openblas_export_env arm64 py310 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py311-dev)
     openblas_export_env arm64 py311 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py312-dev)
     openblas_export_env arm64 py312 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py313-dev)
     openblas_export_env arm64 py313 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py314-dev)
     openblas_export_env arm64 py314 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py310)
     openblas_export_env arm64 py310
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py311)
     openblas_export_env arm64 py311
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py312)
     openblas_export_env arm64 py312
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py313)
     openblas_export_env arm64 py313
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py314)
     openblas_export_env arm64 py314
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 
 # CPU CI
 cpu-static)
     cpu-static_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-static-release)
     cpu-static-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-shared-ml)
     cpu-shared-ml_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-shared-ml-release)
     cpu-shared-ml-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 
-# SYCL CI
-# Optional 2nd arg selects a single test phase (cpp|python); this is used
-# to split C++ tests (build-lib job) from Python tests (build-wheel job,
-# which builds/tests the actual per-Python-version wheel separately) in
-# .github/workflows/ubuntu-sycl.yml, avoiding duplicate test runs.
+# SYCL CI — optional 2nd arg: cpp, python, lib, or all (see run_docker_test_phases).
 sycl-shared)
     sycl-shared_export_env
     ci_print_env
-    case "${2:-all}" in
-        cpp) cpp_test ;;
-        python) python_test ;;
-        all) cpp_python_linking_uninstall_test ;;
-        *)
-            echo "Error: invalid test phase: ${2}." >&2
-            print_usage_and_exit_docker_test
-            ;;
-    esac
+    run_docker_test_phases "${2:-all}"
     ;;
 sycl-static)
     sycl-static_export_env
     ci_print_env
-    case "${2:-all}" in
-        cpp) cpp_test ;;
-        python) python_test ;;
-        all) cpp_python_linking_uninstall_test ;;
-        *)
-            echo "Error: invalid test phase: ${2}." >&2
-            print_usage_and_exit_docker_test
-            ;;
-    esac
+    run_docker_test_phases "${2:-all}"
     ;;
 
     # ML CIs
 2-noble)
     2-noble_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 3-ml-shared-noble-release)
     3-ml-shared-noble-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 3-ml-shared-noble)
     3-ml-shared-noble_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 *)
     echo "Error: invalid argument: ${1}." >&2

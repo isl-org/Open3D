@@ -66,7 +66,12 @@ void pybind_sycl_utils_definitions(py::module& m) {
             .def_readonly("usm_device_allocations",
                           &sy::SYCLDevice::usm_device_allocations)
             .def_readonly("discrete_gpu", &sy::SYCLDevice::discrete_gpu)
-            .def_readonly("global_mem_size", &sy::SYCLDevice::global_mem_size);
+            .def_readonly("global_mem_size", &sy::SYCLDevice::global_mem_size)
+            .def_readonly("local_mem_size", &sy::SYCLDevice::local_mem_size)
+            .def_readonly("compute_units", &sy::SYCLDevice::compute_units)
+            .def_readonly("sub_group_sizes", &sy::SYCLDevice::sub_group_sizes)
+            .def("supports_subgroup_size",
+                 &sy::SYCLDevice::SupportsSubgroupSize, "size"_a);
 
     m_sycl.def("get_device_properties", &sy::GetSYCLDeviceProperties,
                "device"_a,

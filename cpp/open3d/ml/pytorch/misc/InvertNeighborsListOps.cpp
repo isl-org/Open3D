@@ -64,6 +64,19 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsList(
         TORCH_CHECK(false,
                     "InvertNeighborsList was not compiled with CUDA support")
 #endif
+    } else if (inp_neighbors_index.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL(int32_t, uint8_t, InvertNeighborsListSYCL)
+        CALL(int32_t, int8_t, InvertNeighborsListSYCL)
+        CALL(int32_t, int16_t, InvertNeighborsListSYCL)
+        CALL(int32_t, int32_t, InvertNeighborsListSYCL)
+        CALL(int32_t, int64_t, InvertNeighborsListSYCL)
+        CALL(int32_t, float, InvertNeighborsListSYCL)
+        CALL(int32_t, double, InvertNeighborsListSYCL)
+#else
+        TORCH_CHECK(false,
+                    "InvertNeighborsList was not compiled with SYCL support")
+#endif
     } else {
         CALL(int32_t, uint8_t, InvertNeighborsListCPU)
         CALL(int32_t, int8_t, InvertNeighborsListCPU)

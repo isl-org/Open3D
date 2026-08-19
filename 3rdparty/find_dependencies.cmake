@@ -1000,26 +1000,14 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-# curl and openssl (BoringSSL) are mutually referential static archives: curl
-# needs OpenSSL symbols and, depending on how the final link line gets
-# flattened by CMake (e.g. when Open3D itself is a shared library and must
-# fully resolve all symbols at build time), they can end up in an order where
-# ld's single left-to-right archive scan fails to resolve symbols. Wrap them
-# in a GNU ld archive group on UNIX (non-Apple) to ensure GNU ld rescans this
-# group of libraries until all symbols resolve, regardless of order. Use the
-# short "-Wl,-(" / "-Wl,-)" alias rather than "-Wl,--start-group" /
-# "-Wl,--end-group": the latter are also used verbatim by MKL's GROUPED
-# import (see open3d_import_3rdparty_library's GROUPED option below), and
-# CMake's link-line deduplication collapses repeated identical literal flag
-# strings across the whole dependency graph, emptying both groups and
-# stranding MKL's libraries outside their own grouping (undefined mkl_*
-# symbols at link time). We avoid CMake's modern LINK_GROUP RESCAN generator
-# expression here because it produces developer warnings when applied to
-# INTERFACE library targets (which Open3D::3rdparty_curl/openssl are).
-# The parentheses are backslash-escaped because CMake/Ninja invokes the link
-# command via "/bin/sh -c" without shell-quoting raw linker flag strings, and
-# bare "(" / ")" are shell metacharacters that would otherwise cause a shell
-# syntax error at link time.
+# curl and openssl (BoringSSL) are mutually-referential static archives, so a
+# single left-to-right ld scan can fail depending on final link order. Wrap
+# them in a GNU ld archive group (UNIX non-Apple) to force rescanning. Use the
+# short "-Wl,-(" / "-Wl,-)" alias, not "--start-group"/"--end-group", since
+# CMake's link-line deduplication would otherwise collapse those with MKL's
+# identical GROUPED markers below, breaking both groups. Parens are escaped
+# because the link command runs via "/bin/sh -c" and "(" / ")" are shell
+# metacharacters.
 if(UNIX AND NOT APPLE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
         "-Wl,-\\("
@@ -1783,6 +1771,55 @@ if(BUILD_SYCL_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_sycl)
 endif()
 
+# sycl-tla: SYCL Templates for Linear Algebra (Intel fork of CUTLASS v4.2.1).
+# Provides CUTLASS-compatible headers for Intel GPU ML ops via SYCL.
+# Actual kernel porting is handled separately; this only sets up the include path.
+if(BUILD_SYCL_MODULE)
+    if(USE_SYSTEM_SYCL_TLA)
+        find_path(3rdparty_sycl_tla_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_sycl_tla_INCLUDE_DIR)
+            add_library(3rdparty_sycl_tla INTERFACE)
+            target_include_directories(3rdparty_sycl_tla INTERFACE
+                ${3rdparty_sycl_tla_INCLUDE_DIR})
+            target_compile_definitions(3rdparty_sycl_tla INTERFACE
+                CUTLASS_ENABLE_SYCL SYCL_INTEL_TARGET)
+            add_library(Open3D::3rdparty_sycl_tla ALIAS 3rdparty_sycl_tla)
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_sycl_tla EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_SYCL_TLA OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_SYCL_TLA)
+        include(${Open3D_3RDPARTY_DIR}/sycl_tla/sycl_tla.cmake)
+        open3d_import_3rdparty_library(3rdparty_sycl_tla
+            INCLUDE_DIRS ${SYCL_TLA_INCLUDE_DIRS}
+            DEPENDS      ext_sycl_tla
+        )
+        # sycl-tla requires these two defines to enable its SYCL/Intel-GPU code
+        # paths (see cutlass/gpu_generics.h and cute/algorithm/reorder.hpp);
+        # without them the headers either omit the SYCL device-info shims or
+        # fail to compile the Xe DPAS (tensor core) dispatch entirely.
+        target_compile_definitions(3rdparty_sycl_tla INTERFACE
+            CUTLASS_ENABLE_SYCL SYCL_INTEL_TARGET)
+    endif()
+    # sycl-tla's Xe DPAS mainloop/epilogue kernels use SPIR-V features (e.g.
+    # split control-flow barriers) that are not enabled by default when
+    # targeting the generic "spir64" JIT target; the SPIR-V translator's
+    # link step fails ("Feature requires ... SPV_INTEL_split_barrier")
+    # without explicitly opting in. This mirrors the flags sycl-tla's own
+    # CMake (cmake/FindDPCPP.cmake) adds when building its own examples/
+    # tests, and is required for any target that links in sycl-tla-based
+    # GEMM code (e.g. the SYCL PyTorch conv ops).
+    if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+        target_link_options(3rdparty_sycl_tla INTERFACE
+            "-Xspirv-translator"
+            "-spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate")
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_sycl_tla)
+endif()
+
 if(BUILD_SYCL_MODULE)
     set(OPEN3D_USE_ONEAPI_PACKAGES ON CACHE BOOL "Use the oneAPI distribution of MKL/TBB." FORCE)
 else()
@@ -1794,7 +1831,16 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     # 1. oneMKL
     # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
-    set(MKL_LINK static)
+    # oneAPI >= 2026.0 dropped the static SYCL MKL libraries (libmkl_sycl*.a),
+    # and the shared replacements resolve the CPU MKL routines they call
+    # (cblas_*_64) at load time from a *shared* CPU MKL in the process. So a
+    # Linux/macOS SYCL build links all of MKL dynamically; CPU-only oneAPI
+    # builds and Windows (which has import libraries) keep the static link.
+    if(BUILD_SYCL_MODULE AND NOT WIN32)
+        set(MKL_LINK dynamic)
+    else()
+        set(MKL_LINK static)
+    endif()
     find_package(MKL REQUIRED)
     # oneAPI MKL's lib layout differs by platform: Linux nests libs under an
     # "intel64" subdirectory, while Windows (verified with oneAPI 2025.3)
@@ -1805,16 +1851,38 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         set(MKL_LIB_DIR ${MKL_ROOT}/lib/intel64)
     endif()
 
-    set(MKL_SYCL_LIBS)
+    # Libraries linked statically by open3d_import_3rdparty_library, and (on
+    # Linux/macOS SYCL builds) the shared libraries linked by absolute path
+    # afterwards. Of the SYCL domains, only the ones Open3D calls are linked
+    # (blas: Matmul/AddMM, lapack: LU/SVD/Solve/Inverse/LeastSquares) instead of
+    # the libmkl_sycl.so umbrella, which is a linker script covering all domains
+    # and would add DT_NEEDED entries for domains (vm, stats, data_fitting) that
+    # the oneMKL pip packages do not ship.
+    set(MKL_STATIC_LIBS mkl_intel_ilp64 mkl_tbb_thread mkl_core)
+    set(MKL_SHARED_LIBRARIES)
     if(BUILD_SYCL_MODULE)
         if(WIN32)
-            set(MKL_SYCL_LIBS
-                $<IF:$<CONFIG:Debug>,mkl_sycld,mkl_sycl>
+            # oneAPI >= 2026.0 dropped the umbrella mkl_sycl(d).lib import
+            # library on Windows too (same removal as libmkl_sycl.a on
+            # Linux/macOS, see the oneAPI >= 2026.0 comment above); link only
+            # the two domains Open3D actually calls (blas, lapack).
+            list(PREPEND MKL_STATIC_LIBS
                 $<IF:$<CONFIG:Debug>,mkl_sycl_blasd_dll,mkl_sycl_blas_dll>
                 $<IF:$<CONFIG:Debug>,mkl_sycl_lapackd_dll,mkl_sycl_lapack_dll>
             )
         else()
-            set(MKL_SYCL_LIBS mkl_sycl)
+            set(MKL_STATIC_LIBS)
+            foreach(mkl_lib IN ITEMS mkl_sycl_blas mkl_sycl_lapack
+                                     mkl_intel_ilp64 mkl_tbb_thread mkl_core)
+                find_library(MKL_${mkl_lib}_LIBRARY
+                    NAMES ${mkl_lib}
+                    PATHS ${MKL_LIB_DIR}
+                    NO_DEFAULT_PATH
+                    REQUIRED
+                )
+                list(APPEND MKL_SHARED_LIBRARIES ${MKL_${mkl_lib}_LIBRARY})
+                mark_as_advanced(MKL_${mkl_lib}_LIBRARY)
+            endforeach()
         endif()
     endif()
 
@@ -1823,7 +1891,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         GROUPED
         INCLUDE_DIRS ${MKL_INCLUDE}/
         LIB_DIR      ${MKL_LIB_DIR}
-        LIBRARIES    ${MKL_SYCL_LIBS} mkl_intel_ilp64 mkl_tbb_thread mkl_core
+        LIBRARIES    ${MKL_STATIC_LIBS}
     )
     if (BUILD_SYCL_MODULE)
     # target_link_options(3rdparty_mkl INTERFACE "-Wl,-export-dynamic")
@@ -1838,7 +1906,8 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
                 list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES "OpenCL")
             endif()
         else()
-            target_link_libraries(3rdparty_mkl INTERFACE OpenCL)
+            target_link_libraries(3rdparty_mkl INTERFACE
+                ${MKL_SHARED_LIBRARIES} OpenCL)
         endif()
     endif()
     # MKL definitions

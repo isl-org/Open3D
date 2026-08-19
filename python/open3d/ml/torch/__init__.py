@@ -52,6 +52,18 @@ if (_build_config["BUILD_CUDA_MODULE"] and
 --------------------------------------------------------------------------------
 """)
 
+# Single open3d_torch_ops.so now serves all backends (CPU/CUDA/SYCL); warn
+# (don't fail, there's no other variant to fall back to) if the installed
+# PyTorch's CUDA runtime doesn't match what Open3D's ops were built against,
+# since loading may still succeed but behave incorrectly downstream.
+if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
+        _torch.version.cuda != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but PyTorch was built with "
+          "CUDA {}. The PyTorch ops may fail to load or behave incorrectly. "
+          "Consider installing PyTorch with CUDA {}.".format(
+              _build_config["CUDA_VERSION"], _torch.version.cuda,
+              _build_config["CUDA_VERSION"]))
+
 _lib_path = []
 # allow overriding the path to the op library with an env var.
 if 'OPEN3D_TORCH_OP_LIB' in _os.environ:
@@ -61,29 +73,33 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-# CUDA wheels ship open3d/{cpu,cuda} ops; try cuda when torch's CUDA matches
-# the wheel, else cpu. CPU-only wheels use cpu ops only.
-_lib_arch = ('cpu',)
-if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
-    if _torch.version.cuda == _build_config["CUDA_VERSION"]:
-        _lib_arch = ('cuda', 'cpu')
-    else:
-        print("Warning: Open3D was built with CUDA {} but "
-              "PyTorch was built with CUDA {}. Falling back to CPU for now. "
-              "Otherwise, install PyTorch with CUDA {}.".format(
-                  _build_config["CUDA_VERSION"], _torch.version.cuda,
-                  _build_config["CUDA_VERSION"]))
-_lib_path.extend([
-    _os.path.join(_package_root, _la,
-                  'open3d_torch_ops' + _lib_suffix + _lib_ext)
-    for _la in _lib_arch
-])
+_lib_name = 'open3d_torch_ops' + _lib_suffix + _lib_ext
+_lib_path.append(_os.path.join(_package_root, _lib_name))
 
-# Ops live in open3d/{cpu,cuda}; on Windows add the package root so Open3D.dll
-# (beside this package) is found when torch loads the ops.
-_dll_dir = None
+# On Windows add DLL search directories so Open3D.dll and SYCL runtime DLLs
+# are found when torch loads the ops. SYCL/oneAPI runtime DLLs come from
+# pip-installed torch+xpu packages (intel-sycl-rt, intel-opencl-rt,
+# onemkl-sycl-*, intel-openmp, ...), not from a system oneAPI install. These
+# are data-only wheels (no importable Python module) that pip installs under
+# "<sys.prefix>/Library/bin" on Windows (verified by inspecting the
+# intel-sycl-rt wheel: its DLLs are stored at
+# "intel_sycl_rt-<ver>.data/data/Library/bin/*.dll", which pip's "data"
+# install scheme maps to "<sys.prefix>/Library/bin").
+_dll_dirs = []
 if _sys.platform == 'win32':
-    _dll_dir = _os.add_dll_directory(_os.path.abspath(_package_root))
+    _dll_dirs.append(_os.add_dll_directory(_os.path.abspath(_package_root)))
+    if _build_config.get('BUILD_SYCL_MODULE', False):
+        # torch/lib holds torch.dll, torch_xpu.dll and other bundled DLLs.
+        _torch_lib = _os.path.join(_os.path.dirname(_torch.__file__), 'lib')
+        if _os.path.isdir(_torch_lib):
+            _dll_dirs.append(_os.add_dll_directory(
+                _os.path.abspath(_torch_lib)))
+        # <sys.prefix>/Library/bin holds the Intel oneAPI/SYCL runtime DLLs
+        # (sycl9.dll, pi_*.dll, libmkl_sycl_*.dll, libiomp5md.dll, ...).
+        _sycl_rt_bin = _os.path.join(_sys.prefix, 'Library', 'bin')
+        if _os.path.isdir(_sycl_rt_bin):
+            _dll_dirs.append(
+                _os.add_dll_directory(_os.path.abspath(_sycl_rt_bin)))
 
 _load_except = None
 _loaded = False
@@ -100,8 +116,8 @@ for _lp in _lib_path:
                   'BUILD_PYTORCH_OPS was enabled.'.format(
                       _os.path.realpath(_lp)))
 
-if _dll_dir:
-    _dll_dir.close()
+for _dd in _dll_dirs:
+    _dd.close()
 
 if not _loaded:
     raise _load_except
