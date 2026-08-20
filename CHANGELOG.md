@@ -95,7 +95,7 @@
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
-
+-   Add expand/collapse state support for TreeView items in GUI (PR #7451)
 ## 0.13
 
 -   CUDA support 10.1 -> 11.0. Tensorflow 2.3.1 -> 2.4.1. PyTorch 1.6.0 -> 1.7.1 (PR #3049). This requires a custom PyTorch wheel from <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.7.1> due to PyTorch issue #52663

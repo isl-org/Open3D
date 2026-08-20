@@ -1664,7 +1664,9 @@ void pybind_gui_definitions(py::module &m) {
                           "The currently selected item")
             .def("set_on_selection_changed", &TreeView::SetOnSelectionChanged,
                  "Sets f(new_item_id) which is called when the user "
-                 "changes the selection.");
+                 "changes the selection.")
+            .def("is_item_expanded", &TreeView::IsItemExpanded)
+            .def("set_item_expanded", &TreeView::SetItemExpanded);
 
     // ---- TreeView cells ----
     auto checkable_cell = static_cast<
