@@ -60,6 +60,10 @@ public:
     /// Returns the last error from the mainloop thread.
     std::runtime_error GetLastError();
 
+    /// Returns the endpoint the OS actually bound to (e.g. when address_ is
+    /// tcp://localhost:0). Must be called after Start() succeeds.
+    std::string GetLastEndpoint() const;
+
     /// Sets the message processor object which will process incoming messages.
     void SetMessageProcessor(std::shared_ptr<MessageProcessorBase> processor);
 
