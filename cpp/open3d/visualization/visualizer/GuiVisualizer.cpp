@@ -1312,7 +1312,7 @@ void GuiVisualizer::OnMenuItemSelected(gui::Menu::ItemId item_id) {
                            "Point cloud files (.xyz, .xyzn, .xyzrgb, .ply, "
                            ".pcd, .pts)");
             dlg->AddFilter(".ply .splat .spz",
-                           "Gaussian Splat files (.ply, .splat,.spz)");
+                           "Gaussian Splat files (.ply, .splat, .spz)");
             dlg->AddFilter(".ply", "Polygon files (.ply)");
             dlg->AddFilter(".stl", "Stereolithography files (.stl)");
             dlg->AddFilter(".fbx", "Autodesk Filmbox files (.fbx)");

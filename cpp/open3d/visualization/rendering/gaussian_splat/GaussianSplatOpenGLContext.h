@@ -15,6 +15,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+
 #if !defined(__APPLE__)
 
 namespace open3d {
@@ -49,6 +52,10 @@ public:
     ///   Linux   -> GLXContext
     ///   Windows -> HGLRC
     void* GetNativeContext() const;
+
+    /// Returns the underlying GLFWwindow* (as void*), for adapter-identity
+    /// lookups (see GpuAdapterSelection.h's GetAdapterInfoForWindow()).
+    void* GetNativeWindowHandle() const { return glfw_window_; }
 
     /// Destroys the context and associated resources.
     void Shutdown();

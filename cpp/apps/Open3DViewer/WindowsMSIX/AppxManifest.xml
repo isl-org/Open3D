@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest for the Open3D Viewer (Windows x64, side-load distribution).
+
+  Design decisions:
+  - Checked in as source; only the Version attribute is substituted at pack time
+    in CI (placeholder @OPEN3D_MSIX_VERSION@ → four-part version, e.g. 0.18.0.0).
+  - Publisher "CN=Open3D" is matched by the self-signed dev cert generated in CI
+    using the manifest publisher value
+  - runFullTrust is the only required capability for a packaged Win32 desktop app.
+  - File associations are derived from cpp/apps/Open3DViewer/Open3DViewer.xml.
+    The viewer receives the opened file path as argv[1] (standard packaged app
+    full-trust activation behaviour).
+  - MSIX PNGs are kept with the shared GUI resources and installed under
+    resources/ alongside the viewer's other runtime resources.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="Open3DViewer"
+    Publisher="CN=Open3D"
+    Version="@OPEN3D_MSIX_VERSION@"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Open3D</DisplayName>
+    <PublisherDisplayName>Open3D</PublisherDisplayName>
+    <Logo>resources\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <!-- Windows 10 1809 (RS5) minimum; tested on Server 2022 (windows-2022 CI runner). -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.20348.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="Open3DViewer"
+                 Executable="Open3D.exe"
+                 EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Open3D"
+        Description="Open3D Viewer for 3D data, meshes, point clouds and Gaussian Splats."
+        Square150x150Logo="resources\Square150x150Logo.png"
+        Square44x44Logo="resources\Square44x44Logo.png"
+        BackgroundColor="transparent" />
+      <Extensions>
+        <!-- Register file associations for all formats supported by Open3D.
+             Source of truth: cpp/apps/Open3DViewer/Open3DViewer.xml        -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="open3dformats">
+            <uap:Logo>resources\Square44x44Logo.png</uap:Logo>
+            <uap:DisplayName>Open3D 3D file</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.ply</uap:FileType>
+              <uap:FileType>.stl</uap:FileType>
+              <uap:FileType>.obj</uap:FileType>
+              <uap:FileType>.off</uap:FileType>
+              <uap:FileType>.fbx</uap:FileType>
+              <uap:FileType>.glb</uap:FileType>
+              <uap:FileType>.gltf</uap:FileType>
+              <uap:FileType>.pcd</uap:FileType>
+              <uap:FileType>.pts</uap:FileType>
+              <uap:FileType>.xyz</uap:FileType>
+              <uap:FileType>.splat</uap:FileType>
+              <uap:FileType>.spz</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+
+</Package>

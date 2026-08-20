@@ -110,6 +110,7 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/gaussian_splat/ComputeGPUVulkan.cpp
+            rendering/GpuAdapterSelection.cpp
             rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
             rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp

@@ -32,6 +32,7 @@
 
 #if !defined(__APPLE__)
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -47,6 +48,8 @@
 #define VK_NO_PROTOTYPES
 #endif
 #include <vulkan/vulkan_raii.hpp>
+
+#include "open3d/visualization/rendering/GpuAdapterSelection.h"
 
 namespace open3d {
 namespace visualization {
@@ -109,11 +112,12 @@ public:
     static GaussianSplatVulkanInteropContext& GetInstance();
 
     /// Load Vulkan via BlueVK, select a physical device with external-memory
-    /// extension support, and create a compute queue.
-    /// Must be called BEFORE
-    /// GaussianSplatOpenGLContext::InitializeStandalone(). Returns false on
-    /// failure; call GetLastError() for a diagnostic string.
-    bool Initialize();
+    /// extension support, and create a compute queue. If `required_adapter`
+    /// is valid, only that physical GPU is selected; otherwise native discrete
+    /// GPUs are preferred over integrated, translation, and software devices.
+    /// Vulkan and OpenGL must use the same adapter for memory-object interop.
+    /// Returns false on failure; call GetLastError() for a diagnostic string.
+    bool Initialize(const GpuAdapterInfo* required_adapter = nullptr);
 
     /// Release all Vulkan resources and invalidate the context.
     void Shutdown();
@@ -209,7 +213,7 @@ private:
     // --- Internal helpers -------------------------------------------------
 
     bool CreateInstance();
-    bool SelectPhysicalDevice();
+    bool SelectPhysicalDevice(const GpuAdapterInfo* required_adapter);
     bool CreateLogicalDevice();
 
     /// Allocate a VkImage with a dedicated exportable memory allocation and
@@ -220,11 +224,13 @@ private:
                                  VkImageUsageFlags usage,
                                  VkImage& out_image,
                                  VkDeviceMemory& out_memory,
-                                 int& out_fd) const;
+                                 // intptr_t (not int): must hold a 64-bit
+                                 // Windows HANDLE without truncation.
+                                 intptr_t& out_fd) const;
 
     /// Import a Vulkan FD into an OpenGL memory-object and create a GL
     /// texture backed by that memory object.
-    bool ImportFDIntoGL(int fd,
+    bool ImportFDIntoGL(intptr_t fd,
                         std::uint32_t width,
                         std::uint32_t height,
                         VkDeviceSize memory_size,
