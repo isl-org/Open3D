@@ -19,6 +19,7 @@ namespace rpc {
 class DummyReceiver : public ZMQReceiver {
 public:
     DummyReceiver(const std::string& address, int timeout);
+    using ZMQReceiver::GetLastEndpoint;
 };
 
 }  // namespace rpc

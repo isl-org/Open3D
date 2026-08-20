@@ -92,6 +92,11 @@ std::runtime_error ZMQReceiver::GetLastError() {
     return result;
 }
 
+std::string ZMQReceiver::GetLastEndpoint() const {
+    if (!socket_) return "";
+    return socket_->get(zmq::sockopt::last_endpoint);
+}
+
 void ZMQReceiver::Mainloop() {
     context_ = GetZMQContext();
     socket_ = std::unique_ptr<zmq::socket_t>(
