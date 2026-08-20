@@ -10,6 +10,7 @@
 import sys
 import os
 import shutil
+from pathlib import Path
 import open3d as o3d
 import numpy as np
 import pytest
@@ -95,10 +96,9 @@ def test_RSBagReader_post_processing_filters():
     bag_reader.close()
 
     bag_reader = o3d.t.io.RSBagReader()
-    bag_reader.open(sample_l515_bag.path,
-                    {"decimation": {
-                        "filter_magnitude": 2
-                    }})
+    decimation = o3d.t.io.RSBagReader.PostProcessingFilter(
+        "decimation", {"filter_magnitude": 2})
+    bag_reader.open(sample_l515_bag.path, [decimation])
     filtered_rgbd = bag_reader.next_frame()
     bag_reader.close()
 
@@ -115,14 +115,16 @@ def test_RSBagReader_post_processing_filter_validation():
     # These inputs are rejected before bag playback starts, so this test is
     # safe to run in CI despite the historical RSBagReader playback hang.
     bag_reader = o3d.t.io.RSBagReader()
+    unsupported_filter = o3d.t.io.RSBagReader.PostProcessingFilter(
+        "unsupported", {})
     with pytest.raises(RuntimeError,
                        match="Unsupported RealSense post-processing filter"):
-        bag_reader.open("unused.bag", {"unsupported": {}})
+        bag_reader.open(Path("unused.bag"), [unsupported_filter])
+    unsupported_option = o3d.t.io.RSBagReader.PostProcessingFilter(
+        "decimation", {"unsupported": 1})
     with pytest.raises(RuntimeError,
                        match="Unsupported RealSense post-processing option"):
-        bag_reader.open("unused.bag", {"decimation": {"unsupported": 1}})
-    with pytest.raises(RuntimeError, match="options must be a dict"):
-        bag_reader.open("unused.bag", {"decimation": []})
+        bag_reader.open("unused.bag", [unsupported_option])
 
 
 # Test recording from a RealSense camera, if one is connected
