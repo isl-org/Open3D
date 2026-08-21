@@ -11,9 +11,53 @@
 #include <tomasakeninemoeller/tribox3.h>
 
 #include <cmath>
+#include <limits>
 
 namespace open3d {
 namespace geometry {
+namespace {
+
+constexpr double kUnitNormalPlaneDistanceTolerance = 1e-6;
+const double kMinimumRelativeNormalMagnitude =
+        std::sqrt(std::numeric_limits<double>::epsilon());
+
+// A triangle cannot intersect another triangle when all of its vertices are
+// unambiguously on the same side of the other triangle's supporting plane.
+bool SeparatedByTrianglePlane(const Eigen::Vector3d& p0,
+                              const Eigen::Vector3d& p1,
+                              const Eigen::Vector3d& p2,
+                              const Eigen::Vector3d& q0,
+                              const Eigen::Vector3d& q1,
+                              const Eigen::Vector3d& q2) {
+    const Eigen::Vector3d edge0 = p1 - p0;
+    const Eigen::Vector3d edge1 = p2 - p0;
+    const Eigen::Vector3d normal = edge0.cross(edge1);
+    const double edge_norm_product = edge0.norm() * edge1.norm();
+    const double normal_norm = normal.norm();
+
+    // Normalizing a relatively tiny cross product can amplify roundoff into
+    // an unreliable direction, so leave ambiguous cases to the predicate.
+    if (!std::isfinite(normal_norm) || !std::isfinite(edge_norm_product) ||
+        edge_norm_product == 0.0 ||
+        normal_norm <= kMinimumRelativeNormalMagnitude * edge_norm_product) {
+        return false;
+    }
+    const Eigen::Vector3d unit_normal = normal / normal_norm;
+    const double d0 = unit_normal.dot(q0 - p0);
+    const double d1 = unit_normal.dot(q1 - p0);
+    const double d2 = unit_normal.dot(q2 - p0);
+    if (!std::isfinite(d0) || !std::isfinite(d1) || !std::isfinite(d2)) {
+        return false;
+    }
+    return (d0 > kUnitNormalPlaneDistanceTolerance &&
+            d1 > kUnitNormalPlaneDistanceTolerance &&
+            d2 > kUnitNormalPlaneDistanceTolerance) ||
+           (d0 < -kUnitNormalPlaneDistanceTolerance &&
+            d1 < -kUnitNormalPlaneDistanceTolerance &&
+            d2 < -kUnitNormalPlaneDistanceTolerance);
+}
+
+}  // namespace
 
 bool IntersectionTest::AABBAABB(const Eigen::Vector3d& min0,
                                 const Eigen::Vector3d& max0,
@@ -51,6 +95,10 @@ bool IntersectionTest::TriangleTriangle3d(const Eigen::Vector3d& p0,
     Eigen::Vector3d q0m = (q0 - mu).array() / sigma.array();
     Eigen::Vector3d q1m = (q1 - mu).array() / sigma.array();
     Eigen::Vector3d q2m = (q2 - mu).array() / sigma.array();
+    if (SeparatedByTrianglePlane(p0m, p1m, p2m, q0m, q1m, q2m) ||
+        SeparatedByTrianglePlane(q0m, q1m, q2m, p0m, p1m, p2m)) {
+        return false;
+    }
     return NoDivTriTriIsect(p0m.data(), p1m.data(), p2m.data(), q0m.data(),
                             q1m.data(), q2m.data()) != 0;
 }
