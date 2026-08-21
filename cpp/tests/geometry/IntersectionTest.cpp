@@ -76,6 +76,22 @@ TEST(IntersectionTest, TriangleTriangle3dNearParallelIntersection) {
                                                                q1, q2));
 }
 
+TEST(IntersectionTest, TriangleTriangle3dNearDegenerateIntersection) {
+    const Eigen::Vector3d p0(0.0, 0.0, 0.0);
+    const Eigen::Vector3d p1(1.0, 1.0, 1.0);
+    const Eigen::Vector3d p2(2.0, 2.0 + 1e-11, 2.0 - 1e-11);
+
+    // Q is contained in P, but both triangles are nearly degenerate.
+    const Eigen::Vector3d q0 = 0.25 * p1;
+    const Eigen::Vector3d q1 = 0.5 * p1;
+    const Eigen::Vector3d q2 = 0.25 * p2;
+
+    EXPECT_TRUE(geometry::IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0,
+                                                               q1, q2));
+    EXPECT_TRUE(geometry::IntersectionTest::TriangleTriangle3d(q0, q1, q2, p0,
+                                                               p1, p2));
+}
+
 TEST(IntersectionTest, PointsCoplanar) {
     Eigen::Vector3d p0(0, 0, 0);
     Eigen::Vector3d p1(1, 0, 0);

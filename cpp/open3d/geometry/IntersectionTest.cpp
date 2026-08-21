@@ -11,12 +11,15 @@
 #include <tomasakeninemoeller/tribox3.h>
 
 #include <cmath>
+#include <limits>
 
 namespace open3d {
 namespace geometry {
 namespace {
 
 constexpr double kUnitNormalPlaneDistanceTolerance = 1e-6;
+const double kMinimumRelativeNormalMagnitude =
+        std::sqrt(std::numeric_limits<double>::epsilon());
 
 // A triangle cannot intersect another triangle when all of its vertices are
 // unambiguously on the same side of the other triangle's supporting plane.
@@ -26,9 +29,17 @@ bool SeparatedByTrianglePlane(const Eigen::Vector3d& p0,
                               const Eigen::Vector3d& q0,
                               const Eigen::Vector3d& q1,
                               const Eigen::Vector3d& q2) {
-    const Eigen::Vector3d normal = (p1 - p0).cross(p2 - p0);
+    const Eigen::Vector3d edge0 = p1 - p0;
+    const Eigen::Vector3d edge1 = p2 - p0;
+    const Eigen::Vector3d normal = edge0.cross(edge1);
+    const double edge_norm_product = edge0.norm() * edge1.norm();
     const double normal_norm = normal.norm();
-    if (!std::isfinite(normal_norm) || normal_norm == 0.0) {
+
+    // Normalizing a relatively tiny cross product can amplify roundoff into
+    // an unreliable direction, so leave ambiguous cases to the predicate.
+    if (!std::isfinite(normal_norm) || !std::isfinite(edge_norm_product) ||
+        edge_norm_product == 0.0 ||
+        normal_norm <= kMinimumRelativeNormalMagnitude * edge_norm_product) {
         return false;
     }
     const Eigen::Vector3d unit_normal = normal / normal_norm;
