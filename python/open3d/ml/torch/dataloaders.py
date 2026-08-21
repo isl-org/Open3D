@@ -8,8 +8,10 @@
 
 import os as _os
 from open3d import _build_config
+from open3d._optional_deps import require_ml_extra
 
 if _build_config['BUNDLE_OPEN3D_ML']:
+    require_ml_extra()
     if 'OPEN3D_ML_ROOT' in _os.environ:
         from ml3d.torch.dataloaders import *
     else:

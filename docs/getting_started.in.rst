@@ -76,6 +76,16 @@ Pip (PyPI)
 
 .. note::
 
+   The Open3D-ML models and pipelines (``open3d.ml.torch``, ``open3d.ml.tf``)
+   need additional Python packages, which are not installed by default. Install
+   them with the ``ml`` extra:
+
+   .. code-block:: bash
+
+        pip install open3d[ml]        # or open3d-cpu[ml] / open3d-xpu[ml]
+
+.. note::
+
    On Windows, ``open3d`` is the CPU wheel; ``pip install open3d-cuda`` and
    ``pip install open3d-xpu`` install the CUDA- and SYCL-accelerated wheels
    respectively (CUDA runtime dependencies are installed automatically).

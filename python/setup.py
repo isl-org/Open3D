@@ -102,9 +102,7 @@ extras_require = {}
 # Read requirements for ML.
 if "@BUNDLE_OPEN3D_ML@" == "ON":
     with open("requirements_ml.txt", "r") as f:
-        extras_require["ml"] = [
-            line.strip() for line in f.readlines() if line
-        ]
+        extras_require["ml"] = [line.strip() for line in f.readlines() if line]
 
 entry_points = {
     "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]

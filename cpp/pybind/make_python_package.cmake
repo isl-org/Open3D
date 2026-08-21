@@ -37,16 +37,26 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
-# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd on libOpen3D.
+# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd.
+# Shared builds ship libOpen3D; static builds link Filament into the pybind
+# extension instead, so fall back to that as the ELF to probe.
 if(BUILD_GUI AND UNIX AND NOT APPLE)
     file(GLOB _libopen3d_probe LIST_DIRECTORIES false
         "${PYTHON_PACKAGE_DST_DIR}/open3d/libOpen3D.so.*")
-    list(GET _libopen3d_probe 0 _libopen3d_probe)
-    execute_process(
-        COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/package_linux_wheel_runtime.sh"
-            "${PYTHON_PACKAGE_DST_DIR}/open3d" "${_libopen3d_probe}"
-        COMMAND_ERROR_IS_FATAL ANY
-    )
+    if(NOT _libopen3d_probe)
+        file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+            "${PYTHON_PACKAGE_DST_DIR}/open3d/pybind*.so")
+    endif()
+    if(_libopen3d_probe)
+        list(GET _libopen3d_probe 0 _libopen3d_probe)
+        execute_process(
+            COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/package_linux_wheel_runtime.sh"
+                "${PYTHON_PACKAGE_DST_DIR}/open3d" "${_libopen3d_probe}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    else()
+        message(WARNING "No ELF found in the Python package to probe for libc++")
+    endif()
 endif()
 
 # 3) Configured files and supporting files

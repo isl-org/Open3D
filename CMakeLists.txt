@@ -207,12 +207,21 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
-# Bundled when either ML ops backend is enabled (not a separate user-facing option).
 if(BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
-    set(BUNDLE_OPEN3D_ML ON)
-else()
-    set(BUNDLE_OPEN3D_ML OFF)
+    find_path(
+        OPEN3D_ML_ROOT
+        NAMES set_open3d_ml_root.sh
+        HINTS $ENV{OPEN3D_ML_ROOT}
+        DOC "Path to the Open3D-ML repo, bundled in the wheel when ML ops are built. May also be set as an env var."
+        NO_DEFAULT_PATH
+    )
 endif()
+if(OPEN3D_ML_ROOT AND (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
+    set(BUNDLE_OPEN3D_ML_DEFAULT ON)
+else()
+    set(BUNDLE_OPEN3D_ML_DEFAULT OFF)
+endif()
+option(BUNDLE_OPEN3D_ML "Includes the Open3D-ML repo in the wheel. Defaults to ON when ML ops are built and OPEN3D_ML_ROOT is set." ${BUNDLE_OPEN3D_ML_DEFAULT})
 
 # Build Python bindings (and optional ML ops) against an installed Open3D
 # devel package via find_package(Open3D). Skips compiling the C++ core and
@@ -295,6 +304,12 @@ if(APPLE)
         message(WARNING "xcrun was not found. Metal shader compilation for "
         "Gaussian splatting will require Xcode command line tools.")
     endif()
+endif()
+if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
+    message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+endif()
+if(BUNDLE_OPEN3D_ML AND NOT OPEN3D_ML_ROOT)
+    message(SEND_ERROR "BUNDLE_OPEN3D_ML=ON requires OPEN3D_ML_ROOT to point to the Open3D-ML repo. Set -DOPEN3D_ML_ROOT=<path> or the env var with the same name.")
 endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
@@ -504,8 +519,10 @@ if(BUILD_CUDA_MODULE)
             # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
             find_package(CUDAToolkit REQUIRED)
             if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.6")
-                # CUDA 12.x release wheels: drop Turing (75); 90-real SASS + 90 PTX for forward compatibility.
-                set(CMAKE_CUDA_ARCHITECTURES 80-real 86-real 89-real 90-real 90)
+                # CUDA 12.6+ release wheels: SASS for Ampere..Hopper, compute_75 PTX
+                # so Turing (T4, RTX 20xx) still runs via JIT without shipping its
+                # SASS, and compute_90 PTX for forward compatibility.
+                set(CMAKE_CUDA_ARCHITECTURES 75-virtual 80-real 86-real 89-real 90)
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
                 set(CMAKE_CUDA_ARCHITECTURES 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")

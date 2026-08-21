@@ -163,13 +163,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          path: /tmp/Open3D-ML
-   
+          # actions/checkout only accepts paths inside GITHUB_WORKSPACE.
+          path: open3d_ml
 
       - name: Install doc dependencies
         run: |
           source util/ci_utils.sh
-          install_docs_dependencies /tmp/Open3D-ML
+          install_docs_dependencies "${GITHUB_WORKSPACE}/open3d_ml"
 
       - name: Install Open3D wheel
         run: python -m pip install open3d*.whl

@@ -223,7 +223,7 @@ build_pip_package() {
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
     elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
-        echo "Open3D-ML not available; configure requires OPEN3D_ML_ROOT when ML ops are ON."
+        echo "OPEN3D_ML_ROOT not set: building ML ops without the Open3D-ML models and pipelines."
     fi
     if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new Open3D release"
@@ -503,7 +503,7 @@ build_pip_package_from_installed() {
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT} (bundled when ML ops are ON)."
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
     elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
-        echo "Open3D-ML not available; configure requires OPEN3D_ML_ROOT when ML ops are ON."
+        echo "OPEN3D_ML_ROOT not set: building ML ops without the Open3D-ML models and pipelines."
     fi
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
         BUILD_AZURE_KINECT=ON
@@ -639,6 +639,11 @@ test_wheel() {
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -W default -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
+    # Wheels bundling Open3D-ML declare its Python dependencies as the `ml`
+    # extra, needed by the models, pipelines and datasets.
+    if python -c "import sys, open3d; sys.exit(not open3d._build_config['BUNDLE_OPEN3D_ML'])"; then
+        python -m pip install "${wheel_path}[ml]"
+    fi
     python -W default -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo
     # echo "Dynamic libraries used:"

@@ -411,6 +411,8 @@ jobs:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
       BUILD_PYTORCH_OPS: ${{ matrix.device == 'cuda' && 'OFF' || 'ON' }}
+      # Bundles the Open3D-ML models and pipelines when ML ops are built.
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/open3d_ml
 
     steps:
 
@@ -674,6 +676,11 @@ jobs:
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
           python -m pip install $PIP_PKG_NAME
+          # Wheels bundling Open3D-ML declare its Python dependencies as the
+          # `ml` extra, needed by the models, pipelines and datasets.
+          $bundlesML = python -c "import open3d; print(open3d._build_config['BUNDLE_OPEN3D_ML'])" |
+            Select-Object -Last 1
+          if ($bundlesML.Trim() -eq 'True') { python -m pip install "${PIP_PKG_NAME}[ml]" }
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
           python -c "import open3d; print('SYCL enabled: ', open3d.core.sycl.is_available() if hasattr(open3d.core, 'sycl') else False)"
