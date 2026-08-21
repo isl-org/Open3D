@@ -223,6 +223,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
+    summary._async_data_writer.close()
     shutil.rmtree(logdir)
 
 
@@ -321,6 +322,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
+    summary._async_data_writer.close()
     shutil.rmtree(logdir)
 
 
