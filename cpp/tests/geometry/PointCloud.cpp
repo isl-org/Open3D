@@ -1504,6 +1504,21 @@ TEST(PointCloud, CreateFromDepthImage) {
     // visualization::DrawGeometries({pcd}); // Uncomment for manual check
 }
 
+TEST(PointCloud, CreateFromFloatDepthImageTruncatesDepth) {
+    geometry::Image depth;
+    depth.Prepare(2, 1, 1, 4);
+    float* depth_data = depth.PointerAs<float>();
+    depth_data[0] = 1.0f;
+    depth_data[1] = 2.0f;
+
+    camera::PinholeCameraIntrinsic intrinsic(2, 1, 1.0, 1.0, 0.0, 0.0);
+    auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
+            depth, intrinsic, Eigen::Matrix4d::Identity(), 1.0, 2.0);
+
+    ASSERT_EQ(pointcloud->points_.size(), 1);
+    EXPECT_EQ(pointcloud->points_[0], Eigen::Vector3d(0.0, 0.0, 1.0));
+}
+
 TEST(PointCloud, CreateFromRGBDImage) {
     data::SampleRedwoodRGBDImages redwood_data;
     const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
