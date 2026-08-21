@@ -91,4 +91,4 @@ If Python bindings are required, use an activated virtual environment or set
 Use the repository's own formatting tools and pinned versions.
 
 - `pip install -r python/requirements_style.txt`
-- `python util/check_style.py --apply` or `cmake --build build --target apply-style --parallel`
+- `python util/check_style.py --apply --changed-only` or `cmake --build build --target apply-style --parallel`
