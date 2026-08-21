@@ -16,7 +16,8 @@ try:
 except (ImportError, ModuleNotFoundError):
     pytest.importorskip("torch")
 pytest.importorskip("tensorboard")
-vis = pytest.importorskip("open3d.ml.vis")
+# Without the `ml` extra (pip install open3d[ml]) Open3D-ML raises ImportError.
+vis = pytest.importorskip("open3d.ml.vis", exc_type=ImportError)
 try:
     BoundingBox3D = vis.BoundingBox3D
 except AttributeError:
@@ -205,7 +206,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/Open3D')
+        os.path.join(logdir, 'plugins', 'Open3D')
     ]
     filenames_ref = geometry_data['filenames']
 
@@ -303,7 +304,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/Open3D')
+        os.path.join(logdir, 'plugins', 'Open3D')
     ]
     filenames_ref = geometry_data['filenames']
     dirpath, filenames = [], []

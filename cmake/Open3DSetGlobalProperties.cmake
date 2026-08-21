@@ -25,6 +25,74 @@ function(open3d_enable_strip target)
     endif()
 endfunction()
 
+# open3d_prune_cuda_static_libs(target...)
+#
+# NVIDIA's static CUDA libraries embed device code for every GPU architecture
+# since sm_50, most of which we don't support. nvprune only accepts object
+# files and static libraries, not the linked Open3D library, so the imported
+# targets are pruned to CMAKE_CUDA_ARCHITECTURES and re-pointed at the pruned
+# copy before linking. The pruned copies are cached per architecture list, so
+# nvprune runs again only when CMAKE_CUDA_ARCHITECTURES changes.
+function(open3d_prune_cuda_static_libs)
+    # These libraries ship PTX for the newest architecture only, so we must keep
+    # the SASS of every architecture we support, including the ones Open3D
+    # itself builds as PTX only (e.g. 75-virtual).
+    set(archs ${CMAKE_CUDA_ARCHITECTURES})
+    list(TRANSFORM archs REPLACE "-(real|virtual)$" "")
+    find_program(NVPRUNE nvprune HINTS "${CUDAToolkit_BIN_DIR}")
+    if(NOT NVPRUNE)
+        message(WARNING "nvprune not found: the static CUDA libraries keep the device code of all their GPU architectures.")
+    elseif(NOT archs MATCHES "^[0-9;]+$")   # e.g. native
+        message(STATUS "Not pruning the static CUDA libraries for CUDA architectures ${CMAKE_CUDA_ARCHITECTURES}")
+    else()
+        string(REPLACE ";" "_" archs_id "${archs}")
+        set(pruned_dir "${CMAKE_BINARY_DIR}/cuda_pruned/${archs_id}")
+        file(MAKE_DIRECTORY "${pruned_dir}")
+    endif()
+    # Copies pruned for other architectures take up GBs and are not linked, the
+    # targets below keep pointing at the CUDA libraries as installed.
+    file(GLOB stale_dirs "${CMAKE_BINARY_DIR}/cuda_pruned/*")
+    list(REMOVE_ITEM stale_dirs "${pruned_dir}")
+    file(REMOVE_RECURSE ${stale_dirs})
+    if(NOT pruned_dir)
+        return()
+    endif()
+
+    set(prune_flags "")
+    foreach(arch IN LISTS archs)
+        list(APPEND prune_flags "-gencode=arch=compute_${arch},code=sm_${arch}")
+    endforeach()
+    list(SORT archs COMPARE NATURAL)
+    list(GET archs -1 newest_arch)  # keep the PTX for forward compatibility
+    list(APPEND prune_flags "-gencode=arch=compute_${newest_arch},code=compute_${newest_arch}")
+    foreach(target IN LISTS ARGN)
+        if(NOT TARGET ${target})
+            continue()
+        endif()
+        get_target_property(lib_path ${target} IMPORTED_LOCATION)
+        if(NOT lib_path MATCHES "\\.a$")  # not a static library
+            continue()
+        endif()
+        get_filename_component(lib_name "${lib_path}" NAME)
+        set(pruned_path "${pruned_dir}/${lib_name}")
+        if(NOT EXISTS "${pruned_path}" OR "${lib_path}" IS_NEWER_THAN "${pruned_path}")
+            execute_process(COMMAND "${NVPRUNE}" ${prune_flags} -o "${pruned_path}" "${lib_path}"
+                RESULT_VARIABLE prune_result ERROR_VARIABLE prune_error)
+            if(NOT prune_result EQUAL 0)
+                file(REMOVE "${pruned_path}")
+                message(WARNING "nvprune failed for ${lib_name}, using it unpruned: ${prune_error}")
+                continue()
+            endif()
+            file(SIZE "${lib_path}" lib_size)
+            file(SIZE "${pruned_path}" pruned_size)
+            math(EXPR lib_size "${lib_size} / 1048576")
+            math(EXPR pruned_size "${pruned_size} / 1048576")
+            message(STATUS "Pruned ${lib_name} to CUDA architectures ${CMAKE_CUDA_ARCHITECTURES}: ${lib_size}MB -> ${pruned_size}MB")
+        endif()
+        set_property(TARGET ${target} PROPERTY IMPORTED_LOCATION "${pruned_path}")
+    endforeach()
+endfunction()
+
 # RPATH handling (see below). We don't install targets such as pybind, so BUILD_RPATH must be relative as well.
 set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
 

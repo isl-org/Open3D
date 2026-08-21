@@ -2199,6 +2199,17 @@ if (BUILD_CUDA_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_cuda_npp)
 endif ()
 
+if (BUILD_CUDA_MODULE AND BUILD_WITH_CUDA_STATIC)
+    # The linked Open3D library cannot be pruned, so drop the device code of
+    # unsupported GPU architectures from the static CUDA libraries instead.
+    # Shared CUDA libraries are skipped, since we don't ship them.
+    open3d_prune_cuda_static_libs(
+        CUDA::cublas_static CUDA::cublasLt_static CUDA::cusolver_static
+        CUDA::cusparse_static CUDA::nppc_static CUDA::nppicc_static
+        CUDA::nppif_static CUDA::nppig_static CUDA::nppim_static
+        CUDA::nppial_static)
+endif ()
+
 # IPP
 if (WITH_IPP)
     # Ref: https://stackoverflow.com/a/45125525
