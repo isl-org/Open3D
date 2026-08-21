@@ -221,8 +221,7 @@ struct RANSACCorrespondenceReduction {
     const geometry::KDTreeFlann& kdtree;
     std::atomic<int>& est_k_global;
     std::atomic<int>& total_validation;
-    using RandomIntGen = utility::random::UniformIntGenerator<int>;
-    RandomIntGen& rand_gen;
+    const std::vector<CorrespondenceSet>& sampled_correspondences;
     // Constants
     const double max_distance;
     const int ransac_n;
@@ -231,18 +230,19 @@ struct RANSACCorrespondenceReduction {
     CorrespondenceSet ransac_corres;
     RegistrationResult best_result;
 
-    RANSACCorrespondenceReduction(const geometry::PointCloud& source_,
-                                  const geometry::PointCloud& target_,
-                                  const CorrespondenceSet& corres_,
-                                  const TransformationEstimation& estimation_,
-                                  const CheckerType& checkers_,
-                                  const geometry::KDTreeFlann& kdtree_,
-                                  std::atomic<int>& est_k_global_,
-                                  std::atomic<int>& total_validation_,
-                                  RandomIntGen& rand_gen_,
-                                  double max_dist_,
-                                  int ransac_n_,
-                                  double confidence)
+    RANSACCorrespondenceReduction(
+            const geometry::PointCloud& source_,
+            const geometry::PointCloud& target_,
+            const CorrespondenceSet& corres_,
+            const TransformationEstimation& estimation_,
+            const CheckerType& checkers_,
+            const geometry::KDTreeFlann& kdtree_,
+            std::atomic<int>& est_k_global_,
+            std::atomic<int>& total_validation_,
+            const std::vector<CorrespondenceSet>& sampled_correspondences_,
+            double max_dist_,
+            int ransac_n_,
+            double confidence)
         : source(source_),
           target(target_),
           corres(corres_),
@@ -251,7 +251,7 @@ struct RANSACCorrespondenceReduction {
           kdtree(kdtree_),
           est_k_global(est_k_global_),
           total_validation(total_validation_),
-          rand_gen(rand_gen_),
+          sampled_correspondences(sampled_correspondences_),
           max_distance(max_dist_),
           ransac_n(ransac_n_),
           log_confidence(std::log(1.0 - confidence)),
@@ -266,7 +266,7 @@ struct RANSACCorrespondenceReduction {
           kdtree(o.kdtree),
           est_k_global(o.est_k_global),
           total_validation(o.total_validation),
-          rand_gen(o.rand_gen),
+          sampled_correspondences(o.sampled_correspondences),
           max_distance(o.max_distance),
           ransac_n(o.ransac_n),
           log_confidence(o.log_confidence),
@@ -278,7 +278,7 @@ struct RANSACCorrespondenceReduction {
         for (int i = range.begin(); i < range.end(); ++i) {
             if (i < est_k_global) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[rand_gen()];
+                    ransac_corres[j] = sampled_correspondences[i][j];
                 }
 
                 Eigen::Matrix4d transformation =
@@ -362,10 +362,17 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     std::atomic<int> est_k_global = criteria.max_iteration_;
     std::atomic<int> total_validation = 0;
     utility::random::UniformIntGenerator<int> rand_gen(0, corres.size() - 1);
+    std::vector<CorrespondenceSet> sampled_correspondences(
+            criteria.max_iteration_, CorrespondenceSet(ransac_n));
+    for (auto& sampled_correspondence : sampled_correspondences) {
+        for (auto& correspondence : sampled_correspondence) {
+            correspondence = corres[rand_gen()];
+        }
+    }
     RANSACCorrespondenceReduction reducer(
             source, target, corres, estimation, checkers, kdtree, est_k_global,
-            total_validation, rand_gen, max_correspondence_distance, ransac_n,
-            criteria.confidence_);
+            total_validation, sampled_correspondences,
+            max_correspondence_distance, ransac_n, criteria.confidence_);
     tbb::parallel_reduce(
             tbb::blocked_range<int>(0, criteria.max_iteration_,
                                     utility::DefaultGrainSizeTBB()),
