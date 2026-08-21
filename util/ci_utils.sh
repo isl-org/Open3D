@@ -41,7 +41,7 @@ OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Open3D-ML/ml3d deps (scikit-learn, etc.) needed when stubgen imports open3d with
-# BUNDLE_OPEN3D_ML (wheel builds with OPEN3D_ML_ROOT and ML ops enabled).
+# ML ops enabled (Open3D-ML is bundled automatically in that case).
 install_open3d_ml_python_requirements() {
     if [[ -z "${OPEN3D_ML_ROOT:-}" || ! -f "${OPEN3D_ML_ROOT}/requirements.txt" ]]; then
         echo "OPEN3D_ML_ROOT not set or missing requirements.txt; skipping Open3D-ML pip deps"
@@ -65,6 +65,9 @@ install_python_dependencies() {
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
         CUDA_VER=$(nvcc --version | grep "release " | cut -c33-37 | sed 's|[^0-9]||g') # e.g.: 117, 118, 121, ...
         TORCH_GLNX="torch==${TORCH_VER}+cu${CUDA_VER}"
+        if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "win32" ]]; then
+            python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_win_cuda.txt"
+        fi
     elif [[ "with-xpu" =~ ^($options)$ ]]; then
         # No PyTorch xpu wheels for macOS; this option is Linux-only.
         # torch+torchvision+xpu are pinned and installed together from
@@ -73,6 +76,7 @@ install_python_dependencies() {
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow
         TORCH_GLNX=""
+        python -m pip install -U -r "${OPEN3D_SOURCE_ROOT}/python/requirements_sycl.txt"
     else
         # tensorflow-cpu wheels for macOS arm64 are not available
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -215,13 +219,11 @@ build_pip_package() {
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
-        echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
+        echo "Open3D-ML available at ${OPEN3D_ML_ROOT} (bundled when ML ops are ON)."
         # the build system of the main repo expects a main branch. make sure main exists
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
-        BUNDLE_OPEN3D_ML=ON
-    else
-        echo "Open3D-ML not available."
-        BUNDLE_OPEN3D_ML=OFF
+    elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
+        echo "Open3D-ML not available; configure requires OPEN3D_ML_ROOT when ML ops are ON."
     fi
     if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new Open3D release"
@@ -260,7 +262,6 @@ build_pip_package() {
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
-        "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
         "-DBUILD_SHARED_LIBS=ON"
         "-DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}"
         "-DPython3_EXECUTABLE=$(command -v python3)"
@@ -362,7 +363,6 @@ build_devel_packages_cpu_cuda() {
         "-DBUILD_PYTHON_MODULE=OFF"
         "-DBUILD_TENSORFLOW_OPS=OFF"
         "-DBUILD_PYTORCH_OPS=OFF"
-        "-DBUNDLE_OPEN3D_ML=OFF"
         "-DBUILD_UNIT_TESTS=ON"
         "-DBUILD_BENCHMARKS=OFF"
         "-DBUILD_EXAMPLES=OFF"
@@ -500,12 +500,10 @@ build_pip_package_from_installed() {
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
-        echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
+        echo "Open3D-ML available at ${OPEN3D_ML_ROOT} (bundled when ML ops are ON)."
         git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
-        BUNDLE_OPEN3D_ML=ON
-    else
-        echo "Open3D-ML not available."
-        BUNDLE_OPEN3D_ML=OFF
+    elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
+        echo "Open3D-ML not available; configure requires OPEN3D_ML_ROOT when ML ops are ON."
     fi
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
         BUILD_AZURE_KINECT=ON
@@ -566,7 +564,6 @@ build_pip_package_from_installed() {
         -DBUILD_CUDA_MODULE=OFF \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-        -DBUNDLE_OPEN3D_ML="${BUNDLE_OPEN3D_ML}" \
         "${commonOptions[@]}" \
         ..
     set +x
@@ -592,9 +589,9 @@ build_pip_package_from_installed() {
         -DOpen3D_ROOT="${OPEN3D_CUDA_ROOT}" \
         -DCMAKE_PREFIX_PATH="${OPEN3D_CUDA_ROOT}" \
         -DBUILD_CUDA_MODULE=ON \
+        -DBUILD_COMMON_CUDA_ARCHS=ON \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
-        -DBUNDLE_OPEN3D_ML="${BUNDLE_OPEN3D_ML}" \
         "${commonOptions[@]}" \
         ..
     set +x

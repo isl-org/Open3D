@@ -23,8 +23,8 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
          DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
          FOLLOW_SYMLINK_CHAIN)
 endforeach()
-# Include additional libraries that may be absent from the user system
-# eg: libc++.so and libc++abi.so (needed by filament)
+# Include additional libraries that may be absent from the user system (e.g. TBB).
+# Linux LLVM libc++ for Filament is bundled separately via ldd; see below.
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
@@ -37,7 +37,23 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
+# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd on libOpen3D.
+if(BUILD_GUI AND UNIX AND NOT APPLE)
+    file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+        "${PYTHON_PACKAGE_DST_DIR}/open3d/libOpen3D.so.*")
+    list(GET _libopen3d_probe 0 _libopen3d_probe)
+    execute_process(
+        COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/package_linux_wheel_runtime.sh"
+            "${PYTHON_PACKAGE_DST_DIR}/open3d" "${_libopen3d_probe}"
+        COMMAND_ERROR_IS_FATAL ANY
+    )
+endif()
+
 # 3) Configured files and supporting files
+if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+    configure_file("${OPEN3D_ML_ROOT}/requirements.txt"
+                   "${PYTHON_PACKAGE_DST_DIR}/requirements_ml.txt" COPYONLY)
+endif()
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"

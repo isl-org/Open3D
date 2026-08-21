@@ -207,7 +207,12 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
-option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+# Bundled when either ML ops backend is enabled (not a separate user-facing option).
+if(BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
+    set(BUNDLE_OPEN3D_ML ON)
+else()
+    set(BUNDLE_OPEN3D_ML OFF)
+endif()
 
 # Build Python bindings (and optional ML ops) against an installed Open3D
 # devel package via find_package(Open3D). Skips compiling the C++ core and
@@ -290,9 +295,6 @@ if(APPLE)
         message(WARNING "xcrun was not found. Metal shader compilation for "
         "Gaussian splatting will require Xcode command line tools.")
     endif()
-endif()
-if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
-    message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
 endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
@@ -501,7 +503,10 @@ if(BUILD_CUDA_MODULE)
             # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
             # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
             find_package(CUDAToolkit REQUIRED)
-            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.6")
+                # CUDA 12.x release wheels: drop Turing (75); 90-real SASS + 90 PTX for forward compatibility.
+                set(CMAKE_CUDA_ARCHITECTURES 80-real 86-real 89-real 90-real 90)
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
                 set(CMAKE_CUDA_ARCHITECTURES 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
                 set(CMAKE_CUDA_ARCHITECTURES 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
