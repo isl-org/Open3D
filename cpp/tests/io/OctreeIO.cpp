@@ -22,15 +22,16 @@
 namespace open3d {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
+                             const std::string& file_name) {
     // Write to file
-    std::string file_name =
-            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
-    EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
+    std::string full_file_name =
+            utility::filesystem::GetTempDirectoryPath() + file_name;
+    EXPECT_TRUE(io::WriteOctree(full_file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
-    EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
+    EXPECT_TRUE(io::ReadOctree(full_file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
 }
 
@@ -39,7 +40,8 @@ TEST(OctreeIO, EmptyTree) {
     ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
     EXPECT_EQ(octree.size_, 0);
 
-    WriteReadAndAssertEqual(octree);
+    WriteReadAndAssertEqual(octree, "/temp_octree.json");
+    WriteReadAndAssertEqual(octree, "/temp_octree.bin");
 }
 
 TEST(OctreeIO, ZeroDepth) {
@@ -49,10 +51,11 @@ TEST(OctreeIO, ZeroDepth) {
     octree.InsertPoint(point, geometry::OctreeColorLeafNode::GetInitFunction(),
                        geometry::OctreeColorLeafNode::GetUpdateFunction(color));
 
-    WriteReadAndAssertEqual(octree);
+    WriteReadAndAssertEqual(octree, "/temp_octree.json");
+    WriteReadAndAssertEqual(octree, "/temp_octree.bin");
 }
 
-TEST(OctreeIO, JsonFileIOFragment) {
+TEST(OctreeIO, FileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
     data::PLYPointCloud pointcloud_ply;
@@ -61,10 +64,11 @@ TEST(OctreeIO, JsonFileIOFragment) {
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);
 
-    WriteReadAndAssertEqual(octree);
+    WriteReadAndAssertEqual(octree, "/temp_octree.json");
+    WriteReadAndAssertEqual(octree, "/temp_octree.bin");
 }
 
-TEST(OctreeIO, JsonFileIOSevenCubes) {
+TEST(OctreeIO, FileIOSevenCubes) {
     // Build octree
     std::vector<Eigen::Vector3d> points{
             Eigen::Vector3d(0.5, 0.5, 0.5), Eigen::Vector3d(1.5, 0.5, 0.5),
@@ -83,7 +87,8 @@ TEST(OctreeIO, JsonFileIOSevenCubes) {
                 geometry::OctreeColorLeafNode::GetUpdateFunction(colors[i]));
     }
 
-    WriteReadAndAssertEqual(octree);
+    WriteReadAndAssertEqual(octree, "/temp_octree.json");
+    WriteReadAndAssertEqual(octree, "/temp_octree.bin");
 }
 
 }  // namespace tests
