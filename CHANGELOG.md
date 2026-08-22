@@ -11,6 +11,7 @@
 -   Convolution ops' `allow_tf32` acceleration on SYCL requires channel counts and leading dimensions to be divisible by 4; falls back to IEEE float32 with a one-time warning otherwise. See `docs/sycl.rst`.
 -   Document a RoI-pool point-selection divergence between the SYCL and CPU/CUDA backends when more than `sampled_pts_num` points fall inside a box (both are valid samples; downstream counts and `pooled_empty_flag` remain identical). See `docs/sycl.rst`.
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
 -   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
