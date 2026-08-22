@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import os
@@ -322,6 +322,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
+    writer.close()
     summary._async_data_writer.close()
     shutil.rmtree(logdir)
 
