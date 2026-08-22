@@ -36,7 +36,7 @@ platforms:
 +==============================================+========+=======+=========+
 | Standalone mode server (C++/Python)          | Yes    | Yes   | Yes     |
 +----------------------------------------------+--------+-------+---------+
-| Jupyter mode server (Python)                 | Yes    | No    | Yes     |
+| Jupyter mode server (Python)                 | Yes    | Yes   | Yes     |
 +----------------------------------------------+--------+-------+---------+
 | Standalone/Jupyter mode client (web browser) | Yes    | Yes   | Yes     |
 +----------------------------------------------+--------+-------+---------+
@@ -50,9 +50,13 @@ Additional notes on compatibility:
   Intel XEON processors without integrated graphics. You'll need to add a
   discrete GPU to the instance and install the graphics driver to enable the web
   visualizer.
-- Web visualizer servers are not supported on the ARM platform yet. To get the
-  web visualizer working on ARM, you'll need to compile the WebRTC library from
-  source for ARM. See the ``3rdparty/webrtc`` folder for more details.
+- Standalone web visualizer servers are supported on macOS ARM64 using the
+  packaged ARM64 WebRTC libraries. ARM Linux still requires a WebRTC build from
+  source and is rejected by the current CMake configuration.
+- Jupyter mode uses the WebRTC bitmap window system, including on macOS ARM64.
+  The WebRTC backend must be enabled before the asynchronous GUI event loop is
+  imported; the native Cocoa window system cannot run on that background GUI
+  thread.
 - Google Colab and Kaggle notebook are not supported. You'll need to run you own
   Jupyter or JupyterLab server.
 - If you prefer using native windows (with blocking calls) instead of embedded

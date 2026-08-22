@@ -8,7 +8,6 @@
 import os
 import sys
 import site
-import warnings
 
 # Open3D uses oneAPI TBB (not OpenMP) for CPU parallelism. Other packages (e.g. SciPy, MKL) may
 # still bring their own Intel OpenMP; enabling the thread composability manager
@@ -124,25 +123,18 @@ if int(sys.version_info[0]) < 3:
 
 if (_build_config["BUILD_JUPYTER_EXTENSION"] and os.environ.get(
         "OPEN3D_DISABLE_WEB_VISUALIZER", "False").lower() != "true"):
-    import platform
-
-    if not (platform.machine().startswith("arm") or
-            platform.machine().startswith("aarch")):
-        try:
-            shell = get_ipython().__class__.__name__
-            if shell == "ZMQInteractiveShell":
-                print("Jupyter environment detected. "
-                      "Enabling Open3D WebVisualizer.")
-                # Set default window system.
-                open3d.visualization.webrtc_server.enable_webrtc()
-                # HTTP handshake server is needed when Open3D is serving the
-                # visualizer webpage. Disable since Jupyter is serving.
-                open3d.visualization.webrtc_server.disable_http_handshake()
-        except NameError:
-            pass
-    else:
-        warnings.warn("Open3D WebVisualizer is not supported on ARM for now.",
-                      RuntimeWarning)
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == "ZMQInteractiveShell":
+            print("Jupyter environment detected. "
+                  "Enabling Open3D WebVisualizer.")
+            # Set default window system.
+            open3d.visualization.webrtc_server.enable_webrtc()
+            # HTTP handshake server is needed when Open3D is serving the
+            # visualizer webpage. Disable since Jupyter is serving.
+            open3d.visualization.webrtc_server.disable_http_handshake()
+    except NameError:
+        pass
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
