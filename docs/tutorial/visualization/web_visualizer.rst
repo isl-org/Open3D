@@ -150,6 +150,11 @@ external IP address from the browser.
 Jupyter mode
 ------------
 
+The legacy ``open3d.j_visualizer.JVisualizer`` API is no longer provided.
+Use ``open3d.web_visualizer.draw`` instead. The WebVisualizer is an
+``ipywidgets`` widget backed by WebRTC, so it must be enabled in the Open3D
+package you are using.
+
 Install Jupyter with:
 
 .. code-block:: sh
@@ -163,6 +168,14 @@ or, you may also install JupyterLab instead:
 
     pip install jupyterlab
     jupyter-lab
+
+Official Open3D wheels include the Jupyter extension on supported platforms.
+For a package built from source, configure the build with
+``-DBUILD_JUPYTER_EXTENSION=ON``. This also requires WebRTC, the Python
+Jupyter dependencies, Node.js, and Yarn. If the extension is not present,
+importing ``open3d.web_visualizer`` raises an error explaining that it must be
+enabled at build time; installing ``ipywidgets`` after the Open3D build is not
+enough.
 
 Then, run the example notebook
 `docs/jupyter/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/main/docs/jupyter/visualization/jupyter_visualization.ipynb>`_.
@@ -187,6 +200,11 @@ Otherwise, running visualization in one cell will block the execution of the
 next cell. We provide Jupyter-specific helper functions to achieve non-blocking
 visualization. For instance, ``open3d.web_visualizer.draw`` is used instead of
 the regular ``open3d.visualization.draw`` in the example notebook above.
+
+The visualizer window includes interactive controls help. Open the ``Help``
+menu and select ``Show Controls...`` after the widget appears in the notebook.
+This is also a useful check that the WebRTC connection and the Jupyter widget
+are both working.
 
 Besides ``draw``, you may also create your own non-blocking visualization helper
 functions with the ``_AsyncEventLoop`` class. See
@@ -215,7 +233,7 @@ need to :
    .. code-block:: sh
 
      mkdir build && cd build
-     cmake -DBUILD_JUPYTER_EXTENSION ..
+        cmake -DBUILD_WEBRTC=ON -DBUILD_JUPYTER_EXTENSION=ON ..
      make install-pip-package -j$(nproc)
 
 Advanced topic: local server in airplane mode
