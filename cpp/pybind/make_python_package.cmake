@@ -174,39 +174,8 @@ if(WITH_STUBGEN)
     if(NOT IGNORE_STUBGEN_ERRORS)
         set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
     endif()
-    # stubgen imports open3d, which loads Open3D.dll on Windows. CUDA/SYCL wheels
-    # need the same pip runtimes as end users (see open3d/__init__.py) before import.
-    # Reuse the current build environment's Python (${Python3_EXECUTABLE}) rather
-    # than a `pybind11-stubgen` console script that may resolve to a different
-    # interpreter.
-    if(WIN32 AND BUILD_CUDA_MODULE)
-        message(STATUS "Installing Windows CUDA pip runtimes for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
-    if(BUILD_SYCL_MODULE)
-        message(STATUS "Installing SYCL pip runtimes for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
-    if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND
-       EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
-        message(STATUS "Installing Open3D-ML pip requirements for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    "${OPEN3D_ML_ROOT}/requirements.txt"
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
+    # The caller must install the package runtime requirements before building.
+    # stubgen imports open3d from PYTHON_PACKAGE_DST_DIR using that environment.
     message(STATUS "Generating typing stubs...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env
