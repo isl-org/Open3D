@@ -486,6 +486,16 @@ jobs:
           python -m pip install -U -r python/requirements.txt `
             -r python/requirements_build.txt `
             -r python/requirements_jupyter_build.txt
+          if ('${{ env.BUILD_CUDA_MODULE }}' -eq 'ON') {
+            python -m pip install -U -r python/requirements_win_cuda.txt
+          }
+          if ('${{ env.BUILD_SYCL_MODULE }}' -eq 'ON') {
+            python -m pip install -U -r python/requirements_sycl.txt
+          }
+          if (('${{ env.BUILD_TENSORFLOW_OPS }}' -eq 'ON') -or
+              ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON')) {
+            python -m pip install -U -r open3d_ml/requirements.txt
+          }
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
             if ('${{ matrix.device }}' -eq 'xpu') {
               python -m pip install -U -r open3d_ml/requirements-torch-xpu.txt

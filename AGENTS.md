@@ -97,3 +97,4 @@ Use the repository's own formatting tools and pinned versions.
 
 - `pip install -r python/requirements_style.txt`
 - `python util/check_style.py --apply --changed-only` or `cmake --build build --target apply-style --parallel`
+- Use gh for authenticated access to github APIs.
