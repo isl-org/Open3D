@@ -597,7 +597,7 @@ jobs:
           if-no-files-found: error
 
       - name: Update devel release with wheel
-        if: ${{ env.SKIPPED != 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ env.SKIPPED != 'true' && github.ref == 'refs/heads/main' && matrix.device != 'cuda' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
