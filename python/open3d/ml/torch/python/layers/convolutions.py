@@ -114,6 +114,13 @@ class ContinuousConv(torch.nn.Module):
         dense_kernel_initializer: Initializer for the kernel weights of the
           linear layer used for the center if 'use_dense_layer_for_center'
           is True.
+
+        allow_tf32: If True, allows the GEMM step of the convolution to use
+          TF32-equivalent reduced precision on hardware that supports it
+          (e.g. Intel Xe XMX), which can be faster at the cost of some
+          numerical precision. Falls back to full float32 automatically
+          if the operand shapes don't meet the alignment requirement for
+          acceleration. Default is False.
     """
 
     def __init__(
@@ -135,6 +142,7 @@ class ContinuousConv(torch.nn.Module):
             window_function=None,
             use_dense_layer_for_center=False,
             dense_kernel_initializer=torch.nn.init.xavier_uniform_,
+            allow_tf32=False,
             **kwargs):
         super().__init__()
 
@@ -152,6 +160,7 @@ class ContinuousConv(torch.nn.Module):
         self.radius_search_ignore_query_points = radius_search_ignore_query_points
         self.radius_search_metric = radius_search_metric
         self.dense_kernel_initializer = dense_kernel_initializer
+        self.allow_tf32 = allow_tf32
 
         if offset is None:
             offset = torch.zeros(size=(3,), dtype=torch.float32)
@@ -320,6 +329,7 @@ class ContinuousConv(torch.nn.Module):
             'coordinate_mapping': self.coordinate_mapping,
             'interpolation': self.interpolation,
             'normalize': self.normalize,
+            'allow_tf32': self.allow_tf32,
         }
 
         out_features = ops.continuous_conv(**self._conv_values)
@@ -379,6 +389,13 @@ class SparseConv(torch.nn.Module):
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
+
+        allow_tf32: If True, allows the GEMM step of the convolution to use
+          TF32-equivalent reduced precision on hardware that supports it
+          (e.g. Intel Xe XMX), which can be faster at the cost of some
+          numerical precision. Falls back to full float32 automatically
+          if the operand shapes don't meet the alignment requirement for
+          acceleration. Default is False.
     """
 
     def __init__(
@@ -392,6 +409,7 @@ class SparseConv(torch.nn.Module):
             bias_initializer=torch.nn.init.zeros_,
             normalize=False,
             offset=None,
+            allow_tf32=False,
             **kwargs):
         super().__init__()
 
@@ -403,6 +421,7 @@ class SparseConv(torch.nn.Module):
         self.kernel_initializer = kernel_initializer
         self.bias_initializer = bias_initializer
         self.normalize = normalize
+        self.allow_tf32 = allow_tf32
 
         if not (np.asarray(kernel_size) == kernel_size[0]).all():
             raise Exception("Only cubic kernel sizes are supported.")
@@ -514,6 +533,7 @@ class SparseConv(torch.nn.Module):
             'coordinate_mapping': 'identity',
             'interpolation': 'nearest_neighbor',
             'normalize': self.normalize,
+            'allow_tf32': self.allow_tf32,
         }
 
         out_features = ops.continuous_conv(**self._conv_values)
@@ -574,6 +594,13 @@ class SparseConvTranspose(torch.nn.Module):
         offset: A single 3D vector used in the filter coordinate computation.
           The shape is [3]. This can be used to control how the filters are
           centered. It will be set automatically for kernels with even sizes.
+
+        allow_tf32: If True, allows the GEMM step of the convolution to use
+          TF32-equivalent reduced precision on hardware that supports it
+          (e.g. Intel Xe XMX), which can be faster at the cost of some
+          numerical precision. Falls back to full float32 automatically
+          if the operand shapes don't meet the alignment requirement for
+          acceleration. Default is False.
     """
 
     def __init__(
@@ -587,6 +614,7 @@ class SparseConvTranspose(torch.nn.Module):
             bias_initializer=torch.nn.init.zeros_,
             normalize=False,
             offset=None,
+            allow_tf32=False,
             **kwargs):
         super().__init__()
 
@@ -598,6 +626,7 @@ class SparseConvTranspose(torch.nn.Module):
         self.kernel_initializer = kernel_initializer
         self.bias_initializer = bias_initializer
         self.normalize = normalize
+        self.allow_tf32 = allow_tf32
 
         if not (np.asarray(kernel_size) == kernel_size[0]).all():
             raise Exception("Only cubic kernel sizes are supported.")
@@ -722,6 +751,7 @@ class SparseConvTranspose(torch.nn.Module):
             'coordinate_mapping': 'identity',
             'interpolation': 'nearest_neighbor',
             'normalize': self.normalize,
+            'allow_tf32': self.allow_tf32,
         }
 
         out_features = ops.continuous_conv_transpose(**self._conv_values)

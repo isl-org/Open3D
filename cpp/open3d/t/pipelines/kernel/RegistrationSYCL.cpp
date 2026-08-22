@@ -42,9 +42,11 @@ void ComputePosePointToPlaneSYCL(const core::Tensor &source_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: PersistentReduce uses local_accessor + barriers, so per
+    // the oneAPI guide's large-WG SLM/barrier policy it should default to
+    // MaxWorkGroupSizeForSLM, not the elementwise PreferredWorkGroupSize.
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();
@@ -197,9 +199,9 @@ void ComputePoseColoredICPSYCL(const core::Tensor &source_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: see the analogous comment in ComputePosePointToPlaneSYCL.
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t sqrt_lambda_geometric =
@@ -299,9 +301,9 @@ void ComputePoseDopplerICPSYCL(
     core::Tensor global_sum = core::Tensor::Zeros({kReduceDim}, dtype, device);
     core::Tensor v_s_in_S = core::Tensor::Zeros({3}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: see the analogous comment in ComputePosePointToPlaneSYCL.
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t sqrt_lambda_geometric =
@@ -410,9 +412,9 @@ void ComputeInformationMatrixSYCL(const core::Tensor &target_points,
 
     core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);
 
-    sycl::queue queue =
-            core::sy::SYCLContext::GetInstance().GetDefaultQueue(device);
-    const size_t wgs = core::sy::PreferredWorkGroupSize(device);
+    sycl::queue queue = core::sy::GetQueue(device);
+    // Item 17/7.6: see the analogous comment in ComputePosePointToPlaneSYCL.
+    const size_t wgs = core::sy::MaxWorkGroupSizeForSLM(device, 0);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t *global_sum_ptr = global_sum.GetDataPtr<scalar_t>();

@@ -21,6 +21,10 @@
 #endif
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/gui/Window.h"
+#if defined(__linux__)
+#include "open3d/visualization/rendering/GpuAdapterSelection.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#endif
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
 
@@ -111,6 +115,16 @@ void GLFWWindowSystem::Initialize() {
     glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
 #endif
 #if defined(__linux__)
+    // GLFW/GLX caches the vendor selection during glfwInit(). Select the
+    // Vulkan adapter and apply PRIME steering before initializing GLFW so the
+    // helper OpenGL context can be created on the same GPU.
+    auto& vk_ctx = rendering::GaussianSplatVulkanInteropContext::GetInstance();
+    if (!vk_ctx.IsValid() && vk_ctx.Initialize() && vk_ctx.IsValid()) {
+        const rendering::GpuAdapterInfo adapter =
+                rendering::GetAdapterInfo(vk_ctx.GetPhysicalDevice());
+        rendering::SteerNextGLContextToAdapter(adapter);
+    }
+
     // Filament (April 2026) selects PlatformGLX exclusively on Linux
     // (compile-time decision in PlatformFactory.cpp). Force GLFW to X11 so the
     // native window handle is an X11 Window (XID), matching what PlatformGLX
@@ -171,6 +185,10 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
     auto* glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
+
+#if defined(_WIN32)
+    SetNativeWindowIcon(glfw_window);
+#endif
 
     glfwSetWindowUserPointer(glfw_window, o3d_window);
     glfwSetWindowSizeCallback(glfw_window, ResizeCallback);

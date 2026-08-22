@@ -5,6 +5,11 @@
 -   Add vcpkg support for easier dependency management (PR #7386)
 -   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
 -   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
+-   Fix Gaussian Splat rendering on Vulkan by disabling view MSAA before binding a render target with sampleable depth (issue #7495).
+-   Add SYCL ML ops: continuous convolution and sparse convolution (forward/transpose/backprop-filter, sycl-tla GEMM-accelerated), voxelize, voxel pooling, invert neighbors list, reduce-subarrays-sum, and ragged-to-dense, plus contrib NMS, RoI pool, ball query, IoU (BEV + 3D), trilinear devoxelize, and three-interpolate, all exposed via the PyTorch XPU op library.
+-   Hybrid nearest-neighbor search on SYCL now supports the L1 and Linf metrics (previously L2-only), matching fixed-radius search and CUDA.
+-   Convolution ops' `allow_tf32` acceleration on SYCL requires channel counts and leading dimensions to be divisible by 4; falls back to IEEE float32 with a one-time warning otherwise. See `docs/sycl.rst`.
+-   Document a RoI-pool point-selection divergence between the SYCL and CPU/CUDA backends when more than `sampled_pts_num` points fall inside a box (both are valid samples; downstream counts and `pooled_empty_flag` remain identical). See `docs/sycl.rst`.
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
 -   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
@@ -53,6 +58,7 @@
 -   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Add 3D Normal Distributions Transform registration with C++ and Python APIs (PR #7517).
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)

@@ -14,8 +14,7 @@ namespace open3d {
 namespace core {
 
 void TriuSYCL(const Tensor &A, Tensor &output, const int diagonal) {
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(A.GetDevice());
+    sycl::queue queue = sy::GetQueue(A.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *__restrict__ A_ptr =
                 static_cast<const scalar_t *>(A.GetDataPtr());
@@ -37,8 +36,7 @@ void TriuSYCL(const Tensor &A, Tensor &output, const int diagonal) {
 }
 
 void TrilSYCL(const Tensor &A, Tensor &output, const int diagonal) {
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(A.GetDevice());
+    sycl::queue queue = sy::GetQueue(A.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *__restrict__ A_ptr =
                 static_cast<const scalar_t *>(A.GetDataPtr());
@@ -63,8 +61,7 @@ void TriulSYCL(const Tensor &A,
                Tensor &upper,
                Tensor &lower,
                const int diagonal) {
-    sycl::queue queue =
-            sy::SYCLContext::GetInstance().GetDefaultQueue(A.GetDevice());
+    sycl::queue queue = sy::GetQueue(A.GetDevice());
     DISPATCH_DTYPE_TO_TEMPLATE(A.GetDtype(), [&]() {
         const scalar_t *__restrict__ A_ptr =
                 static_cast<const scalar_t *>(A.GetDataPtr());

@@ -25,6 +25,7 @@ target_sources(pipelines PRIVATE
     registration/GeneralizedICP.cpp
     registration/SymmetricICP.cpp
     registration/GlobalOptimization.cpp
+    registration/NormalDistributionsTransform.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp
     registration/RobustKernel.cpp

@@ -24,7 +24,7 @@ void SolveSYCL(void* A_data,
                Dtype dtype,
                const Device& device) {
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     int64_t nrhs = k, lda = n, ldb = n;
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int64_t scratchpad_size = lapack::gesv_scratchpad_size<scalar_t>(

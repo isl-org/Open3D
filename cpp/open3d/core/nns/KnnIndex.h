@@ -14,11 +14,22 @@
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Logging.h"
 
+#ifdef BUILD_CUDA_MODULE
+struct CUstream_st;
+using cudaStream_t = CUstream_st*;
+#endif
+
 namespace open3d {
 namespace core {
 namespace nns {
 
 #ifdef BUILD_CUDA_MODULE
+/// \param user_stream  Optional externally-supplied CUDA stream (e.g.
+///   PyTorch's current stream). If non-null, KnnSearchCUDA installs it as
+///   the ambient stream for the whole call and bridges it to the ephemeral
+///   per-tile streams used internally via CUDA events (non-blocking,
+///   device-side only -- no host stall). If null (the default, used by
+///   KnnIndex::SearchKnn), behavior is unchanged from before.
 template <class T, class TIndex>
 void KnnSearchCUDA(const Tensor& points,
                    const Tensor& points_row_splits,
@@ -27,7 +38,8 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
-                   Tensor& neighbors_distance);
+                   Tensor& neighbors_distance,
+                   cudaStream_t user_stream = nullptr);
 #endif
 
 #ifdef BUILD_SYCL_MODULE

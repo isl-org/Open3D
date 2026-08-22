@@ -53,7 +53,11 @@ const std::unordered_map<std::string, std::string> argument_docs = {
 void pybind_core_hashmap_declarations(py::module& m) {
     py::class_<HashMap> hashmap(m, "HashMap",
                                 "A HashMap is an unordered map from key to "
-                                "value wrapped by Tensors.");
+                                "value wrapped by Tensors. Backend behavior on "
+                                "CPU, CUDA, and SYCL is described in the "
+                                "Open3D doc *NNS and HashMap backends "
+                                "(CPU / CUDA / SYCL)* "
+                                "(docs/nns_hashmap_cpu_cuda_sycl.md).");
 }
 void pybind_core_hashmap_definitions(py::module& m) {
     auto hashmap = static_cast<py::class_<HashMap>>(m.attr("HashMap"));

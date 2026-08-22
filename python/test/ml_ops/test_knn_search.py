@@ -21,9 +21,19 @@ pytestmark = mltest.default_marks
 # the supported dtypes for the point coordinates
 dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
+# GPU (CUDA/XPU) support for KnnSearch is currently only implemented for the
+# PyTorch op, and only for metric='L2' with ignore_query_point=False. Other
+# ml modules/combinations remain CPU-only, so GPU ml modules are only
+# included here; unsupported combinations are skipped inside the test.
+_gpu_l2_ml_modules = [
+    v for v in mltest._ml_modules.values()
+    if not v.device_is_gpu or v.module.__name__ == 'torch'
+]
+ml_gpu_l2 = pytest.mark.parametrize('ml', _gpu_l2_ml_modules)
+
 
 @dtypes
-@mltest.parametrize.ml_cpu_only
+@ml_gpu_l2
 @pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
@@ -32,6 +42,9 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 @pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                     return_distances, index_dtype):
+    if ml.device_is_gpu and (metric != 'L2' or ignore_query_point):
+        pytest.skip("KnnSearch on GPU only supports metric='L2' and "
+                    "ignore_query_point=False")
     rng = np.random.RandomState(123)
 
     num_points, num_queries = num_points_queries
@@ -106,7 +119,7 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-@mltest.parametrize.ml_cpu_only
+@ml_gpu_l2
 def test_knn_search_empty_point_sets(ml):
     rng = np.random.RandomState(123)
 
@@ -154,7 +167,7 @@ def test_knn_search_empty_point_sets(ml):
     assert ans.neighbors_distance.shape == (0,)
 
 
-@mltest.parametrize.ml_cpu_only
+@ml_gpu_l2
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
 def test_knn_search_batches(ml, batch_size):
 
@@ -242,3 +255,53 @@ def test_knn_search_batches(ml, batch_size):
                     gt_dist = np.linalg.norm(q - points[j], ord=p_norm)
 
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
+
+
+# GPU KnnSearch only supports metric='L2' and ignore_query_point=False;
+# other combinations should raise instead of silently computing a wrong
+# result. Only PyTorch has a GPU KnnSearch implementation.
+_torch_gpu_modules = [
+    v for v in mltest._ml_modules.values()
+    if v.device_is_gpu and v.module.__name__ == 'torch'
+]
+
+
+@pytest.mark.parametrize('ml', _torch_gpu_modules)
+@pytest.mark.parametrize('metric', ['L1', 'L2'])
+@pytest.mark.parametrize('ignore_query_point', [False, True])
+def test_knn_search_gpu_unsupported_options(ml, metric, ignore_query_point):
+    if metric == 'L2' and not ignore_query_point:
+        pytest.skip('This combination is supported on GPU')
+
+    rng = np.random.RandomState(123)
+    points = rng.random(size=(10, 3)).astype(np.float32)
+    queries = points if ignore_query_point else rng.random(
+        size=(5, 3)).astype(np.float32)
+
+    layer = ml.layers.KNNSearch(metric=metric,
+                                ignore_query_point=ignore_query_point)
+    with pytest.raises(Exception):
+        mltest.run_op(ml, ml.device, True, layer, points, queries=queries, k=1)
+
+
+@pytest.mark.parametrize('ml', _torch_gpu_modules)
+def test_knn_search_gpu_row_splits_device(ml):
+    """neighbors_row_splits must be allocated on the same device as the
+    input points/queries, not silently default to the CPU device (regression
+    test for KnnSearchOps.cpp's CUDA branch and KnnSearchOpKernelSYCL.cpp,
+    which used to allocate it without specifying a device). Calls the layer
+    directly (rather than going through mltest.run_op, which converts all
+    outputs to numpy) so the returned tensors' .device can still be
+    inspected."""
+    rng = np.random.RandomState(123)
+    points = torch.from_numpy(rng.random(size=(20, 3)).astype(np.float32)).to(
+        ml.device)
+    queries = torch.from_numpy(rng.random(size=(5, 3)).astype(np.float32)).to(
+        ml.device)
+
+    layer = ml.layers.KNNSearch(return_distances=True)
+    ans = layer(points, queries, 3)
+
+    assert ans.neighbors_index.device == points.device
+    assert ans.neighbors_row_splits.device == points.device
+    assert ans.neighbors_distance.device == points.device

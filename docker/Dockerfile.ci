@@ -118,22 +118,26 @@ RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && tar -C /opt -xf ${CMAKE_VERSION}.tar.gz \
  && cmake --version
 
-# Download ccache from GCS bucket
-# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
-# Example directory structure:
-# - CCACHE_DIR        = ~/.cache/ccache
-# - CCACHE_DIR_NAME   = ccache
-# - CCACHE_DIR_PARENT = ~/.cache
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
-# *not* determined by ccache's default, but the downloaded ccache file's config.
+# Download ccache from GCS bucket when the cache directory is empty.
+# Wheel stages reuse the lib image: ccache is already populated and/or
+# /${CCACHE_TAR_NAME}.tar.xz is present at the image root from build-lib.
 RUN ccache --version \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && mkdir -p ${CCACHE_DIR_PARENT} \
  && cd ${CCACHE_DIR_PARENT} \
- && (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && { tar -xf ${CCACHE_TAR_NAME}.tar.?z || true; } \
+ && if ! ls -A "${CCACHE_DIR_NAME}" >/dev/null 2>&1; then \
+        if [ -f "/${CCACHE_TAR_NAME}.tar.xz" ]; then \
+            tar -xf "/${CCACHE_TAR_NAME}.tar.xz"; \
+        elif [ -f "/${CCACHE_TAR_NAME}.tar.gz" ]; then \
+            tar -xf "/${CCACHE_TAR_NAME}.tar.gz"; \
+        else \
+            (wget -nv https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.xz \
+                    https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true); \
+            { tar -xf ${CCACHE_TAR_NAME}.tar.xz || tar -xf ${CCACHE_TAR_NAME}.tar.gz || true; }; \
+        fi; \
+    fi \
  && mkdir -p ${CCACHE_DIR} \
  && ccache -M 4G \
  && ccache -s
@@ -141,9 +145,13 @@ RUN ccache --version \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 # Install Open3D-ML if it is not already present in BASE_IMAGE.
+# TODO(ss/sycl-mlops): switch back to main once requirements-torch-xpu.txt on
+# ss/xpu is merged upstream.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
-        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main ${OPEN3D_ML_ROOT}; \
+RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then OPEN3D_ML_REF=ss/xpu; else OPEN3D_ML_REF=main; fi \
+ && if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
+            -b "${OPEN3D_ML_REF}" ${OPEN3D_ML_ROOT}; \
     fi
 
 # Open3D repo
@@ -158,6 +166,8 @@ RUN ./util/install_deps_ubuntu.sh assume-yes
 RUN source util/ci_utils.sh \
  && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
         install_python_dependencies with-cuda with-jupyter; \
+    elif [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        install_python_dependencies with-xpu with-jupyter; \
     else \
         install_python_dependencies with-jupyter; \
     fi \
@@ -181,6 +191,7 @@ RUN \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+          -DPython3_EXECUTABLE=${PYENV_ROOT}/versions/${PYTHON_VERSION}/bin/python \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
           -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
@@ -214,7 +225,10 @@ RUN ccache -s \
  && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then \
+        rm -f /open3d*.whl; \
+        mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; \
+    fi \
  && ls -alh /
 
 RUN echo "Docker build done."

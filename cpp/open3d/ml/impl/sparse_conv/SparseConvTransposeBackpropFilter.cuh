@@ -8,9 +8,7 @@
 #pragma once
 #define EIGEN_USE_GPU
 
-#include <cutlass/gemm/gemm.h>
-#include <cutlass/gemm/sgemm_traits.h>
-
+#include "open3d/ml/impl/GemmCUDA.h"
 #include "open3d/ml/impl/continuous_conv/ContinuousConvCUDAKernels.h"
 #include "open3d/ml/impl/misc/MemoryAllocation.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvCUDAKernels.h"
@@ -165,15 +163,6 @@ void SparseConvTransposeBackpropFilterCUDA(
             sizeof(TOut) * num_kernel_elements * in_channels * out_channels,
             stream);
 
-    typedef cutlass::gemm::SgemmTraits<
-            cutlass::MatrixLayout::kColumnMajor,  // layout of A matrix
-            cutlass::MatrixLayout::kRowMajor,     // layout of B matrix
-            cutlass::Shape<8, 64, 64>             // threadblock tile size
-            >
-            GemmTraits;
-
-    typedef cutlass::gemm::Gemm<GemmTraits> Gemm;
-
     TFeat* columns = (TFeat*)mem_columns.first;
     TFeat* gradient = ((TFeat*)mem_columns.first) +
                       num_cols_per_run * num_kernel_elements * in_channels;
@@ -205,7 +194,6 @@ void SparseConvTransposeBackpropFilterCUDA(
                 neighbors_kernel_index, neighbors_importance,
                 neighbors_row_splits, num_kernel_elements, normalize);
 
-        typename Gemm::Params params;
         // C is MxN
         // B is KxN
         // A is MxK
@@ -221,27 +209,9 @@ void SparseConvTransposeBackpropFilterCUDA(
         float* C = filter_backprop;
         int ldc = m;
 
-        int result =
-                params.initialize(m,      // GEMM M dimension
-                                  n,      // GEMM N dimension
-                                  k,      // GEMM K dimension
-                                  alpha,  // scalar alpha
-                                  A,      // matrix A operand
-                                  lda,
-                                  B,  // matrix B operand
-                                  ldb,
-                                  beta,  // scalar beta
-                                  C,     // source matrix C
-                                  ldc,
-                                  C,  // destination matrix C (may be different
-                                  ldc);
-
-        if (result) {
-            throw std::runtime_error(
-                    "Failed to initialize CUTLASS Gemm::Params object.");
-        }
-
-        Gemm::launch(params, stream);
+        GemmColumnMajorCUDA<cutlass::layout::ColumnMajor,
+                            cutlass::layout::RowMajor>(
+                stream, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
     }
 }
 

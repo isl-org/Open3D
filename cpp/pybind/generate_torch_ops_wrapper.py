@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 """This script inspects the open3d_torch_ops library and generates function wrappers"""
 import os
+import site
 import sys
 import inspect
 import argparse
@@ -134,17 +135,55 @@ def main():
                         type=str,
                         required=True,
                         help="PyTorch dependencies directory")
+    parser.add_argument(
+        "--open3d_lib_dir",
+        type=str,
+        default="",
+        help="Directory containing Open3D.dll (Windows torch ops wrapper gen)",
+    )
 
     args = parser.parse_args()
     print(args)
 
+    _dll_dir_handles = []
     if sys.platform == "win32":
-        open3d_deps = os.add_dll_directory(args.dependencies_dir)
+        # open3d_torch_ops.dll depends on Open3D.dll, torch, and (for XPU
+        # builds) Intel SYCL runtime DLLs under site-packages/Library/bin.
+        def _add_dll_dir(path):
+            if path and os.path.isdir(path):
+                _dll_dir_handles.append(os.add_dll_directory(path))
 
-    torch.ops.load_library(args.lib)
+        _dll_search_paths = []
+        _dll_search_paths.append(args.dependencies_dir)
+        if args.open3d_lib_dir:
+            _dll_search_paths.append(args.open3d_lib_dir)
+        _dll_search_paths.append(os.path.dirname(os.path.abspath(args.lib)))
+        for _env_name in ('OPEN3D_INSTALL_ROOT', 'Open3D_ROOT'):
+            _root = os.environ.get(_env_name)
+            if _root:
+                _dll_search_paths.append(os.path.join(_root, 'bin'))
+        _dll_search_paths.append(os.path.join(os.path.dirname(torch.__file__),
+                                              "lib"))
+        _dll_search_paths.append(os.path.join(sys.prefix, "Library", "bin"))
+        # oneAPI pip wheels may install runtime DLLs next to the venv.
+        for _site in getattr(site, "getsitepackages", lambda: [])():
+            _dll_search_paths.append(os.path.join(_site, "Library", "bin"))
 
-    if sys.platform == "win32":
-        open3d_deps.close()
+        for _path in _dll_search_paths:
+            _add_dll_dir(_path)
+
+        # PATH is still consulted by the Windows loader for transitive deps.
+        _path_prefix = os.pathsep.join(
+            [p for p in _dll_search_paths if p and os.path.isdir(p)])
+        if _path_prefix:
+            os.environ["PATH"] = _path_prefix + os.pathsep + os.environ.get(
+                    "PATH", "")
+
+    try:
+        torch.ops.load_library(args.lib)
+    finally:
+        for handle in _dll_dir_handles:
+            handle.close()
 
     generated_function_strs = ''
     generated_namedtuple_strs = ''

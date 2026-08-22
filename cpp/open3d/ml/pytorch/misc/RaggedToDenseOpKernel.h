@@ -22,3 +22,11 @@ torch::Tensor RaggedToDenseCUDA(const torch::Tensor& values,
                                 const int64_t out_col_size,
                                 const torch::Tensor& default_value);
 #endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class T>
+torch::Tensor RaggedToDenseSYCL(const torch::Tensor& values,
+                                const torch::Tensor& row_splits,
+                                const int64_t out_col_size,
+                                const torch::Tensor& default_value);
+#endif

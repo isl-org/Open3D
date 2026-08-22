@@ -81,7 +81,7 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.device == 'xpu' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
+      BUILD_PYTORCH_OPS: ${{ ( matrix.device == 'cuda' || matrix.CONFIG == 'Debug' ) && 'OFF' || 'ON' }}   # FIXME
 
     steps:
       - name: Disk space used
@@ -119,17 +119,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: open3d_ml
 
       - name: Install PyTorch requirements
         if: ${{ env.BUILD_PYTORCH_OPS == 'ON' }}
         run: |
           if ( '${{ matrix.device }}' -eq 'cuda' ) {
-            # python -m pip install -r open3d_ml/requirements-torch-cuda.txt
-            python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+            python -m pip install -r open3d_ml/requirements-torch-cuda.txt
           } elseif ( '${{ matrix.device }}' -eq 'xpu' ) {
-            # No PyTorch requirement for SYCL (xpu) since PyTorch ops are disabled
+            python -m pip install -r open3d_ml/requirements-torch-xpu.txt
           } else {
             python -m pip install -r open3d_ml/requirements-torch.txt
           }
@@ -273,27 +274,21 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target INSTALL
-          $cmakeCachePath = Join-Path $env:BUILD_DIR "CMakeCache.txt"
-          $Env:OPEN3D_VERSION_FULL = (Select-String -Path $cmakeCachePath -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
-          $open3dAppPath = Join-Path $env:INSTALL_DIR "bin\Open3D"
-          Compress-Archive -Path $open3dAppPath -DestinationPath `
-            "$Env:GITHUB_WORKSPACE/open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip"
-          echo "VIEWER_ZIP_NAME=open3d-$Env:OPEN3D_VERSION_FULL-app-windows-amd64.zip" | Out-File -FilePath `
-            $Env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Generate viewer attestation
-        if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
-        uses: actions/attest@v4
-        with:
-          subject-path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
+            --target install
+          $version = (Select-String -Path "${{ env.BUILD_DIR }}/CMakeCache.txt" `
+            -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
+          $viewerZip = "${{ env.BUILD_DIR }}/open3d-$version-app-windows-amd64.zip"
+          Compress-Archive -Path "${{ env.INSTALL_DIR }}/bin/Open3D" `
+            -DestinationPath $viewerZip
+          "VIEWER_ZIP_PATH=$viewerZip" | Out-File -FilePath $Env:GITHUB_ENV `
+            -Encoding utf8 -Append
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-app-windows-amd64
-          path: ${{ github.workspace }}/${{ env.VIEWER_ZIP_NAME }}
+          path: ${{ env.VIEWER_ZIP_PATH }}
           if-no-files-found: error
 
       - name: Update devel release with viewer
@@ -301,7 +296,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bash .github/workflows/update_release.sh "${{ env.VIEWER_ZIP_NAME }}"
+          bash .github/workflows/update_release.sh "${{ env.VIEWER_ZIP_PATH }}"
+
+      - name: Setup WinApp CLI
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
+        uses: microsoft/setup-WinAppCli@v0.1
+
+      - name: Build MSIX
+        working-directory: ${{ env.BUILD_DIR }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target Open3DViewerMSIX
+
+      - name: Upload MSIX test package
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.device == 'cpu' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-app-windows-msix-amd64
+          path: |
+            ${{ env.MSIX_PATH }}
+            ${{ env.BUILD_DIR }}\msix-package\Open3D.cer
+          if-no-files-found: error
 
       - name: Run C++ unit tests
         if: ${{ matrix.device != 'cuda' }}
@@ -372,10 +389,9 @@ jobs:
       artifact-metadata: write
     runs-on: windows-2022
     needs: build-lib
-    # Build wheels even if build-lib failed (e.g. some architecture or debug
-    # builds failed, but others succeeded, or unit tests failed): we want to build
-    # whichever wheels have available devel package artifacts.
-    if: ${{ !cancelled() }}
+    # Build wheels even if build-lib failed (e.g. flaky unit tests): still run
+    # whichever matrix legs have devel package artifacts available.
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -397,7 +413,7 @@ jobs:
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
-      BUILD_PYTORCH_OPS: ${{ (matrix.device == 'cuda' || matrix.device == 'xpu') && 'OFF' || 'ON' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cuda' && 'OFF' || 'ON' }}
 
     steps:
 
@@ -421,7 +437,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: open3d_ml
 
       - name: Set up Python
@@ -473,7 +491,11 @@ jobs:
             -r python/requirements_build.txt `
             -r python/requirements_jupyter_build.txt
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
-            python -m pip install -U -r open3d_ml/requirements-torch.txt
+            if ('${{ matrix.device }}' -eq 'xpu') {
+              python -m pip install -U -r open3d_ml/requirements-torch-xpu.txt
+            } else {
+              python -m pip install -U -r open3d_ml/requirements-torch.txt
+            }
           }
 
       - name: Config
@@ -593,6 +615,7 @@ jobs:
       contents: read
     runs-on: windows-2022
     needs: [build-wheel]
+    if: ${{ always() && !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -610,7 +633,7 @@ jobs:
           - is_main: false
             python_version: '3.13'
     env:
-      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cpu' && 'ON' || 'OFF' }}
+      BUILD_PYTORCH_OPS: ${{ matrix.device == 'cuda' && 'OFF' || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -619,7 +642,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          ref: main
+          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
+          # requirements-torch.txt bump on ss/xpu is merged upstream.
+          ref: ss/xpu
           path: open3d_ml
 
       - name: Download wheels
@@ -642,7 +667,11 @@ jobs:
           python -m pip install -U -r python/requirements_build.txt `
             -r python/requirements_test.txt
           if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'ON') {
-            python -m pip install -U -r open3d_ml/requirements-torch.txt
+            if ('${{ matrix.device }}' -eq 'xpu') {
+              python -m pip install -U -r open3d_ml/requirements-torch-xpu.txt
+            } else {
+              python -m pip install -U -r open3d_ml/requirements-torch.txt
+            }
           }
           $PIP_PKG_NAME = (Get-ChildItem *.whl -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
           if (-not $PIP_PKG_NAME) {
@@ -667,10 +696,5 @@ jobs:
           open3d_test_venv\Scripts\Activate.ps1
           echo "Running Open3D python tests..."
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
-          $pytest_args = @("python/test/")
-          if ('${{ env.BUILD_PYTORCH_OPS }}' -eq 'OFF') {
-            echo "Testing ML Ops disabled"
-            $pytest_args += "--ignore=python/test/ml_ops/"
-          }
-          python -m pytest @pytest_args
+          python -m pytest python/test/
           deactivate

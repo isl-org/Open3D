@@ -19,34 +19,10 @@
 #include <tbb/parallel_for.h>
 
 #include <iostream>
-#include <numeric>
-
-#include "open3d/ml/contrib/IoUImpl.h"
-#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace ml {
 namespace contrib {
-
-template <typename T>
-static std::vector<int64_t> SortIndexes(const T *values,
-                                        int64_t num,
-                                        bool descending = false) {
-    std::vector<int64_t> indices(num);
-    std::iota(indices.begin(), indices.end(), 0);
-    if (descending) {
-        std::stable_sort(indices.begin(), indices.end(),
-                         [&values](int64_t i, int64_t j) {
-                             return values[i] > values[j];
-                         });
-    } else {
-        std::stable_sort(indices.begin(), indices.end(),
-                         [&values](int64_t i, int64_t j) {
-                             return values[i] < values[j];
-                         });
-    }
-    return indices;
-}
 
 static void AllPairsSortedIoU(const float *boxes,
                               const float *scores,
@@ -121,7 +97,7 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
                                   const float *scores,
                                   int n,
                                   double nms_overlap_thresh) {
-    std::vector<int64_t> sort_indices = SortIndexes(scores, n, true);
+    std::vector<int64_t> sort_indices = SortIndexesDescending(scores, n);
 
     const int num_block_cols = utility::DivUp(n, NMS_BLOCK_SIZE);
 
@@ -133,30 +109,7 @@ std::vector<int64_t> NmsCPUKernel(const float *boxes,
     AllPairsSortedIoU(boxes, scores, sort_indices.data(), mask, n,
                       nms_overlap_thresh);
 
-    // Write to keep. remv_cpu has n bits in total. If the bit is 1, the
-    // corresponding box will be removed.
-    std::vector<uint64_t> remv_cpu(num_block_cols, 0);
-    std::vector<int64_t> keep_indices;
-    for (int i = 0; i < n; i++) {
-        int block_col_idx = i / NMS_BLOCK_SIZE;
-        int inner_block_col_idx = i % NMS_BLOCK_SIZE;  // threadIdx.x
-
-        // Querying the i-th bit in remv_cpu, counted from the right.
-        // - remv_cpu[block_col_idx]: the block bitmap containing the query.
-        // - 1ULL << inner_block_col_idx: the one-hot bitmap to extract i.
-        if (!(remv_cpu[block_col_idx] & (1ULL << inner_block_col_idx))) {
-            // Keep the i-th box.
-            keep_indices.push_back(sort_indices[i]);
-
-            // Any box that overlaps with the i-th box will be removed.
-            uint64_t *p = mask + i * num_block_cols;
-            for (int j = block_col_idx; j < num_block_cols; j++) {
-                remv_cpu[j] |= p[j];
-            }
-        }
-    }
-
-    return keep_indices;
+    return NmsGreedyKeep(mask, sort_indices.data(), n);
 }
 
 }  // namespace contrib

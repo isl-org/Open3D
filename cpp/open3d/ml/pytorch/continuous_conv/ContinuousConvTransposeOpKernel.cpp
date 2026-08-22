@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "open3d/ml/impl/continuous_conv/ContinuousConvTranspose.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::ml::impl;
@@ -33,7 +34,9 @@ void ContinuousConvTransposeCPU(
         const bool normalize,
         const InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& out_features) {
+    WarnIfTF32NotSupported(allow_tf32);
     const bool individual_extents = extents.size(0) > 1;
     const bool isotropic_extents = extents.size(1) == 1;
     std::vector<int> filter_dims;
@@ -76,6 +79,7 @@ void ContinuousConvTransposeCPU(
             const bool align_corners,                                          \
             const CoordinateMapping coordinate_mapping, const bool normalize,  \
             const InterpolationMode interpolation,                             \
-            const int64_t max_temp_mem_MB, torch::Tensor& out_features);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& out_features);
 
 INSTANTIATE(float, float, float, int32_t)

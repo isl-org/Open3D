@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "open3d/ml/impl/sparse_conv/SparseConv.h"
+#include "open3d/ml/pytorch/TorchHelper.h"
 
 using namespace open3d::ml::impl;
 
@@ -24,7 +25,9 @@ void SparseConvCPU(const torch::Tensor& filters,
                    const torch::Tensor& neighbors_row_splits,
                    const bool normalize,
                    const int64_t max_temp_mem_MB,
+                   const bool allow_tf32,
                    torch::Tensor& out_features) {
+    WarnIfTF32NotSupported(allow_tf32);
     std::vector<int> filter_dims;
     for (auto d : filters.sizes()) {
         filter_dims.push_back(d);
@@ -50,6 +53,7 @@ void SparseConvCPU(const torch::Tensor& filters,
             const torch::Tensor& neighbors_kernel_index,                     \
             const torch::Tensor& neighbors_importance,                       \
             const torch::Tensor& neighbors_row_splits, const bool normalize, \
-            const int64_t max_temp_mem_MB, torch::Tensor& out_features);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,            \
+            torch::Tensor& out_features);
 
 INSTANTIATE(float, float, int32_t, uint8_t)
