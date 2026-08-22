@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -98,10 +98,11 @@ cmdclass["install"] = install
 with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines() if line]
 
+extras_require = {}
 # Read requirements for ML.
 if "@BUNDLE_OPEN3D_ML@" == "ON":
-    with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
-        install_requires += [line.strip() for line in f.readlines() if line]
+    with open("requirements_ml.txt", "r") as f:
+        extras_require["ml"] = [line.strip() for line in f.readlines() if line]
 
 entry_points = {
     "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
@@ -176,6 +177,7 @@ setup_args = dict(
     python_requires=">=3.10",
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extras_require,
     packages=find_packages(),
     entry_points=entry_points,
     zip_safe=False,

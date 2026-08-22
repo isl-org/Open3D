@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -1502,6 +1502,21 @@ TEST(PointCloud, CreateFromDepthImage) {
              1e-5);
     EXPECT_EQ(pcd->colors_.size(), 0);
     // visualization::DrawGeometries({pcd}); // Uncomment for manual check
+}
+
+TEST(PointCloud, CreateFromFloatDepthImageTruncatesDepth) {
+    geometry::Image depth;
+    depth.Prepare(2, 1, 1, 4);
+    float* depth_data = depth.PointerAs<float>();
+    depth_data[0] = 1.0f;
+    depth_data[1] = 2.0f;
+
+    camera::PinholeCameraIntrinsic intrinsic(2, 1, 1.0, 1.0, 0.0, 0.0);
+    auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
+            depth, intrinsic, Eigen::Matrix4d::Identity(), 1.0, 2.0);
+
+    ASSERT_EQ(pointcloud->points_.size(), 1);
+    EXPECT_EQ(pointcloud->points_[0], Eigen::Vector3d(0.0, 0.0, 1.0));
 }
 
 TEST(PointCloud, CreateFromRGBDImage) {

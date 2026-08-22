@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -287,24 +287,22 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         const std::function<void(std::unordered_map<std::string, core::Tensor>
                                          &)> &callback_after_iteration) {
     RegistrationResult result(current_result.transformation_);
-    double prev_fitness = current_result.fitness_;
-    double prev_inlier_rmse = current_result.inlier_rmse_;
+    result = ComputeRegistrationResult(source.GetPointPositions(), target_nns,
+                                       max_correspondence_distance,
+                                       result.transformation_);
+
+    // No correspondences.
+    if (result.fitness_ <= std::numeric_limits<double>::min()) {
+        result.converged_ = false;
+        result.num_iterations_ = 0;
+        return std::make_tuple(result, prev_iteration_count);
+    }
+
+    double prev_fitness = result.fitness_;
+    double prev_inlier_rmse = result.inlier_rmse_;
     int iteration_count = 0;
     for (iteration_count = 0; iteration_count < criteria.max_iteration_;
          ++iteration_count) {
-        // Update the results and find correspondences.
-        result = ComputeRegistrationResult(
-                source.GetPointPositions(), target_nns,
-                max_correspondence_distance, result.transformation_);
-
-        // No correspondences.
-        if (result.fitness_ <= std::numeric_limits<double>::min()) {
-            result.converged_ = false;
-            result.num_iterations_ = iteration_count;
-            return std::make_tuple(result,
-                                   prev_iteration_count + iteration_count);
-        }
-
         // Computing Transform between source and target, given
         // correspondences. ComputeTransformation returns {4,4} shaped
         // Float64 transformation tensor on CPU device.
@@ -320,6 +318,19 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
 
         // Apply the transform on source pointcloud.
         source.Transform(update);
+
+        // Update the registration metrics after applying the transformation.
+        result = ComputeRegistrationResult(
+                source.GetPointPositions(), target_nns,
+                max_correspondence_distance, result.transformation_);
+
+        // No correspondences.
+        if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
+            result.num_iterations_ = iteration_count + 1;
+            return std::make_tuple(result,
+                                   prev_iteration_count + iteration_count + 1);
+        }
 
         utility::LogDebug(
                 "ICP Scale #{:d} Iteration #{:d}: Fitness {:.4f}, RMSE "
@@ -345,18 +356,21 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         }
 
         // ICPConvergenceCriteria, to terminate iteration.
-        if (iteration_count != 0 &&
-            std::abs(prev_fitness - result.fitness_) <
+        if (std::abs(prev_fitness - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(prev_inlier_rmse - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
             result.converged_ = true;
+            result.num_iterations_ = iteration_count + 1;
             break;
         }
         prev_fitness = result.fitness_;
         prev_inlier_rmse = result.inlier_rmse_;
     }
-    return std::make_tuple(result, prev_iteration_count + iteration_count);
+    const int completed_iterations = iteration_count == criteria.max_iteration_
+                                             ? iteration_count
+                                             : iteration_count + 1;
+    return std::make_tuple(result, prev_iteration_count + completed_iterations);
 }
 
 RegistrationResult MultiScaleICP(
@@ -418,17 +432,6 @@ RegistrationResult MultiScaleICP(
                 max_correspondence_distances[scale_idx], estimation, scale_idx,
                 iteration_count, device, dtype, result,
                 callback_after_iteration);
-
-        // To calculate final `fitness` and `inlier_rmse` for the current
-        // `transformation` stored in `result`.
-        if (scale_idx == num_scales - 1) {
-            bool preserved_converged_flag = result.converged_;
-            result = ComputeRegistrationResult(
-                    source_down_pyramid[scale_idx], target_nns,
-                    max_correspondence_distances[scale_idx],
-                    result.transformation_);
-            result.converged_ = preserved_converged_flag;
-        }
 
         // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {

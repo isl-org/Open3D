@@ -5,24 +5,29 @@ functionality is out of scope.
 
 ## Coding and PR review directions
 
-- For any change, first research existing code and prepare a plan with definite goal, requirements, implementation steps, test method, risks and mitigations. **Lock the goal, requirements and test method, and keep the implementation steps with a log of status and decisions made.** Add plan summary to the PR description. 
+- For any change, first research existing code and prepare a plan with definite goal, requirements, implementation steps, test method, risks and mitigations. **Lock the goal, requirements and test method, and keep the implementation steps with a log of status and decisions made.** Record evidence and revise the lock explicitly if it changes; never expand scope silently. Add the plan summary to the PR description.
 - Store intermediate live research and progress reports with important findings in .md files and refer to them as needed.
 - Use subagents for major steps. 
 - Create new git branches when you explore implementation options - go back to previous code as required. 
+- Preserve pre-existing worktree changes. Never reset, overwrite, stash, stage, or commit unrelated work implicitly. Never rewrite published history or force-push.
 - Prioritize human readability and maintainability.
 - **AVOID REDUNDANT IMPLEMENTATION** when similar functionality already exists - refactor and reuse instead.
 - Keep changes focused and small. Avoid broad refactors unless requested.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.
-- **Debugging:** Test root cause hypothesis with logging before trying fixes. Validate with logging afterwards. Undo failed fixes.
+- **Debugging:** State a falsifiable root-cause hypothesis and run the cheapest check that could disprove it before broad exploration. Use logging when useful, validate afterward, remove probes, and undo failed fixes.
 - Developer docs: Document the code with brief (2-3 lines) comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
 - User docs: Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
-- For new functionality, docs and examples, prefer Tensor implementations that work on CPU+CUDA+SYCL. 
+- For new functionality, docs and examples, prefer Tensor implementations that work on CPU+CUDA+SYCL. Do not add silent device or backend fallbacks.
 - Use the Eigen library for Math operations and oneAPI TBB for multithreading. Avoid: OpenMP, stdgpu.
 - Add unit tests for new behavior and bug fixes (if needed).  Add or update both C++ and Python tests when the feature is exposed in both layers.
 - Keep dependencies minimal. Reuse functionality from existing dependencies if needed. Do not update 3rdparty code with patches.
 - Preserve existing public APIs unless the task explicitly requires API changes.
 - Avoid unnecessary compiler warnings, build breakages, and unrelated cleanup.
-- Ensure smallest set of relevant tests run correctly locally. The full CI must pass for all supported SW and HW platforms in Github.
+- After the first substantive edit, run the cheapest behavior-scoped check that can falsify the current hypothesis before making adjacent edits.
+- Ensure the smallest set of relevant tests runs correctly locally. Report unavailable hardware or configurations and never claim unrun checks passed. The full CI must pass for all supported software and hardware platforms in GitHub.
+- Before committing, inspect the final diff and status. Exclude unrelated changes, generated artifacts, temporary instrumentation, agent markers, and formatter churn.
+- Use an imperative, specific commit subject. Do not amend unrelated commits or add co-author trailers unless requested.
+- Push without force, setting upstream for a new branch. When creating a PR, use `.github/pull_request_template.md` and include the plan summary and test evidence.
 
 ## Repository map
 
@@ -91,4 +96,5 @@ If Python bindings are required, use an activated virtual environment or set
 Use the repository's own formatting tools and pinned versions.
 
 - `pip install -r python/requirements_style.txt`
-- `python util/check_style.py --apply` or `cmake --build build --target apply-style --parallel`
+- `python util/check_style.py --apply --changed-only` or `cmake --build build --target apply-style --parallel`
+- Use gh for authenticated access to github APIs.

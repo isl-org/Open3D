@@ -111,6 +111,11 @@ with `oneapi-ci <https://github.com/oneapi-src/oneapi-ci/tree/0804a4c9281440d8a9
 User:
 - https://pypi.org/user/IntelAutomationEngineering/
 
+Linux import without sourcing oneAPI: `pip install -r python/requirements_sycl.txt`
+(transitive dpcpp-cpp-rt / onemkl-sycl-* DSOs land in `<venv>/lib`). With
+`BUILD_SYCL_MODULE`, extension RPATH (and wheel patchelf when available) points
+at `<Python prefix>/lib`.
+
 Libraries:
 - dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history
 - mkl              https://pypi.org/project/mkl/#history

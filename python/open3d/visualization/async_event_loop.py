@@ -1,12 +1,14 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Run the GUI event loop in a non-main thread. This allows using the
 GUI from plugins to other apps (e.g.: Jupyter or Tensorboard) where the GUI
-cannot be started in the main thread. Currently does not work in macOS.
+cannot be started in the main thread. On macOS this requires a non-native
+window system, such as the WebRTC bitmap window system, because Cocoa GUI
+operations must run on the process main thread.
 
 .. note:: This is a singleton class implemented with this module as a
    holder. The ``async_event_loop`` singleton is started whenever this

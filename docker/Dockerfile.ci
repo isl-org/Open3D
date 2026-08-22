@@ -145,13 +145,10 @@ RUN ccache --version \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 # Install Open3D-ML if it is not already present in BASE_IMAGE.
-# TODO(ss/sycl-mlops): switch back to main once requirements-torch-xpu.txt on
-# ss/xpu is merged upstream.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then OPEN3D_ML_REF=ss/xpu; else OPEN3D_ML_REF=main; fi \
- && if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
         git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
-            -b "${OPEN3D_ML_REF}" ${OPEN3D_ML_ROOT}; \
+            ${OPEN3D_ML_ROOT}; \
     fi
 
 # Open3D repo
@@ -171,6 +168,9 @@ RUN source util/ci_utils.sh \
     else \
         install_python_dependencies with-jupyter; \
     fi \
+ && if [ "${BUILD_TENSORFLOW_OPS}" = "ON" ] || [ "${BUILD_PYTORCH_OPS}" = "ON" ]; then \
+        install_open3d_ml_python_requirements; \
+    fi \
  && pip install -r python/requirements_test.txt \
  && install_nodejs_linux
 
@@ -184,6 +184,9 @@ RUN \
         export CMAKE_CXX_COMPILER=g++; \
         export CMAKE_C_COMPILER=gcc; \
         export BUILD_ISPC_MODULE=ON; \
+    fi \
+ && if [ "${BUILD_TENSORFLOW_OPS}" = "ON" ] || [ "${BUILD_PYTORCH_OPS}" = "ON" ]; then \
+        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true; \
     fi \
  && mkdir -p build \
  && cd build \

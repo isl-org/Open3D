@@ -18,6 +18,8 @@
 macro(translate_arch_string input output)
     if("${input}" MATCHES "[0-9]+-real")
         string(REGEX REPLACE "([1-9])([0-9])-real" "\\1.\\2" version "${input}")
+    elseif("${input}" MATCHES "[0-9]+-virtual")
+        string(REGEX REPLACE "([1-9])([0-9])-virtual" "\\1.\\2+PTX" version "${input}")
     elseif("${input}" MATCHES "([0-9]+)")
         string(REGEX REPLACE "([1-9])([0-9])" "\\1.\\2+PTX" version "${input}")
     elseif("${input}" STREQUAL "native")
