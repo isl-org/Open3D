@@ -14,7 +14,7 @@ functionality is out of scope.
 - **AVOID REDUNDANT IMPLEMENTATION** when similar functionality already exists - refactor and reuse instead.
 - Keep changes focused and small. Avoid broad refactors unless requested.
 - Read the relevant C++ / Python / docs files together and identify whether bindings, docs, and tests must change with the source change.
-- **Debugging:** State a falsifiable root-cause hypothesis and run the cheapest check that could disprove it before broad exploration. Use logging when useful, validate afterward, remove probes, and undo failed fixes.
+- **Debugging:** List candidate root-cause hypotheses, then classify each as easy or hard to fix (edit size, blast radius, build/test cost). Test easy candidate fixes directly, cheapest first, and keep the one that resolves the issue. Before attempting a hard or complex fix, add logging or instrumentation to confirm the hypothesis. In all cases prefer the shortest path to a validated resolution: run the cheapest check that could disprove the current hypothesis, validate afterward, remove probes, and undo failed fixes.
 - Developer docs: Document the code with brief (2-3 lines) comments (Why and What is the code doing?), typically for each function and file. Ensure code and docs are consistent.
 - User docs: Update `docs`, Doxygen docs in C++ headers and Google Sphinx RST docs in Python bindings for new / changed code behavior.  Add / update an example function use snippet in the docs.
 - For new functionality, docs and examples, prefer Tensor implementations that work on CPU+CUDA+SYCL. Do not add silent device or backend fallbacks.

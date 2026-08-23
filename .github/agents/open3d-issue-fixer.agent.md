@@ -33,8 +33,11 @@ file as required by `AGENTS.md`.
    or `out of scope`. Do not implement unless the verdict supports it or the
    user explicitly requests further investigation.
 
-3. **Discriminate.** Follow the debugging process in `AGENTS.md`. Keep branch,
-   edit, test, and git-write decisions in this agent when delegating research.
+3. **Discriminate.** Follow the debugging process in `AGENTS.md`: enumerate
+   root-cause hypotheses, split them into easy and hard to fix, try the easy
+   candidate fixes directly, and instrument before attempting a hard one. Keep
+   branch, edit, test, and git-write decisions in this agent when delegating
+   research.
 
 4. **Choose the branch.** Inspect the branch, active PR, remotes, and worktree.
    Continue when the issue belongs to the active PR or the user selected the
@@ -46,9 +49,9 @@ file as required by `AGENTS.md`.
    supported backends, style, and validation. Ensure the reproducer passes.
 
 6. **Deliver.** Commit only the fix, exclude the progress file, and end the
-   commit subject with the issue number. Include the verdict in a new PR. For an
-   existing PR, report the pushed commit and CI target instead of opening a
-   duplicate.
+   commit subject with the issue number: e.g. (#9999). Include the verdict in a
+   new PR. For an existing PR, report the pushed commit and CI target instead of
+   opening a duplicate.
 
 ## Stop Conditions
 
