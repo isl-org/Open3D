@@ -11,8 +11,8 @@
 #include <tbb/parallel_reduce.h>
 
 #include <Eigen/Dense>
-#include <deque>
 #include <algorithm>
+#include <deque>
 #include <numeric>
 
 #include "open3d/geometry/BoundingVolume.h"
