@@ -190,6 +190,6 @@ def _jupyter_nbextension_paths():
     }]
 
 
-del os, sys, Path, warnings, _insert_pybind_names
+del os, sys, Path, _insert_pybind_names
 # If this is removed, pybind11_stubgen adds an incomplete "open3d = " to the stub file
 del open3d
