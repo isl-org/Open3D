@@ -196,7 +196,8 @@ struct TensorRef {
         }
     }
 
-    /// Returns True if the underlying memory buffer is contiguous.
+    /// Returns True if the underlying memory buffer is C-contiguous
+    /// (row-major order, consistent with PyTorch and NumPy conventions).
     inline bool IsContiguous() const {
         SizeVector shape(ndims_);
         SizeVector strides(ndims_);
