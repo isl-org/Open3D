@@ -2511,9 +2511,19 @@ void O3DVisualizer::StopRPCInterface() {
 
 void O3DVisualizer::AddAction(const std::string &name,
                               std::function<void(O3DVisualizer &)> callback) {
+    // Defer callback via PostToMainThread to run after the current
+    // draw/event phase unwinds. This avoids invoking Python callbacks
+    // during ImGui rendering inside WaitEventsTimeout() when the GIL
+    // is released by PythonUnlocker.
+    auto action = std::make_shared<std::function<void(O3DVisualizer &)>>(
+            std::move(callback));
+
     // Add button to the "Custom Actions" segment in the UI
     SmallButton *button = new SmallButton(name.c_str());
-    button->SetOnClicked([this, callback]() { callback(*this); });
+    button->SetOnClicked([this, action]() {
+        Application::GetInstance().PostToMainThread(
+                this, [this, action]() { (*action)(*this); });
+    });
     impl_->settings.actions->AddChild(GiveOwnership(button));
 
     SetNeedsLayout();
@@ -2531,8 +2541,11 @@ void O3DVisualizer::AddAction(const std::string &name,
     }
     int id = MENU_ACTIONS_BASE + int(impl_->settings.menuid2action.size());
     impl_->settings.actions_menu->AddItem(name.c_str(), id);
-    impl_->settings.menuid2action[id] = callback;
-    SetOnMenuItemActivated(id, [this, callback]() { callback(*this); });
+    impl_->settings.menuid2action[id] = *action;
+    SetOnMenuItemActivated(id, [this, action]() {
+        Application::GetInstance().PostToMainThread(
+                this, [this, action]() { (*action)(*this); });
+    });
 }
 
 void O3DVisualizer::SetBackground(
