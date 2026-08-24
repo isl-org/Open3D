@@ -75,15 +75,13 @@ inline void CheckBlockCoordinates(const core::Tensor& block_coords) {
 
 /// TODO(wei): find a proper place for such functionalities
 inline core::Tensor InverseTransformation(const core::Tensor& T) {
-    core::AssertTensorShape(T, {4, 4});
-    core::AssertTensorDtype(T, core::Float64);
-    core::AssertTensorDevice(T, core::Device("CPU:0"));
-    if (!T.IsContiguous()) {
-        utility::LogError("T is expected to be contiguous");
-    }
+    // Move to CPU for host-side computation (result is always CPU).
+    core::Tensor T_cpu = T.To(core::Device("CPU:0")).Contiguous();
+    core::AssertTensorShape(T_cpu, {4, 4});
+    core::AssertTensorDtype(T_cpu, core::Float64);
 
     core::Tensor Tinv({4, 4}, core::Float64, core::Device("CPU:0"));
-    const double* T_ptr = T.GetDataPtr<double>();
+    const double* T_ptr = T_cpu.GetDataPtr<double>();
     double* Tinv_ptr = Tinv.GetDataPtr<double>();
 
     // R' = R.T
