@@ -160,9 +160,7 @@ jobs:
           name: open3d-wheel-linux-x86_64
 
       - name: Checkout Open3D-ML
-        # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-        # requirements-torch.txt bump on ss/xpu is merged upstream.
-        run: git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b ss/xpu /tmp/Open3D-ML
+        run: git clone --depth 1 https://github.com/isl-org/Open3D-ML.git -b main /tmp/Open3D-ML
 
       - name: Install doc dependencies
         run: |

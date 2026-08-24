@@ -145,13 +145,10 @@ RUN ccache --version \
 # Checkout Open3D-ML main branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 # Install Open3D-ML if it is not already present in BASE_IMAGE.
-# TODO(ss/sycl-mlops): switch back to main once requirements-torch-xpu.txt on
-# ss/xpu is merged upstream.
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then OPEN3D_ML_REF=ss/xpu; else OPEN3D_ML_REF=main; fi \
- && if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
         git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
-            -b "${OPEN3D_ML_REF}" ${OPEN3D_ML_ROOT}; \
+            -b main ${OPEN3D_ML_ROOT}; \
     fi
 
 # Open3D repo

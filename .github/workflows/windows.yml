@@ -119,9 +119,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-          # requirements-torch.txt bump on ss/xpu is merged upstream.
-          ref: ss/xpu
+          ref: main
           path: open3d_ml
 
       - name: Install PyTorch requirements
@@ -437,9 +435,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-          # requirements-torch.txt bump on ss/xpu is merged upstream.
-          ref: ss/xpu
+          ref: main
           path: open3d_ml
 
       - name: Set up Python
@@ -642,9 +638,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-          # requirements-torch.txt bump on ss/xpu is merged upstream.
-          ref: ss/xpu
+          ref: main
           path: open3d_ml
 
       - name: Download wheels

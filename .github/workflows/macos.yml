@@ -183,9 +183,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-          # requirements-torch.txt bump on ss/xpu is merged upstream.
-          ref: ss/xpu
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download build artifact
@@ -299,9 +297,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: isl-org/Open3D-ML
-          # TODO(ss/sycl-mlops): switch back to main once the torch 2.13
-          # requirements-torch.txt bump on ss/xpu is merged upstream.
-          ref: ss/xpu
+          ref: main
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Download wheels
