@@ -17,6 +17,7 @@ ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG BUILD_SYCL_MODULE
 ARG CI
+ARG OPEN3D_ML_VERSION
 
 RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [[ -z "${CCACHE_TAR_NAME}"      ]]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -142,10 +143,12 @@ RUN ccache --version \
  && ccache -M 4G \
  && ccache -s
 
-# Checkout Open3D-ML main branch
-# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# Checkout Open3D-ML (tag or main branch)
+# OPEN3D_ML_VERSION can be set to a tag (e.g. v0.19.0) or branch; defaults to main.
 # Install Open3D-ML if it is not already present in BASE_IMAGE.
+ARG OPEN3D_ML_VERSION
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
+ENV OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
         git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
             ${OPEN3D_ML_ROOT}; \
@@ -186,7 +189,7 @@ RUN \
         export BUILD_ISPC_MODULE=ON; \
     fi \
  && if [ "${BUILD_TENSORFLOW_OPS}" = "ON" ] || [ "${BUILD_PYTORCH_OPS}" = "ON" ]; then \
-        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true; \
+        git -C "${OPEN3D_ML_ROOT}" fetch --tags --quiet || true; \
     fi \
  && mkdir -p build \
  && cd build \
@@ -204,6 +207,7 @@ RUN \
           -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
+          -DOPEN3D_ML_VERSION=${OPEN3D_ML_VERSION} \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=OFF \

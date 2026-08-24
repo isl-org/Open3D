@@ -369,6 +369,16 @@ set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION_FULL}" CACHE STRING
 set(OPEN3D_PACKAGE_VERSION "${OPEN3D_VERSION_FULL}")
 set(OPEN3D_ABI_VERSION "${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}" CACHE
     STRING "Open3D ABI version / SOVERSION (for releases only).")
+
+# Tag or branch to check out from the Open3D-ML repo when bundling.
+# Defaults to main. Set to a version tag (e.g. v0.19.0) or branch for
+# reproducible builds. Open3D-ML uses matching version tags (v0.18.0,
+# v0.19.0, etc.) corresponding to Open3D releases.
+if(NOT DEFINED OPEN3D_ML_VERSION)
+    set(OPEN3D_ML_VERSION "main" CACHE STRING
+        "Git tag or branch to check out from the Open3D-ML repo when BUNDLE_OPEN3D_ML=ON.")
+endif()
+
 # Set additional info
 set(PROJECT_EMAIL       "open3d@intel.com")
 set(PROJECT_DOCS        "https://www.open3d.org/docs")

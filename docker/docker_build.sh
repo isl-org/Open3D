@@ -305,6 +305,7 @@ ci_build() {
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
     echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
+    echo "[ci_build()] OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -319,6 +320,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg OPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .

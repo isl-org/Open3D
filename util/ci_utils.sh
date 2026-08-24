@@ -220,8 +220,8 @@ build_pip_package() {
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT} (bundled when ML ops are ON)."
-        # the build system of the main repo expects a main branch. make sure main exists
-        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
+        # Fetch tags so the version tag is available if OPEN3D_ML_VERSION is set to one.
+        git -C "${OPEN3D_ML_ROOT}" fetch --tags --quiet || true
     elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "OPEN3D_ML_ROOT not set: building ML ops without the Open3D-ML models and pipelines."
     fi
@@ -501,7 +501,8 @@ build_pip_package_from_installed() {
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT} (bundled when ML ops are ON)."
-        git -C "${OPEN3D_ML_ROOT}" checkout -b main || true
+        # Fetch tags so the version tag is available if OPEN3D_ML_VERSION is set to one.
+        git -C "${OPEN3D_ML_ROOT}" fetch --tags --quiet || true
     elif [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
         echo "OPEN3D_ML_ROOT not set: building ML ops without the Open3D-ML models and pipelines."
     fi
