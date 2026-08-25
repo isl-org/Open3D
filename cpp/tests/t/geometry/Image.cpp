@@ -238,9 +238,6 @@ TEST_P(ImagePermuteDevices, To_LinearTransform) {
 
 TEST_P(ImagePermuteDevices, FilterBilateral) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) {
-        GTEST_SKIP() << "Image processing is not supported on SYCL.";
-    }
 
     {  // Float32
         // clang-format off
@@ -262,6 +259,7 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
            0.0, 0.110802, 0.112351, 0.110802, 0.0,
            0.0, 0.110249, 0.110802, 0.110249, 0.0,
            0.0, 0.0, 0.0, 0.0, 0.0};
+                const std::vector<float> output_ref_sycl = output_ref_npp;
         // clang-format on
 
         core::Tensor data =
@@ -275,6 +273,11 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
             if (device.IsCPU()) {
                 EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
                         output_ref_ipp, {5, 5, 1}, core::Float32, device)));
+            } else if (device.IsSYCL()) {
+                EXPECT_TRUE(im.AsTensor().AllClose(
+                        core::Tensor(output_ref_sycl, {5, 5, 1}, core::Float32,
+                                     device),
+                        1e-5, 1e-6));
             } else {
                 EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
                         output_ref_npp, {5, 5, 1}, core::Float32, device)));
@@ -302,6 +305,12 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
            0, 123, 123, 123, 0,
            0, 122, 122, 122, 0,
            0, 0, 0, 0, 0};
+                const std::vector<uint8_t> output_ref_sycl =
+                    {0, 0, 0, 0, 0,
+                     0, 122, 122, 122, 0,
+                     0, 123, 123, 123, 0,
+                     0, 122, 122, 122, 0,
+                     0, 0, 0, 0, 0};
         // clang-format on
 
         core::Tensor data =
@@ -315,6 +324,9 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
             if (device.IsCPU()) {
                 EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
                         output_ref_ipp, {5, 5, 1}, core::UInt8, device)));
+            } else if (device.IsSYCL()) {
+                EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
+                        output_ref_sycl, {5, 5, 1}, core::UInt8, device)));
             } else {
                 EXPECT_TRUE(im.AsTensor().AllClose(core::Tensor(
                         output_ref_npp, {5, 5, 1}, core::UInt8, device)));
@@ -327,9 +339,6 @@ TEST_P(ImagePermuteDevices, FilterBilateral) {
 // Note: in 5 x 5 NPP adds a weird offset.
 TEST_P(ImagePermuteDevices, FilterGaussian) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) {
-        GTEST_SKIP() << "Image processing is not supported on SYCL.";
-    }
 
     {  // Float32
         // clang-format off
@@ -490,9 +499,6 @@ TEST_P(ImagePermuteDevices, Filter) {
 
 TEST_P(ImagePermuteDevices, FilterSobel) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) {
-        GTEST_SKIP() << "Image processing is not supported on SYCL.";
-    }
 
     // clang-format off
     const std::vector<float> input_data =
@@ -501,18 +507,21 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
        0, 0, 1, 0, 0,
        1, 0, 1, 0, 0,
        0, 0, 1, 1, 0};
-    const std::vector<float> output_dx_ref =
+        const std::vector<float> output_dx_ref_npp =
       {1, 1, -1, 2, 3,
        2, 3, -2, -2, 1,
        0, 3, -1, -4, 0,
        -2, 2, 1, -4, -1,
        -1, 3, 3, -4, -3};
-    const std::vector<float> output_dy_ref =
+        const std::vector<float> output_dy_ref_npp =
       {1, 3, 3, 0, -3,
        0, 1, 2, 0, -3,
        2, -1, -1, 0, 0,
        0, 0, 1, 2, 1,
        -3, -1, 1, 2, 1};
+        // SYCL uses the same Sobel coefficients and border handling as NPP.
+        const std::vector<float>& output_dx_ref_sycl = output_dx_ref_npp;
+        const std::vector<float>& output_dy_ref_sycl = output_dy_ref_npp;
     // clang-format on
 
     {  // Float32 -> Float32
@@ -525,6 +534,10 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
         } else {
             std::tie(dx, dy) = im.FilterSobel(3);
 
+            const auto& output_dx_ref =
+                    device.IsSYCL() ? output_dx_ref_sycl : output_dx_ref_npp;
+            const auto& output_dy_ref =
+                    device.IsSYCL() ? output_dy_ref_sycl : output_dy_ref_npp;
             EXPECT_TRUE(dx.AsTensor().AllClose(core::Tensor(
                     output_dx_ref, {5, 5, 1}, core::Float32, device)));
             EXPECT_TRUE(dy.AsTensor().AllClose(core::Tensor(
@@ -543,6 +556,10 @@ TEST_P(ImagePermuteDevices, FilterSobel) {
         } else {
             std::tie(dx, dy) = im.FilterSobel(3);
 
+            const auto& output_dx_ref =
+                    device.IsSYCL() ? output_dx_ref_sycl : output_dx_ref_npp;
+            const auto& output_dy_ref =
+                    device.IsSYCL() ? output_dy_ref_sycl : output_dy_ref_npp;
             EXPECT_TRUE(dx.AsTensor().AllClose(
                     core::Tensor(output_dx_ref, {5, 5, 1}, core::Float32,
                                  device)
@@ -648,9 +665,6 @@ TEST_P(ImagePermuteDevices, Resize) {
 
 TEST_P(ImagePermuteDevices, PyrDown) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) {
-        GTEST_SKIP() << "Image processing is not supported on SYCL.";
-    }
 
     {  // Float32
         // clang-format off

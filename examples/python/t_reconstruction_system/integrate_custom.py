@@ -38,6 +38,10 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
     n_files = len(depth_file_names)
     device = o3d.core.Device(config.device)
 
+    def synchronize():
+        if device.get_type() == o3c.Device.DeviceType.CUDA:
+            o3d.core.cuda.synchronize(device)
+
     voxel_size = 3.0 / 512
     trunc = voxel_size * 4
     res = 8
@@ -66,13 +70,13 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
         # Find buf indices in the underlying engine
         buf_indices, masks = vbg.hashmap().find(frustum_block_coords)
-        o3d.core.cuda.synchronize()
+        synchronize()
         end = time.time()
 
         start = time.time()
         voxel_coords, voxel_indices = vbg.voxel_coordinates_and_flattened_indices(
             buf_indices)
-        o3d.core.cuda.synchronize()
+        synchronize()
         end = time.time()
 
         # Now project them to the depth and find association
@@ -86,7 +90,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
         d = uvd[2]
         u = (uvd[0] / d).round().to(o3c.int64)
         v = (uvd[1] / d).round().to(o3c.int64)
-        o3d.core.cuda.synchronize()
+        synchronize()
         end = time.time()
 
         start = time.time()
@@ -106,7 +110,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
 
         sdf[sdf >= trunc] = trunc
         sdf = sdf / trunc
-        o3d.core.cuda.synchronize()
+        synchronize()
         end = time.time()
 
         start = time.time()
@@ -130,7 +134,7 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                          color_readings[mask_inlier]) / (wp)
 
         weight[valid_voxel_indices] = wp
-        o3d.core.cuda.synchronize()
+        synchronize()
         end = time.time()
 
     print(f'Saving to {config.path_npz}...')

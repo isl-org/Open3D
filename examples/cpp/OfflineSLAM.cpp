@@ -25,7 +25,7 @@ void PrintHelp() {
     utility::LogInfo("    --depth_max [=3.0]");
     utility::LogInfo("    --trunc_voxel_multiplier [=8.0]");
     utility::LogInfo("    --block_count [=10000]");
-    utility::LogInfo("    --device [CPU:0]");
+        utility::LogInfo("    --device [CPU:0, CUDA:0, or SYCL:0]");
     utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
     utility::LogInfo("    --mesh [file path to save the extracted mesh]");
     utility::LogInfo("    --vis [whether to visualize the result]");

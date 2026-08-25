@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--device',
         help="(optional) select processing device for slac and slac_integrate. "
-        "[example: cpu:0, cuda:0].",
+        "[example: cpu:0, cuda:0, sycl:0].",
         type=str,
         default='cpu:0')
 

@@ -40,13 +40,16 @@ Running the example with default dataset.
     # which is ``lounge`` dataset from stanford. 
     python dense_slam_gui.py 
 
-It is recommended to use CUDA if available.
+The tensor reconstruction system supports CPU, CUDA, and SYCL devices. CUDA
+and SYCL require an Open3D build with the corresponding backend enabled.
 
 .. code-block:: sh
 
-    # The following command, will download and use the default dataset,
-    # which is ``lounge`` dataset from stanford. 
-    python dense_slam_gui.py --device 'cuda:0'
+    # Use CUDA when available.
+    python dense_slam_gui.py --device 'CUDA:0'
+
+    # Use an Intel GPU through SYCL when available.
+    python dense_slam_gui.py --device 'SYCL:0'
 
 Changing the default dataset.
 One may change the default dataset to other available datasets.

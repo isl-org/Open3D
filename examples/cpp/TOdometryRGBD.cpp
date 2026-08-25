@@ -20,7 +20,7 @@ void PrintHelp() {
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --depth_diff [=0.07]");
     utility::LogInfo("    --method [=PointToPlane | Intensity | Hybrid]");
-    utility::LogInfo("    --device [CPU:0]");
+        utility::LogInfo("    --device [CPU:0, CUDA:0, or SYCL:0]");
     // clang-format on
     utility::LogInfo("");
 }

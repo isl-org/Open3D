@@ -79,6 +79,28 @@ void ColorizeDepthCPU(const core::Tensor &src,
                       float min_value,
                       float max_value);
 
+#ifdef BUILD_SYCL_MODULE
+void FilterBilateralSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         int kernel_size,
+                         float value_sigma,
+                         float dist_sigma);
+
+void FilterSobelSYCL(const core::Tensor &src,
+                     core::Tensor &dst_dx,
+                     core::Tensor &dst_dy,
+                     int kernel_size);
+
+void FilterGaussianSYCL(const core::Tensor &src,
+                        core::Tensor &dst,
+                        int kernel_size,
+                        float sigma);
+
+void ResizeNearestSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float sampling_rate);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void ToCUDA(const core::Tensor &src,
             core::Tensor &dst,

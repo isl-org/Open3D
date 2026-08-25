@@ -26,7 +26,7 @@ void PrintHelp() {
     utility::LogInfo("    [--align]");
     utility::LogInfo("    [--record rgbd_video_file.bag]");
     utility::LogInfo("    [-c|--config rs-config.json]");
-    utility::LogInfo("    [--device CUDA:0]");
+    utility::LogInfo("    [--device CUDA:0 or SYCL:0]");
     // clang-format on
     utility::LogInfo("");
 }

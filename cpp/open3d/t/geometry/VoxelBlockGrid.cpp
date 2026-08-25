@@ -546,6 +546,7 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
 
     std::string kCPU = "CPU";
     std::string kCUDA = "CUDA";
+    std::string kSYCL = "SYCL";
 
     std::string device_str = "CPU:0";
     for (auto &it : tensor_map) {
@@ -554,7 +555,8 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
             inv_attr_map.emplace(value_id, it.first.substr(prefix.size()));
         }
         if (!it.first.compare(0, kCPU.size(), kCPU) ||
-            !it.first.compare(0, kCUDA.size(), kCUDA)) {
+            !it.first.compare(0, kCUDA.size(), kCUDA) ||
+            !it.first.compare(0, kSYCL.size(), kSYCL)) {
             device_str = it.first;
         }
     }
