@@ -1,4 +1,5 @@
 ## Main
+-   Fix inverted `as_tuple` behavior in Python `Tensor.nonzero()` (PR #7536) (issue #7166)
 -   Add symmetric ICP registration to the legacy and Tensor pipelines (PR #7276).
 -   Replace OpenMP with oneAPI TBB for all CPU parallelism; Open3D no longer depends on OpenMP. This removes the `libomp` / `libgomp` runtime dependency and the thread oversubscription and crashes caused by loading multiple OpenMP runtimes in one process (e.g. alongside PyTorch in Python). The `WITH_OPENMP` CMake option is removed, oneTBB >= 2021.4.0 is required, and `OMP_NUM_THREADS` is replaced by `open3d.utility.set_max_threads()` (C++: `utility::SetMaxThreads()` or a `tbb::task_arena`). `utility::OMPProgressBar` is removed in favor of the thread-safe `utility::ProgressBar`; `utility::GetThreadNum()` and `utility::InParallel()` are removed (PR #6626) (issues #6196, #6544, #6750)
 -   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
