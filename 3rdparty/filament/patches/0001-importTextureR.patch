@@ -1,0 +1,29 @@
+diff --git a/filament/backend/src/vulkan/VulkanDriver.cpp b/filament/backend/src/vulkan/VulkanDriver.cpp
+index bf5604a0d..aa20c0020 100644
+--- a/filament/backend/src/vulkan/VulkanDriver.cpp
++++ b/filament/backend/src/vulkan/VulkanDriver.cpp
+@@ -549,7 +549,10 @@ void VulkanDriver::importTextureR(Handle<HwTexture> th, intptr_t id,
+         SamplerType target, uint8_t levels,
+         TextureFormat format, uint8_t samples, uint32_t w, uint32_t h, uint32_t depth,
+         TextureUsage usage) {
+-    // not supported in this backend
++    auto vktexture = mResourceAllocator.construct<VulkanTexture>(th, mPlatform->getDevice(),
++            mAllocator, &mCommands, (VkImage)id, getVkFormat(format),
++            samples, w, h, usage, mStagePool);
++    mResourceManager.acquire(vktexture);
+ }
+ 
+ void VulkanDriver::destroyTexture(Handle<HwTexture> th) {
+diff --git a/filament/backend/src/vulkan/VulkanTexture.cpp b/filament/backend/src/vulkan/VulkanTexture.cpp
+index 9ca88a2c7..f05b86019 100644
+--- a/filament/backend/src/vulkan/VulkanTexture.cpp
++++ b/filament/backend/src/vulkan/VulkanTexture.cpp
+@@ -36,7 +36,7 @@ VulkanTexture::VulkanTexture(VkDevice device, VmaAllocator allocator, VulkanComm
+       VulkanResource(
+               heapAllocated ? VulkanResourceType::HEAP_ALLOCATED : VulkanResourceType::TEXTURE),
+       mVkFormat(format),
+-      mViewType(imgutil::getViewType(target)),
++      mViewType(imgutil::getViewType(SamplerType::SAMPLER_2D)),
+       mSwizzle({}),
+       mTextureImage(image),
+       mFullViewRange{

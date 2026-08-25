@@ -22,17 +22,17 @@
 
 // vulkan-hpp RAII: dynamic dispatch through the per-object DeviceDispatcher;
 // VK_NO_PROTOTYPES is defined transitively via
-// GaussianSplatVulkanInteropContext.h. The global
+// GaussianSplatVulkanContext.h. The global
 // VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE is defined in
-// GaussianSplatVulkanInteropContext.cpp (exactly once in the program).
+// GaussianSplatVulkanContext.cpp (exactly once in the program).
 
 // VMA: header-only allocator (implementation in
-// GaussianSplatVulkanInteropContext.cpp).
+// GaussianSplatVulkanContext.cpp).
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanContext.h"
 #include "vk_mem_alloc.hpp"
 
 namespace open3d {
@@ -144,7 +144,7 @@ public:
         programs_loaded_ = true;
         programs_valid_ = false;
 
-        auto& interop = GaussianSplatVulkanInteropContext::GetInstance();
+        auto& interop = GaussianSplatVulkanContext::GetInstance();
         if (!interop.IsValid()) {
             utility::LogWarning(
                     "GaussianSplatVulkan: interop context not initialized");
@@ -333,13 +333,9 @@ public:
         // (wrong handle); skip silently so we don't trigger VUID-00339.
         auto it = textures_.find(tex);
         if (it == textures_.end()) {
-            auto git = gl_to_handle_.find(static_cast<std::uint32_t>(tex));
-            if (git != gl_to_handle_.end()) {
-                it = textures_.find(git->second);
-            }
+            return;
         }
-        if (it != textures_.end() &&
-            it->second.format == VK_FORMAT_D32_SFLOAT) {
+        if (it->second.format == VK_FORMAT_D32_SFLOAT) {
             utility::LogWarning(
                     "GaussianSplatVulkan: BindImage(binding={}) skipped — "
                     "handle resolves to a depth image which cannot be a "
@@ -434,7 +430,7 @@ public:
         auto& e = it->second;
         // Explicitly destroy the view before the VMA image for correct order.
         e.view = vk::raii::ImageView{nullptr};
-        if (!e.is_shared) vmaDestroyImage(vma_, e.image, e.alloc);
+        if (e.alloc != VK_NULL_HANDLE) vmaDestroyImage(vma_, e.image, e.alloc);
         textures_.erase(it);
     }
 
@@ -535,55 +531,38 @@ public:
 
     // --- Shared-image registration (called by GaussianSplatVulkanBackend) -
 
-    void RegisterSharedImage(std::uint32_t gl_name,
-                             VkImage image,
-                             VkFormat format,
-                             std::uint32_t w,
-                             std::uint32_t h) {
-        // If already registered, clean up old data first.
-        UnregisterSharedImage(gl_name);
+    void RegisterVkImage(VkImage image,
+                         VkFormat format,
+                         std::uint32_t w,
+                         std::uint32_t h) {
         VkImageAspectFlags aspect = (format == VK_FORMAT_D32_SFLOAT)
                                             ? VK_IMAGE_ASPECT_DEPTH_BIT
                                             : VK_IMAGE_ASPECT_COLOR_BIT;
         vk::raii::ImageView view = CreateImageView(image, format, aspect);
         if (static_cast<VkImageView>(*view) == VK_NULL_HANDLE) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: failed to create view for shared "
-                    "gl_name={}",
-                    gl_name);
+                    "GaussianSplatVulkan: failed to create view for "
+                    "VkImage={}",
+                    reinterpret_cast<uintptr_t>(image));
             return;
         }
         TexEntry e{};
         e.image = image;
         e.view = std::move(view);
-        e.alloc = VK_NULL_HANDLE;  // owned by VulkanInteropContext
+        e.alloc = VK_NULL_HANDLE;  // owned externally
         e.format = format;
         e.width = w;
         e.height = h;
-        // Initialise current_layout to GENERAL as a consistent sentinel for
-        // shared images.  The acquire barrier in
-        // EmitSharedInteropAcquireBarriers always uses oldLayout = UNDEFINED
-        // (external-acquire pattern, spec §12.7.4) and ignores this field; the
-        // release barrier writes GENERAL back here each frame.  The sentinel is
-        // used only by ResolveImageView for any intra-CB transitions that
-        // follow the acquire.
         e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
-        e.is_shared = true;
-        uintptr_t handle = next_handle_++;
+        uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
-        gl_to_handle_[gl_name] = handle;
     }
 
-    void UnregisterSharedImage(std::uint32_t gl_name) {
-        auto it = gl_to_handle_.find(gl_name);
-        if (it == gl_to_handle_.end()) return;
-        uintptr_t h = it->second;
-        auto te = textures_.find(h);
-        if (te != textures_.end()) {
-            // vk::raii::ImageView in TexEntry auto-destroyed on erase
-            textures_.erase(te);
-        }
-        gl_to_handle_.erase(it);
+    void UnregisterVkImage(VkImage image) {
+        auto it = textures_.find(reinterpret_cast<uintptr_t>(image));
+        if (it == textures_.end()) return;
+        // vk::raii::ImageView in TexEntry auto-destroyed on erase
+        textures_.erase(it);
     }
 
 private:
@@ -608,37 +587,8 @@ private:
     // current_layout is updated so ResolveImageView will not emit a redundant
     // transition on its first call in the same CB.
     void EmitSharedInteropAcquireBarriers() {
-        std::vector<vk::ImageMemoryBarrier2> barriers;
-        barriers.reserve(textures_.size());
-        for (auto& [handle, e] : textures_) {
-            if (!e.is_shared) continue;
-            const bool is_depth = (e.format == VK_FORMAT_D32_SFLOAT);
-            const vk::ImageLayout new_layout =
-                    is_depth ? vk::ImageLayout::eShaderReadOnlyOptimal
-                             : vk::ImageLayout::eGeneral;
-            const vk::AccessFlags2 dst_access =
-                    is_depth ? vk::AccessFlagBits2::eShaderRead
-                             : (vk::AccessFlagBits2::eShaderRead |
-                                vk::AccessFlagBits2::eShaderWrite);
-            const vk::ImageAspectFlags aspect =
-                    is_depth ? vk::ImageAspectFlagBits::eDepth
-                             : vk::ImageAspectFlagBits::eColor;
-            barriers.emplace_back(
-                    vk::PipelineStageFlagBits2::eNone,  // srcStageMask
-                    vk::AccessFlags2{},                 // srcAccessMask
-                    vk::PipelineStageFlagBits2::eComputeShader,  // dstStageMask
-                    dst_access,
-                    vk::ImageLayout::eGeneral,  // oldLayout (preserve data)
-                    new_layout,
-                    VK_QUEUE_FAMILY_EXTERNAL,  // srcQueueFamilyIndex
-                    queue_family_,             // dstQueueFamilyIndex
-                    vk::Image(e.image),
-                    vk::ImageSubresourceRange{aspect, 0, 1, 0, 1});
-            e.current_layout = static_cast<VkImageLayout>(new_layout);
-        }
-        if (!barriers.empty()) {
-            cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barriers});
-        }
+        /* No-op: all images are same-device VkImages, no queue-family
+           ownership transfer needed */
     }
 
     // Emit image memory barriers that release ownership of every shared
@@ -653,36 +603,8 @@ private:
     // current_layout is updated to GENERAL so the next frame's acquire starts
     // from a consistent sentinel.
     void EmitSharedInteropReleaseBarriers() {
-        if (!cmd_active_) return;
-        std::vector<vk::ImageMemoryBarrier2> barriers;
-        barriers.reserve(textures_.size());
-        for (auto& [handle, e] : textures_) {
-            if (!e.is_shared) continue;
-            const bool is_depth = (e.format == VK_FORMAT_D32_SFLOAT);
-            const vk::AccessFlags2 src_access =
-                    is_depth ? vk::AccessFlagBits2::eShaderRead
-                             : (vk::AccessFlagBits2::eShaderRead |
-                                vk::AccessFlagBits2::eShaderWrite);
-            const vk::ImageAspectFlags aspect =
-                    is_depth ? vk::ImageAspectFlagBits::eDepth
-                             : vk::ImageAspectFlagBits::eColor;
-            barriers.emplace_back(
-                    vk::PipelineStageFlagBits2::eComputeShader,  // srcStageMask
-                    src_access,
-                    vk::PipelineStageFlagBits2::eNone,  // dstStageMask
-                    vk::AccessFlags2{},                 // dstAccessMask
-                    vk::ImageLayout(
-                            e.current_layout),  // oldLayout (post-composite)
-                    vk::ImageLayout::eGeneral,  // newLayout for GL
-                    queue_family_,              // srcQueueFamilyIndex
-                    VK_QUEUE_FAMILY_EXTERNAL,   // dstQueueFamilyIndex
-                    vk::Image(e.image),
-                    vk::ImageSubresourceRange{aspect, 0, 1, 0, 1});
-            e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
-        }
-        if (!barriers.empty()) {
-            cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barriers});
-        }
+        /* No-op: all images are same-device VkImages, no queue-family
+           ownership transfer needed */
     }
 
     // --- Internal state ---------------------------------------------------
@@ -727,12 +649,10 @@ private:
         std::uint32_t width = 0;
         std::uint32_t height = 0;
         VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        bool is_shared = false;
     };
     std::unordered_map<uintptr_t, TexEntry> textures_;
-    std::unordered_map<std::uint32_t, uintptr_t> gl_to_handle_;
-    // Start at a large value so internal handles never collide with small GL
-    // texture names (which are assigned by the driver starting at 1).
+    // Start at a large value so internal handles never collide with VkImage
+    // pointer values (externally-registered images key by VkImage pointer).
     std::uint64_t next_handle_ = 0x80000000ULL;
 
     struct PendingWrite {
@@ -754,11 +674,11 @@ private:
     bool InitVma() {
         // VMA is compiled with VMA_STATIC_VULKAN_FUNCTIONS=0 and
         // VMA_DYNAMIC_VULKAN_FUNCTIONS=0 (set in
-        // GaussianSplatVulkanInteropContext.cpp before VMA_IMPLEMENTATION), so
+        // GaussianSplatVulkanContext.cpp before VMA_IMPLEMENTATION), so
         // all function pointers must be provided manually.
         // vma::functionsFromDispatcher() fills VmaVulkanFunctions from the
         // vulkan-hpp dynamic dispatcher, which is fully initialised after
-        // GaussianSplatVulkanInteropContext::Initialize() calls
+        // GaussianSplatVulkanContext::Initialize() calls
         // VULKAN_HPP_DEFAULT_DISPATCHER.init(instance) and .init(device).
         VmaVulkanFunctions vk_fn =
                 vma::functionsFromDispatcher(VULKAN_HPP_DEFAULT_DISPATCHER);
@@ -767,7 +687,7 @@ private:
         ci.vulkanApiVersion = VK_API_VERSION_1_3;
         ci.physicalDevice = physical_device_;
         ci.device = device_;
-        ci.instance = GaussianSplatVulkanInteropContext::GetInstance()
+        ci.instance = GaussianSplatVulkanContext::GetInstance()
                               .GetVkInstance();
         ci.pVulkanFunctions = &vk_fn;
         if (vmaCreateAllocator(&ci, &vma_) != VK_SUCCESS) {
@@ -779,7 +699,7 @@ private:
     }
 
     bool InitCommandPool() {
-        auto& raii_dev = GaussianSplatVulkanInteropContext::GetInstance()
+        auto& raii_dev = GaussianSplatVulkanContext::GetInstance()
                                  .GetRaiiDevice();
         vk::CommandPoolCreateInfo ci{{}, queue_family_};
         try {
@@ -809,7 +729,7 @@ private:
 
     bool InitFence() {
         try {
-            fence_ = GaussianSplatVulkanInteropContext::GetInstance()
+            fence_ = GaussianSplatVulkanContext::GetInstance()
                              .GetRaiiDevice()
                              .createFence({});
         } catch (const vk::SystemError& e) {
@@ -831,7 +751,7 @@ private:
                 vk::SamplerAddressMode::eClampToEdge,
         };
         try {
-            nearest_sampler_ = GaussianSplatVulkanInteropContext::GetInstance()
+            nearest_sampler_ = GaussianSplatVulkanContext::GetInstance()
                                        .GetRaiiDevice()
                                        .createSampler(si);
         } catch (const vk::SystemError& e) {
@@ -858,7 +778,7 @@ private:
         }
 
         // RAII device: all vk::raii::Xxx handles auto-destroy on exception.
-        auto& raii_dev = GaussianSplatVulkanInteropContext::GetInstance()
+        auto& raii_dev = GaussianSplatVulkanContext::GetInstance()
                                  .GetRaiiDevice();
         vk::ShaderModuleCreateInfo smi{
                 {},
@@ -1051,20 +971,12 @@ private:
 
     // --- Image / view helpers ---------------------------------------------
 
-    /// Resolve a texture handle to a VkImageView: shared images are looked
-    /// up by GL name (stored in gl_to_handle_); internal textures use their
-    /// direct handle. Also ensures the image layout via a barrier.
+    /// Resolve a texture handle to a VkImageView. Also ensures the image
+    /// layout via a barrier.
     VkImageView ResolveImageView(std::uintptr_t handle,
                                  VkImageLayout needed_layout) {
-        // First check if this handle directly maps to a known texture.
         auto it = textures_.find(handle);
-        if (it == textures_.end()) {
-            // Try interpreting the handle as a GL texture name.
-            auto git = gl_to_handle_.find(static_cast<std::uint32_t>(handle));
-            if (git == gl_to_handle_.end()) return VK_NULL_HANDLE;
-            it = textures_.find(git->second);
-            if (it == textures_.end()) return VK_NULL_HANDLE;
-        }
+        if (it == textures_.end()) return VK_NULL_HANDLE;
         auto& e = it->second;
         if (e.current_layout != needed_layout) {
             TransitionImageLayout(e.image, e.format, e.current_layout,
@@ -1143,7 +1055,7 @@ private:
                         static_cast<vk::ImageAspectFlags>(aspect), 0, 1, 0, 1},
         };
         try {
-            return GaussianSplatVulkanInteropContext::GetInstance()
+            return GaussianSplatVulkanContext::GetInstance()
                     .GetRaiiDevice()
                     .createImageView(vci);
         } catch (const vk::SystemError&) {
@@ -1230,7 +1142,6 @@ private:
         e.width = w;
         e.height = h;
         e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        e.is_shared = false;
         return handle;
     }
 
@@ -1306,7 +1217,7 @@ private:
         // Destroy image views (RAII) before their VMA images.
         for (auto& [h, e] : textures_) {
             e.view = vk::raii::ImageView{nullptr};  // vkDestroyImageView
-            if (!e.is_shared && e.alloc != VK_NULL_HANDLE)
+            if (e.alloc != VK_NULL_HANDLE)
                 vmaDestroyImage(vma_, e.image, e.alloc);
         }
         textures_.clear();
@@ -1343,28 +1254,27 @@ private:
 // Public API
 // ---------------------------------------------------------------------------
 
-void RegisterSharedImageInVulkanContext(GaussianSplatGpuContext& ctx,
-                                        std::uint32_t gl_name,
-                                        std::uintptr_t vk_image_opaque,
-                                        std::uint32_t vk_format_opaque,
-                                        std::uint32_t width,
-                                        std::uint32_t height) {
+void RegisterVkImageInComputeContext(GaussianSplatGpuContext& ctx,
+                                     std::uintptr_t vk_image_opaque,
+                                     std::uint32_t vk_format_opaque,
+                                     std::uint32_t width,
+                                     std::uint32_t height) {
     auto* vk_ctx = dynamic_cast<GaussianSplatGpuContextVulkan*>(&ctx);
     if (!vk_ctx) return;
-    vk_ctx->RegisterSharedImage(
-            gl_name, reinterpret_cast<VkImage>(vk_image_opaque),
-            static_cast<VkFormat>(vk_format_opaque), width, height);
+    vk_ctx->RegisterVkImage(reinterpret_cast<VkImage>(vk_image_opaque),
+                            static_cast<VkFormat>(vk_format_opaque), width,
+                            height);
 }
 
-void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
-                                            std::uint32_t gl_name) {
+void UnregisterVkImageFromComputeContext(GaussianSplatGpuContext& ctx,
+                                          std::uintptr_t vk_image_opaque) {
     auto* vk_ctx = dynamic_cast<GaussianSplatGpuContextVulkan*>(&ctx);
     if (!vk_ctx) return;
-    vk_ctx->UnregisterSharedImage(gl_name);
+    vk_ctx->UnregisterVkImage(reinterpret_cast<VkImage>(vk_image_opaque));
 }
 
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan() {
-    auto& interop = GaussianSplatVulkanInteropContext::GetInstance();
+    auto& interop = GaussianSplatVulkanContext::GetInstance();
     if (!interop.IsValid()) {
         utility::LogWarning(
                 "GaussianSplatVulkan: interop context not initialized; "

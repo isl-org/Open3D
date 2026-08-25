@@ -12,6 +12,11 @@ offscreen `RenderToImage` / `RenderToDepthImage` captures.
 **Supported platforms**: Linux X11/GLX (including Wayland via XWayland),
 Windows/WGL, macOS/Metal.
 
+**Renderer backend**: Pure Vulkan on Linux/Windows (GPU compute + Filament
+Vulkan backend share the same VkDevice), Metal on macOS.  The former
+GL-Vulkan interop path (GL_EXT_memory_object export/import) has been replaced
+with direct Vulkan image sharing through Filament's importTextureR() API.
+
 ---
 
 ## Algorithm: 3D Gaussian Splatting
@@ -151,30 +156,44 @@ render-target re-setup is needed when mesh visibility toggles.
 - **Metal constraint**: `readPixels` always uses RGBA+UBYTE (Metal has no native RGB format);
   alpha is stripped when `n_channels_ == 3`.
 
-### Shared GL Context Strategy
+### Shared Vulkan Device Strategy (Linux/Windows)
 
-The compute context must be created **before** `Engine::create()`.  GLX/WGL context sharing
-is set at creation time and cannot be added retroactively.
+Both the GS compute pipeline and Filament now share the same VkDevice, eliminating
+GL-Vulkan interop entirely.  The compute context creates the VkInstance, VkPhysicalDevice,
+and VkDevice **before** `Engine::create()`, then passes a `VulkanSharedContext` struct
+as Engine's `sharedContext` argument.  Filament uses the device it receives and does
+NOT destroy it on shutdown.
 
-1. `FilamentEngine.cpp` calls `GaussianSplatOpenGLContext::GetInstance().InitializeStandalone()`
-2. `InitializeStandalone()` creates a hidden GLFW OpenGL 4.6 helper window.
-3. The native context handle is passed to `Engine::create()` as `sharedGLContext`.
-4. Filament's GL platform creates its own context sharing with that native handle
-   (`PlatformGLX` on Linux, `PlatformWGL` on Windows).
-5. Both contexts share the same GL object namespace; texture handles are valid in both.
+1. `FilamentEngine.cpp` calls `GaussianSplatVulkanContext::GetInstance().Initialize()`
+2. The context creates a headless Vulkan instance with `VK_KHR_surface`,
+   `VK_KHR_get_physical_device_properties2`, and platform surface extensions.
+3. A physical device is selected: discrete GPU preferred, software renderers skipped
+   unless the only option.  Required: Vulkan 1.3, a graphics+compute queue family,
+   `VK_KHR_push_descriptor`, `VK_KHR_swapchain`.
+4. Two queues from the same family: index 0 for GS compute, index 1 for Filament.
+   On single-queue GPUs both indices are 0 (mutual exclusion via existing
+   `flushAndWait()` bracketing).
+5. Synchronization2 is enabled (required by the GS pipeline).
+6. VMA is used for internal-only buffer allocations; shared GS depth/color images are
+   plain `VkImage` + `VkDeviceMemory` (no export).
+7. `GaussianSplatVulkanContext` returns a `VulkanSharedContext` with the instance,
+   physical device, logical device, graphics queue family index, and Filament's queue
+   index.  Filament's `Engine::create()` receives this via `sharedContext`.
+8. GS output images are created via `CreateImage()` and imported into Filament via
+   `FilamentResourceManager::CreateImportedTexture()` (which calls
+   `importTextureR()` on the Vulkan backend, now implemented to create a non-owning
+   `VulkanTexture` wrapper).
 
-On Linux, `GLFWWindowSystem::Initialize()` initializes the Vulkan interop device
-and applies PRIME steering before calling `glfwInit()`. GLFW/GLX caches the
-vendor selection during initialization, so steering after `glfwInit()` can make
-NVIDIA GLX fail to find a compatible framebuffer configuration.
+On Linux, `GLFWWindowSystem::Initialize()` forces `GLFW_PLATFORM_X11` so Filament's
+`PlatformVulkanLinux` can obtain the correct native window surface.
 
 ### Backend Abstraction
 
 ```
 GaussianSplatRenderer::Backend (abstract)
-├── GaussianSplatVulkanBackend      — Linux + Windows (Vulkan compute; GL_EXT_memory_object
-│                                     for zero-copy with Filament OpenGL)
-├── GaussianSplatMetalBackend       — macOS (Metal compute)
+├── GaussianSplatVulkanBackend  — Linux + Windows (Vulkan compute + Filament
+│                                 Vulkan backend share same VkDevice)
+├── GaussianSplatMetalBackend   — macOS (Metal compute)
 └── GaussianSplatPlaceholderBackend — logs once per view, returns false
 ```
 
@@ -404,17 +423,13 @@ consistency even though the shader does not evaluate them.
 
 | Decision | Rationale |
 |----------|-----------|
-| Filament OpenGL backend on Linux/Windows | Only zero-copy texture-sharing path (via GL context group sharing). |
-| Standalone GL context before `Engine::create()` | GLX/WGL sharing is set at context creation time; cannot be added retroactively. Once Filament's driver thread owns its context, sharing is impossible. |
+| Filament Vulkan backend on Linux/Windows | Zero-copy texture-sharing via shared VkDevice.  GS output images are imported into Filament with importTextureR(), eliminating GL_EXT_memory_object export/import, adapter steering, and VK_QUEUE_FAMILY_EXTERNAL ownership transfers. |
+| Headless Vulkan context before `Engine::create()` | The VkInstance, VkPhysicalDevice, and VkDevice must exist before Filament creates its own context.  Filament receives the shared device via Engine::create()'s sharedContext argument and does NOT destroy it. |
 | Force GLX on Linux (including Wayland sessions) | Filament v1.54.0 uses `PlatformGLX` unconditionally on Linux. An EGL context passed as `sharedGLContext` causes `glXQueryContext` to fail. `GLFW_PLATFORM_X11` is forced; XWayland provides GS functionality on all Wayland compositors. |
 | Vulkan compute instead of GL compute | GL compute shaders have limited/no subgroup support on Intel hardware. Vulkan compute provides full `VK_KHR_shader_subgroup` on all major vendors (NVIDIA, AMD, Intel), enabling subgroup-optimized sort and projection shaders. |
 | Fire-and-forget geometry stage | `EndGeometryPass()` submits the Vulkan command buffer and signals a fence without waiting.  Vulkan geometry overlaps Filament's `beginFrame()` and scene draw.  `WaitForGeometryPass()` before composite is typically a no-op because geometry finishes during Filament's draw. |
-| `VK_QUEUE_FAMILY_EXTERNAL` for GL–Vulkan handoff | Images shared with OpenGL via `EXT_external_memory` require queue-family ownership acquire/release in every composite command buffer (`VK_QUEUE_FAMILY_EXTERNAL` ↔ compute queue). `VK_QUEUE_FAMILY_IGNORED` is only valid without external APIs; using it for shared images causes `VK_ERROR_DEVICE_LOST` on strict drivers (Windows AMD/Intel). `engine_.flushAndWait()` provides CPU-side ordering but does not substitute for this GPU-side ownership transfer. |
-| `engine_.flushAndWait()` for synchronization with Filament | GL semaphore objects (`GL_EXT_semaphore`) are shared across contexts, but signal/wait commands must be issued on a specific context's command stream. We cannot inject these into Filament's driver thread without modifying Filament internals. CPU fence waits are the only viable synchronization mechanism. |
-| Acquire barrier uses `oldLayout = UNDEFINED` | Standard external-acquire pattern (Vulkan spec §12.7.4). We do not track the image's previous layout because Filament (OpenGL) manages it; treating it as undefined is always valid. |
-| Release barrier transitions to `GENERAL` | Releases ownership back to the external GL consumer without imposing a Vulkan layout constraint. |
-| Prefer graphics+compute queue family | The same hardware engine (Intel RCS, AMD GFX) as the OpenGL context. Dedicated compute-only queues (Intel CCS) can behave differently for the same SPIR-V and have caused hangs on some driver/hardware combos. |
-| Two-stage compute split (Stage A / Stage B) | Stage A (project + sort) can overlap Filament rasterization on the GPU. Stage B (composite) must wait for Filament's depth output. Splitting the submit is the minimum required for GPU-level overlap without modifying Filament. |
+| Same queue family for Filament + GS compute | Eliminates queue-family ownership transfers.  Two queue indices where available (index 0 = GS, index 1 = Filament).  On single-queue GPUs both indices are 0, with `flushAndWait()` providing mutual exclusion. |
+| `engine_.flushAndWait()` for synchronization with Filament | Filament's driver-thread command stream is opaque; we cannot inject image layout transitions or semaphore operations into it.  CPU fence waits bracketed around GS dispatch are the reliable synchronization mechanism.  The interop barrier passes in ComputeGPUVulkan (formerly needed for GL→Vulkan ownership transitions) are now no-ops. |
 | Shared sampleable depth texture | Zero-copy: Filament writes depth, composite reads it without any CPU staging. The MSAA restriction is acceptable because 3DGS uses Gaussian kernel anti-aliasing. |
 | Scene depth always allocated | Avoids render-target topology changes when mesh visibility toggles; the composite shader gates occlusion via `depth_range_and_flags.w` at runtime instead. |
 | Normalized linear depth for sort keys | Uniform $\Delta d$ per sort-key interval across the full depth range. Inverse depth gives a $1/d^2$ distribution crowding all key space near the camera. `floatBitsToUint` provides a free log-density tilt toward the near field. |
@@ -449,13 +464,12 @@ consistency even though the shader does not evaluate them.
 | `GaussianSplatRenderer.h/.cpp` | Backend interface; per-view output lifecycle; `BeginFrame()`; `RenderCompositeStage()`; `ReadMergedDepthToUint16Cpu()` |
 | `GaussianSplatDataPacking.h/.cpp` | CPU→GPU data packing (std140/std430); `GaussianGpuBufferSizes`; `PackGaussianViewParams`; `PackGaussianSplatAttrsDirect` |
 | `ComputeGPU.h` | `ComputeProgramId` enum; `GaussianSplatGpuContext` abstract base; `GpuComputeFrame` / `GpuComputePass` RAII helpers; `kGsShaderNames[]` |
-| `ComputeGPUVulkan.h/.cpp` | Vulkan `GaussianSplatGpuContext`: pipeline management, SSBO/UBO binding, command buffer lifecycle, fence-based geometry sync |
-| `GaussianSplatVulkanInteropContext.h/.cpp` | Headless Vulkan instance + device; allocates exportable `VkImage` memory, imports into GL via `GL_EXT_memory_object` |
+| `ComputeGPUVulkan.h/.cpp` | Vulkan `GaussianSplatGpuContext`: pipeline management, SSBO/UBO binding, command buffer lifecycle, fence-based geometry sync.  Barriers for GL interop are no-ops; images are imported via direct VkImage (not GL handles). |
+| `GaussianSplatVulkanContext.h/.cpp` | Headless Vulkan instance + device (replaces `GaussianSplatVulkanInteropContext`).  Allocates plain VkImage+VkDeviceMemory for Filament sharing; no GL export/import. |
 | `GaussianSplatVulkanBackend.h/.cpp` | Vulkan `GaussianSplatRenderer::Backend` for Linux/Windows |
 | `ComputeGPUMetal.mm` | Metal `GaussianSplatGpuContext`: buffer management, pipeline dispatch, barriers, texture ops |
 | `GaussianSplatMetalBackend.mm` | Metal `GaussianSplatRenderer::Backend`; acquires Filament `MTLDevice`/queue; creates and imports `MTLTexture` targets |
 | `GaussianSplatPassRunner.h/.cpp` | Backend-agnostic geometry + composite pass sequence (shared by Vulkan and Metal); dispatch group sizes computed inline |
-| `GaussianSplatOpenGLContext.h/.cpp` | GLFW-owned GL 4.6 shared-context creation (GLX on Linux, WGL on Windows) |
 | `shaders/` | Compute shader sources (`.comp`) |
 
 ### Filament integration (`cpp/open3d/visualization/rendering/filament/`)
@@ -468,7 +482,7 @@ consistency even though the shader does not evaluate them.
 | `FilamentScene.h/.cpp` | `per_object_gs_attrs_` / `merged_gs_attrs_`; `RebuildMergedGaussianData()`; `HasNonGaussianVisibleGeometry()` |
 | `FilamentRenderToBuffer.h/.cpp` | GS pipeline mirror; parallel `readPixels`; `BlendPremultipliedSplatOverRgb8` CPU blend |
 | `FilamentRenderer.h/.cpp` | Frame schedule and GS output forwarding; Apple `SetOnAppleGaussianCompositeComplete` |
-| `FilamentEngine.cpp` | Pre-Filament shared context setup |
+| `FilamentEngine.cpp` | Pre-Filament Vulkan context setup (init + shutdown, shared VkDevice lifecycle) |
 | `Window.cpp` | Registers composite-complete callback → `PostRedraw()` (Metal first-frame fix) |
 
 ### Shader files (`shaders/`)

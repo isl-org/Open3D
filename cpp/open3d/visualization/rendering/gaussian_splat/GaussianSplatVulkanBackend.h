@@ -24,7 +24,7 @@ namespace rendering {
 class FilamentResourceManager;
 
 /// Create the Vulkan compute Gaussian splat backend.
-/// Returns nullptr if GaussianSplatVulkanInteropContext is not initialized.
+/// Returns nullptr if GaussianSplatVulkanContext is not initialized.
 [[nodiscard]] std::unique_ptr<GaussianSplatRenderer::Backend>
 CreateGaussianSplatVulkanBackend(
         FilamentResourceManager& resource_mgr,

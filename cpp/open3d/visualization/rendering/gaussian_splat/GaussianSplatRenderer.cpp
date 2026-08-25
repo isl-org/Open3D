@@ -17,7 +17,7 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanContext.h"
 #endif
 
 namespace open3d {
@@ -98,7 +98,6 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
             return std::unique_ptr<GaussianSplatRenderer::Backend>(
                     new GaussianSplatPlaceholderBackend("Metal"));
 #endif
-        case RenderingType::kOpenGL:
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -125,7 +124,7 @@ bool HasGsColorOutput(const GaussianSplatRenderer::OutputTargets& targets) {
 #if defined(__APPLE__)
     return targets.gs_color_mtl_texture != 0;
 #else
-    return targets.color_gl_handle != 0;
+    return targets.uses_vulkan_interop && targets.color_vk_image != 0;
 #endif
 }
 
@@ -141,14 +140,10 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 #else
             return false;
 #endif
-        case RenderingType::kOpenGL:
-            // On Linux/Windows, Filament uses OpenGL but 3DGS compute runs on
-            // Vulkan (GL compute has limited subgroup support on Intel
-            // hardware). Fall through to check Vulkan availability.
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
-            return GaussianSplatVulkanInteropContext::GetInstance().IsValid();
+            return GaussianSplatVulkanContext::GetInstance().IsValid();
 #else
             return false;
 #endif
@@ -443,8 +438,9 @@ void GaussianSplatRenderer::RequestDepthReadbackForView(
 
 std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
         const FilamentView& view) const {
-    auto found = outputs_.find(&view);
-    return found != outputs_.end() ? found->second.scene_depth_gl_handle : 0;
+    // Pure Vulkan path: no GL handles. The backend exports depth_vk_image
+    // which Filament imports directly. This method exists only for API compat.
+    return 0;
 }
 
 const char* GaussianSplatRenderer::GetBackendName() const {
@@ -529,8 +525,6 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     if (backend_) {
         backend_->ReleaseOutputTextures(resource_mgr_, targets);
     }
-    targets.scene_depth_gl_handle = 0;
-    targets.color_gl_handle = 0;
     targets.scene_depth_mtl_texture = 0;
     targets.gs_color_mtl_texture = 0;
 
@@ -552,8 +546,9 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
     auto viewport = view.GetViewport();
     data.viewport_origin = Eigen::Vector2i(viewport[0], viewport[1]);
     data.viewport_size = Eigen::Vector2i(viewport[2], viewport[3]);
+    // Vulkan: screen-space Y points down (same as OpenGL convention).
     data.screen_y_down =
-            (EngineInstance::GetBackendType() != RenderingType::kOpenGL);
+            (EngineInstance::GetBackendType() != RenderingType::kMetal);
 
     const auto* camera = view.GetCamera();
     if (camera) {

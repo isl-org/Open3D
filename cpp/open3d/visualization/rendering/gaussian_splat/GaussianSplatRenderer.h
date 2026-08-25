@@ -92,17 +92,10 @@ public:
         RenderTargetHandle render_target;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
-        /// Non-Apple: shared GL texture id for Filament depth + GS composite
-        /// read.
-        std::uint32_t scene_depth_gl_handle = 0;
-        /// Non-Apple: GL texture id for GS color (written by composite, sampled
-        /// by UI).
-        std::uint32_t color_gl_handle = 0;
 
-        /// When true, the GL textures above are backed by Vulkan-exported
-        /// dedicated memory (EXT_memory_object). ReleaseOutputTextures uses
-        /// the opaque handles below to destroy both the GL objects and the
-        /// Vulkan allocation. Always false on Apple.
+        /// When true, the Vulkan images below are allocated by the non-Apple
+        /// backend and must be destroyed in ReleaseOutputTextures.
+        /// Always false on Apple (which uses MTLTexture).
         bool uses_vulkan_interop = false;
 
         /// Opaque Vulkan handles stored as uintptr_t to avoid including Vulkan
@@ -110,10 +103,8 @@ public:
         /// backend. Zero unless uses_vulkan_interop=true.
         std::uintptr_t color_vk_image = 0;
         std::uintptr_t color_vk_memory = 0;
-        std::uint32_t color_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
         std::uintptr_t depth_vk_image = 0;
         std::uintptr_t depth_vk_memory = 0;
-        std::uint32_t depth_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
 
         /// Apple (Metal): imported Filament scene depth / GS color native
         /// textures.

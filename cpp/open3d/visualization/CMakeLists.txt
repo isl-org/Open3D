@@ -110,10 +110,8 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/gaussian_splat/ComputeGPUVulkan.cpp
-            rendering/GpuAdapterSelection.cpp
-            rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanContext.cpp
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
-            rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )
         # visualization_impl is an OBJECT library; add_dependencies ensures
         # correct build order with ext_vkmemalloc/ext_vmahpp across all
