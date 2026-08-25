@@ -279,14 +279,20 @@ cuda_wheel_build() {
     if [[ "${OPEN3D_BUILD_MODE}" = "lib" ]]; then
         docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
             bash -c "cp -a /open3d-artifacts/open3d-* /opt/mount/ \
-                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount/ \
+                && ccache -s \
+                && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                 && chown -R $(id -u):$(id -g) /opt/mount/open3d-* \
                 && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
     else
         python_package_dir=/root/Open3D/build/lib/python_package
         docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
             bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
+                && ccache -s \
+                && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                 && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
                 && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
     fi
@@ -328,6 +334,10 @@ ci_build() {
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d* /opt/mount \
+               && ccache -s \
+               && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+               && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                   -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                && chown $(id -u):$(id -g) /opt/mount/open3d*"
 }
 

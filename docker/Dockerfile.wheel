@@ -145,12 +145,8 @@ RUN export NPROC=$(($(nproc)+2)) \
         build_pip_package build_azure_kinect build_jupyter; \
     fi
 
-# Compress ccache folder, move to / directory
-RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
- && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
- && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
- && cd ${CCACHE_DIR_PARENT} \
- && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME}
+# The ccache archive is created by the host-mounted docker run in
+# docker_build.sh to keep it out of the image layer.
+RUN ccache -s
 
 RUN echo "Docker build done."
