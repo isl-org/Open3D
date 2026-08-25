@@ -35,10 +35,12 @@ public:
                       "CENTER is not allowed for feature vectors");
     }
 
-    template <class Derived, class Derived2, class Derived3,
+    template <class Derived,
+              class Derived2,
+              class Derived3,
               typename = typename std::enable_if<
-                  std::is_base_of<Eigen::ArrayBase<Derived3>,
-                                  Derived3>::value>::type>
+                      std::is_base_of<Eigen::ArrayBase<Derived3>,
+                                      Derived3>::value>::type>
     inline void AddPoint(const Eigen::MatrixBase<Derived>& pos,
                          const Eigen::MatrixBase<Derived2>& voxel_center,
                          const Derived3& feat) {
@@ -115,10 +117,12 @@ public:
                       "CENTER is not allowed for feature vectors");
     }
 
-    template <class Derived, class Derived2, class Derived3,
+    template <class Derived,
+              class Derived2,
+              class Derived3,
               typename = typename std::enable_if<
-                  std::is_base_of<Eigen::ArrayBase<Derived3>,
-                                  Derived3>::value>::type>
+                      std::is_base_of<Eigen::ArrayBase<Derived3>,
+                                      Derived3>::value>::type>
     inline void AddPoint(const Eigen::MatrixBase<Derived>& pos,
                          const Eigen::MatrixBase<Derived2>& voxel_center,
                          const Derived3& feat,
