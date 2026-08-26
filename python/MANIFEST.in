@@ -7,6 +7,7 @@
 
 # Main library, including compiled binaries
 graft open3d
+recursive-include open3d/resources *
 graft js
 prune **/node_modules
 graft test
