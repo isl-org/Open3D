@@ -4,12 +4,21 @@ set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 
 # Handle build type for single and multi-config generators.
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-set(FILAMENT_BUILD_TYPE ${CMAKE_BUILD_TYPE})
-if(NOT is_multi_config)
-    # Do not mix debug/release CRT on Windows.
-    if (NOT MSVC)
+if(is_multi_config)
+    # Select the optimized configuration when the parent build requests Debug.
+    set(FILAMENT_BUILD_TYPE "RelWithDebInfo")
+    set(FILAMENT_BUILD_CONFIG
+        "$<IF:$<CONFIG:Debug>,RelWithDebInfo,$<CONFIG>>")
+else()
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR
+       CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        # Keep Filament optimized when Open3D is built with debug information.
+        set(FILAMENT_BUILD_TYPE "RelWithDebInfo")
+    else()
+        # Do not mix debug/release CRT on Windows.
         set(FILAMENT_BUILD_TYPE "Release")
     endif()
+    set(FILAMENT_BUILD_CONFIG ${FILAMENT_BUILD_TYPE})
 endif()
 
 set(filament_LIBRARIES
@@ -89,6 +98,11 @@ if(UNIX AND NOT APPLE)
     endif()
 endif()
 
+if(MSVC)
+    set(filament_build_command
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config ${FILAMENT_BUILD_CONFIG})
+endif()
+
 ExternalProject_Add(
     ext_filament
     PREFIX filament
@@ -115,5 +129,6 @@ ExternalProject_Add(
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
         -DSPIRV_WERROR=OFF
+        ${filament_build_command}
         BUILD_BYPRODUCTS ${lib_byproducts}
 )
