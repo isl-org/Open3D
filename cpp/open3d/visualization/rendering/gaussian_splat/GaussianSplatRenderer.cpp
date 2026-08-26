@@ -98,6 +98,7 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
             return std::unique_ptr<GaussianSplatRenderer::Backend>(
                     new GaussianSplatPlaceholderBackend("Metal"));
 #endif
+        case RenderingType::kOpenGL:
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -140,6 +141,7 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 #else
             return false;
 #endif
+        case RenderingType::kOpenGL:
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)

@@ -40,6 +40,15 @@
 
 #if !defined(__APPLE__)
 
+// Include platform-specific Vulkan surface headers before vulkan_raii.hpp
+// (the raii header only includes the core vulkan.hpp, not platform extensions).
+#ifdef _WIN32
+#include <vulkan/vulkan_win32.h>
+#else
+#include <X11/Xlib.h>
+#include <vulkan/vulkan_xlib.h>
+#endif
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <cstdlib>

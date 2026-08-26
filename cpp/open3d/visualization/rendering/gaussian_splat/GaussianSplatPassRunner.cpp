@@ -348,7 +348,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Always upload depth flag when scene depth is present (which is always
     // for interactive GS views). The shader will use this to test occlusion
     // against mesh geometry.
-    const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||
+    const bool has_scene_depth = (targets.depth_vk_image != 0) ||
                                  (targets.scene_depth_mtl_texture != 0);
     if (has_scene_depth) {
         float flag = 1.0f;
@@ -383,7 +383,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     const std::uintptr_t color_tex =
             targets.gs_color_mtl_texture
                     ? targets.gs_color_mtl_texture
-                    : static_cast<std::uintptr_t>(targets.color_gl_handle);
+                    : targets.color_vk_image;
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
@@ -416,8 +416,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     if (has_scene_depth) {
         std::uintptr_t sd = targets.scene_depth_mtl_texture
                                     ? targets.scene_depth_mtl_texture
-                                    : static_cast<std::uintptr_t>(
-                                              targets.scene_depth_gl_handle);
+                                    : targets.depth_vk_image;
         pass.Sampler(14, sd, w, h);
     }
 
@@ -432,8 +431,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
         const std::uintptr_t sd =
                 targets.scene_depth_mtl_texture
                         ? targets.scene_depth_mtl_texture
-                        : static_cast<std::uintptr_t>(
-                                  targets.scene_depth_gl_handle);
+                        : targets.depth_vk_image;
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
                 .Sampler(15, vs.composite_depth_tex, w,

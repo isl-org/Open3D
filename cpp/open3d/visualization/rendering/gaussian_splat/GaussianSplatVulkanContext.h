@@ -51,10 +51,18 @@
 #endif
 #include <vulkan/vulkan_raii.hpp>
 
-// Forward-declare Filament's VulkanSharedContext struct to avoid including
-// Filament headers here.
+// Forward-declare / define Filament's VulkanSharedContext struct here to
+// avoid pulling in Filament headers (and their BlueVK dependency) in this
+// public header.  Must match filament/backend/include/backend/platforms/
+// VulkanPlatform.h exactly.
 namespace filament::backend {
-struct VulkanSharedContext;
+struct VulkanSharedContext {
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice logicalDevice = VK_NULL_HANDLE;
+    uint32_t graphicsQueueFamilyIndex = 0xFFFFFFFF;
+    uint32_t graphicsQueueIndex = 0xFFFFFFFF;
+};
 }  // namespace filament::backend
 
 namespace open3d {
@@ -111,8 +119,8 @@ public:
     /// Returns a VulkanSharedContext suitable for passing as the sharedContext
     /// argument to Engine::create(). The returned pointer stays valid until
     /// Shutdown().
-    const filament::backend::VulkanSharedContext& GetVulkanSharedContext() const {
-        return shared_context_;
+    const filament::backend::VulkanSharedContext* GetVulkanSharedContext() const {
+        return &shared_context_;
     }
 
     // --- Device accessors (used by VulkanBackend and ComputeGPUVulkan) -----
