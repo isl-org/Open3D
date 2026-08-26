@@ -373,7 +373,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
             source, target, corres, estimation, checkers, kdtree, est_k_global,
             total_validation, sampled_correspondences,
             max_correspondence_distance, ransac_n, criteria.confidence_);
-    tbb::parallel_reduce(
+    tbb::parallel_deterministic_reduce(
             tbb::blocked_range<int>(0, criteria.max_iteration_,
                                     utility::DefaultGrainSizeTBB()),
             reducer);

@@ -268,7 +268,8 @@ cuda_wheel_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
-        --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+                    --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+                    --build-arg OPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         --build-arg OPEN3D_CPU_DEVEL_TAR="${OPEN3D_CPU_DEVEL_TAR}" \
         --build-arg OPEN3D_CUDA_DEVEL_TAR="${OPEN3D_CUDA_DEVEL_TAR}" \
         --build-arg CI="${CI:-}" \

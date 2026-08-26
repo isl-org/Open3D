@@ -150,7 +150,8 @@ ARG OPEN3D_ML_VERSION
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 ENV OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
-        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
+          git clone --depth 1 --branch "${OPEN3D_ML_VERSION:-main}" \
+              https://github.com/isl-org/Open3D-ML.git \
             ${OPEN3D_ML_ROOT}; \
     fi
 

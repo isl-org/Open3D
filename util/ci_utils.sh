@@ -565,6 +565,7 @@ build_pip_package_from_installed() {
         -DBUILD_CUDA_MODULE=OFF \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+            -DOPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         "${commonOptions[@]}" \
         ..
     set +x
@@ -593,6 +594,7 @@ build_pip_package_from_installed() {
         -DBUILD_COMMON_CUDA_ARCHS=ON \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+            -DOPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         "${commonOptions[@]}" \
         ..
     set +x

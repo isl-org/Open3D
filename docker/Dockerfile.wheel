@@ -11,6 +11,7 @@ ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG BUILD_PYTHON_MODULE
 ARG OPEN3D_BUILD_MODE=wheel
+ARG OPEN3D_ML_VERSION=main
 ARG CI
 
 # Forward all ARG to ENV (ci_utils.sh reads these)
@@ -22,6 +23,7 @@ ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE}
 ENV OPEN3D_BUILD_MODE=${OPEN3D_BUILD_MODE}
+ENV OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -92,7 +94,8 @@ RUN python --version && pip --version
 # Checkout Open3D-ML (wheel mode may bundle it; lib mode keeps ops OFF)
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
-        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}; \
+        git clone --depth 1 --branch "${OPEN3D_ML_VERSION}" \
+            https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}; \
     fi
 
 # Open3D C++ dependencies
