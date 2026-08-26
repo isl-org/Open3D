@@ -33,22 +33,22 @@ namespace {
 // ---------------------------------------------------------------------------
 
 const std::vector<uint8_t> kRefColorGray = {
-        0, 0, 0, 0, 0, 0, 0, 0,  //
-        255, 255, 255, 0, 0, 0, 0, 0,  //
-        255, 255, 255, 0, 0, 0, 0, 0,  //
-        255, 255, 255, 0, 0, 0, 255, 0,  //
-        255, 255, 255, 0, 255, 255, 255, 255,  //
-        0, 0, 0, 0, 255, 255, 255, 255,  //
-        0, 0, 0, 0, 0, 255, 255, 0,  //
+        27, 24, 13, 5, 0, 0, 0, 0,  //
+        58, 54, 31, 11, 2, 0, 0, 0,  //
+        73, 70, 42, 16, 4, 0, 0, 0,  //
+        54, 54, 34, 13, 3, 0, 3, 0,  //
+        23, 24, 16, 6, 1, 26, 76, 17,  //
+        6, 7, 4, 2, 0, 44, 133, 31,  //
+        0, 0, 0, 0, 0, 5, 17, 4,  //
         0, 0, 0, 0, 0, 0, 0, 0,  //
 };
 const std::vector<uint8_t> kRefDepthGray = {
         255, 255, 255, 255, 255, 255, 255, 255,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
-        255, 230, 255, 255, 255, 255, 255, 255,  //
-        255, 230, 255, 255, 255, 255, 255, 255,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
-        255, 255, 255, 255, 255, 238, 238, 255,  //
+        199, 199, 255, 255, 255, 255, 255, 255,  //
+        199, 199, 199, 255, 255, 255, 255, 255,  //
+        199, 199, 255, 255, 255, 255, 255, 255,  //
+        255, 255, 255, 255, 255, 255, 243, 255,  //
+        255, 255, 255, 255, 255, 255, 243, 255,  //
         255, 255, 255, 255, 255, 255, 255, 255,  //
         255, 255, 255, 255, 255, 255, 255, 255,  //
 };
@@ -65,7 +65,7 @@ t::geometry::PointCloud MakeTwoTestSplats() {
     const int N = 2;
 
     pcd.SetPointPositions(core::Tensor(std::vector<float>{
-            -0.35f, -0.15f, 4.0f, 0.45f, 0.25f, 3.5f},
+            -0.20f, -0.10f, 4.55f, 0.70f, 0.35f, 3.00f},
             {N, 3}, core::Dtype::Float32));
     pcd.SetPointAttr("opacity", core::Tensor(std::vector<float>{8.0f, 8.0f},
             {N, 1}, core::Dtype::Float32));
@@ -73,7 +73,7 @@ t::geometry::PointCloud MakeTwoTestSplats() {
             1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
             {N, 4}, core::Dtype::Float32));
     pcd.SetPointAttr("scale", core::Tensor(std::vector<float>{
-            0.06f, 0.06f, 0.06f, 0.06f, 0.06f, 0.06f},
+            0.08f, 0.08f, 0.08f, 0.08f, 0.08f, 0.08f},
             {N, 3}, core::Dtype::Float32));
     pcd.SetPointAttr("f_dc", core::Tensor(std::vector<float>{
             1.7724539f, -1.7724539f, -1.7724539f,
@@ -87,7 +87,9 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image,
     auto tensor_image = t::geometry::Image::FromLegacy(
             image, core::Device("CPU:0"));
     if (is_color) {
-        tensor_image = tensor_image.RGBToGray();
+        return tensor_image.RGBToGray()
+                .AsTensor()
+                .ToFlatVector<uint8_t>();
     }
     return tensor_image.To(core::Dtype::UInt8, false, 255.0)
             .AsTensor()
@@ -180,7 +182,7 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     EXPECT_EQ(depth_img->width_, kW);
     EXPECT_EQ(depth_img->height_, kH);
 
-        // Review output, retained for future visual debugging:
+        // Visual debugging:
         // io::WriteImage("/tmp/gs_test_color_8x8.png", *color_img);
         // io::WriteImage("/tmp/gs_test_depth_8x8.png", *depth_img);
 
