@@ -12,6 +12,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -33,24 +34,24 @@ namespace {
 // ---------------------------------------------------------------------------
 
 const std::vector<uint8_t> kRefColorGray = {
-        27, 24, 13, 5, 0, 0, 0, 0,  //
-        58, 54, 31, 11, 2, 0, 0, 0,  //
-        73, 70, 42, 16, 4, 0, 0, 0,  //
-        54, 54, 34, 13, 3, 0, 3, 0,  //
-        23, 24, 16, 6, 1, 26, 76, 17,  //
-        6, 7, 4, 2, 0, 44, 133, 31,  //
-        0, 0, 0, 0, 0, 5, 17, 4,  //
+        38, 35, 23, 11, 4, 0, 0, 0,  //
+        63, 60, 42, 21, 7, 2, 0, 0,  //
+        74, 72, 51, 26, 10, 3, 0, 0,  //
+        60, 60, 44, 23, 9, 2, 0, 0,  //
+        34, 35, 26, 14, 6, 27, 77, 23,  //
+        13, 14, 11, 6, 2, 78, 245, 77,  //
+        4, 4, 3, 2, 0, 22, 74, 24,  //
         0, 0, 0, 0, 0, 0, 0, 0,  //
 };
 const std::vector<uint8_t> kRefDepthGray = {
-        255, 255, 255, 255, 255, 255, 255, 255,  //
-        199, 199, 255, 255, 255, 255, 255, 255,  //
-        199, 199, 199, 255, 255, 255, 255, 255,  //
-        199, 199, 255, 255, 255, 255, 255, 255,  //
-        255, 255, 255, 255, 255, 255, 243, 255,  //
-        255, 255, 255, 255, 255, 255, 243, 255,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
+        0, 0, 0, 0, 0, 0, 0, 0,  //
+        29, 29, 29, 0, 0, 0, 0, 0,  //
+        29, 29, 29, 0, 0, 0, 0, 0,  //
+        29, 29, 29, 0, 0, 0, 0, 0,  //
+        0, 0, 0, 0, 0, 0, 0, 0,  //
+        0, 0, 0, 0, 0, 0, 133, 0,  //
+        0, 0, 0, 0, 0, 0, 0, 0,  //
+        0, 0, 0, 0, 0, 0, 0, 0,  //
 };
 
 // ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ t::geometry::PointCloud MakeTwoTestSplats() {
     const int N = 2;
 
     pcd.SetPointPositions(core::Tensor(std::vector<float>{
-            -0.20f, -0.10f, 4.55f, 0.70f, 0.35f, 3.00f},
+            -0.20f, -0.10f, 4.55f, 0.72f, 0.43f, 3.00f},
             {N, 3}, core::Dtype::Float32));
     pcd.SetPointAttr("opacity", core::Tensor(std::vector<float>{8.0f, 8.0f},
             {N, 1}, core::Dtype::Float32));
@@ -73,11 +74,11 @@ t::geometry::PointCloud MakeTwoTestSplats() {
             1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
             {N, 4}, core::Dtype::Float32));
     pcd.SetPointAttr("scale", core::Tensor(std::vector<float>{
-            0.08f, 0.08f, 0.08f, 0.08f, 0.08f, 0.08f},
+            0.10f, 0.10f, 0.10f, 0.10f, 0.10f, 0.10f},
             {N, 3}, core::Dtype::Float32));
     pcd.SetPointAttr("f_dc", core::Tensor(std::vector<float>{
             1.7724539f, -1.7724539f, -1.7724539f,
-            -1.7724539f, 1.7724539f, -1.7724539f},
+            1.4179631f, 1.7724539f, 1.4179631f},
             {N, 3}, core::Dtype::Float32));
     return pcd;
 }
@@ -91,9 +92,17 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image,
                 .AsTensor()
                 .ToFlatVector<uint8_t>();
     }
-    return tensor_image.To(core::Dtype::UInt8, false, 255.0)
-            .AsTensor()
-            .ToFlatVector<uint8_t>();
+
+        // RenderToDepthImage(..., true) returns linear view-space distance, with
+        // infinity for no-hit pixels. Encode no-hit as 0 and metres as 64 levels.
+        const auto depth = tensor_image.AsTensor().ToFlatVector<float>();
+        std::vector<uint8_t> gray(depth.size());
+        for (size_t index = 0; index < depth.size(); ++index) {
+                gray[index] = std::isfinite(depth[index])
+                                                          ? static_cast<uint8_t>(depth[index] * 64.0f + 0.5f)
+                                                          : 0;
+        }
+        return gray;
 }
 
 // =========================================================================
@@ -177,7 +186,8 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
 
     // ---- depth ----
     auto depth_img = app.RenderToDepthImage(
-            *renderer, scene->GetView(), scene->GetScene(), kW, kH);
+            *renderer, scene->GetView(), scene->GetScene(), kW, kH,
+            true /*z_in_view_space*/);
     ASSERT_TRUE(depth_img);
     EXPECT_EQ(depth_img->width_, kW);
     EXPECT_EQ(depth_img->height_, kH);
