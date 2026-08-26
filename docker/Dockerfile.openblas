@@ -116,6 +116,7 @@ RUN mkdir -p build \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
+    -DBUILD_FILAMENT_FROM_SOURCE=ON \
     .. \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \

@@ -211,6 +211,7 @@ RUN \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=OFF \
+          -DBUILD_FILAMENT_FROM_SOURCE=ON \
           -DCMAKE_INSTALL_PREFIX=~/open3d_install \
           .. \
  && export NPROC=$(($(nproc)+2)) \

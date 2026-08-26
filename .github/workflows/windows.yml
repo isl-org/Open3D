@@ -206,9 +206,10 @@ jobs:
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
+            -DBUILD_FILAMENT_FROM_SOURCE=ON `
             ${{ env.SRC_DIR }}
 
-      - name: Build
+      - name: Build (build-lib)
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
