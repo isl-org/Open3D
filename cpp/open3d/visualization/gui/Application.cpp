@@ -81,6 +81,8 @@ std::string FindResourcePath() {
 #endif
         for (auto &sub :
              {"/resources", "/../resources" /* Xcode build layout */,
+              "/../bin/resources" /* shared-library build layout */,
+              "/../../bin/resources" /* multi-config shared-library layout */,
               "/../../resources" /* Windows build layout, extra CONFIG dir */,
               "/share/resources" /* GNU prefix */,
               "/share/Open3D/resources" /* GNU installed */}) {
