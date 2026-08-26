@@ -113,6 +113,9 @@ struct GaussianSplatViewGpuResources {
     /// Merged GS+Filament depth as R16UI (normalised [0,65535]); non-zero only
     /// when an offscreen capture is active and scene depth is available.
     std::uintptr_t merged_depth_u16_tex = 0;
+    /// Vulkan GS output color image, owned by GaussianSplatRenderer targets.
+    /// Used only for direct offscreen staging readback.
+    std::uintptr_t color_output_tex = 0;
     /// Which sort_values_buf index holds the final sorted splat indices.
     /// Set at the end of RunGaussianGeometryPasses; read by composite.
     int final_sort_src = 0;
@@ -232,6 +235,19 @@ public:
                                       std::uint32_t width,
                                       std::uint32_t height,
                                       std::vector<std::uint16_t>& out) {
+        (void)tex;
+        (void)width;
+        (void)height;
+        (void)out;
+        return false;
+    }
+
+    /// Download an RGBA16F texture as four IEEE-754 half-float bit patterns
+    /// per pixel. Used for Vulkan GS offscreen color readback.
+    virtual bool DownloadTextureRGBA16F(std::uintptr_t tex,
+                                        std::uint32_t width,
+                                        std::uint32_t height,
+                                        std::vector<std::uint16_t>& out) {
         (void)tex;
         (void)width;
         (void)height;

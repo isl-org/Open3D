@@ -58,22 +58,6 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include "open3d/utility/Logging.h"
 
-// VMA single-TU implementation.
-#define VMA_STATIC_VULKAN_FUNCTIONS 0
-#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
-#ifndef _MSC_VER
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#endif
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.hpp"
-#ifndef _MSC_VER
-#pragma GCC diagnostic pop
-#endif
-
 namespace open3d {
 namespace visualization {
 namespace rendering {
@@ -134,8 +118,11 @@ constexpr const char* kRequiredInstanceExts[] = {
 // ---------------------------------------------------------------------------
 
 GaussianSplatVulkanContext& GaussianSplatVulkanContext::GetInstance() {
-    static GaussianSplatVulkanContext instance;
-    return instance;
+    // EngineInstance performs the required explicit shutdown after Filament
+    // releases its shared-device resources. Avoid a competing static destructor
+    // whose order relative to EngineInstance is unspecified across TUs.
+    static auto* instance = new GaussianSplatVulkanContext;
+    return *instance;
 }
 
 GaussianSplatVulkanContext::~GaussianSplatVulkanContext() { Shutdown(); }
@@ -261,11 +248,13 @@ bool GaussianSplatVulkanContext::Initialize() {
     single_queue_device_ = (qcount < 2);
     filament_queue_index_ = single_queue_device_ ? 0 : 1;
 
-    float priority = 1.0f;
+    // Vulkan permits at most one DeviceQueueCreateInfo per queue family.
+    // Request both queue indices through one record when available.
+    std::vector<float> priorities(single_queue_device_ ? 1 : 2, 1.0f);
     std::vector<vk::DeviceQueueCreateInfo> qcis;
-    qcis.push_back({{}, graphics_queue_family_, 1, &priority});
-    if (!single_queue_device_)
-        qcis.push_back({{}, graphics_queue_family_, 1, &priority});
+    qcis.push_back({{}, graphics_queue_family_,
+                    static_cast<uint32_t>(priorities.size()),
+                    priorities.data()});
 
     // Enable synchronization2 (required by GS compute pipeline).
     auto feat = physical_device_.getFeatures2<

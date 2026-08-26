@@ -238,6 +238,7 @@ public:
         if (!frame.valid) return false;
 
         auto& vs = view_states_[&view];
+        vs.color_output_tex = targets.color_vk_image;
         const std::uint64_t scene_id = scene.GetGeometryChangeId();
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
@@ -281,6 +282,20 @@ public:
         if (!gpu_) return false;
         return gpu_->DownloadTextureR32F(it->second.composite_depth_tex, width,
                                          height, out);
+    }
+
+    bool ReadColorToRGBA16FCpu(const FilamentView& view,
+                               std::vector<std::uint16_t>& out,
+                               std::uint32_t width,
+                               std::uint32_t height) override {
+        if (!gpu_) return false;
+        auto it = view_states_.find(&view);
+        if (it == view_states_.end()) return false;
+        if (it == view_states_.end() || it->second.color_output_tex == 0) {
+            return false;
+        }
+        return gpu_->DownloadTextureRGBA16F(it->second.color_output_tex,
+                                            width, height, out);
     }
 
 private:
@@ -329,6 +344,7 @@ private:
             gpu_->DestroyTexture(vs.merged_depth_u16_tex);
             vs.merged_depth_u16_tex = 0;
         }
+        vs.color_output_tex = 0;
     }
 };
 

@@ -36,6 +36,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <math/half.h>
+
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
@@ -53,13 +55,17 @@ namespace {
 /// Composite shader stores premultiplied RGB in \p gs_rgba; blend like ImGui
 /// \c One / \c OneMinusSrcAlpha over an opaque Filament base.
 void BlendPremultipliedSplatOverRgb8(
-        uint8_t* base_rgb, int n_channels, const float* gs_rgba, int w, int h) {
+        uint8_t* base_rgb,
+        int n_channels,
+        const filament::math::half* gs_rgba,
+        int w,
+        int h) {
     const int n = w * h;
     for (int i = 0; i < n; ++i) {
-        const float fr = gs_rgba[i * 4 + 0];
-        const float fg = gs_rgba[i * 4 + 1];
-        const float fb = gs_rgba[i * 4 + 2];
-        const float fa = gs_rgba[i * 4 + 3];
+        const float fr = static_cast<float>(gs_rgba[i * 4 + 0]);
+        const float fg = static_cast<float>(gs_rgba[i * 4 + 1]);
+        const float fb = static_cast<float>(gs_rgba[i * 4 + 2]);
+        const float fa = static_cast<float>(gs_rgba[i * 4 + 3]);
         const float br = static_cast<float>(base_rgb[i * n_channels + 0]) *
                          (1.f / 255.f);
         const float bg = static_cast<float>(base_rgb[i * n_channels + 1]) *
@@ -309,21 +315,36 @@ void FilamentRenderToBuffer::Render() {
 
             const size_t n_pixels = static_cast<size_t>(width_) * height_;
 
-            // Scratch buffers for the two parallel readPixels callbacks.
-            std::vector<uint8_t> base_rgba(n_pixels * 4);
-            std::vector<float> gs_f32;
+            // The GS composite replaces this shared color target. Read its
+            // RGBA16F contents directly through Vulkan when available; the
+            // base is transparent black for this composition path.
+            std::vector<uint8_t> base_rgba(n_pixels * 4, 0);
+            std::vector<filament::math::half> gs_rgba;
+            std::vector<std::uint16_t> gs_rgba_bits;
 
-            PixelBufferDescriptor base_pd(
-                    base_rgba.data(), base_rgba.size(), PixelDataFormat::RGBA,
-                    PixelDataType::UBYTE, [](void*, size_t, void*) {}, nullptr);
-            renderer_->readPixels(native_view_rt, vp.left, vp.bottom, vp.width,
-                                  vp.height, std::move(base_pd));
-
-            if (native_gs_rt) {
-                gs_f32.resize(n_pixels * 4);
+            const bool got_gs_rgba =
+                    gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
+                            *view_, gs_rgba_bits,
+                            static_cast<std::uint32_t>(width_),
+                            static_cast<std::uint32_t>(height_)) &&
+                    gs_rgba_bits.size() == n_pixels * 4;
+            if (got_gs_rgba) {
+                gs_rgba.reserve(gs_rgba_bits.size());
+                for (const auto bits : gs_rgba_bits) {
+                    gs_rgba.push_back(filament::math::makeHalf(bits));
+                }
+            } else if (native_gs_rt) {
+                PixelBufferDescriptor base_pd(
+                        base_rgba.data(), base_rgba.size(),
+                        PixelDataFormat::RGBA, PixelDataType::UBYTE,
+                        [](void*, size_t, void*) {}, nullptr);
+                renderer_->readPixels(native_view_rt, vp.left, vp.bottom,
+                                      vp.width, vp.height, std::move(base_pd));
+                gs_rgba.resize(n_pixels * 4);
                 PixelBufferDescriptor gs_pd(
-                        gs_f32.data(), gs_f32.size() * sizeof(float),
-                        PixelDataFormat::RGBA, PixelDataType::FLOAT,
+                        gs_rgba.data(),
+                        gs_rgba.size() * sizeof(filament::math::half),
+                        PixelDataFormat::RGBA, PixelDataType::HALF,
                         [](void*, size_t, void*) {}, nullptr);
                 renderer_->readPixels(native_gs_rt, vp.left, vp.bottom,
                                       vp.width, vp.height, std::move(gs_pd));
@@ -343,8 +364,8 @@ void FilamentRenderToBuffer::Render() {
                 dst[i * nc + 2] = src[i * 4 + 2];
                 if (nc == 4) dst[i * nc + 3] = src[i * 4 + 3];
             }
-            if (native_gs_rt && !gs_f32.empty()) {
-                BlendPremultipliedSplatOverRgb8(buffer_, nc, gs_f32.data(),
+            if (native_gs_rt && !gs_rgba.empty()) {
+                BlendPremultipliedSplatOverRgb8(buffer_, nc, gs_rgba.data(),
                                                 int(width_), int(height_));
             }
 

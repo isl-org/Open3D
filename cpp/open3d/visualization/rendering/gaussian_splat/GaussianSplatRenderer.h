@@ -188,6 +188,17 @@ public:
             (void)height;
             return false;
         }
+
+        virtual bool ReadColorToRGBA16FCpu(const FilamentView& view,
+                                           std::vector<std::uint16_t>& out,
+                                           std::uint32_t width,
+                                           std::uint32_t height) {
+            (void)view;
+            (void)out;
+            (void)width;
+            (void)height;
+            return false;
+        }
     };
 
     GaussianSplatRenderer(filament::Engine& engine,
@@ -242,6 +253,11 @@ public:
                                       std::vector<float>& out,
                                       std::uint32_t width,
                                       std::uint32_t height);
+
+    bool ReadColorToRGBA16FCpu(const FilamentView& view,
+                               std::vector<std::uint16_t>& out,
+                               std::uint32_t width,
+                               std::uint32_t height);
 
     /// Signal that an offscreen depth readback is needed for \p view in the
     /// next composite pass.  Causes the merged_depth_u16_tex to be allocated

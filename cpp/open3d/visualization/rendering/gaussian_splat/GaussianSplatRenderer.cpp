@@ -430,6 +430,17 @@ bool GaussianSplatRenderer::ReadCompositeDepthToFloatCpu(
     return backend_->ReadCompositeDepthToFloatCpu(view, out, width, height);
 }
 
+bool GaussianSplatRenderer::ReadColorToRGBA16FCpu(
+        const FilamentView& view,
+        std::vector<std::uint16_t>& out,
+        std::uint32_t width,
+        std::uint32_t height) {
+    if (!backend_) {
+        return false;
+    }
+    return backend_->ReadColorToRGBA16FCpu(view, out, width, height);
+}
+
 void GaussianSplatRenderer::RequestDepthReadbackForView(
         const FilamentView& view, bool wanted) {
     auto it = outputs_.find(&view);

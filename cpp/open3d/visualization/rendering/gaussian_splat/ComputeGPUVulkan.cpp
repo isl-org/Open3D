@@ -478,6 +478,13 @@ public:
         return DownloadTexBytes(tex, w, h, sizeof(std::uint16_t), out);
     }
 
+    bool DownloadTextureRGBA16F(std::uintptr_t tex,
+                                std::uint32_t w,
+                                std::uint32_t h,
+                                std::vector<std::uint16_t>& out) override {
+        return DownloadTexBytes(tex, w, h, 4 * sizeof(std::uint16_t), out);
+    }
+
     // --- Frame boundary ---------------------------------------------------
 
     void BeginGeometryPass() override { BeginCmdBuf(); }
@@ -568,43 +575,14 @@ public:
 private:
     // --- GL–Vulkan interop barriers ----------------------------------------
 
-    // Emit image memory barriers that acquire ownership of every shared
-    // (GL-interop) image from VK_QUEUE_FAMILY_EXTERNAL to this compute queue.
-    //
-    // These barriers must be the first commands in the composite command buffer
-    // (called from BeginCompositePass after BeginCmdBuf).  On the GL side,
-    // engine_.flushAndWait() already guarantees GPU completion before this CB
-    // records, so srcStageMask = NONE / srcAccessMask = 0 is correct: we are
-    // not waiting for in-flight Vulkan work but performing an ownership handoff
-    // from an external API whose completion has been ensured by the CPU wait.
-    //
-    // Preserve externally produced contents by acquiring from GENERAL, which
-    // matches the layout we release to at the end of the previous composite
-    // pass. newLayout is chosen to match the first Vulkan use in the composite
-    // pass:
-    //   Color (RGBA16F) -> GENERAL                  (storage image, write/read)
-    //   Depth (D32_SFLOAT) -> SHADER_READ_ONLY_OPTIMAL (combined sampler)
-    // current_layout is updated so ResolveImageView will not emit a redundant
-    // transition on its first call in the same CB.
     void EmitSharedInteropAcquireBarriers() {
-        /* No-op: all images are same-device VkImages, no queue-family
-           ownership transfer needed */
+        /* No-op: all shared images use the same Vulkan device and queue
+           family. */
     }
 
-    // Emit image memory barriers that release ownership of every shared
-    // (GL-interop) image from this compute queue back to
-    // VK_QUEUE_FAMILY_EXTERNAL.
-    //
-    // Called from EndCompositePass just before SubmitAndWait().  After submit
-    // the fence signals on the CPU; Filament then reads the GS color overlay.
-    //
-    // Both images are transitioned to GENERAL for GL (GL has no Vulkan layout
-    // concept; GENERAL is universally compatible with external API hand-off).
-    // current_layout is updated to GENERAL so the next frame's acquire starts
-    // from a consistent sentinel.
     void EmitSharedInteropReleaseBarriers() {
-        /* No-op: all images are same-device VkImages, no queue-family
-           ownership transfer needed */
+        /* No-op: all shared images use the same Vulkan device and queue
+           family. */
     }
 
     // --- Internal state ---------------------------------------------------
@@ -1158,7 +1136,7 @@ private:
         const std::size_t row_size =
                 static_cast<std::size_t>(w) * bytes_per_elem;
         const std::size_t total = row_size * h;
-        out.resize(static_cast<std::size_t>(w) * h);
+        out.resize(total / sizeof(T));
 
         // Create a staging readback buffer.
         VkBufferCreateInfo bci{};
@@ -1197,13 +1175,19 @@ private:
                                       : e.current_layout);
         SubmitAndWait();
 
+        vmaInvalidateAllocation(vma_, alloc, 0, total);
         std::memcpy(out.data(), info.pMappedData, total);
         vmaDestroyBuffer(vma_, staging, alloc);
 
-        // Flip bottom-up → top-down (matches GL / Filament readPixels).
+        // Flip bottom-up -> top-down (matches GL / Filament readPixels).
+        // A vector element is not necessarily one pixel: RGBA16F uses four
+        // uint16_t elements per pixel, so flip complete byte strides.
+        const std::size_t elements_per_row = row_size / sizeof(T);
         for (std::uint32_t row = 0; row < h / 2; ++row) {
-            std::swap_ranges(out.begin() + row * w, out.begin() + row * w + w,
-                             out.begin() + (h - 1 - row) * w);
+            std::swap_ranges(out.begin() + row * elements_per_row,
+                             out.begin() + (row + 1) * elements_per_row,
+                             out.begin() +
+                                     (h - 1 - row) * elements_per_row);
         }
         return true;
     }
