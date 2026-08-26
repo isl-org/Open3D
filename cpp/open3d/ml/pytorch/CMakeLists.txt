@@ -24,6 +24,9 @@ if(BUILD_SYCL_MODULE)
     unset(SYCL_COMPILER)
 endif()
 
+# PyTorch's CMake configuration disables CMAKE_CUDA_ARCHITECTURES. Preserve
+# Open3D's selection so it can be applied to this target after find_package.
+set(OPEN3D_CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
 find_package(Pytorch REQUIRED)
 
 if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
@@ -33,6 +36,10 @@ if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1
 endif()
 
 add_library(open3d_torch_ops SHARED)
+if (BUILD_CUDA_MODULE)
+    set_property(TARGET open3d_torch_ops PROPERTY CUDA_ARCHITECTURES
+                 "${OPEN3D_CUDA_ARCHITECTURES}")
+endif()
 
 target_sources(open3d_torch_ops PRIVATE
     continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp
