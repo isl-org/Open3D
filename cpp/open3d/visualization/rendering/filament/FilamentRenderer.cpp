@@ -171,9 +171,9 @@ void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
     on_after_draw_ = callback;
 }
 
-void FilamentRenderer::SetOnAppleGaussianCompositeComplete(
+void FilamentRenderer::SetOnGaussianCompositeComplete(
         std::function<void()> callback) {
-    on_apple_gaussian_composite_complete_ = std::move(callback);
+    on_gaussian_composite_complete_ = std::move(callback);
 }
 
 void FilamentRenderer::UpdateSwapChain() {
@@ -268,10 +268,17 @@ void FilamentRenderer::Draw() {
             // depth texture is fully written before the composite pass reads
             // it.
             engine_.flushAndWait();
+            bool any_composite = false;
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-                scene->ForEachActiveView([this](FilamentView& view) {
-                    gaussian_splat_renderer_->RenderCompositeStage(view);
+                scene->ForEachActiveView([this,
+                                          &any_composite](FilamentView& view) {
+                    any_composite |=
+                            gaussian_splat_renderer_->RenderCompositeStage(
+                                    view);
                 });
+            }
+            if (any_composite && on_gaussian_composite_complete_) {
+                on_gaussian_composite_complete_();
             }
         }
 #endif
@@ -305,12 +312,13 @@ void FilamentRenderer::EndFrame() {
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
                 scene->ForEachActiveView([this,
                                           &any_composite](FilamentView& view) {
-                    gaussian_splat_renderer_->RenderCompositeStage(view);
-                    any_composite = true;
+                    any_composite |=
+                            gaussian_splat_renderer_->RenderCompositeStage(
+                                    view);
                 });
             }
-            if (any_composite && on_apple_gaussian_composite_complete_) {
-                on_apple_gaussian_composite_complete_();
+            if (any_composite && on_gaussian_composite_complete_) {
+                on_gaussian_composite_complete_();
             }
         }
 #endif

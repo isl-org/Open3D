@@ -416,9 +416,9 @@ void Window::CreateRenderer() {
             Application::GetInstance().GetWindowSystem().CreateRenderer(
                     impl_->window_);
     impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
-    // Metal: GS composite runs after endFrame(); defer PostRedraw so the next
-    // frame samples the updated splat texture (see FilamentRenderer::EndFrame).
-    impl_->renderer_->SetOnAppleGaussianCompositeComplete(
+    // Widgets record ImGui commands before GS composite output is produced.
+    // Draw once more so they can bind the newly valid overlay texture.
+    impl_->renderer_->SetOnGaussianCompositeComplete(
             [this]() { PostRedraw(); });
 
     impl_->imgui_.imgui_bridge =

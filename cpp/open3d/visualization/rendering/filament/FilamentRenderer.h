@@ -70,12 +70,10 @@ public:
 
     bool LastBeginFrameSubmitted() const override { return frame_started_; }
 
-    /// Metal: Gaussian splat compositing runs after \c endFrame() so Filament's
-    /// depth is ready. The first \c Draw() still samples the GS color texture
-    /// from before that composite; call \p callback after a successful
-    /// composite so the GUI can \c PostRedraw() and present the updated splats
-    /// (deferred via \c Window::needs_redraw_ when already inside \c OnDraw).
-    void SetOnAppleGaussianCompositeComplete(std::function<void()> callback);
+    /// UI commands are recorded before the current Gaussian splat composite.
+    /// Call \p callback after a successful composite so the GUI can
+    /// \c PostRedraw() and bind the updated overlay texture in the next frame.
+    void SetOnGaussianCompositeComplete(std::function<void()> callback);
 
     MaterialHandle AddMaterial(const ResourceLoadRequest& request) override;
     MaterialInstanceHandle AddMaterialInstance(
@@ -152,7 +150,7 @@ private:
 
     bool frame_started_ = false;
     std::function<void()> on_after_draw_;
-    std::function<void()> on_apple_gaussian_composite_complete_;
+    std::function<void()> on_gaussian_composite_complete_;
     bool needs_wait_after_draw_ = false;
 #if defined(__APPLE__)
     // Scratch buffer for RequestReadPixels' Metal RGBA readback workaround;

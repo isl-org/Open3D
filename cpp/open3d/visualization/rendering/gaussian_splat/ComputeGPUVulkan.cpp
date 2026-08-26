@@ -560,7 +560,12 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
+        // Filament performs the initial transition for imported depth
+        // attachments. Compute owns the first use of color outputs and must
+        // transition those images from their creation layout.
+        e.current_layout = (format == VK_FORMAT_D32_SFLOAT)
+                                   ? VK_IMAGE_LAYOUT_GENERAL
+                                   : VK_IMAGE_LAYOUT_UNDEFINED;
         uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
     }
@@ -665,8 +670,7 @@ private:
         ci.vulkanApiVersion = VK_API_VERSION_1_3;
         ci.physicalDevice = physical_device_;
         ci.device = device_;
-        ci.instance = GaussianSplatVulkanContext::GetInstance()
-                              .GetVkInstance();
+        ci.instance = GaussianSplatVulkanContext::GetInstance().GetVkInstance();
         ci.pVulkanFunctions = &vk_fn;
         if (vmaCreateAllocator(&ci, &vma_) != VK_SUCCESS) {
             utility::LogWarning(
@@ -677,8 +681,8 @@ private:
     }
 
     bool InitCommandPool() {
-        auto& raii_dev = GaussianSplatVulkanContext::GetInstance()
-                                 .GetRaiiDevice();
+        auto& raii_dev =
+                GaussianSplatVulkanContext::GetInstance().GetRaiiDevice();
         vk::CommandPoolCreateInfo ci{{}, queue_family_};
         try {
             cmd_pool_ = raii_dev.createCommandPool(ci);
@@ -756,8 +760,8 @@ private:
         }
 
         // RAII device: all vk::raii::Xxx handles auto-destroy on exception.
-        auto& raii_dev = GaussianSplatVulkanContext::GetInstance()
-                                 .GetRaiiDevice();
+        auto& raii_dev =
+                GaussianSplatVulkanContext::GetInstance().GetRaiiDevice();
         vk::ShaderModuleCreateInfo smi{
                 {},
                 bytes.size(),
@@ -1186,8 +1190,7 @@ private:
         for (std::uint32_t row = 0; row < h / 2; ++row) {
             std::swap_ranges(out.begin() + row * elements_per_row,
                              out.begin() + (row + 1) * elements_per_row,
-                             out.begin() +
-                                     (h - 1 - row) * elements_per_row);
+                             out.begin() + (h - 1 - row) * elements_per_row);
         }
         return true;
     }
@@ -1251,7 +1254,7 @@ void RegisterVkImageInComputeContext(GaussianSplatGpuContext& ctx,
 }
 
 void UnregisterVkImageFromComputeContext(GaussianSplatGpuContext& ctx,
-                                          std::uintptr_t vk_image_opaque) {
+                                         std::uintptr_t vk_image_opaque) {
     auto* vk_ctx = dynamic_cast<GaussianSplatGpuContextVulkan*>(&ctx);
     if (!vk_ctx) return;
     vk_ctx->UnregisterVkImage(reinterpret_cast<VkImage>(vk_image_opaque));

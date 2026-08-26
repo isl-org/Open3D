@@ -2,7 +2,7 @@ diff --git a/filament/backend/src/vulkan/VulkanDriver.cpp b/filament/backend/src
 index bf5604a0d..aa20c0020 100644
 --- a/filament/backend/src/vulkan/VulkanDriver.cpp
 +++ b/filament/backend/src/vulkan/VulkanDriver.cpp
-@@ -549,7 +549,10 @@ void VulkanDriver::importTextureR(Handle<HwTexture> th, intptr_t id,
+@@ -549,7 +549,15 @@ void VulkanDriver::importTextureR(Handle<HwTexture> th, intptr_t id,
          SamplerType target, uint8_t levels,
          TextureFormat format, uint8_t samples, uint32_t w, uint32_t h, uint32_t depth,
          TextureUsage usage) {
@@ -10,6 +10,11 @@ index bf5604a0d..aa20c0020 100644
 +    auto vktexture = mResourceAllocator.construct<VulkanTexture>(th, mPlatform->getDevice(),
 +            mAllocator, &mCommands, (VkImage)id, getVkFormat(format),
 +            samples, w, h, usage, mStagePool);
++    // Non-depth imports are populated externally in GENERAL layout. Depth
++    // imports remain UNDEFINED so Filament performs their initial transition.
++    if (!any(usage & TextureUsage::DEPTH_ATTACHMENT)) {
++        vktexture->setLayout(vktexture->getFullViewRange(), VulkanLayout::READ_WRITE);
++    }
 +    mResourceManager.acquire(vktexture);
  }
  
