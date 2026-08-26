@@ -90,6 +90,14 @@ jobs:
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
 
+      - name: Upload patched Filament to GitHub artifacts
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: filament-linux-x86_64
+          path: filament-binaries.tar.gz
+          if-no-files-found: error
+
       # The wheel is also built as part of the cpu-shared-ml Docker image and
       # is reused by the build-docs job below, avoiding a second Open3D build
       # just for documentation (EGL enables headless notebook rendering with

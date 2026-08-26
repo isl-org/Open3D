@@ -233,6 +233,7 @@ RUN ccache -s \
         rm -f /open3d*.whl; \
         mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; \
     fi \
+ && tar -czf /filament-binaries.tar.gz -C /root/Open3D/build filament-binaries \
  && ls -alh /
 
 RUN echo "Docker build done."

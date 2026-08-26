@@ -121,5 +121,6 @@ RUN mkdir -p build \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
  && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
- && make install -j$NPROC
+ && make install -j$NPROC \
+ && tar -czf /filament-binaries.tar.gz -C /root/Open3D/build filament-binaries
 RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi
