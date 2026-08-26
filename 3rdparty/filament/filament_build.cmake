@@ -53,12 +53,48 @@ if(NOT WIN32)
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
 endif()
 
+# Clang on Linux needs the GCC libstdc++ library path for linking.
+# When building Filament from source with clang while the rest of
+# Open3D uses GCC, the GCC library directory must be explicitly added.
+set(filament_linker_flags "")
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-search-dirs
+        OUTPUT_VARIABLE _gcc_search_dirs
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(_gcc_search_dirs MATCHES "libraries: *=([^\n]+)")
+        string(STRIP "${CMAKE_MATCH_1}" _gcc_lib_path)
+        # Pick the first path that contains libstdc++.
+        string(REPLACE ":" ";" _gcc_lib_list "${_gcc_lib_path}")
+        foreach(_dir ${_gcc_lib_list})
+            if(EXISTS "${_dir}/libstdc++.so")
+                set(filament_linker_flags "-L${_dir}")
+                break()
+            endif()
+        endforeach()
+    endif()
+    # Fallback: try common locations.
+    if(NOT filament_linker_flags)
+        foreach(_dir /usr/lib/gcc/x86_64-linux-gnu/11
+                     /usr/lib/gcc/x86_64-linux-gnu/12
+                     /usr/lib/gcc/x86_64-linux-gnu/13
+                     /usr/lib/x86_64-linux-gnu)
+            if(EXISTS "${_dir}/libstdc++.so")
+                set(filament_linker_flags "-L${_dir}")
+                break()
+            endif()
+        endforeach()
+    endif()
+    if(filament_linker_flags)
+        message(STATUS "Filament: using linker flags ${filament_linker_flags}")
+    endif()
+endif()
+
 ExternalProject_Add(
     ext_filament
     PREFIX filament
     URL https://github.com/google/filament/archive/refs/tags/${FILAMENT_VER}.tar.gz
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
-    PATCH_COMMAND git apply "${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch" || echo "Patch already applied or not applicable"
+    PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
@@ -70,6 +106,8 @@ ExternalProject_Add(
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
         -DCMAKE_CXX_FLAGS:STRING=${filament_cxx_flags}
+        -DCMAKE_EXE_LINKER_FLAGS:STRING=${filament_linker_flags}
+        -DCMAKE_SHARED_LINKER_FLAGS:STRING=${filament_linker_flags}
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
         -DUSE_STATIC_LIBCXX=ON
