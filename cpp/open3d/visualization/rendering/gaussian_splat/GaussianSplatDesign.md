@@ -101,9 +101,16 @@ Draw:
 The two mandatory CPU stalls (`flushAndWait`) cannot be eliminated without modifying Filament.
 
 **Apple** (Metal): GS composite runs after `renderer_->endFrame()` on the same Metal queue
-ordering as Filament's submit.  The first `Draw()` shows the previous frame's composite;
-`SetOnAppleGaussianCompositeComplete` → `PostRedraw()` schedules a second draw so updated
-splats appear without a user input event.
+ordering as Filament's submit. The first `Draw()` shows the previous frame's composite.
+
+On every backend, widgets record ImGui commands before the current frame produces its GS
+output. `SetOnGaussianCompositeComplete` -> `PostRedraw()` schedules a second draw so the
+newly valid overlay is sampled without a user input event.
+
+Imported Vulkan textures must also preserve their external layout state. Compute transitions
+the GS color image from `UNDEFINED` to `GENERAL`; Filament records that non-depth import as
+`READ_WRITE` so its first sampling transition does not discard the compute-written contents.
+Imported depth remains `UNDEFINED` in Filament until its first attachment transition.
 
 `FilamentRenderToBuffer::Render()` mirrors the same `#if defined(__APPLE__)` ordering.
 
@@ -443,7 +450,7 @@ consistency even though the shader does not evaluate them.
 | Sigmoid applied CPU-side | Eliminates a per-splat per-frame transcendental `exp()` in the projection shader; computed once at packing time. |
 | Bit-packed visibility mask | 1 bit per splat (0.125 B/splat).  The project shader reads a single `uint32` word per 32 splats; masked splats write no sort entries. |
 | Pre-destroy invalidation on resize | `InvalidateGaussianSplatOutput()` tears down the GS render target before `FilamentView` frees `color_buffer_`, preventing use-after-free during maximize/resize. |
-| Metal `SetOnAppleGaussianCompositeComplete` + `PostRedraw` | Composite runs after `endFrame()`; without a `PostRedraw()`, the first frame shows no splats until the next user event.  The callback schedules a deferred redraw. |
+| `SetOnGaussianCompositeComplete` + `PostRedraw` | Widgets record texture commands before GS output is produced; without a follow-up draw, the first frame shows no splats until the next user event. The callback schedules one deferred redraw after a successful composite. |
 
 ---
 
@@ -481,9 +488,9 @@ consistency even though the shader does not evaluate them.
 | `FilamentView.h/.cpp` | `EnableViewCaching()` invalidation fix; `GetRenderTargetHandle()` for offscreen readback |
 | `FilamentScene.h/.cpp` | `per_object_gs_attrs_` / `merged_gs_attrs_`; `RebuildMergedGaussianData()`; `HasNonGaussianVisibleGeometry()` |
 | `FilamentRenderToBuffer.h/.cpp` | GS pipeline mirror; parallel `readPixels`; `BlendPremultipliedSplatOverRgb8` CPU blend |
-| `FilamentRenderer.h/.cpp` | Frame schedule and GS output forwarding; Apple `SetOnAppleGaussianCompositeComplete` |
+| `FilamentRenderer.h/.cpp` | Frame schedule and GS output forwarding; `SetOnGaussianCompositeComplete` |
 | `FilamentEngine.cpp` | Pre-Filament Vulkan context setup (init + shutdown, shared VkDevice lifecycle) |
-| `Window.cpp` | Registers composite-complete callback → `PostRedraw()` (Metal first-frame fix) |
+| `Window.cpp` | Registers composite-complete callback -> `PostRedraw()` (first-frame fix) |
 
 ### Shader files (`shaders/`)
 

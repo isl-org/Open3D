@@ -560,7 +560,12 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
+        // Filament performs the initial transition for imported depth
+        // attachments. Compute owns the first use of color outputs and must
+        // transition those images from their creation layout.
+        e.current_layout = (format == VK_FORMAT_D32_SFLOAT)
+                                   ? VK_IMAGE_LAYOUT_GENERAL
+                                   : VK_IMAGE_LAYOUT_UNDEFINED;
         uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
     }
