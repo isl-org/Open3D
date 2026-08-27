@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -196,7 +196,8 @@ struct TensorRef {
         }
     }
 
-    /// Returns True if the underlying memory buffer is contiguous.
+    /// Returns True if the underlying memory buffer is C-contiguous
+    /// (row-major order, consistent with PyTorch and NumPy conventions).
     inline bool IsContiguous() const {
         SizeVector shape(ndims_);
         SizeVector strides(ndims_);

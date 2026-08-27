@@ -5,10 +5,15 @@ if(BUILD_CUDA_MODULE)
     message(STATUS "Building TensorFlow ops with CUDA")
 endif()
 
+set(OPEN3D_CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
 find_package(Tensorflow REQUIRED)
 
 
 add_library(open3d_tf_ops SHARED)
+if (BUILD_CUDA_MODULE)
+    set_property(TARGET open3d_tf_ops PROPERTY CUDA_ARCHITECTURES
+                 "${OPEN3D_CUDA_ARCHITECTURES}")
+endif()
 
 target_sources(open3d_tf_ops PRIVATE
     continuous_conv/ContinuousConvBackpropFilterOpKernel.cpp

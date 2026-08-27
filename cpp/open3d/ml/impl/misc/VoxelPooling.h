@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -35,10 +35,15 @@ public:
                       "CENTER is not allowed for feature vectors");
     }
 
-    template <class Derived, class Derived2, class Derived3>
+    template <class Derived,
+              class Derived2,
+              class Derived3,
+              typename = typename std::enable_if<
+                      std::is_base_of<Eigen::ArrayBase<Derived3>,
+                                      Derived3>::value>::type>
     inline void AddPoint(const Eigen::MatrixBase<Derived>& pos,
                          const Eigen::MatrixBase<Derived2>& voxel_center,
-                         const Eigen::ArrayBase<Derived3>& feat) {
+                         const Derived3& feat) {
         bool new_nearest_neighbor = false;
         TReal sqr_d = 0;
         if (POS_FN == NEAREST_NEIGHBOR || FEAT_FN == NEAREST_NEIGHBOR) {
@@ -112,10 +117,15 @@ public:
                       "CENTER is not allowed for feature vectors");
     }
 
-    template <class Derived, class Derived2, class Derived3>
+    template <class Derived,
+              class Derived2,
+              class Derived3,
+              typename = typename std::enable_if<
+                      std::is_base_of<Eigen::ArrayBase<Derived3>,
+                                      Derived3>::value>::type>
     inline void AddPoint(const Eigen::MatrixBase<Derived>& pos,
                          const Eigen::MatrixBase<Derived2>& voxel_center,
-                         const Eigen::ArrayBase<Derived3>& feat,
+                         const Derived3& feat,
                          const size_t idx) {
         bool new_nearest_neighbor = false;
         TReal sqr_d = 0;

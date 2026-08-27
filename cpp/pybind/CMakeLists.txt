@@ -103,9 +103,9 @@ if (BUILD_SHARED_LIBS)
             $<TARGET_FILE:Open3D::Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
     )
 endif()
-# Include additional libraries that may be absent from the user system
-# eg: libc++.so, libc++abi.so (needed by filament) for Linux.
-# libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
+# Include additional libraries that may be absent from the user system (TBB).
+# Linux GUI wheels bundle LLVM libc++/libc++abi via ldd in
+# package_linux_wheel_runtime.sh (see make_python_package.cmake).
 # Prefer TBB::tbb; fall back to Open3D::tbb from an installed devel package.
 if (TARGET TBB::tbb)
     set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
@@ -113,11 +113,6 @@ elseif (TARGET Open3D::tbb)
     set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:Open3D::tbb>)
 else()
     message(FATAL_ERROR "TBB target required to package Python wheel extras")
-endif()
-if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if (CPP_LIBRARY AND CPPABI_LIBRARY)
-        list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
-    endif()
 endif()
 # Note: Open3D no longer links libomp. TBB (packaged above via
 # PYTHON_EXTRA_LIBRARIES) is the only threading runtime shipped in the wheel,
@@ -178,20 +173,13 @@ if (BUILD_PYTORCH_OPS)
 endif()
 
 if (BUNDLE_OPEN3D_ML)
-    find_path(
-        OPEN3D_ML_ROOT
-        NAMES set_open3d_ml_root.sh
-        HINTS $ENV{OPEN3D_ML_ROOT}
-        DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
-        REQUIRED
-        NO_DEFAULT_PATH
-    )
-
+    # OPEN3D_ML_ROOT is located in the top level CMakeLists.txt, which also
+    # decides whether Open3D-ML can be bundled.
     ExternalProject_Add(
         open3d_ml
         PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
         GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
-        GIT_TAG origin/main
+        GIT_TAG "${OPEN3D_ML_VERSION}"
         GIT_SHALLOW
         BUILD_IN_SOURCE ON
         # do not configure

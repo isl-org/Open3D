@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ primary_doc = "index"
 
 # General information about the project.
 project = u"Open3D"
-copyright = u"2018 - 2023, www.open3d.org"
+copyright = u"2018 - 2026, www.open3d.org"
 author = u"www.open3d.org"
 
 # The version info for the project you're documenting, acts as replacement for
