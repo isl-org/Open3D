@@ -380,10 +380,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");
     }
 
-    const std::uintptr_t color_tex =
-            targets.gs_color_mtl_texture
-                    ? targets.gs_color_mtl_texture
-                    : targets.color_vk_image;
+    const std::uintptr_t color_tex = targets.gs_color_mtl_texture
+                                             ? targets.gs_color_mtl_texture
+                                             : targets.color_vk_image;
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
@@ -428,10 +427,9 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Only dispatched when a readback was requested AND the merged texture
     // was successfully allocated.
     if (targets.wants_depth_readback && vs.merged_depth_u16_tex != 0) {
-        const std::uintptr_t sd =
-                targets.scene_depth_mtl_texture
-                        ? targets.scene_depth_mtl_texture
-                        : targets.depth_vk_image;
+        const std::uintptr_t sd = targets.scene_depth_mtl_texture
+                                          ? targets.scene_depth_mtl_texture
+                                          : targets.depth_vk_image;
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
                 .Sampler(15, vs.composite_depth_tex, w,

@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "open3d/Open3D.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/Camera.h"
@@ -34,24 +36,24 @@ namespace {
 // ---------------------------------------------------------------------------
 
 const std::vector<uint8_t> kRefColorGray = {
-        38, 35, 23, 11, 4, 0, 0, 0,  //
-        63, 60, 42, 21, 7, 2, 0, 0,  //
-        74, 72, 51, 26, 10, 3, 0, 0,  //
-        60, 60, 44, 23, 9, 2, 0, 0,  //
-        34, 35, 26, 14, 6, 27, 77, 23,  //
-        13, 14, 11, 6, 2, 78, 245, 77,  //
-        4, 4, 3, 2, 0, 22, 74, 24,  //
-        0, 0, 0, 0, 0, 0, 0, 0,  //
+        38, 35, 23, 11, 4,  0,  0,   0,   //
+        63, 60, 42, 21, 7,  2,  0,   0,   //
+        74, 72, 51, 26, 10, 3,  0,   0,   //
+        60, 60, 44, 23, 9,  2,  0,   0,   //
+        34, 35, 26, 14, 6,  27, 77,  23,  //
+        13, 14, 11, 6,  2,  78, 245, 77,  //
+        4,  4,  3,  2,  0,  22, 74,  24,  //
+        0,  0,  0,  0,  0,  0,  0,   0,   //
 };
 const std::vector<uint8_t> kRefDepthGray = {
-        0, 0, 0, 0, 0, 0, 0, 0,  //
-        29, 29, 29, 0, 0, 0, 0, 0,  //
-        29, 29, 29, 0, 0, 0, 0, 0,  //
-        29, 29, 29, 0, 0, 0, 0, 0,  //
-        0, 0, 0, 0, 0, 0, 0, 0,  //
-        0, 0, 0, 0, 0, 0, 133, 0,  //
-        0, 0, 0, 0, 0, 0, 0, 0,  //
-        0, 0, 0, 0, 0, 0, 0, 0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 133, 0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
 };
 
 // ---------------------------------------------------------------------------
@@ -65,44 +67,45 @@ t::geometry::PointCloud MakeTwoTestSplats() {
     PointCloud pcd;
     const int N = 2;
 
-    pcd.SetPointPositions(core::Tensor(std::vector<float>{
-            -0.20f, -0.10f, 4.55f, 0.72f, 0.43f, 3.00f},
+    pcd.SetPointPositions(core::Tensor(
+            std::vector<float>{-0.20f, -0.10f, 4.55f, 0.72f, 0.43f, 3.00f},
             {N, 3}, core::Dtype::Float32));
     pcd.SetPointAttr("opacity", core::Tensor(std::vector<float>{8.0f, 8.0f},
-            {N, 1}, core::Dtype::Float32));
-    pcd.SetPointAttr("rot", core::Tensor(std::vector<float>{
-            1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
-            {N, 4}, core::Dtype::Float32));
-    pcd.SetPointAttr("scale", core::Tensor(std::vector<float>{
-            0.10f, 0.10f, 0.10f, 0.10f, 0.10f, 0.10f},
-            {N, 3}, core::Dtype::Float32));
-    pcd.SetPointAttr("f_dc", core::Tensor(std::vector<float>{
-            1.7724539f, -1.7724539f, -1.7724539f,
-            1.4179631f, 1.7724539f, 1.4179631f},
-            {N, 3}, core::Dtype::Float32));
+                                             {N, 1}, core::Dtype::Float32));
+    pcd.SetPointAttr(
+            "rot", core::Tensor(std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                                   0.0f, 0.0f, 0.0f},
+                                {N, 4}, core::Dtype::Float32));
+    pcd.SetPointAttr("scale",
+                     core::Tensor(std::vector<float>{0.10f, 0.10f, 0.10f, 0.10f,
+                                                     0.10f, 0.10f},
+                                  {N, 3}, core::Dtype::Float32));
+    pcd.SetPointAttr("f_dc",
+                     core::Tensor(std::vector<float>{1.7724539f, -1.7724539f,
+                                                     -1.7724539f, 1.4179631f,
+                                                     1.7724539f, 1.4179631f},
+                                  {N, 3}, core::Dtype::Float32));
     return pcd;
 }
 
-std::vector<uint8_t> ImageToGray(const geometry::Image& image,
-                                 bool is_color) {
-    auto tensor_image = t::geometry::Image::FromLegacy(
-            image, core::Device("CPU:0"));
+std::vector<uint8_t> ImageToGray(const geometry::Image& image, bool is_color) {
+    auto tensor_image =
+            t::geometry::Image::FromLegacy(image, core::Device("CPU:0"));
     if (is_color) {
-        return tensor_image.RGBToGray()
-                .AsTensor()
-                .ToFlatVector<uint8_t>();
+        return tensor_image.RGBToGray().AsTensor().ToFlatVector<uint8_t>();
     }
 
-        // RenderToDepthImage(..., true) returns linear view-space distance, with
-        // infinity for no-hit pixels. Encode no-hit as 0 and metres as 64 levels.
-        const auto depth = tensor_image.AsTensor().ToFlatVector<float>();
-        std::vector<uint8_t> gray(depth.size());
-        for (size_t index = 0; index < depth.size(); ++index) {
-                gray[index] = std::isfinite(depth[index])
-                                                          ? static_cast<uint8_t>(depth[index] * 64.0f + 0.5f)
-                                                          : 0;
-        }
-        return gray;
+    // RenderToDepthImage(..., true) returns linear view-space distance, with
+    // infinity for no-hit pixels. Encode no-hit as 0 and metres as 64 levels.
+    const auto depth = tensor_image.AsTensor().ToFlatVector<float>();
+    std::vector<uint8_t> gray(depth.size());
+    for (size_t index = 0; index < depth.size(); ++index) {
+        gray[index] =
+                std::isfinite(depth[index])
+                        ? static_cast<uint8_t>(depth[index] * 64.0f + 0.5f)
+                        : 0;
+    }
+    return gray;
 }
 
 // =========================================================================
@@ -112,12 +115,16 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image,
 class GaussianSplatRenderTest : public testing::Test {
 protected:
     void SetUp() override {
+        const char* ci = std::getenv("CI");
+        // Very rough way to tell if a CI machine has a GPU 
+        if (ci && !core::cuda::IsAvailable() && core::sy::GetDeviceCount() < 2) {
+            GTEST_SKIP() << "Gaussian splat rendering requires GPU in CI";
+        }
         if (!initialized_) {
             // Filament resources are at <build>/bin/resources/ relative
             // to the test executable.  Set the path explicitly so the
             // test works when run from any working directory.
-            const char* res_env =
-                    std::getenv("OPEN3D_RESOURCE_PATH");
+            const char* res_env = std::getenv("OPEN3D_RESOURCE_PATH");
             if (res_env && res_env[0] != '\0') {
                 visualization::rendering::EngineInstance::SetResourcePath(
                         res_env);
@@ -127,12 +134,12 @@ protected:
         }
     }
 
-        static void TearDownTestSuite() {
-                if (initialized_) {
-                        visualization::gui::Application::GetInstance().OnTerminate();
-                        initialized_ = false;
-                }
+    static void TearDownTestSuite() {
+        if (initialized_) {
+            visualization::gui::Application::GetInstance().OnTerminate();
+            initialized_ = false;
         }
+    }
 
     static bool initialized_;
 };
@@ -146,8 +153,8 @@ bool GaussianSplatRenderTest::initialized_ = false;
 // ---------------------------------------------------------------------------
 
 TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
-        constexpr int kW = 8;
-        constexpr int kH = 8;
+    constexpr int kW = 8;
+    constexpr int kH = 8;
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
     auto& resource_mgr =
@@ -157,8 +164,8 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
             std::make_unique<visualization::rendering::FilamentRenderer>(
                     engine, kW, kH, resource_mgr);
 
-    auto scene = std::make_unique<visualization::rendering::Open3DScene>(
-            *renderer);
+    auto scene =
+            std::make_unique<visualization::rendering::Open3DScene>(*renderer);
 
     visualization::rendering::MaterialRecord mat;
     mat.shader = "gaussianSplat";
@@ -171,36 +178,34 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     auto* cam = scene->GetCamera();
     cam->SetProjection(60.0f, static_cast<float>(kW) / kH, 0.1f, 50.0f,
                        visualization::rendering::Camera::FovType::Vertical);
-    cam->LookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 5.0f},
-                {0.0f, 1.0f, 0.0f});
+    cam->LookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 5.0f}, {0.0f, 1.0f, 0.0f});
 
     auto& app = visualization::gui::Application::GetInstance();
 
     // ---- colour ----
-    auto color_img =
-            app.RenderToImage(*renderer, scene->GetView(), scene->GetScene(),
-                              kW, kH);
+    auto color_img = app.RenderToImage(*renderer, scene->GetView(),
+                                       scene->GetScene(), kW, kH);
     ASSERT_TRUE(color_img);
     EXPECT_EQ(color_img->width_, kW);
     EXPECT_EQ(color_img->height_, kH);
 
     // ---- depth ----
-    auto depth_img = app.RenderToDepthImage(
-            *renderer, scene->GetView(), scene->GetScene(), kW, kH,
-            true /*z_in_view_space*/);
+    auto depth_img = app.RenderToDepthImage(*renderer, scene->GetView(),
+                                            scene->GetScene(), kW, kH,
+                                            true /*z_in_view_space*/);
     ASSERT_TRUE(depth_img);
     EXPECT_EQ(depth_img->width_, kW);
     EXPECT_EQ(depth_img->height_, kH);
 
-        // Visual debugging:
-        // io::WriteImage("/tmp/gs_test_color_8x8.png", *color_img);
-        // io::WriteImage("/tmp/gs_test_depth_8x8.png", *depth_img);
+    // Visual debugging:
+    // io::WriteImage("/tmp/gs_test_color_8x8.png", *color_img);
+    // io::WriteImage("/tmp/gs_test_depth_8x8.png", *depth_img);
 
-        auto gray_color = ImageToGray(*color_img, true);
-        auto gray_depth = ImageToGray(*depth_img, false);
+    auto gray_color = ImageToGray(*color_img, true);
+    auto gray_depth = ImageToGray(*depth_img, false);
     ASSERT_EQ(gray_color.size(), 64u);
     ASSERT_EQ(gray_depth.size(), 64u);
 
-        EXPECT_EQ(gray_color, kRefColorGray);
-        EXPECT_EQ(gray_depth, kRefDepthGray);
+    EXPECT_EQ(gray_color, kRefColorGray);
+    EXPECT_EQ(gray_depth, kRefDepthGray);
 }

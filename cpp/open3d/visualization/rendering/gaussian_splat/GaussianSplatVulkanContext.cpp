@@ -163,8 +163,7 @@ bool GaussianSplatVulkanContext::Initialize() {
         utility::LogWarning("GaussianSplat VulkanContext: {}", last_error_);
         return false;
     }
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(
-            static_cast<vk::Instance>(*instance_));
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Instance>(*instance_));
 
     // ---- Physical device -------------------------------------------------
     auto phys_devices = instance_.enumeratePhysicalDevices();
@@ -252,13 +251,15 @@ bool GaussianSplatVulkanContext::Initialize() {
     // Request both queue indices through one record when available.
     std::vector<float> priorities(single_queue_device_ ? 1 : 2, 1.0f);
     std::vector<vk::DeviceQueueCreateInfo> qcis;
-    qcis.push_back({{}, graphics_queue_family_,
+    qcis.push_back({{},
+                    graphics_queue_family_,
                     static_cast<uint32_t>(priorities.size()),
                     priorities.data()});
 
     // Enable synchronization2 (required by GS compute pipeline).
-    auto feat = physical_device_.getFeatures2<
-            vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features>();
+    auto feat =
+            physical_device_.getFeatures2<vk::PhysicalDeviceFeatures2,
+                                          vk::PhysicalDeviceVulkan13Features>();
     if (feat.get<vk::PhysicalDeviceVulkan13Features>().synchronization2 !=
         VK_TRUE) {
         last_error_ = "Device does not support synchronization2";
@@ -279,15 +280,14 @@ bool GaussianSplatVulkanContext::Initialize() {
         last_error_ = std::string("vkCreateDevice: ") + e.what();
         return false;
     }
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(
-            static_cast<vk::Device>(*device_));
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Device>(*device_));
 
     compute_queue_ = device_.getQueue(graphics_queue_family_, 0);
 
     // Subgroup properties for shader capability queries.
-    auto p11 = physical_device_.getProperties2<
-            vk::PhysicalDeviceProperties2,
-            vk::PhysicalDeviceVulkan11Properties>();
+    auto p11 = physical_device_
+                       .getProperties2<vk::PhysicalDeviceProperties2,
+                                       vk::PhysicalDeviceVulkan11Properties>();
     const auto& sub = p11.get<vk::PhysicalDeviceVulkan11Properties>();
     subgroup_size_ = sub.subgroupSize;
     subgroup_supported_stages_ = (std::uint32_t)sub.subgroupSupportedStages;
@@ -313,7 +313,10 @@ bool GaussianSplatVulkanContext::Initialize() {
 void GaussianSplatVulkanContext::Shutdown() {
     if (!initialized_) return;
     if (*device_) {
-        try { device_.waitIdle(); } catch (const vk::SystemError&) {}
+        try {
+            device_.waitIdle();
+        } catch (const vk::SystemError&) {
+        }
     }
     compute_queue_ = vk::raii::Queue{nullptr};
     device_ = vk::raii::Device{nullptr};
@@ -345,12 +348,11 @@ std::uint32_t GaussianSplatVulkanContext::FindMemoryType(
 // Image lifecycle (plain VkImage, no export/import)
 // ---------------------------------------------------------------------------
 
-VkImageDesc GaussianSplatVulkanContext::CreateImage(
-        std::uint32_t width,
-        std::uint32_t height,
-        VkFormat vk_format,
-        VkImageUsageFlags usage,
-        const char* label) {
+VkImageDesc GaussianSplatVulkanContext::CreateImage(std::uint32_t width,
+                                                    std::uint32_t height,
+                                                    VkFormat vk_format,
+                                                    VkImageUsageFlags usage,
+                                                    const char* label) {
     VkImageDesc desc{};
     if (!initialized_) return desc;
 
@@ -371,15 +373,14 @@ VkImageDesc GaussianSplatVulkanContext::CreateImage(
     try {
         image = dev.createImage(ici);
     } catch (const vk::SystemError& e) {
-        utility::LogWarning(
-                "VulkanContext: vkCreateImage '{}': {}", label, e.what());
+        utility::LogWarning("VulkanContext: vkCreateImage '{}': {}", label,
+                            e.what());
         return desc;
     }
 
     const vk::MemoryRequirements reqs = dev.getImageMemoryRequirements(image);
-    const std::uint32_t mem_type =
-            FindMemoryType(reqs.memoryTypeBits,
-                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    const std::uint32_t mem_type = FindMemoryType(
+            reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (mem_type == UINT32_MAX) {
         dev.destroyImage(image);
         utility::LogWarning("VulkanContext: no mem type for '{}'", label);
@@ -388,12 +389,12 @@ VkImageDesc GaussianSplatVulkanContext::CreateImage(
 
     vk::DeviceMemory memory;
     try {
-        memory = dev.allocateMemory(
-                vk::MemoryAllocateInfo{reqs.size, mem_type});
+        memory =
+                dev.allocateMemory(vk::MemoryAllocateInfo{reqs.size, mem_type});
     } catch (const vk::SystemError& e) {
         dev.destroyImage(image);
-        utility::LogWarning("VulkanContext: vkAllocateMemory '{}': {}",
-                            label, e.what());
+        utility::LogWarning("VulkanContext: vkAllocateMemory '{}': {}", label,
+                            e.what());
         return desc;
     }
 
@@ -402,8 +403,8 @@ VkImageDesc GaussianSplatVulkanContext::CreateImage(
     } catch (const vk::SystemError& e) {
         dev.freeMemory(memory);
         dev.destroyImage(image);
-        utility::LogWarning("VulkanContext: vkBindImageMemory '{}': {}",
-                            label, e.what());
+        utility::LogWarning("VulkanContext: vkBindImageMemory '{}': {}", label,
+                            e.what());
         return desc;
     }
 

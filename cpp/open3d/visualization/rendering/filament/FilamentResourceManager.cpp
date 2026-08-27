@@ -591,7 +591,7 @@ TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
 }
 
 TextureHandle FilamentResourceManager::CreateImportedTexture(
-    intptr_t texture_handle, int width, int height, int format, int usage) {
+        intptr_t texture_handle, int width, int height, int format, int usage) {
     using namespace filament;
     auto texture = Texture::Builder()
                            .width(width)

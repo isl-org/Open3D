@@ -95,12 +95,13 @@ class GaussianSplatVulkanContext {
 public:
     static GaussianSplatVulkanContext& GetInstance();
 
-    /// Load Vulkan via BlueVK, select a physical device (discrete-GPU-preferred),
-    /// and create a logical device with compute capabilities. Two queue indices
-    /// are requested from the graphics queue family: index 0 for GS compute,
-    /// index 1 for Filament. On single-queue GPUs both indices are 0 and
-    /// flushAndWait bracketing provides mutual exclusion (see plan Q2).
-    /// Returns false on failure; call GetLastError() for a diagnostic string.
+    /// Load Vulkan via BlueVK, select a physical device
+    /// (discrete-GPU-preferred), and create a logical device with compute
+    /// capabilities. Two queue indices are requested from the graphics queue
+    /// family: index 0 for GS compute, index 1 for Filament. On single-queue
+    /// GPUs both indices are 0 and flushAndWait bracketing provides mutual
+    /// exclusion (see plan Q2). Returns false on failure; call GetLastError()
+    /// for a diagnostic string.
     bool Initialize();
 
     /// Release all Vulkan resources and invalidate the context.
@@ -119,7 +120,8 @@ public:
     /// Returns a VulkanSharedContext suitable for passing as the sharedContext
     /// argument to Engine::create(). The returned pointer stays valid until
     /// Shutdown().
-    const filament::backend::VulkanSharedContext* GetVulkanSharedContext() const {
+    const filament::backend::VulkanSharedContext* GetVulkanSharedContext()
+            const {
         return &shared_context_;
     }
 
@@ -183,8 +185,8 @@ private:
     ~GaussianSplatVulkanContext();
 
     GaussianSplatVulkanContext(const GaussianSplatVulkanContext&) = delete;
-    GaussianSplatVulkanContext& operator=(
-            const GaussianSplatVulkanContext&) = delete;
+    GaussianSplatVulkanContext& operator=(const GaussianSplatVulkanContext&) =
+            delete;
 
     // --- Internal helpers -------------------------------------------------
 

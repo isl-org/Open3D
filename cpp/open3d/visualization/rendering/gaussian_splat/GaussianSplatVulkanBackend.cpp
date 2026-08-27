@@ -143,14 +143,12 @@ public:
         using Tex = filament::Texture;
         targets.depth = resource_mgr.CreateImportedTexture(
                 static_cast<intptr_t>(targets.depth_vk_image), int(width),
-                int(height),
-                static_cast<int>(Tex::InternalFormat::DEPTH32F),
+                int(height), static_cast<int>(Tex::InternalFormat::DEPTH32F),
                 static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
                                  Tex::Usage::SAMPLEABLE));
         targets.color = resource_mgr.CreateImportedTexture(
                 static_cast<intptr_t>(targets.color_vk_image), int(width),
-                int(height),
-                static_cast<int>(Tex::InternalFormat::RGBA16F),
+                int(height), static_cast<int>(Tex::InternalFormat::RGBA16F),
                 static_cast<int>(Tex::Usage::SAMPLEABLE |
                                  Tex::Usage::COLOR_ATTACHMENT |
                                  Tex::Usage::BLIT_SRC));
@@ -190,11 +188,11 @@ public:
 
         if (gpu_ && targets.uses_vulkan_interop) {
             if (targets.color_vk_image != 0)
-                UnregisterVkImageFromComputeContext(
-                        *gpu_, targets.color_vk_image);
+                UnregisterVkImageFromComputeContext(*gpu_,
+                                                    targets.color_vk_image);
             if (targets.depth_vk_image != 0)
-                UnregisterVkImageFromComputeContext(
-                        *gpu_, targets.depth_vk_image);
+                UnregisterVkImageFromComputeContext(*gpu_,
+                                                    targets.depth_vk_image);
         }
 
         if (targets.uses_vulkan_interop) {
@@ -294,8 +292,8 @@ public:
         if (it == view_states_.end() || it->second.color_output_tex == 0) {
             return false;
         }
-        return gpu_->DownloadTextureRGBA16F(it->second.color_output_tex,
-                                            width, height, out);
+        return gpu_->DownloadTextureRGBA16F(it->second.color_output_tex, width,
+                                            height, out);
     }
 
 private:

@@ -81,6 +81,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libncursesw5-dev \
     libusb-1.0-0-dev \
+    libvulkan1 \
+    mesa-vulkan-drivers \
     xz-utils \
     tk-dev \
     libxml2-dev \

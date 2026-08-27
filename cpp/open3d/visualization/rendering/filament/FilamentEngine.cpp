@@ -129,8 +129,9 @@ EngineInstance::EngineInstance() {
                     vk_ctx.GetLastError());
         }
         if (vk_ctx.IsValid()) {
-            shared_context_ = const_cast<filament::backend::VulkanSharedContext*>(
-                    vk_ctx.GetVulkanSharedContext());
+            shared_context_ =
+                    const_cast<filament::backend::VulkanSharedContext*>(
+                            vk_ctx.GetVulkanSharedContext());
         }
     }
 #endif

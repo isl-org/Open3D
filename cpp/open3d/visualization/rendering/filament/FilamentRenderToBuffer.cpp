@@ -32,11 +32,11 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <math/half.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <vector>
-
-#include <math/half.h>
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -54,12 +54,11 @@ namespace {
 
 /// Composite shader stores premultiplied RGB in \p gs_rgba; blend like ImGui
 /// \c One / \c OneMinusSrcAlpha over an opaque Filament base.
-void BlendPremultipliedSplatOverRgb8(
-        uint8_t* base_rgb,
-        int n_channels,
-        const filament::math::half* gs_rgba,
-        int w,
-        int h) {
+void BlendPremultipliedSplatOverRgb8(uint8_t* base_rgb,
+                                     int n_channels,
+                                     const filament::math::half* gs_rgba,
+                                     int w,
+                                     int h) {
     const int n = w * h;
     for (int i = 0; i < n; ++i) {
         const float fr = static_cast<float>(gs_rgba[i * 4 + 0]);

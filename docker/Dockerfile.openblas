@@ -33,6 +33,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libtbb12 \
+    libvulkan1 \
+    mesa-vulkan-drivers \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building python
