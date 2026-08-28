@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -341,6 +341,7 @@ TEST_P(VoxelBlockGridPermuteDevices, IO) {
         auto pcd = vbg.ExtractPointCloud();
 
         auto vbg_loaded = VoxelBlockGrid::Load(file_name);
+        EXPECT_EQ(vbg_loaded.GetHashMap().GetDevice(), device);
         auto pcd_loaded = vbg_loaded.ExtractPointCloud();
 
         EXPECT_EQ(pcd.GetPointPositions().GetLength(),

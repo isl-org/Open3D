@@ -1,5 +1,6 @@
 name: Default reconstruction system config
 fragment_size: 100
+# Set to CUDA:0 or SYCL:0 when the corresponding backend is available.
 device: CUDA:0
 engine: tensor
 multiprocessing: false

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -928,11 +928,14 @@ Ref:
                                       "Compatible destination shape with the "
                                       "same number of elements."}});
     tensor.def("contiguous", &Tensor::Contiguous,
-               "Returns a contiguous tensor containing the same data in the "
-               "same device.  If the tensor is already contiguous, the same "
-               "underlying memory will be used.");
+               "Returns a C-contiguous (row-major) tensor containing the "
+               "same data in the same device. If the tensor is already "
+               "C-contiguous, the same underlying memory will be used. "
+               "Consistent with PyTorch and NumPy conventions.");
     tensor.def("is_contiguous", &Tensor::IsContiguous,
-               "Returns True if the underlying memory buffer is contiguous.");
+               "Returns True if the underlying memory buffer is "
+               "C-contiguous (row-major order). Consistent with PyTorch "
+               "and NumPy conventions.");
     tensor.def(
             "flatten", &Tensor::Flatten,
             R"(Flattens input by reshaping it into a one-dimensional tensor. If

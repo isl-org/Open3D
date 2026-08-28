@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ void PrintHelp() {
     utility::LogInfo("    [--align]");
     utility::LogInfo("    [--record rgbd_video_file.bag]");
     utility::LogInfo("    [-c|--config rs-config.json]");
-    utility::LogInfo("    [--device CUDA:0]");
+    utility::LogInfo("    [--device CUDA:0 or SYCL:0]");
     // clang-format on
     utility::LogInfo("");
 }

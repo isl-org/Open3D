@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -200,6 +200,15 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Resize, data_, dst_im.data_, interp_type);
+    } else if (data_.IsSYCL() && interp_type == InterpType::Nearest &&
+               GetChannels() == 1 &&
+               (GetDtype() == core::UInt8 || GetDtype() == core::UInt16 ||
+                GetDtype() == core::Float32)) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::image::ResizeNearestSYCL(data_, dst_im.data_, sampling_rate);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError(
                 "Resize with data type {} on device {} is not "
@@ -270,6 +279,15 @@ Image Image::FilterBilateral(int kernel_size,
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterBilateral, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
+    } else if (data_.IsSYCL() &&
+               (GetDtype() == core::Float32 || GetDtype() == core::UInt8) &&
+               GetChannels() == 1) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::image::FilterBilateralSYCL(data_, dst_im.data_, kernel_size,
+                                           value_sigma, dist_sigma);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else if (HAVE_IPP && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
@@ -342,6 +360,15 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
+    } else if (data_.IsSYCL() && GetChannels() == 1 &&
+               (GetDtype() == core::UInt8 || GetDtype() == core::UInt16 ||
+                GetDtype() == core::Float32)) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::image::FilterGaussianSYCL(data_, dst_im.data_, kernel_size,
+                                          sigma);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError(
                 "FilterGaussian with data type {} on device {} is not "
@@ -392,6 +419,15 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                  kernel_size);
+    } else if (data_.IsSYCL() &&
+               (GetDtype() == core::Float32 || GetDtype() == core::UInt8) &&
+               GetChannels() == 1) {
+#ifdef BUILD_SYCL_MODULE
+        kernel::image::FilterSobelSYCL(data_, dst_im_dx.data_, dst_im_dy.data_,
+                                       kernel_size);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError(
                 "FilterSobel with data type {} on device {} is not "

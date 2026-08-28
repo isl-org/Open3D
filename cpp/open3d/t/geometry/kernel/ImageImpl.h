@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -196,6 +196,234 @@ void PyrDownDepthCPU
                         w_sum == 0 ? invalid_fill : v_sum / w_sum;
             });
 }
+
+// Workaround for lack of Intel GPU bilateral filter, Sobel filter, ImageResize
+// and Gaussian filter support in IPP.
+#if defined(SYCL_LANGUAGE_VERSION)
+void FilterBilateralSYCL(const core::Tensor& src,
+                         core::Tensor& dst,
+                         int kernel_size,
+                         float value_sigma,
+                         float dist_sigma) {
+    if (src.GetDtype() != core::Float32 && src.GetDtype() != core::UInt8) {
+        utility::LogError("SYCL bilateral filter does not support dtype {}.",
+                          src.GetDtype().ToString());
+    }
+
+    NDArrayIndexer src_indexer(src, 2);
+    NDArrayIndexer dst_indexer(dst, 2);
+
+    const int rows = src_indexer.GetShape(0);
+    const int cols = src_indexer.GetShape(1);
+    const int radius = kernel_size / 2;
+    const float inv_value_sigma_squared = 0.5f / (value_sigma * value_sigma);
+    const float inv_dist_sigma_squared = 0.5f / (dist_sigma * dist_sigma);
+
+    using std::exp;
+    DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
+        core::ParallelFor(
+                src.GetDevice(), static_cast<int64_t>(rows) * cols,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    const int y = workload_idx / cols;
+                    const int x = workload_idx % cols;
+                    const float center = static_cast<float>(
+                            *src_indexer.GetDataPtr<scalar_t>(x, y));
+                    float value_sum = 0.0f;
+                    float weight_sum = 0.0f;
+
+                    for (int dy = -radius; dy <= radius; ++dy) {
+                        const int sample_y = y + dy;
+                        if (sample_y < 0 || sample_y >= rows) continue;
+                        for (int dx = -radius; dx <= radius; ++dx) {
+                            const int sample_x = x + dx;
+                            if (sample_x < 0 || sample_x >= cols) continue;
+                            const float sample = static_cast<float>(
+                                    *src_indexer.GetDataPtr<scalar_t>(
+                                            sample_x, sample_y));
+                            const float spatial_distance =
+                                    static_cast<float>(dx * dx + dy * dy);
+                            const float value_distance = sample - center;
+                            const float weight = exp(
+                                    -spatial_distance * inv_dist_sigma_squared -
+                                    value_distance * value_distance *
+                                            inv_value_sigma_squared);
+                            value_sum += weight * sample;
+                            weight_sum += weight;
+                        }
+                    }
+                    *dst_indexer.GetDataPtr<scalar_t>(x, y) =
+                            static_cast<scalar_t>(value_sum / weight_sum);
+                });
+    });
+}
+#endif
+
+template <typename scalar_t, typename output_t>
+void FilterSobelSYCLImpl(const core::Tensor& src,
+                         core::Tensor& dst_dx,
+                         core::Tensor& dst_dy,
+                         int kernel_size) {
+    NDArrayIndexer src_indexer(src, 2);
+    NDArrayIndexer dst_dx_indexer(dst_dx, 2);
+    NDArrayIndexer dst_dy_indexer(dst_dy, 2);
+
+    const int rows = src_indexer.GetShape(0);
+    const int cols = src_indexer.GetShape(1);
+    const int radius = kernel_size / 2;
+    const float derivative_3[3] = {-1.0f, 0.0f, 1.0f};
+    const float smoothing_3[3] = {1.0f, 2.0f, 1.0f};
+    const float derivative_5[5] = {-1.0f, -2.0f, 0.0f, 2.0f, 1.0f};
+    const float smoothing_5[5] = {1.0f, 4.0f, 6.0f, 4.0f, 1.0f};
+
+    core::ParallelFor(
+            src.GetDevice(), static_cast<int64_t>(rows) * cols,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                const int y = workload_idx / cols;
+                const int x = workload_idx % cols;
+                float value_dx = 0.0f;
+                float value_dy = 0.0f;
+
+                for (int ky = -radius; ky <= radius; ++ky) {
+                    const int sample_y =
+                            std::max(0, std::min(rows - 1, y + ky));
+                    for (int kx = -radius; kx <= radius; ++kx) {
+                        const int sample_x =
+                                std::max(0, std::min(cols - 1, x + kx));
+                        const float sample = static_cast<float>(
+                                *src_indexer.GetDataPtr<scalar_t>(sample_x,
+                                                                  sample_y));
+                        const int ix = kx + radius;
+                        const int iy = ky + radius;
+                        const float* derivative_coefficients =
+                                kernel_size == 3 ? derivative_3 : derivative_5;
+                        const float* smoothing_coefficients =
+                                kernel_size == 3 ? smoothing_3 : smoothing_5;
+                        value_dx += sample * derivative_coefficients[ix] *
+                                    smoothing_coefficients[iy];
+                        value_dy += sample * smoothing_coefficients[ix] *
+                                    derivative_coefficients[iy];
+                    }
+                }
+                *dst_dx_indexer.GetDataPtr<output_t>(x, y) =
+                        static_cast<output_t>(value_dx);
+                *dst_dy_indexer.GetDataPtr<output_t>(x, y) =
+                        static_cast<output_t>(value_dy);
+            });
+}
+
+#if defined(SYCL_LANGUAGE_VERSION)
+void FilterSobelSYCL(const core::Tensor& src,
+                     core::Tensor& dst_dx,
+                     core::Tensor& dst_dy,
+                     int kernel_size) {
+    if (src.GetDtype() == core::Float32) {
+        FilterSobelSYCLImpl<float, float>(src, dst_dx, dst_dy, kernel_size);
+    } else if (src.GetDtype() == core::UInt8) {
+        FilterSobelSYCLImpl<uint8_t, int16_t>(src, dst_dx, dst_dy, kernel_size);
+    } else {
+        utility::LogError("SYCL Sobel filter does not support dtype {}.",
+                          src.GetDtype().ToString());
+    }
+}
+#endif
+
+#if defined(SYCL_LANGUAGE_VERSION)
+template <typename scalar_t>
+void FilterGaussianSYCLImpl(const core::Tensor& src,
+                            core::Tensor& dst,
+                            int kernel_size,
+                            float sigma) {
+    NDArrayIndexer src_indexer(src, 2);
+    NDArrayIndexer dst_indexer(dst, 2);
+    const int rows = src_indexer.GetShape(0);
+    const int cols = src_indexer.GetShape(1);
+    const int radius = kernel_size / 2;
+
+    core::ParallelFor(
+            src.GetDevice(), static_cast<int64_t>(rows) * cols,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                const int y = workload_idx / cols;
+                const int x = workload_idx % cols;
+                float value_sum = 0.0f;
+                float weight_sum = 0.0f;
+                for (int ky = -radius; ky <= radius; ++ky) {
+                    const int sample_y =
+                            std::max(0, std::min(rows - 1, y + ky));
+                    for (int kx = -radius; kx <= radius; ++kx) {
+                        const int sample_x =
+                                std::max(0, std::min(cols - 1, x + kx));
+                        const float distance =
+                                static_cast<float>(kx * kx + ky * ky);
+                        const float weight =
+                                exp(-distance / (2.0f * sigma * sigma));
+                        value_sum += weight *
+                                     static_cast<float>(
+                                             *src_indexer.GetDataPtr<scalar_t>(
+                                                     sample_x, sample_y));
+                        weight_sum += weight;
+                    }
+                }
+                *dst_indexer.GetDataPtr<scalar_t>(x, y) =
+                        static_cast<scalar_t>(value_sum / weight_sum);
+            });
+}
+
+void FilterGaussianSYCL(const core::Tensor& src,
+                        core::Tensor& dst,
+                        int kernel_size,
+                        float sigma) {
+    if (src.GetDtype() == core::Float32) {
+        FilterGaussianSYCLImpl<float>(src, dst, kernel_size, sigma);
+    } else if (src.GetDtype() == core::UInt8) {
+        FilterGaussianSYCLImpl<uint8_t>(src, dst, kernel_size, sigma);
+    } else if (src.GetDtype() == core::UInt16) {
+        FilterGaussianSYCLImpl<uint16_t>(src, dst, kernel_size, sigma);
+    } else {
+        utility::LogError("SYCL Gaussian filter does not support dtype {}.",
+                          src.GetDtype().ToString());
+    }
+}
+
+template <typename scalar_t>
+void ResizeNearestSYCLImpl(const core::Tensor& src,
+                           core::Tensor& dst,
+                           float sampling_rate) {
+    NDArrayIndexer src_indexer(src, 2);
+    NDArrayIndexer dst_indexer(dst, 2);
+    const int src_rows = src_indexer.GetShape(0);
+    const int src_cols = src_indexer.GetShape(1);
+    const int dst_rows = dst_indexer.GetShape(0);
+    const int dst_cols = dst_indexer.GetShape(1);
+
+    core::ParallelFor(
+            src.GetDevice(), static_cast<int64_t>(dst_rows) * dst_cols,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                const int y = workload_idx / dst_cols;
+                const int x = workload_idx % dst_cols;
+                const int source_y = std::min(
+                        src_rows - 1, static_cast<int>(y / sampling_rate));
+                const int source_x = std::min(
+                        src_cols - 1, static_cast<int>(x / sampling_rate));
+                *dst_indexer.GetDataPtr<scalar_t>(x, y) =
+                        *src_indexer.GetDataPtr<scalar_t>(source_x, source_y);
+            });
+}
+
+void ResizeNearestSYCL(const core::Tensor& src,
+                       core::Tensor& dst,
+                       float sampling_rate) {
+    if (src.GetDtype() == core::Float32) {
+        ResizeNearestSYCLImpl<float>(src, dst, sampling_rate);
+    } else if (src.GetDtype() == core::UInt8) {
+        ResizeNearestSYCLImpl<uint8_t>(src, dst, sampling_rate);
+    } else if (src.GetDtype() == core::UInt16) {
+        ResizeNearestSYCLImpl<uint16_t>(src, dst, sampling_rate);
+    } else {
+        utility::LogError("SYCL nearest resize does not support dtype {}.",
+                          src.GetDtype().ToString());
+    }
+}
+#endif
 
 #if defined(__CUDACC__)
 void CreateVertexMapCUDA

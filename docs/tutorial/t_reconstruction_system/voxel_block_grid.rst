@@ -29,6 +29,8 @@ where ``16`` stands for the local voxel block grid resolution.
 
 By convention, we use ``3.0 / 512`` as the voxel resolution. This spatial resolution is equivalent to representing a ``3m x 3m x 3m`` (m = meter) room with a dense ``512 x 512 x 512`` voxel grid.
 
-The voxel block grid is optimized to run fast on GPU. On CPU, it runs slower. Empirically, we reserve ``50000`` such blocks for a living room-scale scene to avoid frequent rehashing.
+The voxel block grid is optimized to run fast on accelerators such as CUDA and
+SYCL GPUs. On CPU, it runs slower. Empirically, we reserve ``50000`` such
+blocks for a living room-scale scene to avoid frequent rehashing.
 
 You can always customize your own properties, e.g., ``intensity`` of element shape ``(16, 16, 16, 1)`` in ``float32``, ``label`` of element shape ``(16, 16, 16, 1)`` in ``int32``, etc. To know how to process the data, please refer to :ref:`customized_integration`.
