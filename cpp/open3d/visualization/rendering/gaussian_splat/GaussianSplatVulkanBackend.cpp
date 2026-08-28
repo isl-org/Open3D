@@ -187,6 +187,7 @@ public:
         }
 
         if (gpu_ && targets.uses_vulkan_interop) {
+            gpu_->WaitForGeometryPass();
             if (targets.color_vk_image != 0)
                 UnregisterVkImageFromComputeContext(*gpu_,
                                                     targets.color_vk_image);

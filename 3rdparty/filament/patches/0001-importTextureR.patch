@@ -1,3 +1,11 @@
+Subject: [PATCH] backend/vulkan: implement importTextureR for external VkImage import
+
+Implement VulkanDriver::importTextureR and fix VulkanTexture constructor to
+support importing externally allocated VkImage handles (such as 3D Gaussian
+Splatting compute targets) into Filament as zero-copy textures. Non-depth
+textures are assumed to be in READ_WRITE (GENERAL) layout, while depth textures
+are left UNDEFINED for Filament to manage transitions.
+
 diff --git a/filament/backend/src/vulkan/VulkanDriver.cpp b/filament/backend/src/vulkan/VulkanDriver.cpp
 index bf5604a0d..aa20c0020 100644
 --- a/filament/backend/src/vulkan/VulkanDriver.cpp

@@ -534,6 +534,10 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
         targets.depth = TextureHandle();
     }
 
+    // Filament releases imported texture wrappers asynchronously. Complete
+    // those commands before the backend destroys their shared VkImages.
+    engine_.flushAndWait();
+
     // Release platform-specific textures via the backend.
     if (backend_) {
         backend_->ReleaseOutputTextures(resource_mgr_, targets);

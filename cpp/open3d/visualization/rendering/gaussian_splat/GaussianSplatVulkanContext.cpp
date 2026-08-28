@@ -154,7 +154,8 @@ bool GaussianSplatVulkanContext::Initialize() {
         debug_utils_enabled_ = true;
     }
 
-    vk::ApplicationInfo app_info{"Open3D GS", VK_API_VERSION_1_3};
+    vk::ApplicationInfo app_info{"Open3D GS", 1, "Open3D", 1,
+                                 VK_API_VERSION_1_3};
     vk::InstanceCreateInfo ici({}, &app_info, {}, inst_exts);
     try {
         instance_ = context_.createInstance(ici);

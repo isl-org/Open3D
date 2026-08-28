@@ -108,7 +108,10 @@ ExternalProject_Add(
     PREFIX filament
     URL https://github.com/google/filament/archive/refs/tags/${FILAMENT_VER}.tar.gz
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
+    # 0001: Implements VulkanDriver::importTextureR for zero-copy 3DGS texture sharing.
     PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
+    # 0002: Backports upstream Vulkan swapchain acquire retry/recovery on window resize.
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0002-handle-vulkan-swapchain-acquire.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
