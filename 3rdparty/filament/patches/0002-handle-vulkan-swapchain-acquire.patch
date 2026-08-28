@@ -54,7 +54,7 @@ index d587b2a..05f6379 100644
      FILAMENT_CHECK_PRECONDITION(mCurrentRenderPass.currentSubpass == 0)
              << "Only two subpasses are currently supported.";
  
-@@ -1547,21 +1567,29 @@ void VulkanDriver::makeCurrent(Handle<HwSwapChain> drawSch, Handle<HwSwapChain>
+@@ -1547,21 +1567,35 @@ void VulkanDriver::makeCurrent(Handle<HwSwapChain> drawSch, Handle<HwSwapChain>
  
      ASSERT_PRECONDITION_NON_FATAL(drawSch == readSch,
              "Vulkan driver does not support distinct draw/read swap chains.");
@@ -272,7 +272,7 @@ diff --git a/filament/backend/src/vulkan/VulkanSwapChain.h b/filament/backend/sr
 index 80886f8..fa4bcde 100644
 --- a/filament/backend/src/vulkan/VulkanSwapChain.h
 +++ b/filament/backend/src/vulkan/VulkanSwapChain.h
-@@ -47,7 +47,11 @@ struct VulkanSwapChain : public HwSwapChain, VulkanResource {
+@@ -47,7 +47,14 @@ struct VulkanSwapChain : public HwSwapChain, VulkanResource {
  
      void present();
  

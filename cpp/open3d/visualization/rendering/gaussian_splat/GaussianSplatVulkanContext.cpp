@@ -40,6 +40,12 @@
 
 #if !defined(__APPLE__)
 
+// These must match settings in Filament VulkanMemory.h
+#define VMA_IMPLEMENTATION
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#include "vk_mem_alloc.h"
+
 // Include platform-specific Vulkan surface headers before vulkan_raii.hpp
 // (the raii header only includes the core vulkan.hpp, not platform extensions).
 #ifdef _WIN32
@@ -283,6 +289,19 @@ bool GaussianSplatVulkanContext::Initialize() {
     vk::StructureChain<vk::PhysicalDeviceFeatures2,
                        vk::PhysicalDeviceVulkan13Features>
             enabled_feat;
+    enabled_feat.get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy =
+            feat.get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy;
+    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
+            .features.textureCompressionETC2 =
+            feat.get<vk::PhysicalDeviceFeatures2>()
+                    .features.textureCompressionETC2;
+    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
+            .features.textureCompressionBC =
+            feat.get<vk::PhysicalDeviceFeatures2>()
+                    .features.textureCompressionBC;
+    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
+            .features.shaderClipDistance =
+            feat.get<vk::PhysicalDeviceFeatures2>().features.shaderClipDistance;
     enabled_feat.get<vk::PhysicalDeviceVulkan13Features>().synchronization2 =
             VK_TRUE;
 

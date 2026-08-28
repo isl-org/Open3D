@@ -630,14 +630,10 @@ private:
     // --- Init helpers -----------------------------------------------------
 
     bool InitVma() {
-        // VMA is compiled with VMA_STATIC_VULKAN_FUNCTIONS=0 and
-        // VMA_DYNAMIC_VULKAN_FUNCTIONS=0 (set in
-        // GaussianSplatVulkanContext.cpp before VMA_IMPLEMENTATION), so
-        // all function pointers must be provided manually.
-        // vma::functionsFromDispatcher() fills VmaVulkanFunctions from the
-        // vulkan-hpp dynamic dispatcher, which is fully initialised after
-        // GaussianSplatVulkanContext::Initialize() calls
-        // VULKAN_HPP_DEFAULT_DISPATCHER.init(instance) and .init(device).
+        // VMA uses dynamic Vulkan dispatch (configured in
+        // GaussianSplatVulkanContext.cpp). This must match Filament's VMA
+        // settings. The helper fills its loader callbacks and Vulkan functions
+        // from the initialized Hpp dispatcher.
         VmaVulkanFunctions vk_fn =
                 vma::functionsFromDispatcher(VULKAN_HPP_DEFAULT_DISPATCHER);
 

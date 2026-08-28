@@ -56,7 +56,11 @@ set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 
-set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated" "-Wno-pass-failed=transform-warning" "-Wno-error=nonnull")
+set(filament_cxx_flags "${CMAKE_CXX_FLAGS}")
+if(NOT MSVC)
+    set(filament_cxx_flags "${filament_cxx_flags} -Wno-deprecated"
+        "-Wno-pass-failed=transform-warning" "-Wno-error=nonnull")
+endif()
 if(NOT WIN32)
     # Issue Open3D#1909, filament#2146
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
@@ -118,6 +122,7 @@ ExternalProject_Add(
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
         -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
         -DFILAMENT_ENABLE_JAVA=OFF
+        -DFILAMENT_SUPPORTS_VULKAN=ON
         -DCMAKE_C_COMPILER=${FILAMENT_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${FILAMENT_CXX_COMPILER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
