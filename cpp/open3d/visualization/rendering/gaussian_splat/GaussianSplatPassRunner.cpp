@@ -44,6 +44,20 @@ inline std::size_t IndirectByteOffset(std::uint32_t slot) {
     return slot * kIndirectStride;
 }
 
+// Opaque handles of the two shared output images. Exactly one of the Metal /
+// Vulkan members is populated depending on the active backend.
+inline std::uintptr_t SharedColorTexture(
+        const GaussianSplatRenderer::OutputTargets& targets) {
+    return targets.gs_color_mtl_texture ? targets.gs_color_mtl_texture
+                                        : targets.color_vk_image;
+}
+
+inline std::uintptr_t SharedSceneDepthTexture(
+        const GaussianSplatRenderer::OutputTargets& targets) {
+    return targets.scene_depth_mtl_texture ? targets.scene_depth_mtl_texture
+                                           : targets.depth_vk_image;
+}
+
 /// Download the GPU error-flag counters and log each active error code once
 /// per view (latched in vs.warned_gpu_error_flags so it never re-fires for
 /// the same bit). Must be called after the geometry pass has been submitted
@@ -348,8 +362,8 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Always upload depth flag when scene depth is present (which is always
     // for interactive GS views). The shader will use this to test occlusion
     // against mesh geometry.
-    const bool has_scene_depth = (targets.depth_vk_image != 0) ||
-                                 (targets.scene_depth_mtl_texture != 0);
+    const std::uintptr_t scene_depth_tex = SharedSceneDepthTexture(targets);
+    const bool has_scene_depth = (scene_depth_tex != 0);
     if (has_scene_depth) {
         float flag = 1.0f;
         static constexpr std::size_t kDepthFlagOffset =
@@ -380,9 +394,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");
     }
 
-    const std::uintptr_t color_tex = targets.gs_color_mtl_texture
-                                             ? targets.gs_color_mtl_texture
-                                             : targets.color_vk_image;
+    const std::uintptr_t color_tex = SharedColorTexture(targets);
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
@@ -413,10 +425,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
 
     if (has_scene_depth) {
-        std::uintptr_t sd = targets.scene_depth_mtl_texture
-                                    ? targets.scene_depth_mtl_texture
-                                    : targets.depth_vk_image;
-        pass.Sampler(14, sd, w, h);
+        pass.Sampler(14, scene_depth_tex, w, h);
     }
 
     pass.Dispatch(steal_wg_count, 1u, 1u);
@@ -427,15 +436,12 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Only dispatched when a readback was requested AND the merged texture
     // was successfully allocated.
     if (targets.wants_depth_readback && vs.merged_depth_u16_tex != 0) {
-        const std::uintptr_t sd = targets.scene_depth_mtl_texture
-                                          ? targets.scene_depth_mtl_texture
-                                          : targets.depth_vk_image;
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
                 .Sampler(15, vs.composite_depth_tex, w,
                          h)  // binding 15: Metal max texture/sampler index
                 .Image(1, vs.merged_depth_u16_tex, w, h, ImageFormat::kR16UI)
-                .Sampler(14, sd, w, h)
+                .Sampler(14, scene_depth_tex, w, h)
                 .Dispatch(DivUp(w, 16u), DivUp(h, 16u), 1u);
         ctx.FullBarrier();
     }

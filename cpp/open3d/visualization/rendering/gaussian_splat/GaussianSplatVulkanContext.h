@@ -51,23 +51,23 @@
 #endif
 #include <vulkan/vulkan_raii.hpp>
 
-// Forward-declare / define Filament's VulkanSharedContext struct here to
-// avoid pulling in Filament headers (and their BlueVK dependency) in this
-// public header.  Must match filament/backend/include/backend/platforms/
-// VulkanPlatform.h exactly.
-namespace filament::backend {
-struct VulkanSharedContext {
-    VkInstance instance = VK_NULL_HANDLE;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice logicalDevice = VK_NULL_HANDLE;
-    uint32_t graphicsQueueFamilyIndex = 0xFFFFFFFF;
-    uint32_t graphicsQueueIndex = 0xFFFFFFFF;
-};
-}  // namespace filament::backend
-
 namespace open3d {
 namespace visualization {
 namespace rendering {
+
+/// Layout-compatible stand-in for
+/// filament::backend::VulkanPlatform::VulkanSharedContext, which is a nested
+/// class (not forward-declarable) whose header drags in BlueVK.  Filament
+/// receives it as an opaque `void*` through Engine::create(), so only the
+/// field layout matters.  Keep in sync with
+/// filament/backend/include/backend/platforms/VulkanPlatform.h.
+struct FilamentVulkanSharedContext {
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice logical_device = VK_NULL_HANDLE;
+    std::uint32_t graphics_queue_family_index = 0xFFFFFFFFu;
+    std::uint32_t graphics_queue_index = 0xFFFFFFFFu;
+};
 
 /// Describes a single GPU image owned by Vulkan for sharing with Filament via
 /// importTextureR(). The VkImage and VkDeviceMemory are allocated by
@@ -75,9 +75,6 @@ namespace rendering {
 struct VkImageDesc {
     VkImage vk_image = VK_NULL_HANDLE;
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
-
-    std::uint32_t width = 0;
-    std::uint32_t height = 0;
 
     bool IsValid() const { return vk_image != VK_NULL_HANDLE; }
 };
@@ -95,13 +92,13 @@ class GaussianSplatVulkanContext {
 public:
     static GaussianSplatVulkanContext& GetInstance();
 
-    /// Load Vulkan via BlueVK, select a physical device
-    /// (discrete-GPU-preferred), and create a logical device with compute
-    /// capabilities. Two queue indices are requested from the graphics queue
-    /// family: index 0 for GS compute, index 1 for Filament. On single-queue
-    /// GPUs both indices are 0 and flushAndWait bracketing provides mutual
-    /// exclusion (see plan Q2). Returns false on failure; call GetLastError()
-    /// for a diagnostic string.
+    /// Load Vulkan via BlueVK, select the first suitable hardware device in
+    /// loader enumeration order (with a software fallback), and create a
+    /// logical device with compute capabilities. Two queue indices are
+    /// requested from the graphics queue family: index 0 for GS compute,
+    /// index 1 for Filament. On single-queue GPUs both indices are 0 and
+    /// flushAndWait bracketing provides mutual exclusion (see plan Q2).
+    /// Returns false on failure; call GetLastError() for a diagnostic string.
     bool Initialize();
 
     /// Release all Vulkan resources and invalidate the context.
@@ -117,13 +114,9 @@ public:
 
     // --- Filament integration ---------------------------------------------
 
-    /// Returns a VulkanSharedContext suitable for passing as the sharedContext
-    /// argument to Engine::create(). The returned pointer stays valid until
-    /// Shutdown().
-    const filament::backend::VulkanSharedContext* GetVulkanSharedContext()
-            const {
-        return &shared_context_;
-    }
+    /// Returns the shared-context record to pass as Engine::create()'s
+    /// `sharedContext` argument. Valid until Shutdown().
+    void* GetVulkanSharedContext() { return &shared_context_; }
 
     // --- Device accessors (used by VulkanBackend and ComputeGPUVulkan) -----
 
@@ -146,18 +139,8 @@ public:
     /// True when VK_EXT_debug_utils was available and enabled at instance
     /// creation.
     bool GetDebugUtilsEnabled() const { return debug_utils_enabled_; }
-    /// Hardware subgroup size (gl_SubgroupSize) for compute shaders on this
-    /// device. Returns 0 before Initialize().
-    std::uint32_t GetSubgroupSize() const { return subgroup_size_; }
-    std::uint32_t GetSubgroupSupportedStages() const {
-        return subgroup_supported_stages_;
-    }
-    std::uint32_t GetSubgroupSupportedOperations() const {
-        return subgroup_supported_operations_;
-    }
 
-    // RAII accessors used by ComputeGPUVulkan to create sub-objects.
-    const vk::raii::Instance& GetRaiiInstance() const { return instance_; }
+    // RAII accessor used by ComputeGPUVulkan to create sub-objects.
     const vk::raii::Device& GetRaiiDevice() const { return device_; }
 
     // --- Image lifecycle --------------------------------------------------
@@ -168,6 +151,8 @@ public:
                             VkFormat vk_format,
                             VkImageUsageFlags usage,
                             const char* label = nullptr);
+
+    bool SupportsOptimalStorageImage(VkFormat vk_format) const;
 
     /// Destroy an image previously created by CreateImage().
     void DestroyImage(VkImageDesc& desc);
@@ -188,28 +173,17 @@ private:
     GaussianSplatVulkanContext& operator=(const GaussianSplatVulkanContext&) =
             delete;
 
-    // --- Internal helpers -------------------------------------------------
-
-    bool CreateInstance();
-    bool SelectPhysicalDevice();
-    bool CreateLogicalDevice();
-
     // --- State ------------------------------------------------------------
     bool initialized_ = false;
     bool debug_utils_enabled_ = false;
-    std::uint32_t subgroup_size_ = 0;
-    std::uint32_t subgroup_supported_stages_ = 0;
-    std::uint32_t subgroup_supported_operations_ = 0;
     std::string last_error_;
 
-    // Queue family indices within the graphics queue family.
+    // Queue indices within the graphics queue family; index 0 = GS compute.
     std::uint32_t graphics_queue_family_ = UINT32_MAX;
-    std::uint32_t filament_queue_index_ = 1;  // index 0 = GS compute
-    // True when the family has only 1 queue; both indices are 0.
-    bool single_queue_device_ = false;
+    std::uint32_t filament_queue_index_ = 1;
 
-    // VulkanSharedContext held alive for Filament's lifetime.
-    filament::backend::VulkanSharedContext shared_context_{};
+    // Shared-context record held alive for Filament's lifetime.
+    FilamentVulkanSharedContext shared_context_{};
 
     // RAII handles. Destruction order is reverse of declaration order:
     // compute_queue_ → device_ → physical_device_ → instance_ → context_.

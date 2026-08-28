@@ -51,6 +51,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -172,9 +173,11 @@ bool GaussianSplatVulkanContext::Initialize() {
         return false;
     }
 
-    // Pick the first device that meets requirements.
-    // The user can override via VK_LOADER_DEVICE_SELECT etc.
+    // Preserve Vulkan loader enumeration order so VK_LOADER_DEVICE_SELECT can
+    // choose between suitable hardware devices. Software renderers remain a
+    // fallback only when no suitable hardware device is available.
     std::size_t best = phys_devices.size();
+    std::size_t software_fallback = phys_devices.size();
     for (std::size_t i = 0; i < phys_devices.size(); ++i) {
         const auto& pd = phys_devices[i];
         const auto props = pd.getProperties();
@@ -199,19 +202,32 @@ bool GaussianSplatVulkanContext::Initialize() {
                              std::size(kRequiredDeviceExts), missing)) {
             continue;
         }
-
-        // Skip software renderers unless they're the only option.
-        const std::string name(props.deviceName.data());
-        bool software = name.find("llvmpipe") != std::string::npos ||
-                        name.find("SwiftShader") != std::string::npos ||
-                        name.find("WARP") != std::string::npos;
-        if (software && i + 1 < phys_devices.size()) continue;
-
-        if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
-            best = i;  // discrete GPU is best
-            break;
+        const auto color_format_properties =
+                pd.getFormatProperties(vk::Format::eR16G16B16A16Sfloat);
+        if ((color_format_properties.optimalTilingFeatures &
+             vk::FormatFeatureFlagBits::eStorageImage) ==
+            vk::FormatFeatureFlags{}) {
+            continue;
         }
+
+        // Keep the first suitable software renderer as a fallback, but do not
+        // let it displace a suitable hardware device later in the list.
+        const std::string name(props.deviceName.data());
+        const bool software = name.find("llvmpipe") != std::string::npos ||
+                              name.find("SwiftShader") != std::string::npos ||
+                              name.find("WARP") != std::string::npos;
+        if (software) {
+            if (software_fallback == phys_devices.size()) {
+                software_fallback = i;
+            }
+            continue;
+        }
+
         best = i;
+        break;
+    }
+    if (best == phys_devices.size()) {
+        best = software_fallback;
     }
 
     if (best == phys_devices.size()) {
@@ -241,20 +257,17 @@ bool GaussianSplatVulkanContext::Initialize() {
     }
 
     // At least 2 queues preferred (index 0 = GS, index 1 = Filament).
-    // Fall back to index 0 for both on single-queue families.
-    // Mutual exclusion is provided by existing flushAndWait() bracketing.
-    const auto qcount = qfams[graphics_queue_family_].queueCount;
-    single_queue_device_ = (qcount < 2);
-    filament_queue_index_ = single_queue_device_ ? 0 : 1;
+    // Fall back to index 0 for both on single-queue families, where mutual
+    // exclusion is provided by the existing flushAndWait() bracketing.
+    // Vulkan permits at most one DeviceQueueCreateInfo per queue family, so
+    // both indices are requested through a single record.
+    const std::uint32_t queue_count =
+            std::min(2u, qfams[graphics_queue_family_].queueCount);
+    filament_queue_index_ = queue_count - 1u;
 
-    // Vulkan permits at most one DeviceQueueCreateInfo per queue family.
-    // Request both queue indices through one record when available.
-    std::vector<float> priorities(single_queue_device_ ? 1 : 2, 1.0f);
+    const float priorities[2] = {1.0f, 1.0f};
     std::vector<vk::DeviceQueueCreateInfo> qcis;
-    qcis.push_back({{},
-                    graphics_queue_family_,
-                    static_cast<uint32_t>(priorities.size()),
-                    priorities.data()});
+    qcis.push_back({{}, graphics_queue_family_, queue_count, priorities});
 
     // Enable synchronization2 (required by GS compute pipeline).
     auto feat =
@@ -284,29 +297,18 @@ bool GaussianSplatVulkanContext::Initialize() {
 
     compute_queue_ = device_.getQueue(graphics_queue_family_, 0);
 
-    // Subgroup properties for shader capability queries.
-    auto p11 = physical_device_
-                       .getProperties2<vk::PhysicalDeviceProperties2,
-                                       vk::PhysicalDeviceVulkan11Properties>();
-    const auto& sub = p11.get<vk::PhysicalDeviceVulkan11Properties>();
-    subgroup_size_ = sub.subgroupSize;
-    subgroup_supported_stages_ = (std::uint32_t)sub.subgroupSupportedStages;
-    subgroup_supported_operations_ =
-            (std::uint32_t)sub.subgroupSupportedOperations;
-
     // ---- Filament shared context -----------------------------------------
     shared_context_.instance = GetVkInstance();
-    shared_context_.physicalDevice = GetPhysicalDevice();
-    shared_context_.logicalDevice = GetDevice();
-    shared_context_.graphicsQueueFamilyIndex = graphics_queue_family_;
-    shared_context_.graphicsQueueIndex = filament_queue_index_;
+    shared_context_.physical_device = GetPhysicalDevice();
+    shared_context_.logical_device = GetDevice();
+    shared_context_.graphics_queue_family_index = graphics_queue_family_;
+    shared_context_.graphics_queue_index = filament_queue_index_;
 
     initialized_ = true;
     utility::LogDebug(
-            "GaussianSplat VulkanContext: ready '{}' (fam={} gs_q=0 "
-            "fil_q={} sq={} sub={})",
+            "GaussianSplat VulkanContext: ready '{}' (fam={} gs_q=0 fil_q={})",
             pd_props.deviceName.data(), graphics_queue_family_,
-            filament_queue_index_, single_queue_device_, subgroup_size_);
+            filament_queue_index_);
     return true;
 }
 
@@ -322,9 +324,9 @@ void GaussianSplatVulkanContext::Shutdown() {
     device_ = vk::raii::Device{nullptr};
     physical_device_ = vk::raii::PhysicalDevice{nullptr};
     instance_ = vk::raii::Instance{nullptr};
+    shared_context_ = FilamentVulkanSharedContext{};
     graphics_queue_family_ = UINT32_MAX;
     filament_queue_index_ = 1;
-    single_queue_device_ = false;
     initialized_ = false;
     utility::LogDebug("GaussianSplat VulkanContext: shutdown");
 }
@@ -342,6 +344,15 @@ std::uint32_t GaussianSplatVulkanContext::FindMemoryType(
         }
     }
     return UINT32_MAX;
+}
+
+bool GaussianSplatVulkanContext::SupportsOptimalStorageImage(
+        VkFormat vk_format) const {
+    const auto properties = physical_device_.getFormatProperties(
+            static_cast<vk::Format>(vk_format));
+    return (properties.optimalTilingFeatures &
+            vk::FormatFeatureFlagBits::eStorageImage) !=
+           vk::FormatFeatureFlags{};
 }
 
 // ---------------------------------------------------------------------------
@@ -410,8 +421,6 @@ VkImageDesc GaussianSplatVulkanContext::CreateImage(std::uint32_t width,
 
     desc.vk_image = static_cast<VkImage>(image);
     desc.vk_memory = static_cast<VkDeviceMemory>(memory);
-    desc.width = width;
-    desc.height = height;
     return desc;
 }
 

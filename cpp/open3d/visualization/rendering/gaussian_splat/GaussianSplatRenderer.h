@@ -189,14 +189,14 @@ public:
             return false;
         }
 
-        virtual bool ReadColorToRGBA16FCpu(const FilamentView& view,
-                                           std::vector<std::uint16_t>& out,
-                                           std::uint32_t width,
-                                           std::uint32_t height) {
-            (void)view;
+        /// Read the GS composite color overlay (RGBA16F, premultiplied, four
+        /// half-float bit patterns per pixel) into \p out.  Reads the shared
+        /// output image referenced by \p targets directly, bypassing Filament's
+        /// readPixels. Default: unsupported (returns false).
+        virtual bool ReadColorToRGBA16FCpu(const OutputTargets& targets,
+                                           std::vector<std::uint16_t>& out) {
+            (void)targets;
             (void)out;
-            (void)width;
-            (void)height;
             return false;
         }
     };
@@ -254,10 +254,11 @@ public:
                                       std::uint32_t width,
                                       std::uint32_t height);
 
+    /// Read the GS composite color overlay for \p view as RGBA16F half-float
+    /// bit patterns (4 per pixel, premultiplied alpha).  Returns false when the
+    /// backend cannot read the shared image directly.
     bool ReadColorToRGBA16FCpu(const FilamentView& view,
-                               std::vector<std::uint16_t>& out,
-                               std::uint32_t width,
-                               std::uint32_t height);
+                               std::vector<std::uint16_t>& out);
 
     /// Signal that an offscreen depth readback is needed for \p view in the
     /// next composite pass.  Causes the merged_depth_u16_tex to be allocated
@@ -265,9 +266,6 @@ public:
     void RequestDepthReadbackForView(const FilamentView& view,
                                      bool wanted = true);
 
-    /// Returns the GL texture handle for the scene depth texture
-    /// that Filament should render into (shared via import).
-    std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;
     const ViewRenderData* GetViewRenderData(const FilamentView& view) const;
     const RenderConfig& GetRenderConfig() const;
     void SetRenderConfig(const RenderConfig& config);

@@ -352,7 +352,13 @@ void FilamentView::EnableViewCaching(bool enable) {
 
 bool FilamentView::IsCached() const { return caching_enabled_; }
 
-TextureHandle FilamentView::GetColorBuffer() { return color_buffer_; }
+TextureHandle FilamentView::GetColorBuffer() {
+    if (scene_ && scene_->UsesGaussianSplatOutput(*this)) {
+        auto color = scene_->GetColorBufferForView(*this);
+        if (color) return color;
+    }
+    return color_buffer_;
+}
 
 TextureHandle FilamentView::GetDepthBuffer() { return depth_buffer_; }
 

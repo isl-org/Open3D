@@ -9,13 +9,15 @@ lets the composite shader reject splats behind Filament-rendered mesh geometry f
 per-splat occlusion.  Multiple Gaussian scenes are supported.  The full pipeline also runs in
 offscreen `RenderToImage` / `RenderToDepthImage` captures.
 
-**Supported platforms**: Linux X11/GLX (including Wayland via XWayland),
-Windows/WGL, macOS/Metal.
+**Implemented backends**: Vulkan on non-Apple platforms and Metal on macOS.
+The shared-device Vulkan path has been exercised locally only on Linux with an
+NVIDIA RTX 4090. Windows, AMD, Intel, hybrid graphics, desktop X11/XWayland,
+and macOS/Metal still require explicit validation.
 
-**Renderer backend**: Pure Vulkan on Linux/Windows (GPU compute + Filament
-Vulkan backend share the same VkDevice), Metal on macOS.  The former
-GL-Vulkan interop path (GL_EXT_memory_object export/import) has been replaced
-with direct Vulkan image sharing through Filament's importTextureR() API.
+**Renderer backend**: Pure Vulkan on non-Apple platforms (GPU compute and the
+Filament Vulkan backend share one `VkDevice`), Metal on macOS. The former
+GL-Vulkan interop path (`GL_EXT_memory_object` export/import) has been replaced
+with direct Vulkan image sharing through Filament's `importTextureR()` API.
 
 ---
 
@@ -76,26 +78,30 @@ reversed-Z convention for downstream readback compatibility.
 
 The pipeline splits into two GPU stages: Stage A (projection + sort) and Stage B (composite).
 
-**Non-Apple** (Filament OpenGL + Vulkan compute):
+**Non-Apple** (shared-device Vulkan):
 
-Filament uses an **OpenGL** backend — the only zero-copy texture-sharing path on
-Linux/Windows.  GS compute runs on a separate **Vulkan** compute queue.  Stage A is submitted
-fire-and-forget (no CPU wait) so Vulkan geometry overlaps Filament rasterization.  Stage B
-runs after Filament completes because it needs the scene depth.
+Open3D creates the Vulkan instance, physical device, logical device, and queues,
+then passes Filament a layout-compatible shared-context record at
+`Engine::create()`. Filament renders meshes into an imported RGBA16F Vulkan
+colour attachment and writes the paired imported D32F depth attachment. GS
+compute uses queue 0; Filament uses queue 1 when the queue family exposes two
+queues (otherwise both use queue 0). Stage A is submitted before Filament's
+scene draw; Stage B waits until the depth attachment is ready, then composites
+splats into the same colour image.
 
 ```
 BeginFrame:
   1. GaussianSplatRenderer::BeginFrame()
-  2. engine_.flushAndWait()    -- drain prior Filament (GL) work; shared textures idle
+  2. engine_.flushAndWait()    -- drain prior Filament Vulkan work
   3. Stage A (geometry)        -- VK Submit + fence signal, NO CPU WAIT (fire-and-forget)
   4. renderer_->beginFrame()
 
 Draw:
-  5. Filament scene draw       -- writes depth to shared GL depth texture
+  5. Filament scene draw       -- writes mesh colour and depth to imported VkImages
   6. engine_.flushAndWait()    -- depth ready for composite
   7. WaitForGeometryPass()     -- VK fence wait (usually no-op; geometry done during step 5)
-  8. Stage B (composite)       -- VK Submit + wait; writes GS RGBA16F
-  9. ImGui                     -- base + splat overlay
+  8. Stage B (composite)       -- VK Submit + wait; source-over blends splats in-place
+  9. ImGui                     -- presents the already-composited colour image once
 ```
 
 The two mandatory CPU stalls (`flushAndWait`) cannot be eliminated without modifying Filament.
@@ -107,25 +113,29 @@ On every backend, widgets record ImGui commands before the current frame produce
 output. `SetOnGaussianCompositeComplete` -> `PostRedraw()` schedules a second draw so the
 newly valid overlay is sampled without a user input event.
 
-Imported Vulkan textures must also preserve their external layout state. Compute transitions
-the GS color image from `UNDEFINED` to `GENERAL`; Filament records that non-depth import as
-`READ_WRITE` so its first sampling transition does not discard the compute-written contents.
-Imported depth remains `UNDEFINED` in Filament until its first attachment transition.
+The shared colour image remains in `GENERAL` layout for both Filament's imported
+colour-attachment access and GS storage-image access. The output targets are
+created with storage, sampled, colour-attachment, and transfer-source usage.
 
 `FilamentRenderToBuffer::Render()` mirrors the same `#if defined(__APPLE__)` ordering.
 
+depth attachment.  Filament writes depth; the composite shader reads it at binding 14.
 ### Depth-Aware Compositing (Zero-Copy)
 
-The GS compute context and Filament share the same GLX context group.  GL texture handles
-are valid in both contexts — no CPU copies.
+Open3D creates ordinary Vulkan images on Filament's shared device; Filament
+imports non-owning wrappers for them. No OpenGL context, exported memory object,
+or queue-family transfer to an external API is involved.
 
-**Shared depth texture**: a `GL_DEPTH_COMPONENT32F` texture is created in the helper
-context, imported into Filament as `DEPTH_ATTACHMENT | SAMPLEABLE`, and set as the view's
-depth attachment.  Filament writes depth; the composite shader reads it at binding 14.
+**Shared depth image**: a D32F image is imported as `DEPTH_ATTACHMENT |
+SAMPLEABLE` and installed as the view depth attachment. Filament writes reversed-Z
+depth; the composite shader samples it at binding 14 to reject splats behind mesh
+geometry.
 
-**Shared color texture**: a `GL_RGBA16F` texture is imported into Filament as `SAMPLEABLE`.
-The composite shader writes to it via `imageStore`.  ImGui blends it over the Filament scene
-color buffer (SrcAlpha / 1−SrcAlpha).
+**Shared colour image**: an RGBA16F image is imported as `SAMPLEABLE |
+COLOR_ATTACHMENT | BLIT_SRC` and installed as the view colour attachment. The
+composite shader loads the mesh colour, applies premultiplied source-over
+blending, and stores the final colour back into that image. Vulkan ImGui must not
+apply a second splat overlay.
 
 **MSAA**: disabled for GS views.  Filament asserts `!msaa.enabled || !hasSampleableDepth()`.
 3DGS uses Gaussian kernel anti-aliasing instead.
@@ -156,43 +166,53 @@ render-target re-setup is needed when mesh visibility toggles.
 - `EnableViewCaching(true)` for the offscreen view (valid Filament color buffer for zero-copy setup).
 - `RequestRedrawForView` before each `Render()` forces the GS pipeline to re-run even
   when the scene and camera are unchanged.
-- **Color readback**: two parallel `readPixels` (Filament RGBA+UBYTE, GS RGBA+FLOAT) then
-  a second `flushAndWait()`; CPU `BlendPremultipliedSplatOverRgb8` composites the overlay.
-- **Depth readback** (GL): `gaussian_depth_merge.comp` merges GS + Filament depth into a
-  normalised R16UI texture; `ReadMergedDepthToUint16Cpu` reads it via `glGetTexImage`.
-- **Metal constraint**: `readPixels` always uses RGBA+UBYTE (Metal has no native RGB format);
-  alpha is stripped when `n_channels_ == 3`.
+- **Vulkan color readback**: Filament renders meshes and the composite shader blends splats
+  in-place into one shared RGBA16F image. `ReadColorToRGBA16FCpu` downloads that final image;
+  no Filament `readPixels` or CPU blend is used.
+- **Depth readback**: `gaussian_depth_merge.comp` merges GS + Filament depth into a
+  normalised R16UI texture. The focused test validates the resulting linear
+  view-space depth grid. When manually written as PNG, float depth is converted
+  to a finite-depth `uint8` preview first.
+- **Metal constraint**: Metal keeps the separate overlay and CPU blend path. Its `readPixels`
+  always uses RGBA+UBYTE (Metal has no native RGB format); alpha is stripped when
+  `n_channels_ == 3`.
 
 ### Shared Vulkan Device Strategy (Linux/Windows)
 
 Both the GS compute pipeline and Filament now share the same VkDevice, eliminating
 GL-Vulkan interop entirely.  The compute context creates the VkInstance, VkPhysicalDevice,
-and VkDevice **before** `Engine::create()`, then passes a `VulkanSharedContext` struct
-as Engine's `sharedContext` argument.  Filament uses the device it receives and does
-NOT destroy it on shutdown.
+and VkDevice **before** `Engine::create()`, then passes a `FilamentVulkanSharedContext`
+record as Engine's `sharedContext` argument.  Filament uses the device it receives and
+does NOT destroy it on shutdown.  Because the GS pipeline requires this shared device,
+Gaussian splatting is unavailable when Filament runs its OpenGL backend.
 
 1. `FilamentEngine.cpp` calls `GaussianSplatVulkanContext::GetInstance().Initialize()`
 2. The context creates a headless Vulkan instance with `VK_KHR_surface`,
    `VK_KHR_get_physical_device_properties2`, and platform surface extensions.
-3. A physical device is selected: discrete GPU preferred, software renderers skipped
-   unless the only option.  Required: Vulkan 1.3, a graphics+compute queue family,
-   `VK_KHR_push_descriptor`, `VK_KHR_swapchain`.
+3. The first suitable hardware physical device in Vulkan loader enumeration
+  order is selected, honoring loader policy such as `VK_LOADER_DEVICE_SELECT`.
+  A suitable software renderer is retained only as a fallback. Required:
+  Vulkan 1.3, a graphics+compute queue family, `VK_KHR_push_descriptor`, and
+  `VK_KHR_swapchain`, plus optimal-tiled RGBA16F storage-image support.
 4. Two queues from the same family: index 0 for GS compute, index 1 for Filament.
    On single-queue GPUs both indices are 0 (mutual exclusion via existing
    `flushAndWait()` bracketing).
 5. Synchronization2 is enabled (required by the GS pipeline).
 6. VMA is used for internal-only buffer allocations; shared GS depth/color images are
    plain `VkImage` + `VkDeviceMemory` (no export).
-7. `GaussianSplatVulkanContext` returns a `VulkanSharedContext` with the instance,
-   physical device, logical device, graphics queue family index, and Filament's queue
-   index.  Filament's `Engine::create()` receives this via `sharedContext`.
+7. `GaussianSplatVulkanContext` returns a `FilamentVulkanSharedContext` with the
+   instance, physical device, logical device, graphics queue family index, and
+   Filament's queue index.  Filament's `Engine::create()` receives this via
+   `sharedContext` as an opaque `void*`, so only the field layout must match
+   `VulkanPlatform::VulkanSharedContext`.
 8. GS output images are created via `CreateImage()` and imported into Filament via
    `FilamentResourceManager::CreateImportedTexture()` (which calls
    `importTextureR()` on the Vulkan backend, now implemented to create a non-owning
    `VulkanTexture` wrapper).
 
-On Linux, `GLFWWindowSystem::Initialize()` forces `GLFW_PLATFORM_X11` so Filament's
-`PlatformVulkanLinux` can obtain the correct native window surface.
+On Linux, Vulkan surface creation uses the Xlib platform extension. Desktop X11
+and XWayland behavior remains an acceptance-test item; the local focused tests
+used GLFW's headless fallback.
 
 ### Backend Abstraction
 
@@ -430,14 +450,15 @@ consistency even though the shader does not evaluate them.
 
 | Decision | Rationale |
 |----------|-----------|
-| Filament Vulkan backend on Linux/Windows | Zero-copy texture-sharing via shared VkDevice.  GS output images are imported into Filament with importTextureR(), eliminating GL_EXT_memory_object export/import, adapter steering, and VK_QUEUE_FAMILY_EXTERNAL ownership transfers. |
+| Filament Vulkan backend on non-Apple platforms | Zero-copy texture-sharing via a shared VkDevice. GS output images are imported into Filament with `importTextureR()`, eliminating GL_EXT_memory_object export/import, adapter steering, and VK_QUEUE_FAMILY_EXTERNAL ownership transfers. |
 | Headless Vulkan context before `Engine::create()` | The VkInstance, VkPhysicalDevice, and VkDevice must exist before Filament creates its own context.  Filament receives the shared device via Engine::create()'s sharedContext argument and does NOT destroy it. |
-| Force GLX on Linux (including Wayland sessions) | Filament v1.54.0 uses `PlatformGLX` unconditionally on Linux. An EGL context passed as `sharedGLContext` causes `glXQueryContext` to fail. `GLFW_PLATFORM_X11` is forced; XWayland provides GS functionality on all Wayland compositors. |
+| Vulkan surface extensions on Linux | The shared context enables `VK_KHR_xlib_surface` for Filament's Linux Vulkan surface path. The focused local tests use GLFW headless fallback; X11/XWayland desktop behavior is not yet validated. |
 | Vulkan compute instead of GL compute | GL compute shaders have limited/no subgroup support on Intel hardware. Vulkan compute provides full `VK_KHR_shader_subgroup` on all major vendors (NVIDIA, AMD, Intel), enabling subgroup-optimized sort and projection shaders. |
 | Fire-and-forget geometry stage | `EndGeometryPass()` submits the Vulkan command buffer and signals a fence without waiting.  Vulkan geometry overlaps Filament's `beginFrame()` and scene draw.  `WaitForGeometryPass()` before composite is typically a no-op because geometry finishes during Filament's draw. |
 | Same queue family for Filament + GS compute | Eliminates queue-family ownership transfers.  Two queue indices where available (index 0 = GS, index 1 = Filament).  On single-queue GPUs both indices are 0, with `flushAndWait()` providing mutual exclusion. |
-| `engine_.flushAndWait()` for synchronization with Filament | Filament's driver-thread command stream is opaque; we cannot inject image layout transitions or semaphore operations into it.  CPU fence waits bracketed around GS dispatch are the reliable synchronization mechanism.  The interop barrier passes in ComputeGPUVulkan (formerly needed for GL→Vulkan ownership transitions) are now no-ops. |
+| `engine_.flushAndWait()` for synchronization with Filament | Filament's driver-thread command stream is opaque; Open3D cannot inject semaphore operations into its submissions. CPU waits bracket GS dispatches so shared-image access is ordered. Removing those stalls requires a larger Filament synchronization API change. |
 | Shared sampleable depth texture | Zero-copy: Filament writes depth, composite reads it without any CPU staging. The MSAA restriction is acceptable because 3DGS uses Gaussian kernel anti-aliasing. |
+| Shared Vulkan color attachment | Open3D allocates an RGBA16F image with `STORAGE`, `COLOR_ATTACHMENT`, `SAMPLED`, and `TRANSFER_SRC` usage, then imports it into Filament as the view color attachment. The composite shader reads and writes this image in `GENERAL` layout, eliminating the Vulkan offscreen base readback and CPU blend. |
 | Scene depth always allocated | Avoids render-target topology changes when mesh visibility toggles; the composite shader gates occlusion via `depth_range_and_flags.w` at runtime instead. |
 | Normalized linear depth for sort keys | Uniform $\Delta d$ per sort-key interval across the full depth range. Inverse depth gives a $1/d^2$ distribution crowding all key space near the camera. `floatBitsToUint` provides a free log-density tilt toward the near field. |
 | Dynamic T/D sort-key split | Adapts tile/depth bit allocation to the actual tile count. The sign-bit strip (always zero for `norm_depth` ∈ [0,1]) reclaims one free depth bit without cost. |
@@ -450,13 +471,22 @@ consistency even though the shader does not evaluate them.
 | Sigmoid applied CPU-side | Eliminates a per-splat per-frame transcendental `exp()` in the projection shader; computed once at packing time. |
 | Bit-packed visibility mask | 1 bit per splat (0.125 B/splat).  The project shader reads a single `uint32` word per 32 splats; masked splats write no sort entries. |
 | Pre-destroy invalidation on resize | `InvalidateGaussianSplatOutput()` tears down the GS render target before `FilamentView` frees `color_buffer_`, preventing use-after-free during maximize/resize. |
-| `SetOnGaussianCompositeComplete` + `PostRedraw` | Widgets record texture commands before GS output is produced; without a follow-up draw, the first frame shows no splats until the next user event. The callback schedules one deferred redraw after a successful composite. |
+| `SetOnGaussianCompositeComplete` + `PostRedraw` | Widgets record texture commands before GS output is produced; without a follow-up draw, the first frame can show no splats until the next user event. The callback schedules one deferred redraw after a successful composite. |
 
 ---
 
 ## Future Work / TODO
 
-1. **User shader callbacks.** Add user-provided shader callbacks to mimic Spark's
+1. **Acceptance validation.** Run the interactive example, Vulkan validation
+  layers, Python visualization tests, patched prebuilt-Filament flow, and the
+  Linux/Windows/AMD/Intel/hybrid hardware matrix. The local evidence is limited
+  to headless Linux on an NVIDIA RTX 4090.
+2. **Single-queue hardware.** Validate that the existing `flushAndWait()` ordering
+  safely serializes GS and Filament submissions when only queue index 0 exists.
+3. **Metal parity.** Retain and test Metal's separate-overlay/CPU-blend path;
+  do not port Vulkan's imported writable colour attachment without dedicated
+  Metal coverage.
+4. **User shader callbacks.** Add user-provided shader callbacks to mimic Spark's
    programmable rendering and shader-graph functionality, allowing user code to
    modify splats or shading on the GPU.
 
@@ -471,7 +501,7 @@ consistency even though the shader does not evaluate them.
 | `GaussianSplatRenderer.h/.cpp` | Backend interface; per-view output lifecycle; `BeginFrame()`; `RenderCompositeStage()`; `ReadMergedDepthToUint16Cpu()` |
 | `GaussianSplatDataPacking.h/.cpp` | CPU→GPU data packing (std140/std430); `GaussianGpuBufferSizes`; `PackGaussianViewParams`; `PackGaussianSplatAttrsDirect` |
 | `ComputeGPU.h` | `ComputeProgramId` enum; `GaussianSplatGpuContext` abstract base; `GpuComputeFrame` / `GpuComputePass` RAII helpers; `kGsShaderNames[]` |
-| `ComputeGPUVulkan.h/.cpp` | Vulkan `GaussianSplatGpuContext`: pipeline management, SSBO/UBO binding, command buffer lifecycle, fence-based geometry sync.  Barriers for GL interop are no-ops; images are imported via direct VkImage (not GL handles). |
+| `ComputeGPUVulkan.h/.cpp` | Vulkan `GaussianSplatGpuContext`: pipeline management, SSBO/UBO binding, command buffer lifecycle, fence-based geometry sync, and direct-VkImage binding. |
 | `GaussianSplatVulkanContext.h/.cpp` | Headless Vulkan instance + device (replaces `GaussianSplatVulkanInteropContext`).  Allocates plain VkImage+VkDeviceMemory for Filament sharing; no GL export/import. |
 | `GaussianSplatVulkanBackend.h/.cpp` | Vulkan `GaussianSplatRenderer::Backend` for Linux/Windows |
 | `ComputeGPUMetal.mm` | Metal `GaussianSplatGpuContext`: buffer management, pipeline dispatch, barriers, texture ops |
@@ -487,7 +517,23 @@ consistency even though the shader does not evaluate them.
 | `FilamentResourceManager.h/.cpp` | `CreateImportedTexture()` / `CreateImportedMTLTexture()` for zero-copy import |
 | `FilamentView.h/.cpp` | `EnableViewCaching()` invalidation fix; `GetRenderTargetHandle()` for offscreen readback |
 | `FilamentScene.h/.cpp` | `per_object_gs_attrs_` / `merged_gs_attrs_`; `RebuildMergedGaussianData()`; `HasNonGaussianVisibleGeometry()` |
-| `FilamentRenderToBuffer.h/.cpp` | GS pipeline mirror; parallel `readPixels`; `BlendPremultipliedSplatOverRgb8` CPU blend |
+| `FilamentRenderToBuffer.h/.cpp` | Offscreen GS pipeline. Vulkan downloads the final shared RGBA16F image directly; Metal retains readback plus CPU overlay blend. |
+
+### Vulkan GPU-side scene-colour compositing
+
+On Linux and Windows, Open3D allocates the storage-capable RGBA16F image rather
+than asking Filament to allocate `FilamentView::color_buffer_`; Filament imports
+that image and renders the scene directly into it. The composite shader reads the
+base colour with `imageLoad`, applies premultiplied source-over blending, and
+writes the final colour with `imageStore`. `FilamentView::GetColorBuffer()`
+returns that image, so Vulkan ImGui presents it once without a Gaussian overlay.
+
+The shared image uses `GENERAL` layout for both Filament color-attachment access
+and compute storage-image access. Vulkan device initialization rejects devices
+without optimal-tiled RGBA16F storage-image support. Metal intentionally retains
+its separate-overlay path until the equivalent imported writable view attachment
+is implemented and tested.
+
 | `FilamentRenderer.h/.cpp` | Frame schedule and GS output forwarding; `SetOnGaussianCompositeComplete` |
 | `FilamentEngine.cpp` | Pre-Filament Vulkan context setup (init + shutdown, shared VkDevice lifecycle) |
 | `Window.cpp` | Registers composite-complete callback -> `PostRedraw()` (first-frame fix) |
@@ -507,5 +553,5 @@ consistency even though the shader does not evaluate them.
 
 | File | Purpose |
 |------|---------|
-| `cpp/tests/visualization/rendering/GaussianSplatRender.cpp` | `RenderToImage` golden PNG test (36×20, `AllClose atol=5`); `OPEN3D_TEST_GENERATE_REFERENCE=1` regenerates reference |
-| `examples/cpp/GaussianSplat.cpp` | Interactive viewer with red sphere for depth compositing testing |
+| `cpp/tests/visualization/rendering/GaussianSplatRender.cpp` | Focused 8×8 `RenderToImage` and `RenderToDepthImage` goldens for two splats and a mixed parameterized-blue-mesh/splat occlusion scene. Locally passing on Linux/NVIDIA headless fallback. |
+| `examples/cpp/GaussianSplat.cpp` | Interactive viewer with a red sphere for depth-compositing validation; not yet run for this implementation update. |

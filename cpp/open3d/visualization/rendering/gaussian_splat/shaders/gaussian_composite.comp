@@ -111,7 +111,7 @@ layout(std430, binding = 11) restrict readonly buffer SortedSplatIndices {
 // above live in separate namespaces and are not affected.
 // Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams
 // UBO.
-layout(binding = 16, rgba16f) uniform writeonly image2D out_color;
+layout(binding = 16, rgba16f) uniform image2D out_color;
 layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 
 // Scene depth from Filament's render pass (reversed-Z, non-linear).
@@ -408,7 +408,10 @@ void main() {
             // Filament's transparent blend mode uses One, 1-SrcAlpha
             // (premultiplied-alpha compositing), so store premultiplied RGB
             // directly: final = accum_color + transmittance * background.
-            imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+            vec4 base_color = imageLoad(out_color, pixel);
+            imageStore(out_color, pixel,
+                       vec4(accum_color + base_color.rgb * transmittance,
+                            out_alpha + base_color.a * transmittance));
             // Convert nearest-splat depth back to Filament inverse convention
             // (near=1, far=0) so gaussian_depth_merge.comp and CPU readback
             // can compare against Filament's own depth buffer unchanged.

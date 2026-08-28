@@ -34,7 +34,7 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
 
 namespace {
 
-/// No-op backend used on Vulkan/unsupported platforms so the renderer stays
+/// No-op backend used when no GPU backend is available, so the renderer stays
 /// valid without crashing; emits a one-time warning per view.
 class GaussianSplatPlaceholderBackend final
     : public GaussianSplatRenderer::Backend {
@@ -67,8 +67,8 @@ public:
                              GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogWarning(
-                    "GaussianSplat backend '{}' is selected but GPU "
-                    "dispatch is not implemented yet.",
+                    "GaussianSplat rendering is {} on this configuration; "
+                    "splats will not be drawn.",
                     name_);
         }
         return false;
@@ -95,10 +95,13 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
 #if defined(__APPLE__)
             return CreateGaussianSplatMetalBackend(resource_mgr, config);
 #else
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend("Metal"));
+            break;
 #endif
+        // The GS compute pipeline shares images with Filament on a single
+        // VkDevice, so it requires Filament's Vulkan backend. There is no
+        // OpenGL path.
         case RenderingType::kOpenGL:
+            break;
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -107,15 +110,11 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
                 vk_backend) {
                 return vk_backend;
             }
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend(
-                            "Vulkan not available"));
-#else
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend("Unsupported"));
 #endif
+            break;
     }
-    return nullptr;
+    return std::unique_ptr<GaussianSplatRenderer::Backend>(
+            new GaussianSplatPlaceholderBackend("unsupported"));
 }
 
 /// Returns true when the platform-specific GS color texture handle is ready.
@@ -141,7 +140,9 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 #else
             return false;
 #endif
+        // Requires Filament's Vulkan backend for single-device image sharing.
         case RenderingType::kOpenGL:
+            return false;
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -431,14 +432,13 @@ bool GaussianSplatRenderer::ReadCompositeDepthToFloatCpu(
 }
 
 bool GaussianSplatRenderer::ReadColorToRGBA16FCpu(
-        const FilamentView& view,
-        std::vector<std::uint16_t>& out,
-        std::uint32_t width,
-        std::uint32_t height) {
-    if (!backend_) {
+        const FilamentView& view, std::vector<std::uint16_t>& out) {
+    auto found = outputs_.find(&view);
+    if (!backend_ || found == outputs_.end() ||
+        !found->second.has_valid_output) {
         return false;
     }
-    return backend_->ReadColorToRGBA16FCpu(view, out, width, height);
+    return backend_->ReadColorToRGBA16FCpu(found->second, out);
 }
 
 void GaussianSplatRenderer::RequestDepthReadbackForView(
@@ -447,13 +447,6 @@ void GaussianSplatRenderer::RequestDepthReadbackForView(
     if (it != outputs_.end()) {
         it->second.wants_depth_readback = wanted;
     }
-}
-
-std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
-        const FilamentView& view) const {
-    // Pure Vulkan path: no GL handles. The backend exports depth_vk_image
-    // which Filament imports directly. This method exists only for API compat.
-    return 0;
 }
 
 const char* GaussianSplatRenderer::GetBackendName() const {

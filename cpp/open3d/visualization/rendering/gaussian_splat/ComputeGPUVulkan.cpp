@@ -492,25 +492,12 @@ public:
     // Filament rendering proceeds in parallel; WaitForGeometryPass() (called
     // at the start of RunGaussianCompositePass) drains it only if needed.
     void EndGeometryPass() override { SubmitOnly(); }
-    void BeginCompositePass() override {
-        BeginCmdBuf();
-        // Acquire shared GL-interop images from the external (OpenGL) API into
-        // this Vulkan compute queue.  flushAndWait() in FilamentRenderer
-        // ensures GL has finished writing before we reach here on the CPU;
-        // these barriers perform the GPU-side queue-family ownership transfer
-        // and set the layout Vulkan will use.  Without them the spec considers
-        // the image contents and layout undefined, which manifests as
-        // VK_ERROR_DEVICE_LOST on strict drivers (typically Windows AMD/Intel).
-        EmitSharedInteropAcquireBarriers();
-    }
-    void EndCompositePass() override {
-        // Release shared images back to the external (OpenGL) API before
-        // Filament samples the GS color overlay.  The release barrier transfers
-        // queue-family ownership and leaves both images in GENERAL so GL can
-        // use them without an explicit Vulkan layout.
-        EmitSharedInteropReleaseBarriers();
-        SubmitAndWait();
-    }
+    // Images shared with Filament live on the same VkDevice and queue family,
+    // so no queue-family ownership transfer is needed. FilamentRenderer's
+    // flushAndWait() bracketing provides the cross-API execution ordering, and
+    // ResolveImageView() emits any required layout transition per binding.
+    void BeginCompositePass() override { BeginCmdBuf(); }
+    void EndCompositePass() override { SubmitAndWait(); }
 
     void WaitForGeometryPass() override { WaitForPendingSubmit(); }
 
@@ -578,18 +565,6 @@ public:
     }
 
 private:
-    // --- GL–Vulkan interop barriers ----------------------------------------
-
-    void EmitSharedInteropAcquireBarriers() {
-        /* No-op: all shared images use the same Vulkan device and queue
-           family. */
-    }
-
-    void EmitSharedInteropReleaseBarriers() {
-        /* No-op: all shared images use the same Vulkan device and queue
-           family. */
-    }
-
     // --- Internal state ---------------------------------------------------
     VkDevice device_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
@@ -968,11 +943,9 @@ private:
         return static_cast<VkImageView>(*e.view);
     }
 
-    // Layout transition for internally-owned (non-shared) VMA images only.
-    // Uses VK_QUEUE_FAMILY_IGNORED because these images are never accessed by
-    // an external API; queue-family ownership is always within this compute
-    // queue.  Shared GL-interop images must use EmitSharedInteropAcquire/
-    // ReleaseBarriers instead, which use VK_QUEUE_FAMILY_EXTERNAL.
+    // Layout transition using VK_QUEUE_FAMILY_IGNORED: every image (including
+    // those shared with Filament) lives on this device's graphics/compute
+    // family, so ownership never leaves this queue family.
     void TransitionImageLayout(VkImage image,
                                VkFormat format,
                                VkImageLayout old_layout,
@@ -1157,26 +1130,25 @@ private:
             VK_SUCCESS)
             return false;
 
-        // Record copy: transition image to TRANSFER_SRC, copy, transition
-        // back.
+        // Record copy: transition image to TRANSFER_SRC, copy, transition to
+        // GENERAL (a valid layout for the next compute or transfer use).
         BeginCmdBuf();
         auto& e = it->second;
+        const auto aspect = (e.format == VK_FORMAT_D32_SFLOAT)
+                                    ? vk::ImageAspectFlagBits::eDepth
+                                    : vk::ImageAspectFlagBits::eColor;
         TransitionImageLayout(e.image, e.format, e.current_layout,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         vk::BufferImageCopy region{
-                0,         0,
-                0,         {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
-                {0, 0, 0}, {w, h, 1},
+                0, 0, 0, {aspect, 0, 0, 1}, {0, 0, 0}, {w, h, 1},
         };
         cmd_.copyImageToBuffer(vk::Image(e.image),
                                vk::ImageLayout::eTransferSrcOptimal,
                                vk::Buffer(staging), region);
-        // Transition back to previous layout (or GENERAL).
         TransitionImageLayout(e.image, e.format,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              e.current_layout == VK_IMAGE_LAYOUT_UNDEFINED
-                                      ? VK_IMAGE_LAYOUT_GENERAL
-                                      : e.current_layout);
+                              VK_IMAGE_LAYOUT_GENERAL);
+        e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
         SubmitAndWait();
 
         vmaInvalidateAllocation(vma_, alloc, 0, total);

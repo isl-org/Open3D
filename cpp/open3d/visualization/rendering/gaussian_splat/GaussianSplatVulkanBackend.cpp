@@ -153,18 +153,17 @@ public:
                                  Tex::Usage::COLOR_ATTACHMENT |
                                  Tex::Usage::BLIT_SRC));
 
-        auto view_color = view.GetColorBuffer();
-        if (!view_color || !targets.color) return false;
+        if (!targets.color) return false;
 
         if (targets.depth) {
-            targets.render_target =
-                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
+            targets.render_target = resource_mgr.CreateRenderTarget(
+                    targets.color, targets.depth);
         } else {
             auto owned_depth = resource_mgr.CreateDepthAttachmentTexture(
                     int(width), int(height));
             targets.depth = owned_depth;
-            targets.render_target =
-                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
+            targets.render_target = resource_mgr.CreateRenderTarget(
+                    targets.color, targets.depth);
         }
         // Disable MSAA before binding the render target: Filament validates
         // MSAA/sampleable-depth compatibility inside SetRenderTarget()
@@ -236,7 +235,6 @@ public:
         if (!frame.valid) return false;
 
         auto& vs = view_states_[&view];
-        vs.color_output_tex = targets.color_vk_image;
         const std::uint64_t scene_id = scene.GetGeometryChangeId();
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
@@ -282,18 +280,12 @@ public:
                                          height, out);
     }
 
-    bool ReadColorToRGBA16FCpu(const FilamentView& view,
-                               std::vector<std::uint16_t>& out,
-                               std::uint32_t width,
-                               std::uint32_t height) override {
-        if (!gpu_) return false;
-        auto it = view_states_.find(&view);
-        if (it == view_states_.end()) return false;
-        if (it == view_states_.end() || it->second.color_output_tex == 0) {
-            return false;
-        }
-        return gpu_->DownloadTextureRGBA16F(it->second.color_output_tex, width,
-                                            height, out);
+    bool ReadColorToRGBA16FCpu(
+            const GaussianSplatRenderer::OutputTargets& targets,
+            std::vector<std::uint16_t>& out) override {
+        if (!gpu_ || targets.color_vk_image == 0) return false;
+        return gpu_->DownloadTextureRGBA16F(targets.color_vk_image,
+                                            targets.width, targets.height, out);
     }
 
 private:
@@ -342,7 +334,6 @@ private:
             gpu_->DestroyTexture(vs.merged_depth_u16_tex);
             vs.merged_depth_u16_tex = 0;
         }
-        vs.color_output_tex = 0;
     }
 };
 
