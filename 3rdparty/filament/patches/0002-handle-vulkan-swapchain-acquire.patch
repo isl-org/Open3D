@@ -61,6 +61,12 @@ index d587b2a..05f6379 100644
 -    VulkanSwapChain* swapChain = mCurrentSwapChain
 -            = mResourceAllocator.handle_cast<VulkanSwapChain*>(drawSch);
 +    mCurrentSwapChain = mResourceAllocator.handle_cast<VulkanSwapChain*>(drawSch);
++
++    // Headless swapchains have no presentation lifecycle, so acquire them when
++    // they become current as in the unpatched Filament path.
++    if (mCurrentSwapChain->isHeadless()) {
++        acquireNextSwapchainImage();
++    }
  
 -    bool resized = false;
 -    swapChain->acquire(resized);
@@ -275,6 +281,9 @@ index 80886f8..fa4bcde 100644
 +
 +    inline bool isAcquired() const noexcept {
 +        return mAcquired;
++    }
++    inline bool isHeadless() const noexcept {
++        return mHeadless;
 +    }
  
      inline VulkanTexture* getCurrentColor() const noexcept {
