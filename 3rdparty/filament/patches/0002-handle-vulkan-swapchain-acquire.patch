@@ -1,0 +1,324 @@
+Subject: [PATCH] backend/vulkan: recover swapchain acquisition during resize
+
+Backport Filament Vulkan resize recovery for v1.54.0. Defer acquisition until
+the first swapchain render pass, skip unavailable resize frames safely, and
+drain queued work before releasing old swapchain images and synchronization.
+This prevents resize failures from contaminating Gaussian Splat offscreen work.
+
+diff --git a/filament/backend/src/vulkan/VulkanDriver.cpp b/filament/backend/src/vulkan/VulkanDriver.cpp
+index d587b2a..05f6379 100644
+--- a/filament/backend/src/vulkan/VulkanDriver.cpp
++++ b/filament/backend/src/vulkan/VulkanDriver.cpp
+@@ -1213,8 +1213,19 @@ void VulkanDriver::beginRenderPass(Handle<HwRenderTarget> rth, const RenderPassP
+         VulkanSwapChain* sc = mCurrentSwapChain;
+         assert_invariant(sc);
+         if (sc->isFirstRenderPass()) {
+-            discardStart |= TargetBufferFlags::COLOR;
+-            sc->markFirstRenderPass();
++            if (!acquireNextSwapchainImage()) {
++                mCurrentRenderPass = {};
++                FVK_SYSTRACE_END();
++                return;
++            } else {
++                discardStart |= TargetBufferFlags::COLOR;
++                sc->markFirstRenderPass();
++            }
++        }
++        if (!sc->isAcquired()) {
++            mCurrentRenderPass = {};
++            FVK_SYSTRACE_END();
++            return;
+         }
+     }
+ 
+@@ -1458,6 +1469,11 @@ void VulkanDriver::endRenderPass(int) {
+     FVK_SYSTRACE_CONTEXT();
+     FVK_SYSTRACE_START("endRenderPass");
+ 
++    if (skipDueToEmptyRenderPass()) {
++        FVK_SYSTRACE_END();
++        return;
++    }
++
+     VulkanCommandBuffer& commands = mCommands.get();
+     VkCommandBuffer cmdbuffer = commands.buffer();
+     vkCmdEndRenderPass(cmdbuffer);
+@@ -1523,6 +1539,10 @@ void VulkanDriver::endRenderPass(int) {
+ }
+ 
+ void VulkanDriver::nextSubpass(int) {
++    if (skipDueToEmptyRenderPass()) {
++        return;
++    }
++
+     FILAMENT_CHECK_PRECONDITION(mCurrentRenderPass.currentSubpass == 0)
+             << "Only two subpasses are currently supported.";
+ 
+@@ -1547,21 +1567,29 @@ void VulkanDriver::makeCurrent(Handle<HwSwapChain> drawSch, Handle<HwSwapChain>
+ 
+     ASSERT_PRECONDITION_NON_FATAL(drawSch == readSch,
+             "Vulkan driver does not support distinct draw/read swap chains.");
+-    VulkanSwapChain* swapChain = mCurrentSwapChain
+-            = mResourceAllocator.handle_cast<VulkanSwapChain*>(drawSch);
++    mCurrentSwapChain = mResourceAllocator.handle_cast<VulkanSwapChain*>(drawSch);
+ 
+-    bool resized = false;
+-    swapChain->acquire(resized);
++    FVK_SYSTRACE_END();
++}
+ 
+-    if (resized) {
++bool VulkanDriver::acquireNextSwapchainImage() {
++    assert_invariant(mCurrentSwapChain);
++    if (!mDefaultRenderTarget) {
++        return false;
++    }
++
++    auto const [acquired, backingChanged] = mCurrentSwapChain->acquire();
++
++    if (backingChanged) {
+         mFramebufferCache.reset();
+     }
+ 
+-    if (UTILS_LIKELY(mDefaultRenderTarget)) {
+-        mDefaultRenderTarget->bindToSwapChain(*swapChain);
++    if (acquired) {
++        mDefaultRenderTarget->bindToSwapChain(*mCurrentSwapChain);
++        return true;
+     }
+ 
+-    FVK_SYSTRACE_END();
++    return false;
+ }
+ 
+ void VulkanDriver::commit(Handle<HwSwapChain> sch) {
+@@ -1604,6 +1632,9 @@ void VulkanDriver::bindSamplers(uint32_t index, Handle<HwSamplerGroup> sbh) {
+ 
+ void VulkanDriver::setPushConstant(backend::ShaderStage stage, uint8_t index,
+         backend::PushConstantVariant value) {
++    if (skipDueToEmptyRenderPass()) {
++        return;
++    }
+     assert_invariant(mBoundPipeline.program && "Expect a program when writing to push constants");
+     VulkanCommands* commands = &mCommands;
+     mBoundPipeline.program->writePushConstant(commands, mBoundPipeline.pipelineLayout, stage, index,
+@@ -1797,6 +1828,11 @@ void VulkanDriver::bindPipeline(PipelineState const& pipelineState) {
+     FVK_SYSTRACE_CONTEXT();
+     FVK_SYSTRACE_START("draw");
+ 
++    if (skipDueToEmptyRenderPass()) {
++        FVK_SYSTRACE_END();
++        return;
++    }
++
+     VulkanCommandBuffer* commands = &mCommands.get();
+     const VulkanVertexBufferInfo& vbi =
+             *mResourceAllocator.handle_cast<VulkanVertexBufferInfo*>(pipelineState.vertexBufferInfo);
+@@ -1916,6 +1952,11 @@ void VulkanDriver::bindRenderPrimitive(Handle<HwRenderPrimitive> rph) {
+     FVK_SYSTRACE_CONTEXT();
+     FVK_SYSTRACE_START("bindRenderPrimitive");
+ 
++    if (skipDueToEmptyRenderPass()) {
++        FVK_SYSTRACE_END();
++        return;
++    }
++
+     VulkanCommandBuffer* commands = &mCommands.get();
+     VkCommandBuffer cmdbuffer = commands->buffer();
+     const VulkanRenderPrimitive& prim = *mResourceAllocator.handle_cast<VulkanRenderPrimitive*>(rph);
+@@ -1945,6 +1986,11 @@ void VulkanDriver::draw2(uint32_t indexOffset, uint32_t indexCount, uint32_t ins
+     FVK_SYSTRACE_CONTEXT();
+     FVK_SYSTRACE_START("draw2");
+ 
++    if (skipDueToEmptyRenderPass()) {
++        FVK_SYSTRACE_END();
++        return;
++    }
++
+     VulkanCommandBuffer& commands = mCommands.get();
+     VkCommandBuffer cmdbuffer = commands.buffer();
+ 
+@@ -1976,6 +2022,10 @@ void VulkanDriver::dispatchCompute(Handle<HwProgram> program, math::uint3 workGr
+ }
+ 
+ void VulkanDriver::scissor(Viewport scissorBox) {
++    if (skipDueToEmptyRenderPass()) {
++        return;
++    }
++
+     VulkanCommandBuffer& commands = mCommands.get();
+     VkCommandBuffer cmdbuffer = commands.buffer();
+ 
+diff --git a/filament/backend/src/vulkan/VulkanDriver.h b/filament/backend/src/vulkan/VulkanDriver.h
+index abdbc63..6888658 100644
+--- a/filament/backend/src/vulkan/VulkanDriver.h
++++ b/filament/backend/src/vulkan/VulkanDriver.h
+@@ -127,6 +127,12 @@ private:
+ private:
+     void collectGarbage();
+ 
++    bool skipDueToEmptyRenderPass() const {
++        return mCurrentRenderPass.renderTarget == nullptr;
++    }
++
++    bool acquireNextSwapchainImage();
++
+     VulkanPlatform* mPlatform = nullptr;
+     std::unique_ptr<VulkanTimestamps> mTimestamps;
+ 
+diff --git a/filament/backend/src/vulkan/VulkanSwapChain.cpp b/filament/backend/src/vulkan/VulkanSwapChain.cpp
+index 8c4a345..4f54463 100644
+--- a/filament/backend/src/vulkan/VulkanSwapChain.cpp
++++ b/filament/backend/src/vulkan/VulkanSwapChain.cpp
+@@ -16,6 +16,7 @@
+ 
+ #include "VulkanSwapChain.h"
+ #include "VulkanTexture.h"
++#include "VulkanConstants.h"
+ 
+ #include <utils/FixedCapacityVector.h>
+ #include <utils/Panic.h>
+@@ -74,6 +75,12 @@ void VulkanSwapChain::update() {
+ }
+ 
+ void VulkanSwapChain::present() {
++    // The last acquire failed, so just skip presenting.
++    if (!mAcquired) {
++        mIsFirstRenderPass = true;
++        return;
++    }
++
+     if (!mHeadless && mTransitionSwapChainImageLayoutForPresent) {
+         VkCommandBuffer const cmdbuf = mCommands->get().buffer();
+         VkImageSubresourceRange const subresources{
+@@ -107,32 +114,57 @@ void VulkanSwapChain::present() {
+     mIsFirstRenderPass = true;
+ }
+ 
+-void VulkanSwapChain::acquire(bool& resized) {
+-    // It's ok to call acquire multiple times due to it being linked to Driver::makeCurrent().
++std::pair<bool, bool> VulkanSwapChain::acquire() {
++    // Indicates whether the backing swapchain has changed (and might invalidate the associated
++    // images that are tracked in the FBO cache).
++    bool swapchainRecreated = false;
++
++    // Final result of the call to acquire a swapchain image.
++    VkResult result = VK_NOT_READY;
++
++    // It's ok to call acquire multiple times due to it being linked to Driver::makeCurrent(). If a
++    // valid swapchain has already been acquired, then this method is no-op.
+     if (mAcquired) {
+-        return;
++        return { mAcquired, swapchainRecreated };
+     }
+ 
+     // Check if the swapchain should be resized.
+-    if ((resized = mPlatform->hasResized(swapChain))) {
+-        if (mFlushAndWaitOnResize) {
+-            mCommands->flush();
+-            mCommands->wait();
+-        }
+-        mPlatform->recreate(swapChain);
+-        update();
++    if (mPlatform->hasResized(swapChain)) {
++        result = VK_ERROR_OUT_OF_DATE_KHR;
+     }
+ 
+     VulkanPlatform::ImageSyncData imageSyncData;
+-    VkResult const result = mPlatform->acquire(swapChain, &imageSyncData);
++
++    for (uint8_t tryCount = 0; result != VK_SUCCESS && tryCount < 2; tryCount++) {
++        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
++            // Following recreates the swapchain
++
++            // Calling flush multiple times is ok, since it's no-op if not recording.
++            if (mFlushAndWaitOnResize) {
++                mCommands->flush();
++                mCommands->wait();
++            }
++            mPlatform->recreate(swapChain);
++            update();
++            swapchainRecreated = true;
++        }
++        result = mPlatform->acquire(swapChain, &imageSyncData);
++    }
++
++    if (result != VK_SUCCESS) {
++        // We just don't set mAcquired here so the next present will just skip.
++        FVK_LOGD << "Failed to acquire next image in the swapchain result=" << (int) result << utils::io::endl;
++        return { false, swapchainRecreated };
++    }
++
+     mCurrentSwapIndex = imageSyncData.imageIndex;
+     mExplicitImageReadyWait = imageSyncData.explicitImageReadyWait;
+-    FILAMENT_CHECK_POSTCONDITION(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) 
+-        << "Cannot acquire in swapchain.";
+     if (imageSyncData.imageReadySemaphore != VK_NULL_HANDLE) {
+         mCommands->injectDependency(imageSyncData.imageReadySemaphore);
+     }
+     mAcquired = true;
++
++    return { true, swapchainRecreated };
+ }
+ 
+ }// namespace filament::backend
+diff --git a/filament/backend/src/vulkan/VulkanSwapChain.h b/filament/backend/src/vulkan/VulkanSwapChain.h
+index 80886f8..fa4bcde 100644
+--- a/filament/backend/src/vulkan/VulkanSwapChain.h
++++ b/filament/backend/src/vulkan/VulkanSwapChain.h
+@@ -47,7 +47,11 @@ struct VulkanSwapChain : public HwSwapChain, VulkanResource {
+ 
+     void present();
+ 
+-    void acquire(bool& reized);
++    std::pair<bool, bool> acquire();
++
++    inline bool isAcquired() const noexcept {
++        return mAcquired;
++    }
+ 
+     inline VulkanTexture* getCurrentColor() const noexcept {
+         uint32_t const imageIndex = mCurrentSwapIndex;
+diff --git a/filament/backend/src/vulkan/platform/VulkanPlatformSwapChainImpl.cpp b/filament/backend/src/vulkan/platform/VulkanPlatformSwapChainImpl.cpp
+index 6c643f7..a7a808c 100644
+--- a/filament/backend/src/vulkan/platform/VulkanPlatformSwapChainImpl.cpp
++++ b/filament/backend/src/vulkan/platform/VulkanPlatformSwapChainImpl.cpp
+@@ -131,9 +131,8 @@ VulkanPlatformSurfaceSwapChain::VulkanPlatformSurfaceSwapChain(VulkanContext con
+ }
+ 
+ VulkanPlatformSurfaceSwapChain::~VulkanPlatformSurfaceSwapChain() {
+-    vkDestroySwapchainKHR(mDevice, mSwapchain, VKALLOC);
+-    vkDestroySurfaceKHR(mInstance, mSurface, VKALLOC);
+     destroy();
++    vkDestroySurfaceKHR(mInstance, mSurface, VKALLOC);
+ }
+ 
+ VkResult VulkanPlatformSurfaceSwapChain::create() {
+@@ -258,7 +257,6 @@ VkResult VulkanPlatformSurfaceSwapChain::create() {
+     VkSemaphoreCreateInfo const semaphoreCreateInfo = {
+             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+     };
+-
+     for (uint32_t i = 0; i < IMAGE_READY_SEMAPHORE_COUNT; ++i) {
+         VkResult result = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr,
+                 mImageReady + i);
+@@ -324,6 +322,8 @@ VkResult VulkanPlatformSurfaceSwapChain::recreate() {
+ }
+ 
+ void VulkanPlatformSurfaceSwapChain::destroy() {
++    vkQueueWaitIdle(mQueue);
++
+     VulkanPlatformSwapChainImpl::destroy();
+ 
+     for (uint32_t i = 0; i < IMAGE_READY_SEMAPHORE_COUNT; ++i) {
+@@ -332,6 +332,10 @@ void VulkanPlatformSurfaceSwapChain::destroy() {
+             mImageReady[i] = VK_NULL_HANDLE;
+         }
+     }
++    if (mSwapchain) {
++        vkDestroySwapchainKHR(mDevice, mSwapchain, VKALLOC);
++        mSwapchain = VK_NULL_HANDLE;
++    }
+ }
+ 
+ VulkanPlatformHeadlessSwapChain::VulkanPlatformHeadlessSwapChain(VulkanContext const& context,
