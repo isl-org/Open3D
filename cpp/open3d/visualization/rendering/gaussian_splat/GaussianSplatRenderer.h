@@ -116,7 +116,8 @@ public:
         RenderTargetHandle gs_readback_rt;
         bool has_render_data = false;
         bool has_valid_output = false;
-        bool needs_render = true;
+        bool needs_geometry_render = true;
+        bool needs_composite_render = true;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
         /// texture; cleared after each frame.
@@ -227,6 +228,10 @@ public:
     /// would skip the GS pipeline and read only the Filament swapchain (no
     /// splats).
     void RequestRedrawForView(const FilamentView& view);
+
+    /// Marks the final composite pass dirty after Filament redraws its shared
+    /// color target while the geometry pass inputs remain unchanged.
+    void RequestCompositeForView(const FilamentView& view);
 
     bool IsEnabled() const;
     void SetEnabled(bool enabled);

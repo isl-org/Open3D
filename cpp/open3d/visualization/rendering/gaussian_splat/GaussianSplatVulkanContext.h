@@ -92,9 +92,10 @@ class GaussianSplatVulkanContext {
 public:
     static GaussianSplatVulkanContext& GetInstance();
 
-    /// Load Vulkan via BlueVK, select the first suitable hardware device in
-    /// loader enumeration order (with a software fallback), and create a
-    /// logical device with compute capabilities. Two queue indices are
+    /// Load Vulkan via BlueVK, score suitable devices by type, and select the
+    /// first device with the highest score: discrete GPU (200), integrated
+    /// GPU (100), or CPU/software renderer (0). Create a logical device with
+    /// compute capabilities. Two queue indices are
     /// requested from the graphics queue family: index 0 for GS compute,
     /// index 1 for Filament. On single-queue GPUs both indices are 0 and
     /// flushAndWait bracketing provides mutual exclusion (see plan Q2).
@@ -108,6 +109,9 @@ public:
     void Shutdown();
 
     bool IsValid() const { return initialized_; }
+
+    /// True when the selected device is a CPU/software Vulkan implementation.
+    bool IsSoftwareDevice() const;
 
     /// Human-readable description of the last failure.
     const std::string& GetLastError() const { return last_error_; }

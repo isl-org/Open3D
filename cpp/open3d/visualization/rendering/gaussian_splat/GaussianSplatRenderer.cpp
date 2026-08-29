@@ -256,10 +256,11 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
     const bool scene_changed = targets.last_scene_change_id != scene_change_id;
 
     if (view_changed || scene_changed) {
-        targets.needs_render = true;
+        targets.needs_geometry_render = true;
+        targets.needs_composite_render = true;
     }
 
-    if (!targets.needs_render) {
+    if (!targets.needs_geometry_render) {
         return;
     }
 
@@ -270,11 +271,14 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
     }
     if (rendered) {
         targets.last_scene_change_id = scene_change_id;
+        targets.needs_geometry_render = false;
+        targets.needs_composite_render = true;
     } else {
         // Geometry stage failed: prevent composite from consuming stale
         // intermediate buffers from the prior frame.
         targets.has_valid_output = false;
-        targets.needs_render = false;
+        targets.needs_geometry_render = false;
+        targets.needs_composite_render = false;
     }
 }
 
@@ -282,7 +286,7 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     // Run the composite compute pass for a single view; returns true on
     // success.
     auto it = outputs_.find(&view);
-    if (it == outputs_.end() || !it->second.needs_render) {
+    if (it == outputs_.end() || !it->second.needs_composite_render) {
         return false;
     }
 
@@ -299,7 +303,7 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     }
 
     targets.has_valid_output = rendered;
-    targets.needs_render = false;
+    targets.needs_composite_render = false;
     targets.last_updated_frame = frame_index_;
     return rendered;
 }
@@ -308,7 +312,15 @@ void GaussianSplatRenderer::RequestRedrawForView(const FilamentView& view) {
     // Force the next frame to run both GS stages even if nothing has changed.
     auto it = outputs_.find(&view);
     if (it != outputs_.end()) {
-        it->second.needs_render = true;
+        it->second.needs_geometry_render = true;
+        it->second.needs_composite_render = true;
+    }
+}
+
+void GaussianSplatRenderer::RequestCompositeForView(const FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it != outputs_.end()) {
+        it->second.needs_composite_render = true;
     }
 }
 
@@ -386,7 +398,8 @@ void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
     render_config_ = config;
     for (auto& pair : outputs_) {
         pair.second.has_valid_output = false;
-        pair.second.needs_render = true;
+        pair.second.needs_geometry_render = true;
+        pair.second.needs_composite_render = true;
     }
 }
 
@@ -503,7 +516,8 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     targets.width = width;
     targets.height = height;
     targets.has_valid_output = false;
-    targets.needs_render = true;
+    targets.needs_geometry_render = true;
+    targets.needs_composite_render = true;
     return targets;
 }
 
@@ -542,7 +556,8 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.height = 0;
     targets.has_render_data = false;
     targets.has_valid_output = false;
-    targets.needs_render = true;
+    targets.needs_geometry_render = true;
+    targets.needs_composite_render = true;
     targets.wants_depth_readback = false;
     targets.last_scene_change_id = 0;
     targets.last_updated_frame = 0;
@@ -577,13 +592,14 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
 
 bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
                                                  const FilamentView& view) {
-    // Detect camera/viewport changes; set needs_render when anything changed.
+    // Detect camera/viewport changes; re-run both GS stages when needed.
     const ViewRenderData new_data = ExtractViewRenderData(view);
     if (!targets.has_render_data ||
         !ViewRenderDataEquals(targets.render_data, new_data)) {
         targets.render_data = new_data;
         targets.has_render_data = true;
-        targets.needs_render = true;
+        targets.needs_geometry_render = true;
+        targets.needs_composite_render = true;
         return true;
     }
 

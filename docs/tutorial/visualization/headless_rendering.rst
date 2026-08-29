@@ -1,6 +1,6 @@
 .. _headless_rendering:
 
-Headless rendering
+Headless rendering (Legacy OpenGL)
 ------------------
 
 This tutorial shows how to render and save images from a terminal with no

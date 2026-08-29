@@ -212,17 +212,6 @@ void FilamentRenderer::BeginFrame() {
     if (gaussian_splat_renderer_) {
         gaussian_splat_renderer_->BeginFrame();
         if (run_gs_pipeline) {
-#if !defined(__APPLE__)
-            // Drain any pending Filament (OpenGL) work before the geometry pass
-            // begins. Filament renders on its own driver thread with an OpenGL
-            // backend; flushAndWait() enqueues glFinish() there and blocks
-            // until it completes. This ensures the shared interop textures from
-            // the previous frame are no longer in use by the GL driver before
-            // Vulkan compute overwrites them. (Vulkan and Filament run
-            // independent queues; there is no shared queue between them.)
-            engine_.flushAndWait();
-#endif
-
             // Dispatch Gaussian splat geometry work before Filament's
             // beginFrame
             // so our queue submissions do not conflict with Filament's frame.
@@ -238,6 +227,9 @@ void FilamentRenderer::BeginFrame() {
                     live_views.insert(&view);
                 });
                 scene->ForEachActiveView([this, &scene](FilamentView& view) {
+                    // Filament clears the shared GS color target for every
+                    // active view render, so it must be recomposited each time.
+                    gaussian_splat_renderer_->RequestCompositeForView(view);
                     gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
                 });
             }
@@ -268,17 +260,10 @@ void FilamentRenderer::Draw() {
             // depth texture is fully written before the composite pass reads
             // it.
             engine_.flushAndWait();
-            bool any_composite = false;
             for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-                scene->ForEachActiveView([this,
-                                          &any_composite](FilamentView& view) {
-                    any_composite |=
-                            gaussian_splat_renderer_->RenderCompositeStage(
-                                    view);
+                scene->ForEachActiveView([this](FilamentView& view) {
+                    gaussian_splat_renderer_->RenderCompositeStage(view);
                 });
-            }
-            if (any_composite && on_gaussian_composite_complete_) {
-                on_gaussian_composite_complete_();
             }
         }
 #endif

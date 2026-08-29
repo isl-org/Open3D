@@ -189,9 +189,9 @@ Gaussian splatting is unavailable when Filament runs its OpenGL backend.
 1. `FilamentEngine.cpp` calls `GaussianSplatVulkanContext::GetInstance().Initialize()`
 2. The context creates a headless Vulkan instance with `VK_KHR_surface`,
    `VK_KHR_get_physical_device_properties2`, and platform surface extensions.
-3. The first suitable hardware physical device in Vulkan loader enumeration
-  order is selected, honoring loader policy such as `VK_LOADER_DEVICE_SELECT`.
-  A suitable software renderer is retained only as a fallback. Required:
+3. Suitable physical devices are scored by type: discrete GPU (200),
+  integrated GPU (100), and CPU/software renderer (0). The first device with
+  the highest score is selected. Required:
   Vulkan 1.3, a graphics+compute queue family, `VK_KHR_push_descriptor`, and
   `VK_KHR_swapchain`, plus optimal-tiled RGBA16F storage-image support.
 4. Two queues from the same family: index 0 for GS compute, index 1 for Filament.

@@ -12,9 +12,9 @@
 // VulkanPlatform::VulkanSharedContext (passed as Engine::create()'s
 // sharedContext argument), eliminating GL-Vulkan interop entirely.
 //
-// Adapter selection: the Vulkan loader picks the first suitable physical
-// device (the platform default).  Use VK_LOADER_DEVICE_SELECT /
-// VK_ICD_FILENAMES / VK_INSTANCE_LAYERS environment variables to override.
+// Adapter selection: score suitable devices by type: discrete GPU (200),
+// integrated GPU (100), and CPU/software renderer (0). The first device with
+// the highest score is selected.
 //
 // Sequence:
 //   1. Initialize()    → VkInstance, VkPhysicalDevice, VkDevice, 2 queues
@@ -180,11 +180,8 @@ bool GaussianSplatVulkanContext::Initialize() {
         return false;
     }
 
-    // Preserve Vulkan loader enumeration order so VK_LOADER_DEVICE_SELECT can
-    // choose between suitable hardware devices. Software renderers remain a
-    // fallback only when no suitable hardware device is available.
     std::size_t best = phys_devices.size();
-    std::size_t software_fallback = phys_devices.size();
+    int best_score = -1;
     for (std::size_t i = 0; i < phys_devices.size(); ++i) {
         const auto& pd = phys_devices[i];
         const auto props = pd.getProperties();
@@ -217,24 +214,19 @@ bool GaussianSplatVulkanContext::Initialize() {
             continue;
         }
 
-        // Keep the first suitable software renderer as a fallback, but do not
-        // let it displace a suitable hardware device later in the list.
         const std::string name(props.deviceName.data());
         const bool software = name.find("llvmpipe") != std::string::npos ||
                               name.find("SwiftShader") != std::string::npos ||
                               name.find("WARP") != std::string::npos;
-        if (software) {
-            if (software_fallback == phys_devices.size()) {
-                software_fallback = i;
-            }
-            continue;
+        const int device_score =
+                software ? 0
+                         : props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu
+                                   ? 200
+                                   : 100;
+        if (device_score > best_score) {
+            best = i;
+            best_score = device_score;
         }
-
-        best = i;
-        break;
-    }
-    if (best == phys_devices.size()) {
-        best = software_fallback;
     }
 
     if (best == phys_devices.size()) {
@@ -330,6 +322,12 @@ bool GaussianSplatVulkanContext::Initialize() {
             pd_props.deviceName.data(), graphics_queue_family_,
             filament_queue_index_);
     return true;
+}
+
+bool GaussianSplatVulkanContext::IsSoftwareDevice() const {
+    if (!initialized_) return false;
+    const auto properties = physical_device_.getProperties();
+    return properties.deviceType == vk::PhysicalDeviceType::eCpu;
 }
 
 void GaussianSplatVulkanContext::Shutdown() {

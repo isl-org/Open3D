@@ -40,11 +40,13 @@ set(filament_LIBRARIES
 )
 
 set(FILAMENT_VER "v1.54.0")
+set(FILAMENT_VER_HASH "f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a8389e8d")
 
 # Locate byproducts
 set(lib_dir lib)
 if(APPLE)
     set(FILAMENT_VER "v1.57.2")    # Metal shared texture support for 3DGS
+    set(FILAMENT_VER_HASH "")
     if(APPLE_AARCH64)
         set(lib_dir lib/arm64)
     else()
@@ -111,6 +113,7 @@ ExternalProject_Add(
     ext_filament
     PREFIX filament
     URL https://github.com/google/filament/archive/refs/tags/${FILAMENT_VER}.tar.gz
+    URL_HASH SHA256=${FILAMENT_VER_HASH}
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     # 0001: Implements VulkanDriver::importTextureR for zero-copy 3DGS texture sharing.
     PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
