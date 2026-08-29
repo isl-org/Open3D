@@ -75,6 +75,7 @@ OPTION:
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
+OPEN3D_GIT_HASH="${OPEN3D_GIT_HASH:-$(git -C "${HOST_OPEN3D_ROOT}" rev-parse --short=7 HEAD)}"
 
 # Shared variables
 AARCH="$(uname -m)"
@@ -170,6 +171,7 @@ openblas_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        --build-arg OPEN3D_GIT_HASH="${OPEN3D_GIT_HASH}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
         --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         -t "${DOCKER_TAG}" \
@@ -262,6 +264,7 @@ cuda_wheel_build() {
     docker build \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        --build-arg OPEN3D_GIT_HASH="${OPEN3D_GIT_HASH}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
