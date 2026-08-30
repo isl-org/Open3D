@@ -268,7 +268,8 @@ cuda_wheel_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
-        --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+                    --build-arg OPEN3D_BUILD_MODE="${OPEN3D_BUILD_MODE}" \
+                    --build-arg OPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         --build-arg OPEN3D_CPU_DEVEL_TAR="${OPEN3D_CPU_DEVEL_TAR}" \
         --build-arg OPEN3D_CUDA_DEVEL_TAR="${OPEN3D_CUDA_DEVEL_TAR}" \
         --build-arg CI="${CI:-}" \
@@ -279,14 +280,20 @@ cuda_wheel_build() {
     if [[ "${OPEN3D_BUILD_MODE}" = "lib" ]]; then
         docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
             bash -c "cp -a /open3d-artifacts/open3d-* /opt/mount/ \
-                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount/ \
+                && ccache -s \
+                && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                 && chown -R $(id -u):$(id -g) /opt/mount/open3d-* \
                 && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
     else
         python_package_dir=/root/Open3D/build/lib/python_package
         docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
             bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
-                && cp /${CCACHE_TAR_NAME}.tar.xz /opt/mount \
+                && ccache -s \
+                && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                 && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
                 && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.xz"
     fi
@@ -305,6 +312,7 @@ ci_build() {
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
     echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
+    echo "[ci_build()] OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -319,14 +327,20 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         --build-arg BUILD_SYCL_MODULE="${BUILD_SYCL_MODULE}" \
+        --build-arg OPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         --build-arg CI="${CI:-}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -cx "cp /open3d* /opt/mount \
-               && chown $(id -u):$(id -g) /opt/mount/open3d*"
+        bash -cx "find / -maxdepth 1 -name 'open3d*' -exec cp -t /opt/mount {} + \
+               && ccache -s \
+               && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
+               && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
+                   -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
+               && find /opt/mount -maxdepth 1 -name 'open3d*' \
+                    -exec chown $(id -u):$(id -g) {} +"
 }
 
 2-noble_export_env() {

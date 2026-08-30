@@ -1,12 +1,13 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 # Main library, including compiled binaries
 graft open3d
+recursive-include open3d/resources *
 graft js
 prune **/node_modules
 graft test

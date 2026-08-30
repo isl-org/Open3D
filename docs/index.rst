@@ -19,6 +19,7 @@ Open3D: A Modern Library for 3D Data Processing
 
     introduction
     getting_started
+    dev_wheels
     compilation
     cpp_project
     builddocs

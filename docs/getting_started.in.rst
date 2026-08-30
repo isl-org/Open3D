@@ -14,7 +14,7 @@ releases <https://github.com/isl-org/Open3D/releases>`__. The latest development
 version (``HEAD`` of ``main`` branch) viewer app is provided here [#]_:
 
 * `Linux (Ubuntu 22.04+ or glibc 2.35+) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-viewer-@OPEN3D_VERSION_FULL@-Linux.deb>`__ [#]_
-* `MacOSX v10.15+ (Intel or Apple Silicon) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-app-macosx-10_15-universal2.zip>`__
+* `MacOSX arm64 v11.0+ <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-app-macosx-10_15-ARM64.zip>`__
 * `Windows 10+ (64-bit) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-app-windows-amd64.zip>`__
 
 .. [#] Please use these links from the `latest version of this page <https://www.open3d.org/docs/latest/getting_started.html>`__ only.
@@ -71,8 +71,19 @@ Pip (PyPI)
 
 .. code-block:: bash
 
-    pip install open3d        # or
+    pip install open3d        # Standard wheel with CUDA support on x86_64 Linux
     pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
+    pip install open3d-xpu    # Intel GPU wheel on x86_64 Windows and Linux (since v0.20+)
+
+.. note::
+
+   The Open3D-ML models and pipelines (``open3d.ml.torch``, ``open3d.ml.tf``)
+   need additional Python packages, which are not installed by default. Install
+   them with the ``ml`` extra:
+
+   .. code-block:: bash
+
+        pip install open3d[ml]        # or open3d-cpu[ml] / open3d-xpu[ml]
 
 .. note::
 
@@ -117,48 +128,15 @@ Pip (PyPI)
 Development version (pip)
 -------------------------
 
-To test the latest features in Open3D, download and install the development
-version (``HEAD`` of ``main`` branch):
-
-.. list-table::
-    :stub-columns: 1
-    :widths: auto
-
-    * - Linux
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-manylinux_2_35_x86_64.whl>`__
-
-    * - Linux (CPU)
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp312-cp312-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp313-cp313-manylinux_2_35_x86_64.whl>`__
-      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_cpu-@OPEN3D_VERSION_FULL@-cp314-cp314-manylinux_2_35_x86_64.whl>`__
-
-    * - MacOS
-      - `Python 3.10 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_11_0_universal2.whl>`__
-      - `Python 3.11 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-macosx_10_15_universal2.whl>`__
-      - `Python 3.12 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-macosx_10_15_universal2.whl>`__
-      - `Python 3.13 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-macosx_10_15_universal2.whl>`__
-      - `Python 3.14 (x86_64+arm64) <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-macosx_10_15_universal2.whl>`__
-
-    * - Windows
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
-      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp312-cp312-win_amd64.whl>`__
-      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp313-cp313-win_amd64.whl>`__
-      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-@OPEN3D_VERSION_FULL@-cp314-cp314-win_amd64.whl>`__
-
-Please use these links from the `latest version of this page
-<https://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
-install the latest development version directly with pip:
+To test the latest features in Open3D, install the development version
+(``HEAD`` of ``main`` branch) with:
 
 .. code-block:: bash
 
-    pip install -U -f https://www.open3d.org/docs/latest/getting_started.html --only-binary open3d open3d
+    pip install -U -f https://www.open3d.org/docs/latest/dev_wheels.html open3d
+
+See the :ref:`dev_wheels` page for a full list of available platform and
+Python version wheels.
 
 .. warning::
    The development wheels for Linux are named according to PEP600. Please
@@ -228,7 +206,6 @@ available for the main supported platforms. Also, the latest development version
     .. hlist::
         :columns: 2
 
-        * `x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `arm64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-darwin-arm64-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :Windows 10+:

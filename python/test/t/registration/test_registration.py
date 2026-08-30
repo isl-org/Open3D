@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -162,6 +162,31 @@ def test_icp_point_to_point(device):
                                    reg_p2p_legacy.inlier_rmse, 0.001)
         np.testing.assert_allclose(reg_p2p_t.fitness, reg_p2p_legacy.fitness,
                                    0.001)
+
+
+@pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))
+def test_icp_stops_when_converged(device):
+    source_t, target_t = get_pcds(o3c.float64, device)
+    iterations = []
+    metrics = []
+
+    registration_result = o3d.t.pipelines.registration.icp(
+        source_t,
+        target_t,
+        3.0,
+        o3c.Tensor.eye(4, o3c.float64, device),
+        o3d.t.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.t.pipelines.registration.ICPConvergenceCriteria(
+            relative_fitness=1e-5, relative_rmse=1e-5, max_iteration=30),
+        callback_after_iteration=lambda info:
+        (iterations.append(info["iteration_index"].item()),
+         metrics.append((info["fitness"].item(), info["inlier_rmse"].item()))))
+
+    assert registration_result.converged
+    assert len(iterations) < 30
+    assert registration_result.num_iterations == len(iterations)
+    assert metrics[-1][0] == pytest.approx(registration_result.fitness)
+    assert metrics[-1][1] == pytest.approx(registration_result.inlier_rmse)
 
 
 @pytest.mark.parametrize("device", list_devices(also_sycl_cpu=False))

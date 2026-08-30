@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -398,7 +398,8 @@ private:
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_index_ - start_index_ > 500 && device_.IsCUDA()) {
+        if (end_index_ - start_index_ > 500 &&
+            (device_.IsCUDA() || device_.IsSYCL())) {
             utility::LogWarning(
                     "The range of data might exceed memory. "
                     "You might want to avoid pre-fetching the data to your "
@@ -685,7 +686,7 @@ void PrintHelp() {
 
     PrintOpen3DVersion();
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > TICPSequential [device]");
+    utility::LogInfo("    > TICPSequential [device] [config_path]");
     utility::LogInfo("");
 }
 

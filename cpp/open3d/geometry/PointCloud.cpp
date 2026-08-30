@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <deque>
 #include <numeric>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -588,7 +589,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-    std::vector<bool> mask = std::vector<bool>(points_.size());
+    // avoid vector<bool> -> causes data race in the concurrent write below
+    std::deque<bool> mask(points_.size());
     utility::ProgressBar progress_bar(
             points_.size(), "Remove radius outliers: ", print_progress);
 

@@ -174,7 +174,7 @@ Compiling Open3D on ARM64 macOS
 
     # Configure and choose build options
     cd Open3D && mkdir build && cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TENSORFLOW_OPS=ON -DBUILD_PYTORCH_OPS=ON -DBUNDLE_OPEN3D_ML=ON ..
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TENSORFLOW_OPS=ON -DBUILD_PYTORCH_OPS=ON ..
 
     # Build
     make pip-package -j8    # Build Python wheel

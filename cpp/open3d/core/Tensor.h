@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -1085,16 +1085,18 @@ public:
         return values;
     }
 
-    /// Returns True if the underlying memory buffer is contiguous. A
-    /// contiguous Tensor's data_ptr_ does not need to point to the
-    /// beginning of blob_.
+    /// Returns True if the underlying memory buffer is C-contiguous
+    /// (row-major order, consistent with PyTorch and NumPy conventions).
+    /// A C-contiguous Tensor's elements are laid out in memory with the
+    /// last dimension varying fastest. data_ptr_ does not need to point
+    /// to the beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
     }
 
-    /// Returns a contiguous Tensor containing the same data in the same
-    /// device. If self tensor is already contiguous, the same underlying
-    /// memory will be used.
+    /// Returns a C-contiguous Tensor containing the same data in the same
+    /// device and row-major order. If self tensor is already
+    /// C-contiguous, the same underlying memory will be used.
     Tensor Contiguous() const;
 
     /// Computes matrix multiplication with *this and rhs and returns the

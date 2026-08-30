@@ -23,8 +23,8 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
          DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
          FOLLOW_SYMLINK_CHAIN)
 endforeach()
-# Include additional libraries that may be absent from the user system
-# eg: libc++.so and libc++abi.so (needed by filament)
+# Include additional libraries that may be absent from the user system (e.g. TBB).
+# Linux LLVM libc++ for Filament is bundled separately via ldd; see below.
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
@@ -37,7 +37,33 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
+# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd.
+# Shared builds ship libOpen3D; static builds link Filament into the pybind
+# extension instead, so fall back to that as the ELF to probe.
+if(BUILD_GUI AND UNIX AND NOT APPLE)
+    file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+        "${PYTHON_PACKAGE_DST_DIR}/open3d/libOpen3D.so.*")
+    if(NOT _libopen3d_probe)
+        file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+            "${PYTHON_PACKAGE_DST_DIR}/open3d/pybind*.so")
+    endif()
+    if(_libopen3d_probe)
+        list(GET _libopen3d_probe 0 _libopen3d_probe)
+        execute_process(
+            COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/package_linux_wheel_runtime.sh"
+                "${PYTHON_PACKAGE_DST_DIR}/open3d" "${_libopen3d_probe}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    else()
+        message(WARNING "No ELF found in the Python package to probe for libc++")
+    endif()
+endif()
+
 # 3) Configured files and supporting files
+if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+    configure_file("${OPEN3D_ML_ROOT}/requirements.txt"
+                   "${PYTHON_PACKAGE_DST_DIR}/requirements_ml.txt" COPYONLY)
+endif()
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
@@ -148,39 +174,8 @@ if(WITH_STUBGEN)
     if(NOT IGNORE_STUBGEN_ERRORS)
         set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
     endif()
-    # stubgen imports open3d, which loads Open3D.dll on Windows. CUDA/SYCL wheels
-    # need the same pip runtimes as end users (see open3d/__init__.py) before import.
-    # Reuse the current build environment's Python (${Python3_EXECUTABLE}) rather
-    # than a `pybind11-stubgen` console script that may resolve to a different
-    # interpreter.
-    if(WIN32 AND BUILD_CUDA_MODULE)
-        message(STATUS "Installing Windows CUDA pip runtimes for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
-    if(BUILD_SYCL_MODULE)
-        message(STATUS "Installing SYCL pip runtimes for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
-    if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND
-       EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
-        message(STATUS "Installing Open3D-ML pip requirements for stubgen...")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -m pip install -q -r
-                    "${OPEN3D_ML_ROOT}/requirements.txt"
-            COMMAND_ECHO STDOUT
-            ${PYBIND11_STUBGEN_FATAL_FLAGS}
-        )
-    endif()
+    # The caller must install the package runtime requirements before building.
+    # stubgen imports open3d from PYTHON_PACKAGE_DST_DIR using that environment.
     message(STATUS "Generating typing stubs...")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E env
