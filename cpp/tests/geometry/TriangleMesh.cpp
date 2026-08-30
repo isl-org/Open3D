@@ -1504,6 +1504,16 @@ TEST(TriangleMesh, IsSelfIntersecting) {
                        {0.1, 0.1, 0}, {0.1, 1.1, 0}, {1.1, 0.1, 0}};
     mesh1.triangles_ = {{0, 1, 2}, {3, 4, 5}};
     EXPECT_TRUE(mesh1.IsSelfIntersecting());
+
+    // Regression for #5117: the AABBs touch at x = 1, but the triangles do
+    // not. The narrow phase must reject this pair.
+    geometry::TriangleMesh mesh2;
+    mesh2.vertices_ = {{0.0, 0.13918686, 1.0}, {0.0, 0.0, 1.1270161},
+                       {1.0, 0.0, 1.0284119},  {1.0, 1.1269569, 0.0},
+                       {1.0, 0.03113556, 1.0}, {2.0, 1.0189056, 0.0}};
+    mesh2.triangles_ = {{0, 1, 2}, {3, 4, 5}};
+    EXPECT_FALSE(mesh2.IsSelfIntersecting());
+    EXPECT_TRUE(mesh2.GetSelfIntersectingTriangles().empty());
 }
 
 TEST(TriangleMesh, GetVolume) {
