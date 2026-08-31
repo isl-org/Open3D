@@ -359,9 +359,17 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     const std::uint32_t morton_range = morton_side * morton_side;
     const std::uint32_t steal_wg_count = std::max(1u, (morton_range + 3u) / 4u);
 
-    // Always upload depth flag when scene depth is present (which is always
-    // for interactive GS views). The shader will use this to test occlusion
-    // against mesh geometry.
+    // The Vulkan target contains the Filament mesh color, whereas Metal
+    // retains a separate transparent splat overlay for presentation.
+        const float composite_over_base = targets.uses_vulkan_interop ? 1.0f : 0.0f;
+    static constexpr std::size_t kCompositeOverBaseFlagOffset =
+            offsetof(GaussianViewParams, depth_range_and_flags) +
+            2 * sizeof(float);
+    ctx.UploadBuffer(vs.view_params_buf, &composite_over_base,
+                     sizeof(composite_over_base), kCompositeOverBaseFlagOffset);
+
+    // Upload the depth flag when scene depth is present so the shader can
+    // reject splats occluded by mesh geometry.
     const std::uintptr_t scene_depth_tex = SharedSceneDepthTexture(targets);
     const bool has_scene_depth = (scene_depth_tex != 0);
     if (has_scene_depth) {

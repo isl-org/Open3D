@@ -67,6 +67,10 @@ private:
     std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
+#if defined(__APPLE__)
+    std::uint8_t* rgba_readback_buffer_ = nullptr;
+    std::size_t rgba_readback_buffer_size_ = 0;
+#endif
     bool depth_image_ = false;
 
     BufferReadyCallback callback_;

@@ -133,22 +133,22 @@ bool PrepareAppleOutputTextures(FilamentView& view,
                              Tex::Usage::COLOR_ATTACHMENT |
                              Tex::Usage::BLIT_SRC));
 
-    if (!targets.color) {
-        ReleaseAppleOutputTextures(targets);
-        return false;
-    }
-
     auto view_color = view.GetColorBuffer();
     if (!view_color) {
         ReleaseAppleOutputTextures(targets);
         return false;
     }
 
+    if (!targets.color) {
+        ReleaseAppleOutputTextures(targets);
+        return false;
+    }
+
     if (targets.depth) {
-        // Use shared depth: Filament writes into the depth texture that
-        // the GS composite shader will later sample.
+        // Filament renders the mesh into its own color buffer while the GS
+        // composite writes a separate transparent overlay.
         targets.render_target =
-                resource_mgr.CreateRenderTarget(view_color, targets.depth);
+            resource_mgr.CreateRenderTarget(view_color, targets.depth);
     } else {
         // No shared depth: create a Filament-owned depth attachment so
         // Filament renders normally (depth stays private to Filament).

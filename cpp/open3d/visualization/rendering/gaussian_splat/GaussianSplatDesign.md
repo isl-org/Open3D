@@ -19,6 +19,10 @@ Filament Vulkan backend share one `VkDevice`), Metal on macOS. The former
 GL-Vulkan interop path (`GL_EXT_memory_object` export/import) has been replaced
 with direct Vulkan image sharing through Filament's `importTextureR()` API.
 
+**Image coordinates**: Metal and Vulkan output textures use a top-left origin,
+matching Filament's displayed image coordinates. OpenGL uses a bottom-left
+origin; `screen_y_down` communicates this distinction to the 3DGS projection.
+
 ---
 
 ## Algorithm: 3D Gaussian Splatting
@@ -131,6 +135,42 @@ SAMPLEABLE` and installed as the view depth attachment. Filament writes reversed
 depth; the composite shader samples it at binding 14 to reject splats behind mesh
 geometry.
 
+#### Depth conventions
+
+Filament's `getProjectionMatrix()` uses an infinite far plane for the actual render
+projection, even when the camera has a finite culling far plane. Its reversed-Z depth
+therefore stores:
+
+$$
+z_{\mathrm{Filament}} = \frac{n}{d}
+$$
+
+where $n$ is the near plane and $d$ is positive view-space distance. The finite far
+plane is used for culling and for the GS normalized depth range, but it must not be
+used as the projection equation for decoding the sampled mesh depth.
+
+The composite shader converts the sampled depth into the GS convention with:
+
+$$
+L_{\mathrm{mesh}} = \operatorname{clamp}\left(
+\frac{n(1-z_{\mathrm{Filament}})}
+  {z_{\mathrm{Filament}}(f-n)}, 0, 1\right),
+\qquad
+L_{\mathrm{GS}} = \frac{d_{\mathrm{GS}}-n}{f-n}
+$$
+
+The inverse conversion used for GS depth output is:
+
+$$
+z_{\mathrm{GS}} = \frac{n}{n + L_{\mathrm{GS}}(f-n)}
+$$
+
+This mapping is implemented by `InverseToLinear01()` and `Linear01ToInverse()` in
+`gaussian_composite.comp`. A pixel with no GS hit writes `0.0`, the far/inactive
+sentinel, rather than encoding normalized depth `1.0` as a finite surface. The same
+infinite-far convention is required by `gaussian_depth_merge.comp`, which compares
+GS and Filament depth values directly in reversed-Z space.
+
 **Shared colour image**: an RGBA16F image is imported as `SAMPLEABLE |
 COLOR_ATTACHMENT | BLIT_SRC` and installed as the view colour attachment. The
 composite shader loads the mesh colour, applies premultiplied source-over
@@ -171,8 +211,9 @@ render-target re-setup is needed when mesh visibility toggles.
   no Filament `readPixels` or CPU blend is used.
 - **Depth readback**: `gaussian_depth_merge.comp` merges GS + Filament depth into a
   normalised R16UI texture. The focused test validates the resulting linear
-  view-space depth grid. When manually written as PNG, float depth is converted
-  to a finite-depth `uint8` preview first.
+  view-space depth grid. Both inputs use Filament's infinite-far reversed-Z
+  convention before the merge. When manually written as PNG, float depth is
+  converted to a finite-depth `uint8` preview first.
 - **Metal constraint**: Metal keeps the separate overlay and CPU blend path. Its `readPixels`
   always uses RGBA+UBYTE (Metal has no native RGB format); alpha is stripped when
   `n_channels_ == 3`.
@@ -486,6 +527,14 @@ consistency even though the shader does not evaluate them.
 3. **Metal parity.** Retain and test Metal's separate-overlay/CPU-blend path;
   do not port Vulkan's imported writable colour attachment without dedicated
   Metal coverage.
+  An experiment on Apple M3 Max attached the imported `RGBA16F` Metal color
+  texture as Filament's view color target and used the in-place composite path.
+  Although the generated Metal shader and command submission succeeded, the
+  shared texture read back as uniform `(1, 1, 1, 1)` and the focused splat
+  render output became all white, with or without `imageLoad`. The experiment
+  was reverted. We will not attempt to make the Metal and Vulkan paths common
+  through this approach; the separate Metal overlay path remains intentional
+  and avoids changes to the upstream Filament binary.
 4. **User shader callbacks.** Add user-provided shader callbacks to mimic Spark's
    programmable rendering and shader-graph functionality, allowing user code to
    modify splats or shading on the GPU.

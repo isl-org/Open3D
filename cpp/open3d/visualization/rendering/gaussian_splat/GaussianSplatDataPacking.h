@@ -55,7 +55,8 @@ struct alignas(16) GaussianViewParams {
     // z=max_tile_entries_total, w=tile_key_bits T = ceil(log2(tile_count)),
     // clamped to [1,31]: T bits for tile index, (32-T) bits for depth)
     std::uint32_t limits[4];
-    // vec4 depth_range_and_flags (x=near, y=far, z=reserved, w=0)
+    // vec4 depth_range_and_flags (x=near, y=far, z=composite_over_base,
+    // w=scene_depth_present)
     float depth_range_and_flags[4];
 };
 static_assert(sizeof(GaussianViewParams) == 288,

@@ -54,34 +54,34 @@ namespace {
 
 #if defined(__APPLE__)
 void BlendPremultipliedSplatOverRgb8(uint8_t* base_rgb,
-                                     int n_channels,
-                                     const std::uint16_t* gs_rgba_bits,
-                                     int w,
-                                     int h) {
+                     int n_channels,
+                     const std::uint16_t* gs_rgba_bits,
+                     int w,
+                     int h) {
     const auto to_float = [](std::uint16_t bits) {
-        return static_cast<float>(filament::math::makeHalf(bits));
+    return static_cast<float>(filament::math::makeHalf(bits));
     };
     const int n = w * h;
     for (int i = 0; i < n; ++i) {
-        const float fr = to_float(gs_rgba_bits[i * 4 + 0]);
-        const float fg = to_float(gs_rgba_bits[i * 4 + 1]);
-        const float fb = to_float(gs_rgba_bits[i * 4 + 2]);
-        const float fa = to_float(gs_rgba_bits[i * 4 + 3]);
-        const float br =
-                static_cast<float>(base_rgb[i * n_channels + 0]) / 255.0f;
-        const float bg =
-                static_cast<float>(base_rgb[i * n_channels + 1]) / 255.0f;
-        const float bb =
-                static_cast<float>(base_rgb[i * n_channels + 2]) / 255.0f;
-        base_rgb[i * n_channels + 0] = static_cast<uint8_t>(
-                std::clamp(fr + br * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        base_rgb[i * n_channels + 1] = static_cast<uint8_t>(
-                std::clamp(fg + bg * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        base_rgb[i * n_channels + 2] = static_cast<uint8_t>(
-                std::clamp(fb + bb * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        if (n_channels == 4) {
-            base_rgb[i * n_channels + 3] = 255;
-        }
+    const float fr = to_float(gs_rgba_bits[i * 4 + 0]);
+    const float fg = to_float(gs_rgba_bits[i * 4 + 1]);
+    const float fb = to_float(gs_rgba_bits[i * 4 + 2]);
+    const float fa = to_float(gs_rgba_bits[i * 4 + 3]);
+    const float br =
+        static_cast<float>(base_rgb[i * n_channels + 0]) / 255.0f;
+    const float bg =
+        static_cast<float>(base_rgb[i * n_channels + 1]) / 255.0f;
+    const float bb =
+        static_cast<float>(base_rgb[i * n_channels + 2]) / 255.0f;
+    base_rgb[i * n_channels + 0] = static_cast<uint8_t>(
+        std::clamp(fr + br * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+    base_rgb[i * n_channels + 1] = static_cast<uint8_t>(
+        std::clamp(fg + bg * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+    base_rgb[i * n_channels + 2] = static_cast<uint8_t>(
+        std::clamp(fb + bb * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+    if (n_channels == 4) {
+        base_rgb[i * n_channels + 3] = 255;
+    }
     }
 }
 #endif
@@ -105,6 +105,13 @@ FilamentRenderToBuffer::~FilamentRenderToBuffer() {
 
         buffer_size_ = 0;
     }
+#if defined(__APPLE__)
+    if (rgba_readback_buffer_) {
+        free(rgba_readback_buffer_);
+        rgba_readback_buffer_ = nullptr;
+        rgba_readback_buffer_size_ = 0;
+    }
+#endif
 }
 
 void FilamentRenderToBuffer::Configure(const View* view,
@@ -205,17 +212,29 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
 
 View& FilamentRenderToBuffer::GetView() { return *view_; }
 
-using PBDParams = std::tuple<FilamentRenderToBuffer*,
-                             FilamentRenderToBuffer::BufferReadyCallback>;
+struct PBDParams {
+    FilamentRenderToBuffer* self;
+    FilamentRenderToBuffer::BufferReadyCallback callback;
+    bool strip_rgba = false;
+};
 
 void FilamentRenderToBuffer::ReadPixelsCallback(void*, size_t, void* user) {
     auto params = static_cast<PBDParams*>(user);
-    FilamentRenderToBuffer* self;
-    BufferReadyCallback callback;
-    std::tie(self, callback) = *params;
+    auto* self = params->self;
 
-    callback({self->width_, self->height_, self->n_channels_, self->buffer_,
-              self->buffer_size_});
+#if defined(__APPLE__)
+    if (params->strip_rgba) {
+        const std::size_t n_pixels = self->width_ * self->height_;
+        for (std::size_t i = 0; i < n_pixels; ++i) {
+            self->buffer_[i * 3 + 0] = self->rgba_readback_buffer_[i * 4 + 0];
+            self->buffer_[i * 3 + 1] = self->rgba_readback_buffer_[i * 4 + 1];
+            self->buffer_[i * 3 + 2] = self->rgba_readback_buffer_[i * 4 + 2];
+        }
+    }
+#endif
+
+    params->callback({self->width_, self->height_, self->n_channels_,
+                      self->buffer_, self->buffer_size_});
 
     // Unassign the callback, in case it captured ourself. Then we would never
     // get freed.
@@ -342,21 +361,8 @@ void FilamentRenderToBuffer::Render() {
         }
 
         if (!depth_image_ && run_gs_pipeline && native_view_rt) {
-            // Issue both readPixels (base + GS overlay) together, then do one
-            // more flushAndWait to collect both callbacks synchronously.
-            //
-            // Metal readPixels from a render target only supports RGBA+UBYTE,
-            // not RGB+UBYTE (Metal has no native RGB texture format).  Always
-            // read RGBA8 for the base and strip alpha when n_channels_==3.
-            // On GL, RGBA also works fine — use one path for both backends.
-
             const size_t n_pixels = static_cast<size_t>(width_) * height_;
             const size_t n_gs_elems = n_pixels * 4;
-
-            // Filament renders meshes into the view's own color buffer while
-            // the GS composite writes a separate RGBA16F overlay image. Read
-            // the base through Filament and the overlay either directly from
-            // the Vulkan image or, as a fallback, through readPixels.
             std::vector<uint8_t> base_rgba(n_pixels * 4, 0);
             PixelBufferDescriptor base_pd(
                     base_rgba.data(), base_rgba.size(), PixelDataFormat::RGBA,
@@ -382,10 +388,8 @@ void FilamentRenderToBuffer::Render() {
                 gs_rgba_bits.clear();
             }
 
-            // One more flush ensures all readPixels callbacks complete.
             engine_.flushAndWait();
 
-            // Unpack RGBA8 base → output buffer (strip alpha for RGB).
             const uint8_t* src = base_rgba.data();
             uint8_t* dst = buffer_;
             const int nc = static_cast<int>(n_channels_);
@@ -401,9 +405,6 @@ void FilamentRenderToBuffer::Render() {
                                                 gs_rgba_bits.data(),
                                                 int(width_), int(height_));
             }
-
-            // Deliver result now; the BeginFrame flushAndWait is a no-op since
-            // all GPU work has already been collected above.
             if (callback_) {
                 callback_({static_cast<std::size_t>(width_),
                            static_cast<std::size_t>(height_),
@@ -465,7 +466,7 @@ void FilamentRenderToBuffer::Render() {
                 } else {
                     // Final fallback: Filament depth only via readPixels
                     // (backend unsupported or no GS depth available).
-                    auto* user_param = new PBDParams(this, callback_);
+                    auto* user_param = new PBDParams{this, callback_};
                     PixelBufferDescriptor pd(buffer_, buffer_size_,
                                              PixelDataFormat::DEPTH_COMPONENT,
                                              PixelDataType::FLOAT,
@@ -488,9 +489,24 @@ void FilamentRenderToBuffer::Render() {
                 format = PixelDataFormat::DEPTH_COMPONENT;
                 type = PixelDataType::FLOAT;
             }
-            auto* user_param = new PBDParams(this, callback_);
-            PixelBufferDescriptor pd(buffer_, buffer_size_, format, type,
-                                     ReadPixelsCallback, user_param);
+            auto* user_param = new PBDParams{this, callback_};
+            void* readback_buffer = buffer_;
+            size_t readback_size = buffer_size_;
+#if defined(__APPLE__)
+            if (!depth_image_ && n_channels_ == 3) {
+                format = PixelDataFormat::RGBA;
+                readback_size = width_ * height_ * 4;
+                if (rgba_readback_buffer_size_ != readback_size) {
+                    rgba_readback_buffer_ = static_cast<uint8_t*>(realloc(
+                            rgba_readback_buffer_, readback_size));
+                    rgba_readback_buffer_size_ = readback_size;
+                }
+                readback_buffer = rgba_readback_buffer_;
+                user_param->strip_rgba = true;
+            }
+#endif
+            PixelBufferDescriptor pd(readback_buffer, readback_size, format,
+                                     type, ReadPixelsCallback, user_param);
             renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
                                   std::move(pd));
         }

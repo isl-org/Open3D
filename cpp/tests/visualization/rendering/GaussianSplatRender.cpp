@@ -40,53 +40,48 @@ namespace {
 // ---------------------------------------------------------------------------
 
 const std::vector<uint8_t> kRefColorGray = {
-        166, 173, 200, 228, 245, 255, 255, 255,  //
-        106, 114, 158, 207, 237, 250, 255, 255,  //
-        81,  85,  135, 193, 232, 249, 255, 255,  //
-        114, 113, 152, 200, 234, 249, 255, 255,  //
-        175, 172, 193, 221, 242, 240, 222, 245,  //
-        223, 221, 229, 240, 249, 221, 150, 222,  //
-        247, 245, 247, 251, 255, 246, 223, 244,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
+    255, 255, 255, 255, 255, 255, 255, 255,  //
+    247, 245, 247, 251, 255, 246, 223, 245,  //
+    223, 221, 229, 241, 249, 222, 150, 222,  //
+    175, 172, 193, 221, 242, 241, 222, 245,  //
+    114, 113, 152, 200, 234, 249, 255, 255,  //
+    81,  85,  135, 193, 232, 249, 255, 255,  //
+    106, 114, 158, 207, 237, 250, 255, 255,  //
+    167, 173, 200, 228, 246, 255, 255, 255,  //
 };
 const std::vector<uint8_t> kRefDepthGray = {
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 133, 0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 128, 0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
 };
 
-// Mixed-geometry (splats + mesh) scene: an opaque blue cube sits at z=3.8,
-// between splat_0 (z=4.55, nearer the camera) and splat_1 (z=3.00, farther).
-// Centred at (-0.01, 0.16) -- between the splats' (x,y) -- with a 0.4
-// world-unit footprint, it partially overlaps both splats on screen: splat_0
-// partially occludes the cube (splat_0 is nearer the camera), and the cube
-// partially occludes splat_1 (the cube is nearer the camera than splat_1). This
-// exercises the composite shader's per-splat scene-depth occlusion test in both
-// directions, which the splat-only test above cannot reach.
+// Mixed-geometry (splats + mesh) scene: an opaque blue cube occludes the lower
+// green splat. The splat is at (0.72, 0.43, 3.0); the cube is at z=2.8 and its
+// XY coordinates scale by 2.8 / 3.0 to project to the same image position.
 const std::vector<uint8_t> kRefMixedColorGray = {
-        166, 173, 200, 228, 245, 255, 255, 255,  //
-        106, 114, 158, 207, 237, 250, 255, 255,  //
-        81,  85,  135, 193, 232, 249, 255, 255,  //
-        114, 113, 152, 200, 234, 249, 255, 255,  //
-        175, 172, 193, 26,  19,  240, 222, 245,  //
-        223, 221, 229, 19,  16,  221, 150, 222,  //
-        247, 245, 247, 251, 255, 246, 223, 244,  //
-        255, 255, 255, 255, 255, 255, 255, 255,  //
+    255, 255, 255, 255, 255, 255, 255, 255,  //
+    247, 245, 247, 251, 255, 246, 223, 245,  //
+    223, 221, 229, 241, 249, 57,  150, 222,  //
+    175, 172, 193, 221, 242, 241, 222, 245,  //
+    114, 113, 152, 200, 234, 249, 255, 255,  //
+    81,  85,  135, 193, 232, 249, 255, 255,  //
+    106, 114, 158, 207, 237, 250, 255, 255,  //
+    167, 173, 200, 228, 246, 255, 255, 255,  //
 };
 const std::vector<uint8_t> kRefMixedDepthGray = {
-        0,  0,  0,  0,  0,  0, 0,   0,  //
-        29, 29, 29, 0,  0,  0, 0,   0,  //
-        29, 29, 29, 0,  0,  0, 0,   0,  //
-        29, 29, 29, 0,  0,  0, 0,   0,  //
-        0,  0,  0,  64, 64, 0, 0,   0,  //
-        0,  0,  0,  64, 64, 0, 133, 0,  //
-        0,  0,  0,  0,  0,  0, 0,   0,  //
-        0,  0,  0,  0,  0,  0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    0, 0, 0, 0, 0, 0, 128, 0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    29, 29, 29, 0, 0, 0, 0, 0,  //
+    0, 0, 0, 0, 0, 0, 0,   0,  //
 };
 
 // ---------------------------------------------------------------------------
@@ -126,8 +121,8 @@ t::geometry::PointCloud MakeTwoTestSplats() {
 std::shared_ptr<geometry::TriangleMesh> MakeOcclusionTestCube() {
     constexpr double kSize = 0.4;
     auto cube = geometry::TriangleMesh::CreateBox(kSize, kSize, kSize);
-    cube->Translate(Eigen::Vector3d(-0.01, 0.16, 3.8) -
-                    Eigen::Vector3d(kSize / 2, kSize / 2, kSize / 2));
+        cube->Translate(Eigen::Vector3d(0.672, 0.4013333333, 2.8) -
+                Eigen::Vector3d(kSize / 2, kSize / 2, kSize / 2));
     cube->ComputeVertexNormals();
     return cube;
 }
@@ -230,6 +225,21 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
     ASSERT_EQ(gray_color.size(), 64u);
     ASSERT_EQ(gray_depth.size(), 64u);
 
+    const auto max_difference = [](const std::vector<uint8_t>& actual,
+                                   const std::vector<uint8_t>& expected) {
+        uint8_t maximum = 0;
+        for (size_t index = 0; index < actual.size(); ++index) {
+            maximum = std::max(
+                    maximum,
+                    static_cast<uint8_t>(std::abs(static_cast<int>(actual[index]) -
+                                                   static_cast<int>(expected[index]))));
+        }
+        return maximum;
+    };
+    utility::LogInfo("Gaussian splat color max difference: {}",
+                     max_difference(gray_color, ref_color));
+    utility::LogInfo("Gaussian splat depth max difference: {}",
+                     max_difference(gray_depth, ref_depth));
     EXPECT_EQ(gray_color, ref_color);
     EXPECT_EQ(gray_depth, ref_depth);
 }
@@ -300,7 +310,7 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     scene->AddGeometry("test_splats", &pcd, mat);
 
     SetUpTestCamera(*scene);
-    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray);
+    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray, "twosplats_");
 }
 
 // ---------------------------------------------------------------------------
@@ -339,5 +349,5 @@ TEST_F(GaussianSplatRenderTest, RenderToImageSplatsAndMeshOcclusion) {
 
     SetUpTestCamera(*scene);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
-                         kRefMixedDepthGray);
+                         kRefMixedDepthGray, "mixed_");
 }

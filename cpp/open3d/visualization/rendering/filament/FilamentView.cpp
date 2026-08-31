@@ -34,6 +34,7 @@
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 #include "open3d/visualization/rendering/filament/FilamentScene.h"
@@ -353,7 +354,11 @@ void FilamentView::EnableViewCaching(bool enable) {
 bool FilamentView::IsCached() const { return caching_enabled_; }
 
 TextureHandle FilamentView::GetColorBuffer() {
-    if (scene_ && scene_->UsesGaussianSplatOutput(*this)) {
+    // Metal keeps GS output as a transparent UI overlay, so the cached
+    // Filament texture remains the base scene color. Vulkan composites GS
+    // in-place and exposes the final shared color texture instead.
+    if (EngineInstance::GetBackendType() != RenderingType::kMetal && scene_ &&
+        scene_->UsesGaussianSplatOutput(*this)) {
         auto color = scene_->GetColorBufferForView(*this);
         if (color) return color;
     }
