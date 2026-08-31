@@ -547,12 +547,13 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        // Filament performs the initial transition for imported depth
-        // attachments. Compute owns the first use of color outputs and must
-        // transition those images from their creation layout.
+        // Filament finishes rendering with color images in
+        // COLOR_ATTACHMENT_OPTIMAL and depth images in
+        // DEPTH_STENCIL_ATTACHMENT_OPTIMAL. Track these as the initial
+        // layout so the first compute transition does not discard contents.
         e.current_layout = (format == VK_FORMAT_D32_SFLOAT)
-                                   ? VK_IMAGE_LAYOUT_GENERAL
-                                   : VK_IMAGE_LAYOUT_UNDEFINED;
+                                   ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                                   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
     }
@@ -950,11 +951,22 @@ private:
         const auto src_stage =
                 (old_layout == VK_IMAGE_LAYOUT_UNDEFINED)
                         ? vk::PipelineStageFlagBits2::eNone
+                : (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                        ? vk::PipelineStageFlagBits2::eColorAttachmentOutput
+                : (old_layout ==
+                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                        ? (vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                           vk::PipelineStageFlagBits2::eLateFragmentTests)
                 : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                         ? vk::PipelineStageFlagBits2::eTransfer
                         : vk::PipelineStageFlagBits2::eComputeShader;
         const auto src_access =
                 (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) ? vk::AccessFlags2{}
+                : (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                        ? vk::AccessFlagBits2::eColorAttachmentWrite
+                : (old_layout ==
+                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                        ? vk::AccessFlagBits2::eDepthStencilAttachmentWrite
                 : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                         ? vk::AccessFlagBits2::eTransferRead
                 // SHADER_READ_ONLY_OPTIMAL is a read-only layout;

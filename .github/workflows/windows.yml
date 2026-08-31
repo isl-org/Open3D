@@ -218,7 +218,7 @@ jobs:
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
-            -DBUILD_FILAMENT_FROM_SOURCE=ON `
+            -DBUILD_FILAMENT_FROM_SOURCE=${{ matrix.device != 'xpu' && 'ON' || 'OFF' }} `
             ${{ env.SRC_DIR }}
 
       - name: Build (build-lib)

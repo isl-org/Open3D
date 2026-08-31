@@ -46,7 +46,7 @@ set(FILAMENT_VER_HASH "f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a
 set(lib_dir lib)
 if(APPLE)
     set(FILAMENT_VER "v1.57.2")    # Metal shared texture support for 3DGS
-    set(FILAMENT_VER_HASH "")
+    set(FILAMENT_VER_HASH "58a009e5e33674ea1841b0ea3481d19b682814db67048f93cd80da3df020051a")
     if(APPLE_AARCH64)
         set(lib_dir lib/arm64)
     else()

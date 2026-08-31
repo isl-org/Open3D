@@ -323,16 +323,24 @@ void FilamentRenderToBuffer::Render() {
                                 std::clamp(value, 0.0f, 1.0f) * 255.0f + 0.5f);
                     }
                 }
+                if (callback_) {
+                    callback_({static_cast<std::size_t>(width_),
+                               static_cast<std::size_t>(height_),
+                               static_cast<std::size_t>(n_channels_), buffer_,
+                               buffer_size_});
+                    callback_ = nullptr;
+                }
+                frame_done_ = true;
+            } else {
+                utility::LogWarning(
+                        "FilamentRenderToBuffer: Vulkan direct readback "
+                        "failed; returning empty frame.");
+                if (callback_) {
+                    callback_(ImageBuffer{0, 0, 0, nullptr, 0});
+                    callback_ = nullptr;
+                }
+                frame_done_ = true;
             }
-
-            if (callback_) {
-                callback_({static_cast<std::size_t>(width_),
-                           static_cast<std::size_t>(height_),
-                           static_cast<std::size_t>(n_channels_), buffer_,
-                           buffer_size_});
-                callback_ = nullptr;
-            }
-            frame_done_ = true;
         } else if (run_gs_pipeline) {
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }

@@ -123,7 +123,6 @@ created with storage, sampled, colour-attachment, and transfer-source usage.
 
 `FilamentRenderToBuffer::Render()` mirrors the same `#if defined(__APPLE__)` ordering.
 
-depth attachment.  Filament writes depth; the composite shader reads it at binding 14.
 ### Depth-Aware Compositing (Zero-Copy)
 
 Open3D creates ordinary Vulkan images on Filament's shared device; Filament
