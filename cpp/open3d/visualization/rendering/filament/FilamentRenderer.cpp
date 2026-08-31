@@ -191,6 +191,7 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 void FilamentRenderer::BeginFrame() {
     const bool run_gs_pipeline = gaussian_splat_renderer_ &&
                                  ScenesHaveGaussianSplatGeometry(scenes_);
+    rendered_views_.clear();
 
     // We will complete render to buffer requests first
     if (!buffer_renderers_.empty()) {
@@ -226,10 +227,7 @@ void FilamentRenderer::BeginFrame() {
                 scene->ForEachView([&live_views](const FilamentView& view) {
                     live_views.insert(&view);
                 });
-                scene->ForEachActiveView([this, &scene](FilamentView& view) {
-                    // Filament clears the shared GS color target for every
-                    // active view render, so it must be recomposited each time.
-                    gaussian_splat_renderer_->RequestCompositeForView(view);
+                scene->ForEachViewToRender([this, &scene](FilamentView& view) {
                     gaussian_splat_renderer_->RenderGeometryStage(view, *scene);
                 });
             }
@@ -247,7 +245,7 @@ void FilamentRenderer::Draw() {
     if (frame_started_) {
         // Draw 3D scenes into textures
         for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-            scene->Draw(*renderer_);
+            scene->Draw(*renderer_, rendered_views_);
         }
 
         // Non-Apple backends composite into the overlay during the current
@@ -260,10 +258,9 @@ void FilamentRenderer::Draw() {
             // depth texture is fully written before the composite pass reads
             // it.
             engine_.flushAndWait();
-            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-                scene->ForEachActiveView([this](FilamentView& view) {
-                    gaussian_splat_renderer_->RenderCompositeStage(view);
-                });
+            for (FilamentView* view : rendered_views_) {
+                gaussian_splat_renderer_->RequestCompositeForView(*view);
+                gaussian_splat_renderer_->RenderCompositeStage(*view);
             }
         }
 #endif
@@ -272,7 +269,8 @@ void FilamentRenderer::Draw() {
         // will draw the textures as an image, and this way we will have the
         // current frame's content from above.
         if (gui_scene_) {
-            gui_scene_->Draw(*renderer_);
+            std::vector<FilamentView*> gui_rendered_views;
+            gui_scene_->Draw(*renderer_, gui_rendered_views);
         }
 
         if (on_after_draw_) {
@@ -294,13 +292,10 @@ void FilamentRenderer::EndFrame() {
             // stalls the main thread behind expensive geometry compute
             // CBs that are ahead in the queue.
             bool any_composite = false;
-            for ([[maybe_unused]] const auto& [handle, scene] : scenes_) {
-                scene->ForEachActiveView([this,
-                                          &any_composite](FilamentView& view) {
-                    any_composite |=
+            for (FilamentView* view : rendered_views_) {
+                any_composite |=
                             gaussian_splat_renderer_->RenderCompositeStage(
-                                    view);
-                });
+                                    *view);
             }
             if (any_composite && on_gaussian_composite_complete_) {
                 on_gaussian_composite_complete_();

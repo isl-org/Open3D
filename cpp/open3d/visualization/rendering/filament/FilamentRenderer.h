@@ -147,6 +147,7 @@ private:
 
     std::unordered_set<std::shared_ptr<FilamentRenderToBuffer>>
             buffer_renderers_;
+        std::vector<FilamentView*> rendered_views_;
 
     bool frame_started_ = false;
     std::function<void()> on_after_draw_;
