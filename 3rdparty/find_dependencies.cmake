@@ -2102,31 +2102,28 @@ if(BUILD_CUDA_MODULE)
         # see python/open3d/__init__.py for how they are located at runtime).
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM CUDA::cudart CUDA::cusolver CUDA::cublas)
     else()
-        # CMake docs   : https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
-        # cusolver 11.0: https://docs.nvidia.com/cuda/archive/11.0/cusolver/index.html#static-link-lapack
-        # cublas   11.0: https://docs.nvidia.com/cuda/archive/11.0/cublas/index.html#static-library
-        # The link order below is important. Theoretically we should use
-        # open3d_find_package_3rdparty_library, but we have to insert
-        # liblapack_static.a in the middle of the targets.
+        # CMake 3.24.0 and 3.24.1 do not propagate late-discovered LAPACK and
+        # METIS targets through CUDA::cusolver_static. List the imported targets
+        # explicitly so package exports remain compatible and relocatable.
         add_library(3rdparty_cublas INTERFACE)
         if(CUDAToolkit_VERSION VERSION_LESS "12.0")
             target_link_libraries(3rdparty_cublas INTERFACE
                 CUDA::cusolver_static
-                ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+                CUDA::cusolver_lapack_static
+                CUDA::cusolver_metis_static
                 CUDA::cusparse_static
                 CUDA::cublas_static
                 CUDA::cublasLt_static
                 CUDA::culibos
             )
         else()
-            # In CUDA 12.0 the liblapack_static.a is deprecated and removed.
-            # Use the libcusolver_lapack_static.a instead.
             # Use of static libraries is preferred.
             if(BUILD_WITH_CUDA_STATIC)
                 # Use static CUDA libraries.
                 target_link_libraries(3rdparty_cublas INTERFACE
                     CUDA::cusolver_static
-                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                    CUDA::cusolver_lapack_static
+                    CUDA::cusolver_metis_static
                     CUDA::cusparse_static
                     CUDA::cublas_static
                     CUDA::cublasLt_static
@@ -2137,7 +2134,6 @@ if(BUILD_CUDA_MODULE)
                 # Use shared CUDA libraries.
                 target_link_libraries(3rdparty_cublas INTERFACE
                     CUDA::cusolver
-                    ${CUDAToolkit_LIBRARY_DIR}/libcusolver.so
                     CUDA::cusparse
                     CUDA::cublas
                     CUDA::cublasLt
