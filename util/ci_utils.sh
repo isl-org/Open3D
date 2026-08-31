@@ -250,6 +250,7 @@ build_pip_package() {
     mkdir -p build
     pushd build
     cmakeOptions=("-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH:-}"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
@@ -536,6 +537,7 @@ build_pip_package_from_installed() {
     local commonOptions=(
         "-DOPEN3D_USE_INSTALLED_LIBRARY=ON"
         "-DDEVELOPER_BUILD=${DEVELOPER_BUILD}"
+        "-DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH:-}"
         "-DBUILD_SHARED_LIBS=ON"
         "-DBUILD_PYTHON_MODULE=ON"
         "-DBUILD_AZURE_KINECT=${BUILD_AZURE_KINECT}"
@@ -565,6 +567,7 @@ build_pip_package_from_installed() {
         -DBUILD_CUDA_MODULE=OFF \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+            -DOPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         "${commonOptions[@]}" \
         ..
     set +x
@@ -593,6 +596,7 @@ build_pip_package_from_installed() {
         -DBUILD_COMMON_CUDA_ARCHS=ON \
         -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+            -DOPEN3D_ML_VERSION="${OPEN3D_ML_VERSION:-main}" \
         "${commonOptions[@]}" \
         ..
     set +x
@@ -813,6 +817,7 @@ build_docs() {
     }
     subst_version Doxyfile.in Doxyfile
     subst_version getting_started.in.rst getting_started.rst
+    subst_version dev_wheels.in.rst dev_wheels.rst
     subst_version docker.in.rst docker.rst
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
         --py_api_rst=always --py_example_rst=always --sphinx --doxygen

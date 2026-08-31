@@ -1546,9 +1546,11 @@ if(BUILD_GUI)
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
-                message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
-                foreach(llvm_ver RANGE 7 19)
+                message(STATUS "Searching /usr/lib/llvm-[7..20]/lib/ for libc++ and libc++abi")
+                foreach(llvm_ver RANGE 7 20)
                     set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
+                    unset(CPP_LIBRARY CACHE)
+                    unset(CPPABI_LIBRARY CACHE)
                     find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
                     if (CPP_LIBRARY AND CPPABI_LIBRARY)
@@ -1565,6 +1567,7 @@ if(BUILD_GUI)
             if (NOT CLANG_LIBDIR)
                 message(STATUS "Clang C++ libraries not found. Searching other paths...")
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-20/lib
                              llvm-19/lib
                              llvm-18/lib
                              llvm-17/lib
@@ -1596,8 +1599,8 @@ if(BUILD_GUI)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
-                                  ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
-            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}")
+                                  ${CPP_LIBRARY} ${CPPABI_LIBRARY})
+            message(STATUS "Filament C++ libraries: ${CPP_LIBRARY} ${CPPABI_LIBRARY}")
             if (LIBCPP_VERSION GREATER 11)
                 message(WARNING "libc++ (LLVM) version ${LIBCPP_VERSION} > 11 includes libunwind that "
                 "interferes with the system libunwind.so.8 and may crash Python code when exceptions "

@@ -23,7 +23,7 @@ if(TARGET ext_zlib)
 endif()
 
 if(USE_SYSTEM_ZSTD)
-    set(spz_zstd_args "")
+    set(spz_zstd_args "-Dzstd_DIR:PATH=${zstd_DIR}")
 else()
     set(spz_zstd_args "-Dzstd_DIR:PATH=${ZSTD_CONFIG_DIR}")
 endif()

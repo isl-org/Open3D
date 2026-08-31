@@ -270,7 +270,6 @@ void FilterSobelSYCLImpl(const core::Tensor& src,
     const int rows = src_indexer.GetShape(0);
     const int cols = src_indexer.GetShape(1);
     const int radius = kernel_size / 2;
-    const int coefficient_offset = kernel_size == 3 ? 1 : 0;
     const float derivative_3[3] = {-1.0f, 0.0f, 1.0f};
     const float smoothing_3[3] = {1.0f, 2.0f, 1.0f};
     const float derivative_5[5] = {-1.0f, -2.0f, 0.0f, 2.0f, 1.0f};
@@ -293,8 +292,8 @@ void FilterSobelSYCLImpl(const core::Tensor& src,
                         const float sample = static_cast<float>(
                                 *src_indexer.GetDataPtr<scalar_t>(sample_x,
                                                                   sample_y));
-                        const int ix = kx + coefficient_offset;
-                        const int iy = ky + coefficient_offset;
+                        const int ix = kx + radius;
+                        const int iy = ky + radius;
                         const float* derivative_coefficients =
                                 kernel_size == 3 ? derivative_3 : derivative_5;
                         const float* smoothing_coefficients =

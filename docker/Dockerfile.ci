@@ -7,6 +7,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
+ARG OPEN3D_GIT_HASH
 ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
@@ -44,6 +45,7 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
 # Forward all ARG to ENV
 # ci_utils.sh may require these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV OPEN3D_GIT_HASH=${OPEN3D_GIT_HASH}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
@@ -152,7 +154,8 @@ ARG OPEN3D_ML_VERSION
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
 ENV OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}
 RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
-        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
+          git clone --depth 1 --branch "${OPEN3D_ML_VERSION:-main}" \
+              https://github.com/isl-org/Open3D-ML.git \
             ${OPEN3D_ML_ROOT}; \
     fi
 
@@ -203,6 +206,7 @@ RUN \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
           -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+          -DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
