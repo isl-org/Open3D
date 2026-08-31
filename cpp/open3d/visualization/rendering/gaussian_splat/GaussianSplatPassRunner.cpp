@@ -448,7 +448,6 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
 
     ctx.FinishGpuWork();
     // frame destructor calls End() automatically; explicit call omitted.
-    LogGaussianGpuErrorsOnce(ctx, vs);
 
     return ctx.WasLastSubmitSuccessful();
 }

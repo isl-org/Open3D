@@ -393,6 +393,18 @@ void FilamentScene::ForEachActiveView(
     }
 }
 
+void FilamentScene::ForEachViewToRender(
+        const std::function<void(FilamentView&)>& callback) {
+    for (auto& pair : views_) {
+        auto& container = pair.second;
+        if (!container.is_active || container.render_count == 0 ||
+            !container.view) {
+            continue;
+        }
+        callback(*container.view);
+    }
+}
+
 void FilamentScene::ForEachView(
         const std::function<void(FilamentView&)>& callback) const {
     for (const auto& pair : views_) {
@@ -2449,7 +2461,9 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     }
 }
 
-void FilamentScene::Draw(filament::Renderer& renderer) {
+void FilamentScene::Draw(
+    filament::Renderer& renderer,
+    std::vector<FilamentView*>& rendered_views) {
     for (auto& pair : views_) {
         auto& container = pair.second;
         // Skip inactive views
@@ -2462,6 +2476,7 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
         container.view->PreRender();
         renderer.render(container.view->GetNativeView());
         container.view->PostRender();
+        rendered_views.push_back(container.view.get());
     }
 }
 

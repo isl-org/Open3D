@@ -216,6 +216,8 @@ public:
             override;
 
     void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
+    void ForEachViewToRender(
+            const std::function<void(FilamentView&)>& callback);
     /// Iterate over ALL views (including inactive/cached ones).
     void ForEachView(const std::function<void(FilamentView&)>& callback) const;
     bool HasGaussianSplatGeometry() const;
@@ -231,7 +233,8 @@ public:
     void InvalidateGaussianSplatOutput(FilamentView& view);
     const GaussianSplatPackedAttrs* GetGaussianSplatPackedAttrs() const;
 
-    void Draw(filament::Renderer& renderer);
+    void Draw(filament::Renderer& renderer,
+              std::vector<FilamentView*>& rendered_views);
 
     // NOTE: This method is to work around Filament limitation when rendering to
     // depth buffer. Materials with SSR require multiple passes which causes a
