@@ -220,9 +220,9 @@ bool GaussianSplatVulkanContext::Initialize() {
                               name.find("WARP") != std::string::npos;
         const int device_score =
                 software ? 0
-                         : props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu
-                                   ? 200
-                                   : 100;
+                : props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu
+                        ? 200
+                        : 100;
         if (device_score > best_score) {
             best = i;
             best_score = device_score;

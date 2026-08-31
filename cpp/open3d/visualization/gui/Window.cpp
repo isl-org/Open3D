@@ -612,6 +612,14 @@ void Window::PostRedraw() {
         return;
     }
 
+    // macOS rejects redraw requests while the application is still starting.
+    // Do not mark the request pending in that state; the native window's first
+    // expose/refresh event will trigger the initial draw once the run loop is
+    // active.
+    if (!Application::GetInstance().IsRunning()) {
+        return;
+    }
+
     if (impl_->redraw_pending_) {
         return;
     }

@@ -361,7 +361,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
 
     // The Vulkan target contains the Filament mesh color, whereas Metal
     // retains a separate transparent splat overlay for presentation.
-        const float composite_over_base = targets.uses_vulkan_interop ? 1.0f : 0.0f;
+    const float composite_over_base = targets.uses_vulkan_interop ? 1.0f : 0.0f;
     static constexpr std::size_t kCompositeOverBaseFlagOffset =
             offsetof(GaussianViewParams, depth_range_and_flags) +
             2 * sizeof(float);

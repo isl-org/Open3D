@@ -2461,9 +2461,8 @@ void FilamentScene::RenderableGeometry::ReleaseResources(
     }
 }
 
-void FilamentScene::Draw(
-    filament::Renderer& renderer,
-    std::vector<FilamentView*>& rendered_views) {
+void FilamentScene::Draw(filament::Renderer& renderer,
+                         std::vector<FilamentView*>& rendered_views) {
     for (auto& pair : views_) {
         auto& container = pair.second;
         // Skip inactive views

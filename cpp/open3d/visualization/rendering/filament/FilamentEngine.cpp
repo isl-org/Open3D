@@ -85,7 +85,6 @@ EngineInstance::~EngineInstance() {
     GaussianSplatVulkanContext::GetInstance().Shutdown();
     shared_context_ = nullptr;
 #endif
-
 }
 
 EngineInstance& EngineInstance::Get() {

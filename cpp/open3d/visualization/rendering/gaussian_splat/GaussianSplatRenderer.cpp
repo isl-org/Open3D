@@ -571,9 +571,9 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
     auto viewport = view.GetViewport();
     data.viewport_origin = Eigen::Vector2i(viewport[0], viewport[1]);
     data.viewport_size = Eigen::Vector2i(viewport[2], viewport[3]);
-        // Output textures use a top-left origin on Metal and Vulkan; only the
-        // OpenGL backend uses bottom-left image coordinates.
-        data.screen_y_down =
+    // Output textures use a top-left origin on Metal and Vulkan; only the
+    // OpenGL backend uses bottom-left image coordinates.
+    data.screen_y_down =
             (EngineInstance::GetBackendType() != RenderingType::kOpenGL);
 
     const auto* camera = view.GetCamera();

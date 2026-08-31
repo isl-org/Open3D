@@ -294,8 +294,7 @@ void FilamentRenderer::EndFrame() {
             bool any_composite = false;
             for (FilamentView* view : rendered_views_) {
                 any_composite |=
-                            gaussian_splat_renderer_->RenderCompositeStage(
-                                    *view);
+                        gaussian_splat_renderer_->RenderCompositeStage(*view);
             }
             if (any_composite && on_gaussian_composite_complete_) {
                 on_gaussian_composite_complete_();

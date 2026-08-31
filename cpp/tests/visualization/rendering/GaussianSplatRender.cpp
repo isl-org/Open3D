@@ -40,48 +40,48 @@ namespace {
 // ---------------------------------------------------------------------------
 
 const std::vector<uint8_t> kRefColorGray = {
-    255, 255, 255, 255, 255, 255, 255, 255,  //
-    247, 245, 247, 251, 255, 246, 223, 245,  //
-    223, 221, 229, 241, 249, 222, 150, 222,  //
-    175, 172, 193, 221, 242, 241, 222, 245,  //
-    114, 113, 152, 200, 234, 249, 255, 255,  //
-    81,  85,  135, 193, 232, 249, 255, 255,  //
-    106, 114, 158, 207, 237, 250, 255, 255,  //
-    167, 173, 200, 228, 246, 255, 255, 255,  //
+        255, 255, 255, 255, 255, 255, 255, 255,  //
+        247, 245, 247, 251, 255, 246, 223, 245,  //
+        223, 221, 229, 241, 249, 222, 150, 222,  //
+        175, 172, 193, 221, 242, 241, 222, 245,  //
+        114, 113, 152, 200, 234, 249, 255, 255,  //
+        81,  85,  135, 193, 232, 249, 255, 255,  //
+        106, 114, 158, 207, 237, 250, 255, 255,  //
+        167, 173, 200, 228, 246, 255, 255, 255,  //
 };
 const std::vector<uint8_t> kRefDepthGray = {
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    0, 0, 0, 0, 0, 0, 128, 0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 128, 0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
 };
 
 // Mixed-geometry (splats + mesh) scene: an opaque blue cube occludes the lower
 // green splat. The splat is at (0.72, 0.43, 3.0); the cube is at z=2.8 and its
 // XY coordinates scale by 2.8 / 3.0 to project to the same image position.
 const std::vector<uint8_t> kRefMixedColorGray = {
-    255, 255, 255, 255, 255, 255, 255, 255,  //
-    247, 245, 247, 251, 255, 246, 223, 245,  //
-    223, 221, 229, 241, 249, 57,  150, 222,  //
-    175, 172, 193, 221, 242, 241, 222, 245,  //
-    114, 113, 152, 200, 234, 249, 255, 255,  //
-    81,  85,  135, 193, 232, 249, 255, 255,  //
-    106, 114, 158, 207, 237, 250, 255, 255,  //
-    167, 173, 200, 228, 246, 255, 255, 255,  //
+        255, 255, 255, 255, 255, 255, 255, 255,  //
+        247, 245, 247, 251, 255, 246, 223, 245,  //
+        223, 221, 229, 241, 249, 57,  150, 222,  //
+        175, 172, 193, 221, 242, 241, 222, 245,  //
+        114, 113, 152, 200, 234, 249, 255, 255,  //
+        81,  85,  135, 193, 232, 249, 255, 255,  //
+        106, 114, 158, 207, 237, 250, 255, 255,  //
+        167, 173, 200, 228, 246, 255, 255, 255,  //
 };
 const std::vector<uint8_t> kRefMixedDepthGray = {
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    0, 0, 0, 0, 0, 0, 128, 0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    29, 29, 29, 0, 0, 0, 0, 0,  //
-    0, 0, 0, 0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 128, 0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        29, 29, 29, 0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0, 0,   0,  //
 };
 
 // ---------------------------------------------------------------------------
@@ -121,8 +121,8 @@ t::geometry::PointCloud MakeTwoTestSplats() {
 std::shared_ptr<geometry::TriangleMesh> MakeOcclusionTestCube() {
     constexpr double kSize = 0.4;
     auto cube = geometry::TriangleMesh::CreateBox(kSize, kSize, kSize);
-        cube->Translate(Eigen::Vector3d(0.672, 0.4013333333, 2.8) -
-                Eigen::Vector3d(kSize / 2, kSize / 2, kSize / 2));
+    cube->Translate(Eigen::Vector3d(0.672, 0.4013333333, 2.8) -
+                    Eigen::Vector3d(kSize / 2, kSize / 2, kSize / 2));
     cube->ComputeVertexNormals();
     return cube;
 }
@@ -229,10 +229,10 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
                                    const std::vector<uint8_t>& expected) {
         uint8_t maximum = 0;
         for (size_t index = 0; index < actual.size(); ++index) {
-            maximum = std::max(
-                    maximum,
-                    static_cast<uint8_t>(std::abs(static_cast<int>(actual[index]) -
-                                                   static_cast<int>(expected[index]))));
+            maximum = std::max(maximum,
+                               static_cast<uint8_t>(std::abs(
+                                       static_cast<int>(actual[index]) -
+                                       static_cast<int>(expected[index]))));
         }
         return maximum;
     };
@@ -310,7 +310,8 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     scene->AddGeometry("test_splats", &pcd, mat);
 
     SetUpTestCamera(*scene);
-    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray, "twosplats_");
+    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray,
+                         "twosplats_");
 }
 
 // ---------------------------------------------------------------------------

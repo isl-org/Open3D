@@ -191,7 +191,6 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
 void GLFWWindowSystem::DestroyWindow(OSWindow w) {
     glfwDestroyWindow((GLFWwindow*)w);
 }
-
 void GLFWWindowSystem::PostRedrawEvent(OSWindow w) {
 #if __APPLE__
     // Layer-backed Metal views do not trigger GLFW's refresh callback when

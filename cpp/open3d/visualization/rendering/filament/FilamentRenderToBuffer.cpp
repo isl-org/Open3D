@@ -54,34 +54,34 @@ namespace {
 
 #if defined(__APPLE__)
 void BlendPremultipliedSplatOverRgb8(uint8_t* base_rgb,
-                     int n_channels,
-                     const std::uint16_t* gs_rgba_bits,
-                     int w,
-                     int h) {
+                                     int n_channels,
+                                     const std::uint16_t* gs_rgba_bits,
+                                     int w,
+                                     int h) {
     const auto to_float = [](std::uint16_t bits) {
-    return static_cast<float>(filament::math::makeHalf(bits));
+        return static_cast<float>(filament::math::makeHalf(bits));
     };
     const int n = w * h;
     for (int i = 0; i < n; ++i) {
-    const float fr = to_float(gs_rgba_bits[i * 4 + 0]);
-    const float fg = to_float(gs_rgba_bits[i * 4 + 1]);
-    const float fb = to_float(gs_rgba_bits[i * 4 + 2]);
-    const float fa = to_float(gs_rgba_bits[i * 4 + 3]);
-    const float br =
-        static_cast<float>(base_rgb[i * n_channels + 0]) / 255.0f;
-    const float bg =
-        static_cast<float>(base_rgb[i * n_channels + 1]) / 255.0f;
-    const float bb =
-        static_cast<float>(base_rgb[i * n_channels + 2]) / 255.0f;
-    base_rgb[i * n_channels + 0] = static_cast<uint8_t>(
-        std::clamp(fr + br * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-    base_rgb[i * n_channels + 1] = static_cast<uint8_t>(
-        std::clamp(fg + bg * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-    base_rgb[i * n_channels + 2] = static_cast<uint8_t>(
-        std::clamp(fb + bb * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-    if (n_channels == 4) {
-        base_rgb[i * n_channels + 3] = 255;
-    }
+        const float fr = to_float(gs_rgba_bits[i * 4 + 0]);
+        const float fg = to_float(gs_rgba_bits[i * 4 + 1]);
+        const float fb = to_float(gs_rgba_bits[i * 4 + 2]);
+        const float fa = to_float(gs_rgba_bits[i * 4 + 3]);
+        const float br =
+                static_cast<float>(base_rgb[i * n_channels + 0]) / 255.0f;
+        const float bg =
+                static_cast<float>(base_rgb[i * n_channels + 1]) / 255.0f;
+        const float bb =
+                static_cast<float>(base_rgb[i * n_channels + 2]) / 255.0f;
+        base_rgb[i * n_channels + 0] = static_cast<uint8_t>(
+                std::clamp(fr + br * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+        base_rgb[i * n_channels + 1] = static_cast<uint8_t>(
+                std::clamp(fg + bg * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+        base_rgb[i * n_channels + 2] = static_cast<uint8_t>(
+                std::clamp(fb + bb * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
+        if (n_channels == 4) {
+            base_rgb[i * n_channels + 3] = 255;
+        }
     }
 }
 #endif
@@ -497,8 +497,8 @@ void FilamentRenderToBuffer::Render() {
                 format = PixelDataFormat::RGBA;
                 readback_size = width_ * height_ * 4;
                 if (rgba_readback_buffer_size_ != readback_size) {
-                    rgba_readback_buffer_ = static_cast<uint8_t*>(realloc(
-                            rgba_readback_buffer_, readback_size));
+                    rgba_readback_buffer_ = static_cast<uint8_t*>(
+                            realloc(rgba_readback_buffer_, readback_size));
                     rgba_readback_buffer_size_ = readback_size;
                 }
                 readback_buffer = rgba_readback_buffer_;

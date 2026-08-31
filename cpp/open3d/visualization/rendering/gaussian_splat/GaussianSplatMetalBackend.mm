@@ -148,7 +148,7 @@ bool PrepareAppleOutputTextures(FilamentView& view,
         // Filament renders the mesh into its own color buffer while the GS
         // composite writes a separate transparent overlay.
         targets.render_target =
-            resource_mgr.CreateRenderTarget(view_color, targets.depth);
+                resource_mgr.CreateRenderTarget(view_color, targets.depth);
     } else {
         // No shared depth: create a Filament-owned depth attachment so
         // Filament renders normally (depth stays private to Filament).

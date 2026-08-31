@@ -26,7 +26,7 @@ functionality is out of scope.
 - After the first substantive edit, run the cheapest behavior-scoped check that can falsify the current hypothesis before making adjacent edits.
 - Ensure the smallest set of relevant tests runs correctly locally. Report unavailable hardware or configurations and never claim unrun checks passed. The full CI must pass for all supported software and hardware platforms in GitHub.
 - Before committing, inspect the final diff and status. Exclude unrelated changes, generated artifacts, temporary instrumentation, agent markers, and formatter churn.
-- Use an imperative, specific commit subject. Do not amend unrelated commits or add co-author trailers unless requested.
+- Use an imperative, specific commit subject and brief description and reasons for each significant change in the body. Do not amend unrelated commits or add co-author trailers unless requested.
 - Push without force, setting upstream for a new branch. When creating a PR, use `.github/pull_request_template.md` and include the plan summary and test evidence.
 
 ## Repository map

@@ -412,9 +412,9 @@ void main() {
             vec4 out_color_value = vec4(accum_color, out_alpha);
             if (composite_over_base) {
                 vec4 base_color = imageLoad(out_color, pixel);
-                out_color_value = vec4(
-                        accum_color + base_color.rgb * transmittance,
-                        out_alpha + base_color.a * transmittance);
+                out_color_value =
+                        vec4(accum_color + base_color.rgb * transmittance,
+                             out_alpha + base_color.a * transmittance);
             }
             imageStore(out_color, pixel, out_color_value);
             // Convert nearest-splat depth back to Filament inverse convention
