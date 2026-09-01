@@ -1162,16 +1162,6 @@ private:
         vmaInvalidateAllocation(vma_, alloc, 0, total);
         std::memcpy(out.data(), info.pMappedData, total);
         vmaDestroyBuffer(vma_, staging, alloc);
-
-        // Flip bottom-up -> top-down (matches GL / Filament readPixels).
-        // A vector element is not necessarily one pixel: RGBA16F uses four
-        // uint16_t elements per pixel, so flip complete byte strides.
-        const std::size_t elements_per_row = row_size / sizeof(T);
-        for (std::uint32_t row = 0; row < h / 2; ++row) {
-            std::swap_ranges(out.begin() + row * elements_per_row,
-                             out.begin() + (row + 1) * elements_per_row,
-                             out.begin() + (h - 1 - row) * elements_per_row);
-        }
         return true;
     }
 

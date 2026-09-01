@@ -336,7 +336,7 @@ void FilamentRenderToBuffer::Render() {
                         "FilamentRenderToBuffer: Vulkan direct readback "
                         "failed; returning empty frame.");
                 if (callback_) {
-                    callback_(ImageBuffer{0, 0, 0, nullptr, 0});
+                    callback_(Buffer{0, 0, 0, nullptr, 0});
                     callback_ = nullptr;
                 }
                 frame_done_ = true;

@@ -147,6 +147,20 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image, bool is_color) {
     return gray;
 }
 
+size_t CountPixelsOutsideTolerance(const std::vector<uint8_t>& actual,
+                                  const std::vector<uint8_t>& expected,
+                                  uint8_t tolerance) {
+    size_t count = 0;
+    for (size_t index = 0; index < actual.size(); ++index) {
+        const int difference = std::abs(static_cast<int>(actual[index]) -
+                                        static_cast<int>(expected[index]));
+        if (difference > tolerance) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 geometry::Image MakeDepthPreview(const geometry::Image& depth_image) {
     const auto depth =
             t::geometry::Image::FromLegacy(depth_image, core::Device("CPU:0"))
@@ -196,6 +210,8 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
                           visualization::rendering::Open3DScene& scene,
                           const std::vector<uint8_t>& ref_color,
                           const std::vector<uint8_t>& ref_depth,
+                          size_t max_color_outliers,
+                          size_t max_depth_outliers,
                           const char* dump_prefix = nullptr) {
     auto& app = visualization::gui::Application::GetInstance();
 
@@ -240,8 +256,15 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
                      max_difference(gray_color, ref_color));
     utility::LogInfo("Gaussian splat depth max difference: {}",
                      max_difference(gray_depth, ref_depth));
-    EXPECT_EQ(gray_color, ref_color);
-    EXPECT_EQ(gray_depth, ref_depth);
+    // Half-float conversion may vary by one intensity level across Vulkan
+    // drivers. Rasterization of a mesh edge may cover one adjacent 8x8 pixel.
+    constexpr uint8_t kPixelTolerance = 1;
+    EXPECT_LE(CountPixelsOutsideTolerance(gray_color, ref_color,
+                                          kPixelTolerance),
+              max_color_outliers);
+    EXPECT_LE(CountPixelsOutsideTolerance(gray_depth, ref_depth,
+                                          kPixelTolerance),
+              max_depth_outliers);
 }
 
 // =========================================================================
@@ -311,7 +334,7 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
 
     SetUpTestCamera(*scene);
     RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray,
-                         "twosplats_");
+                         0, 0, "twosplats_");
 }
 
 // ---------------------------------------------------------------------------
@@ -350,5 +373,5 @@ TEST_F(GaussianSplatRenderTest, RenderToImageSplatsAndMeshOcclusion) {
 
     SetUpTestCamera(*scene);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
-                         kRefMixedDepthGray, "mixed_");
+                         kRefMixedDepthGray, 1, 1, "mixed_");
 }
