@@ -162,6 +162,13 @@ file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 
+# Ship the Python agent skill so AI coding agents can discover the API offline.
+# Located via `open3d agent_skill --path`; see python/tools/cli.py.
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/agent_skills/")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../docs/agent_skills/open3d-python"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/agent_skills"
+     FILES_MATCHING PATTERN "*.md")
+
 # Generate typing stub files (.pyi) and py.typed marker file.
 if(WITH_STUBGEN)
     if(NOT Python3_EXECUTABLE)

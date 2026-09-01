@@ -8,6 +8,7 @@
 import argparse
 import os
 import runpy
+import shutil
 import sys
 from pathlib import Path
 
@@ -34,6 +35,19 @@ def _get_examples_dir():
             os.path.dirname(os.path.dirname(tools_path)), "examples", "python")
         examples_dir = Path(examples_path)
         return examples_dir
+
+
+def _get_agent_skill_dir():
+    """Get the path to the bundled agent skill, or None if not packaged."""
+    tools_path = os.path.dirname(os.path.abspath(__file__))
+    skill_path = (Path(os.path.dirname(tools_path)) / "agent_skills" /
+                  "open3d-python")
+    if skill_path.is_dir():
+        return skill_path
+    # Source tree fallback: <repo>/docs/agent_skills/open3d-python
+    skill_path = (Path(tools_path).parents[1] / "docs" / "agent_skills" /
+                  "open3d-python")
+    return skill_path if skill_path.is_dir() else None
 
 
 def _get_all_examples_dict():
@@ -188,6 +202,31 @@ def _example(parser, args):
     return 0
 
 
+def _agent_skill(parser, args):
+    skill_dir = _get_agent_skill_dir()
+    if skill_dir is None:
+        print("Error: the agent skill is not bundled with this Open3D install.",
+              file=sys.stderr)
+        return 1
+
+    if args.path:
+        print(skill_dir)
+        return 0
+
+    if args.install is not None:
+        dest = Path(args.install).expanduser() / "open3d-python"
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.copytree(skill_dir, dest)
+        print(f"Installed Open3D agent skill to {dest}")
+        return 0
+
+    for path in sorted(skill_dir.rglob("*.md")):
+        print(f"===== {path.relative_to(skill_dir)} =====")
+        print(path.read_text())
+    return 0
+
+
 def _draw(parser, args):
     if args.filename is None:
         parser.print_help()
@@ -307,6 +346,39 @@ def main():
                                 action="help",
                                 help="Show this help message and exit.")
     parser_example.set_defaults(func=_example)
+
+    agent_skill_help = (
+        "Print or install the Open3D agent skill for AI coding assistants.\n"
+        "Example usage:\n"
+        "  open3d agent_skill                            # Print the skill\n"
+        "  open3d agent_skill --path                     # Print its directory\n"
+        "  open3d agent_skill --install .github/skills   # Copy into a project\n\n"
+    )
+    parser_agent_skill = subparsers.add_parser(
+        "agent_skill",
+        add_help=False,
+        description=agent_skill_help,
+        help=agent_skill_help,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser_agent_skill.add_argument(
+        "-p",
+        "--path",
+        action="store_true",
+        help="Print the path to the bundled agent skill directory and exit.\n",
+    )
+    parser_agent_skill.add_argument(
+        "-i",
+        "--install",
+        metavar="DIR",
+        help="Copy the agent skill into DIR, e.g. .github/skills or\n"
+        "~/.copilot/skills.\n",
+    )
+    parser_agent_skill.add_argument("-h",
+                                    "--help",
+                                    action="help",
+                                    help="Show this help message and exit.")
+    parser_agent_skill.set_defaults(func=_agent_skill)
 
     draw_help = (
         "Load and visualize a 3D model. Example usage:\n"
