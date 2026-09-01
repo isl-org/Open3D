@@ -403,8 +403,17 @@ def _normalize(tensor):
         tuple: (Normalized tensor, min value of tensor, max value of tensor) min
         and max are stretched to include 0 or 1 for degenerate tensors.
     """
-    if tensor.dtype in (o3d.core.float32, o3d.core.float64, np.float32,
-                        np.float64):
+    if isinstance(tensor, o3d.core.Tensor):
+        is_float_tensor = tensor.dtype in (o3d.core.float32, o3d.core.float64)
+    else:
+        dtype = getattr(tensor, "dtype", None)
+        try:
+            is_float_tensor = (dtype is not None and
+                               np.issubdtype(dtype, np.floating))
+        except TypeError:
+            is_float_tensor = False
+
+    if is_float_tensor:
         m, M = tensor.min().item(), tensor.max().item()
         if M <= m + 1e-6:  # stretch degenerate range to include [0, 1]
             m, M = min(m, 0), max(M, 1)
