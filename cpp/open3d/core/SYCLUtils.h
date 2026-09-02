@@ -50,10 +50,6 @@ namespace open3d {
 namespace core {
 namespace sy {
 
-/// Runs simple SYCL test program for sanity checks.
-/// \return Retuns 0 if successful.
-int SYCLDemo();
-
 /// Print available SYCL devices.
 ///
 /// \param print_all If true, prints all SYCL devices. Otherwise, prints only

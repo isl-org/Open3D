@@ -46,21 +46,38 @@ void pybind_geometry_classes_declarations(py::module &m) {
 void pybind_geometry_classes_definitions(py::module &m) {
     // open3d.geometry functions
     m.def("get_rotation_matrix_from_xyz", &Geometry3D::GetRotationMatrixFromXYZ,
+          "Returns a rotation matrix from rotations around the X, Y, and Z axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yzx", &Geometry3D::GetRotationMatrixFromYZX,
+          "Returns a rotation matrix from rotations around the Y, Z, and X axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zxy", &Geometry3D::GetRotationMatrixFromZXY,
+          "Returns a rotation matrix from rotations around the Z, X, and Y axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_xzy", &Geometry3D::GetRotationMatrixFromXZY,
+          "Returns a rotation matrix from rotations around the X, Z, and Y axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zyx", &Geometry3D::GetRotationMatrixFromZYX,
+          "Returns a rotation matrix from rotations around the Z, Y, and X axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yxz", &Geometry3D::GetRotationMatrixFromYXZ,
+          "Returns a rotation matrix from rotations around the Y, X, and Z axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
-          &Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromAxisAngle,
+          "Returns a rotation matrix from an axis-angle rotation. The input is "
+          "an axis-angle vector in radians.",
+          "rotation"_a);
     m.def("get_rotation_matrix_from_quaternion",
-          &Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromQuaternion,
+          "Returns a rotation matrix from a quaternion in [w, x, y, z] order.",
+          "rotation"_a);
 
     // open3d.geometry.Geometry
     auto geometry = static_cast<py::class_<Geometry, PyGeometry<Geometry>,
