@@ -189,7 +189,7 @@ apply a second splat overlay.
   data and writes a bit-packed `visibility_mask` (1 bit per splat).
 
 `ShowGeometry` patches the object's mask slice in-place (no full rebuild) and calls
-`MarkGeometryChanged()`.  The project shader tests the mask bit before writing sort entries;
+the packed scene revision. The project shader tests the mask bit before writing sort entries;
 hidden splats produce no sort entries.
 
 ### Scene-Depth Fast Path

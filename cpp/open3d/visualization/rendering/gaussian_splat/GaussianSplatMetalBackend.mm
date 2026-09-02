@@ -242,7 +242,7 @@ public:
 
         auto& vs = view_states_[&view];
 
-        const std::uint64_t scene_id = scene.GetGeometryChangeId();
+        const std::uint64_t scene_id = attrs->revision;
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
                  attrs->splat_count != vs.cached_splat_count);

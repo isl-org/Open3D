@@ -213,6 +213,10 @@ void FilamentRenderer::BeginFrame() {
     if (gaussian_splat_renderer_) {
         gaussian_splat_renderer_->BeginFrame();
         if (run_gs_pipeline) {
+            // Drain the previous Filament frame before GS submits directly to
+            // a Vulkan queue that may be shared with Filament.
+            engine_.flushAndWait();
+
             // Dispatch Gaussian splat geometry work before Filament's
             // beginFrame
             // so our queue submissions do not conflict with Filament's frame.

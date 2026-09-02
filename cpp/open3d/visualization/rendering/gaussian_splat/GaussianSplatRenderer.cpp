@@ -251,7 +251,9 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
     // when transitioning between private-depth and shared sampleable depth
     // attachments during runtime geometry visibility changes.
     auto& targets = PrepareOutputTargets(view);
-    const std::uint64_t scene_change_id = scene.GetGeometryChangeId();
+    const auto* packed_attrs = scene.GetGaussianSplatPackedAttrs();
+    const std::uint64_t scene_change_id =
+            packed_attrs ? packed_attrs->revision : 0;
     const bool view_changed = UpdateViewRenderData(targets, view);
     const bool scene_changed = targets.last_scene_change_id != scene_change_id;
 

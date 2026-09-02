@@ -148,8 +148,8 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image, bool is_color) {
 }
 
 size_t CountPixelsOutsideTolerance(const std::vector<uint8_t>& actual,
-                                  const std::vector<uint8_t>& expected,
-                                  uint8_t tolerance) {
+                                   const std::vector<uint8_t>& expected,
+                                   uint8_t tolerance) {
     size_t count = 0;
     for (size_t index = 0; index < actual.size(); ++index) {
         const int difference = std::abs(static_cast<int>(actual[index]) -
@@ -259,12 +259,12 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
     // Half-float conversion may vary by one intensity level across Vulkan
     // drivers. Rasterization of a mesh edge may cover one adjacent 8x8 pixel.
     constexpr uint8_t kPixelTolerance = 1;
-    EXPECT_LE(CountPixelsOutsideTolerance(gray_color, ref_color,
-                                          kPixelTolerance),
-              max_color_outliers);
-    EXPECT_LE(CountPixelsOutsideTolerance(gray_depth, ref_depth,
-                                          kPixelTolerance),
-              max_depth_outliers);
+    EXPECT_LE(
+            CountPixelsOutsideTolerance(gray_color, ref_color, kPixelTolerance),
+            max_color_outliers);
+    EXPECT_LE(
+            CountPixelsOutsideTolerance(gray_depth, ref_depth, kPixelTolerance),
+            max_depth_outliers);
 }
 
 // =========================================================================
@@ -308,6 +308,38 @@ bool GaussianSplatRenderTest::initialized_ = false;
 
 }  // namespace
 
+TEST_F(GaussianSplatRenderTest, FastLodPreservesGaussianSplatComposite) {
+    auto& engine = visualization::rendering::EngineInstance::GetInstance();
+    auto& resource_mgr =
+            visualization::rendering::EngineInstance::GetResourceManager();
+    auto renderer =
+            std::make_unique<visualization::rendering::FilamentRenderer>(
+                    engine, kW, kH, resource_mgr);
+    auto scene =
+            std::make_unique<visualization::rendering::Open3DScene>(*renderer);
+
+    visualization::rendering::MaterialRecord gs_mat;
+    gs_mat.shader = "gaussianSplat";
+    gs_mat.gaussian_splat_sh_degree = 0;
+    auto splats = MakeTwoTestSplats();
+    scene->AddGeometry("test_splats", &splats, gs_mat);
+
+    visualization::rendering::MaterialRecord cube_mat;
+    cube_mat.shader = "defaultUnlit";
+    cube_mat.base_color = {0.0f, 0.0f, 1.0f, 1.0f};
+    auto cube = MakeOcclusionTestCube();
+    scene->AddGeometry("occluder_cube", cube.get(), cube_mat);
+
+    SetUpTestCamera(*scene);
+    scene->SetLOD(visualization::rendering::Open3DScene::LOD::FAST);
+    RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
+                         kRefMixedDepthGray, 1, 1);
+
+    scene->SetLOD(visualization::rendering::Open3DScene::LOD::HIGH_DETAIL);
+    RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
+                         kRefMixedDepthGray, 1, 1);
+}
+
 // ---------------------------------------------------------------------------
 // Render two splats and compare the direct 8x8 output grid.
 // ---------------------------------------------------------------------------
@@ -333,8 +365,8 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     scene->AddGeometry("test_splats", &pcd, mat);
 
     SetUpTestCamera(*scene);
-    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray,
-                         0, 0, "twosplats_");
+    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray, 0, 0,
+                         "twosplats_");
 }
 
 // ---------------------------------------------------------------------------

@@ -128,6 +128,8 @@ inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
 ///   dc_opacity      — fp16×4 as uvec2 pair, 8 B/splat
 ///   sh_coefficients — fp16 uvec2, stride = 3×degree×2 u32/splat
 struct GaussianSplatPackedAttrs {
+    /// Monotonic scene revision used by per-view GPU upload caches.
+    std::uint64_t revision = 0;
     std::vector<Std430Vec4> positions;  ///< fp32 vec4, 16 B/splat
     std::vector<std::uint32_t>
             scales;  ///< fp16×4 in uvec2 pair, 8 B/splat; linear
