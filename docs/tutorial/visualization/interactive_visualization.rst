@@ -3,6 +3,14 @@
 Interactive visualization
 -------------------------------------
 
+.. note::
+
+    This tutorial uses the legacy OpenGL ``Visualizer`` API. For new applications,
+    prefer the Filament-based visualization stack, which provides physically based
+    rendering, remote visualization, GUI controls, and 3D Gaussian splatting. See
+    :doc:`/tutorial/visualization/index` and
+    :doc:`/tutorial/visualization/gaussian_splatting`.
+
 This tutorial introduces user interaction features of the visualizer window provided by:-
 
 #. ``open3d.visualization.draw_geometries_with_editing``

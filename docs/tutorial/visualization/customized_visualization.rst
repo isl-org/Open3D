@@ -3,6 +3,14 @@
 Customized visualization
 -------------------------------------
 
+.. note::
+
+    This tutorial uses the legacy OpenGL ``Visualizer`` API. For new applications,
+    prefer the Filament-based visualization stack, which provides physically based
+    rendering, remote visualization, GUI controls, and 3D Gaussian splatting. See
+    :doc:`/tutorial/visualization/index` and
+    :doc:`/tutorial/visualization/gaussian_splatting`.
+
 The usage of Open3D convenient visualization functions ``draw_geometries`` and ``draw_geometries_with_custom_animation`` is straightforward. Everything can be done with the GUI. Press :kbd:`h` inside the visualizer window to see helper information. For more details, see :any:`/tutorial/visualization/visualization.ipynb`.
 
 This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer to examples/python/visualization/customized_visualization.py to try the following examples.
