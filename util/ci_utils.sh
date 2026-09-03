@@ -131,18 +131,30 @@ install_python_dependencies() {
     fi
 }
 
-# Install Node.js and Yarn on Linux for BUILD_JUPYTER_EXTENSION. 
-# NodeSource apt is unreliable in CI.  macOS does not use this: CI wheels
-# disable the Jupyter extension; local macOS builds expect node/yarn on PATH
-# (typically brew install node; npm install -g yarn).
-install_nodejs_linux() {
+# Install Node.js and Yarn for BUILD_JUPYTER_EXTENSION.
+# Linux: downloads the official tarball (NodeSource apt is unreliable in CI).
+# macOS: uses Homebrew (brew install node; npm install -g yarn).
+install_nodejs() {
+    echo "Installing Node.js ${NODEJS_VERSION} and Yarn"
+    local arch node_arch tarball
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if ! command -v node >/dev/null 2>&1; then
+            brew install node
+        fi
+        if ! command -v yarn >/dev/null 2>&1; then
+            npm install -g yarn
+        fi
+        node --version
+        yarn --version
+        return 0
+    fi
+
     if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-        echo "install_nodejs_linux is for Linux only (current OSTYPE=$OSTYPE)"
+        echo "install_nodejs: unsupported OS (OSTYPE=$OSTYPE)"
         exit 1
     fi
 
-    echo "Installing Node.js ${NODEJS_VERSION} and Yarn"
-    local arch node_arch tarball
     arch="$(uname -m)"
     case "$arch" in
         x86_64) node_arch=linux-x64 ;;
@@ -161,6 +173,11 @@ install_nodejs_linux() {
     npm install -g yarn
     node --version
     yarn --version
+}
+
+# Backward-compatible alias.
+install_nodejs_linux() {
+    install_nodejs
 }
 
 build_all() {
@@ -238,11 +255,11 @@ build_pip_package() {
     if [[ "build_jupyter" =~ ^($options)$ ]]; then
         echo "Building Jupyter extension in Python wheel."
         BUILD_JUPYTER_EXTENSION=ON
-        BUILD_WEBRTC_FROM_SOURCE=ON
+        BUILD_WEBRTC=ON
     else
         echo "Jupyter extension disabled in Python wheel."
         BUILD_JUPYTER_EXTENSION=OFF
-        BUILD_WEBRTC_FROM_SOURCE=OFF
+        BUILD_WEBRTC=OFF
     fi
     set -u
 
@@ -258,7 +275,7 @@ build_pip_package() {
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
-        "-DBUILD_WEBRTC=$BUILD_WEBRTC_FROM_SOURCE"
+        "-DBUILD_WEBRTC=$BUILD_WEBRTC"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"

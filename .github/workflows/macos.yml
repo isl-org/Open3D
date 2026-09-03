@@ -220,9 +220,10 @@ jobs:
           echo "Using cmake: $(which cmake)"
           cmake --version
           source util/ci_utils.sh
-          install_python_dependencies
+          install_python_dependencies with-jupyter
 
-          brew install ccache glslang spirv-cross gcc
+          brew install ccache glslang spirv-cross gcc node
+          npm install -g yarn
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           # Fix gfortran not found issue
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
@@ -232,7 +233,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_package
+          build_pip_package build_jupyter
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV

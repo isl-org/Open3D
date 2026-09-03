@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <optional>
 #include <sstream>
 #include <thread>
 #include <unordered_map>
@@ -45,9 +46,15 @@ static const std::list<std::string> s_open3d_ice_servers{
 };
 
 // clang-format off
-/// Get custom STUN server address from WEBRTC_STUN_SERVER environment variable.
-/// If there are more than one server, separate them with ";".
-/// Example usage:
+/// Get the STUN/TURN server configuration from WEBRTC_STUN_SERVER.
+/// The return value distinguishes the following configurations:
+/// - Unset: return nullopt and use the default STUN/TURN servers.
+/// - Empty: return an empty string and use host-only ICE with loopback candidates.
+///   This is intended only for a browser and server running on the same machine.
+/// - Nonempty: return the configured servers and replace the default servers.
+///   Separate multiple servers with ";".
+///
+/// Example custom TURN server setup:
 /// 1. Set WEBRTC_STUN_SERVER to:
 ///    - UDP only
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478"
@@ -55,16 +62,15 @@ static const std::list<std::string> s_open3d_ice_servers{
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
 ///    - UDP and TCP
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478;turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
-/// 2. Start your TURN server binding to a local IP address and port
-/// 3. Set router configurations to forward your local IP address and port to
-///    the public IP address and port.
+/// 2. Start your TURN server binding to a local IP address and port.
+/// 3. Configure the router to forward the local IP address and port to the
+///    public IP address and port.
 // clang-format on
-static std::string GetCustomSTUNServer() {
+static std::optional<std::string> GetCustomSTUNServer() {
     if (const char *env_p = std::getenv("WEBRTC_STUN_SERVER")) {
         return std::string(env_p);
-    } else {
-        return "";
     }
+    return std::nullopt;
 }
 
 static std::string GetEnvWebRTCIP() {
@@ -290,16 +296,21 @@ void WebRTCWindowSystem::StartWebRTCServer() {
             webrtc::InitializeSSL();
             Json::Value config;
             std::list<std::string> ice_servers;
-            ice_servers.insert(ice_servers.end(), s_public_ice_servers.begin(),
-                               s_public_ice_servers.end());
-            if (!GetCustomSTUNServer().empty()) {
+            const std::optional<std::string> custom_stun_server =
+                    GetCustomSTUNServer();
+            if (!custom_stun_server.has_value()) {
+                ice_servers.insert(ice_servers.end(),
+                                   s_public_ice_servers.begin(),
+                                   s_public_ice_servers.end());
+                ice_servers.insert(ice_servers.end(),
+                                   s_open3d_ice_servers.begin(),
+                                   s_open3d_ice_servers.end());
+            } else if (!custom_stun_server->empty()) {
                 std::vector<std::string> custom_servers =
-                        utility::SplitString(GetCustomSTUNServer(), ";");
+                        utility::SplitString(*custom_stun_server, ";");
                 ice_servers.insert(ice_servers.end(), custom_servers.begin(),
                                    custom_servers.end());
             }
-            ice_servers.insert(ice_servers.end(), s_open3d_ice_servers.begin(),
-                               s_open3d_ice_servers.end());
             utility::LogInfo("ICE servers: {}", ice_servers);
 
             impl_->peer_connection_manager_ =

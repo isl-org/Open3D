@@ -306,3 +306,16 @@ Here are some ideas to debug network issues:
 - If the visualization video has compression artifacts, you may be using a TURN
   server with insufficient bandwidth. Try switching to a TURN server with higher
   bandwidth or closer to your location.
+
+For a client and server running on the same machine, external STUN or TURN
+servers can be disabled explicitly:
+
+.. code-block:: sh
+
+    WEBRTC_STUN_SERVER="" python examples/python/visualization/draw_webrtc.py
+
+This host-only mode also enables loopback ICE candidates. It can help when
+external ICE servers are unreachable or local network interfaces interfere with
+candidate selection. Do not use it when the browser and Open3D server run on
+different machines; remote connections generally require the default STUN/TURN
+servers or a custom ``WEBRTC_STUN_SERVER`` value.

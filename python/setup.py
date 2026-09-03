@@ -105,15 +105,12 @@ if "@BUNDLE_OPEN3D_ML@" == "ON":
         extras_require["ml"] = [line.strip() for line in f.readlines() if line]
 
 entry_points = {
-    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",],
+    "tensorboard_plugins": [
+        "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+        ".plugin:Open3DPlugin",
+    ],
 }
-if sys.platform != "darwin":  # Remove check when off main thread GUI works
-    entry_points.update({
-        "tensorboard_plugins": [
-            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
-            ".plugin:Open3DPlugin",
-        ]
-    })
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
