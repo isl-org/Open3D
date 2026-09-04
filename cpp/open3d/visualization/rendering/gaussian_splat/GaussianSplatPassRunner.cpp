@@ -11,6 +11,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <string>
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
@@ -121,8 +122,10 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
         ctx.ClearBufferUInt32Zero(vs.histogram_buf);
         ctx.FullBarrier();
 
+        const std::string histogram_label =
+                "gs_radix_histogram_pass_" + std::to_string(pass);
         GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
-                       "gs_radix_histogram")
+                       histogram_label.c_str())
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])
@@ -131,8 +134,10 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
                                   IndirectByteOffset(kSlotRadixHist0 + pass));
         ctx.FullBarrier();
 
+        const std::string scatter_label =
+                "gs_radix_scatter_pass_" + std::to_string(pass);
         GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
-                       "gs_radix_scatter")
+                       scatter_label.c_str())
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])

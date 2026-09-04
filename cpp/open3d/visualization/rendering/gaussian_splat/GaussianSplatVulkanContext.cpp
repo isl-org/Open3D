@@ -71,11 +71,6 @@ namespace rendering {
 
 namespace {
 
-bool ShouldEnableDebugUtils() {
-    const char* value = std::getenv("OPEN3D_VULKAN_DEBUG_UTILS");
-    return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
-}
-
 /// Returns true when all extensions in required[0..n-1] are present in
 /// available.  Sets out_missing to the first missing name.
 bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
@@ -156,7 +151,13 @@ bool GaussianSplatVulkanContext::Initialize() {
     // ---- Instance --------------------------------------------------------
     std::vector<const char*> inst_exts(std::begin(kRequiredInstanceExts),
                                        std::end(kRequiredInstanceExts));
-    if (ShouldEnableDebugUtils()) {
+    const auto available_instance_exts =
+            context_.enumerateInstanceExtensionProperties();
+    const char* debug_utils_exts[] = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
+    std::string missing_debug_utils;
+    if (CheckExtensions(available_instance_exts,
+                 debug_utils_exts, 1,
+                         missing_debug_utils)) {
         inst_exts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         debug_utils_enabled_ = true;
     }

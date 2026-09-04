@@ -156,6 +156,9 @@ public:
         compute_queue_ = interop.GetComputeQueue();
         queue_family_ = interop.GetComputeQueueFamily();
         debug_utils_enabled_ = interop.GetDebugUtilsEnabled();
+        NameObject(vk::ObjectType::eQueue,
+               reinterpret_cast<std::uintptr_t>(compute_queue_),
+               "gs.queue.compute");
 
         if (!InitVma()) return false;
         if (!InitCommandPool()) return false;
@@ -416,12 +419,12 @@ public:
 
     std::uintptr_t CreateTexture2DR32F(std::uint32_t w,
                                        std::uint32_t h,
-                                       const char* /*label*/) override {
+                                       const char* label) override {
         return AllocTex(w, h, VK_FORMAT_R32_SFLOAT,
                         VK_IMAGE_USAGE_STORAGE_BIT |
                                 VK_IMAGE_USAGE_SAMPLED_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                        VK_IMAGE_ASPECT_COLOR_BIT);
+                    VK_IMAGE_ASPECT_COLOR_BIT, label);
     }
 
     void DestroyTexture(std::uintptr_t tex) override {
@@ -450,7 +453,7 @@ public:
     std::uintptr_t ResizeTexture2DR16UI(std::uintptr_t tex,
                                         std::uint32_t w,
                                         std::uint32_t h,
-                                        const char* /*label*/) override {
+                                        const char* label) override {
         if (tex != 0) {
             auto it = textures_.find(tex);
             if (it != textures_.end() && it->second.width == w &&
@@ -461,7 +464,7 @@ public:
         return AllocTex(
                 w, h, VK_FORMAT_R16_UINT,
                 VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                VK_IMAGE_ASPECT_COLOR_BIT);
+                VK_IMAGE_ASPECT_COLOR_BIT, label);
     }
 
     bool DownloadTextureR32F(std::uintptr_t tex,
@@ -670,6 +673,10 @@ private:
         vk::CommandPoolCreateInfo ci{{}, queue_family_};
         try {
             cmd_pool_ = raii_dev.createCommandPool(ci);
+            NameObject(vk::ObjectType::eCommandPool,
+                   reinterpret_cast<std::uintptr_t>(
+                       static_cast<VkCommandPool>(*cmd_pool_)),
+                   "gs.command_pool");
         } catch (const vk::SystemError& e) {
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateCommandPool failed: {}",
@@ -684,6 +691,10 @@ private:
         try {
             auto cmds = raii_dev.allocateCommandBuffers(ai);
             cmd_ = std::move(cmds.front());
+            NameObject(vk::ObjectType::eCommandBuffer,
+                   reinterpret_cast<std::uintptr_t>(
+                       static_cast<VkCommandBuffer>(*cmd_)),
+                   "gs.command_buffer");
         } catch (const vk::SystemError& e) {
             utility::LogWarning(
                     "GaussianSplatVulkan: vkAllocateCommandBuffers failed: {}",
@@ -720,6 +731,11 @@ private:
             nearest_sampler_ = GaussianSplatVulkanContext::GetInstance()
                                        .GetRaiiDevice()
                                        .createSampler(si);
+                NameObject(
+                    vk::ObjectType::eSampler,
+                    reinterpret_cast<std::uintptr_t>(
+                        static_cast<VkSampler>(*nearest_sampler_)),
+                    "gs.sampler.nearest");
         } catch (const vk::SystemError& e) {
             utility::LogWarning(
                     "GaussianSplatVulkan: vkCreateSampler failed: {}",
@@ -761,6 +777,11 @@ private:
                     name, e.what());
             return false;
         }
+        NameObject(
+            vk::ObjectType::eShaderModule,
+            reinterpret_cast<std::uintptr_t>(
+                static_cast<VkShaderModule>(*shader_module)),
+            (name + ".shader").c_str());
 
         // Build descriptor set layout for this pipeline
         const auto& bt = kShaderBindings[i];
@@ -807,6 +828,11 @@ private:
                     name, e.what());
             return false;
         }
+        NameObject(
+            vk::ObjectType::ePipelineLayout,
+            reinterpret_cast<std::uintptr_t>(
+                static_cast<VkPipelineLayout>(*pipeline_layout)),
+            (name + ".layout").c_str());
 
         vk::ComputePipelineCreateInfo pci{
                 {},
@@ -830,6 +856,11 @@ private:
                     name, e.what());
             return false;
         }
+        NameObject(
+            vk::ObjectType::ePipeline,
+            reinterpret_cast<std::uintptr_t>(
+                static_cast<VkPipeline>(*pipeline)),
+            name.c_str());
         // shader_module auto-destroyed here (pipeline compiled; module no
         // longer needed)
 
@@ -841,6 +872,23 @@ private:
         p.valid = true;
         utility::LogDebug("GaussianSplatVulkan: loaded {}", name);
         return true;
+    }
+
+    void NameObject(vk::ObjectType type,
+                    std::uint64_t handle,
+                    const char* name) {
+        if (!debug_utils_enabled_ || !handle || name == nullptr) return;
+        vk::DebugUtilsObjectNameInfoEXT info{};
+        info.objectType = type;
+        info.objectHandle = handle;
+        info.pObjectName = name;
+        try {
+            (void)GaussianSplatVulkanContext::GetInstance()
+                    .GetRaiiDevice()
+                    .setDebugUtilsObjectNameEXT(info);
+        } catch (const vk::SystemError&) {
+            // Object naming is diagnostic metadata and must not affect rendering.
+        }
     }
 
     // --- Command buffer lifecycle -----------------------------------------
@@ -952,8 +1000,8 @@ private:
                 }
                 continue;
             }
-            VkImageMemoryBarrier2 barrier{
-                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+            VkImageMemoryBarrier2 barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
             barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
             barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
@@ -964,7 +1012,8 @@ private:
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.image = entry.image;
             barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-            VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+            VkDependencyInfo dependency{};
+            dependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
             dependency.imageMemoryBarrierCount = 1;
             dependency.pImageMemoryBarriers = &barrier;
             VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
@@ -987,8 +1036,8 @@ private:
             e.current_layout = needed_layout;
         } else if (first_imported_use &&
                    needed_layout == VK_IMAGE_LAYOUT_GENERAL) {
-            VkImageMemoryBarrier2 barrier{
-                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+            VkImageMemoryBarrier2 barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
             barrier.srcStageMask =
                     VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
             barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
@@ -1001,7 +1050,8 @@ private:
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.image = e.image;
             barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-            VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+            VkDependencyInfo dependency{};
+            dependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
             dependency.imageMemoryBarrierCount = 1;
             dependency.pImageMemoryBarriers = &barrier;
             VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
@@ -1110,7 +1160,7 @@ private:
 
     // --- Buffer allocation ------------------------------------------------
 
-    std::uintptr_t AllocBuf(std::size_t size, bool priv, const char* /*lbl*/) {
+    std::uintptr_t AllocBuf(std::size_t size, bool priv, const char* label) {
         if (size == 0) return 0;
         VkBufferCreateInfo bci{};
         bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -1144,6 +1194,8 @@ private:
         e.size = size;
         e.mapped = priv ? nullptr : info.pMappedData;
         e.is_private = priv;
+        NameObject(vk::ObjectType::eBuffer,
+               reinterpret_cast<std::uintptr_t>(buf), label);
         return handle;
     }
 
@@ -1153,7 +1205,8 @@ private:
                             std::uint32_t h,
                             VkFormat format,
                             VkImageUsageFlags usage,
-                            VkImageAspectFlags aspect) {
+                            VkImageAspectFlags aspect,
+                            const char* label = nullptr) {
         VkImageCreateInfo ici{};
         ici.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         ici.imageType = VK_IMAGE_TYPE_2D;
@@ -1187,6 +1240,12 @@ private:
         e.width = w;
         e.height = h;
         e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        NameObject(vk::ObjectType::eImage,
+               reinterpret_cast<std::uintptr_t>(image), label);
+        NameObject(vk::ObjectType::eImageView,
+               reinterpret_cast<std::uintptr_t>(
+                   static_cast<VkImageView>(*e.view)),
+               label);
         return handle;
     }
 

@@ -309,8 +309,10 @@ public:
         : ctx_(ctx), kind_(kind) {
         if (kind_ == kGeometry) {
             ctx_.BeginGeometryPass();
+            ctx_.PushDebugGroup("gs_geometry_frame");
         } else {
             ctx_.BeginCompositePass();
+            ctx_.PushDebugGroup("gs_composite_frame");
         }
     }
     ~GpuComputeFrame() { End(); }
@@ -322,6 +324,7 @@ public:
     void End() {
         if (!ended_) {
             ended_ = true;
+            ctx_.PopDebugGroup();
             if (kind_ == kGeometry) {
                 ctx_.EndGeometryPass();
             } else {
