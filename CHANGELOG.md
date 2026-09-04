@@ -15,6 +15,7 @@
 -   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add RealSense depth post-processing filters for RSBagReader playback (issue #6164).
 -   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
 -   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
 -   Upgrade stdgpu third-party library to commit d7c07d0.

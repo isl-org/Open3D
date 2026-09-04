@@ -102,6 +102,9 @@ void pybind_sensor_declarations(py::module &m) {
                     ".. warning:: A few frames may be dropped if user code "
                     "takes a long time (>10 frame intervals) to process a "
                     "frame.");
+    py::class_<RSBagReader::PostProcessingFilter>(
+            rs_bag_reader, "PostProcessingFilter",
+            "RealSense depth post-processing filter configuration.");
     py::class_<RealSenseSensorConfig> realsense_sensor_config(
             m, "RealSenseSensorConfig", "Configuration for a RealSense camera");
     py::class_<RealSenseValidConfigs> realsense_valid_configs(
@@ -131,7 +134,10 @@ void pybind_sensor_definitions(py::module &m) {
                      "(default video length) Save frames till this time (us)"},
                     {"buffer_size",
                      "Size of internal frame buffer, increase this if you "
-                     "experience frame drops."}};
+                     "experience frame drops."},
+                    {"filters",
+                     "Ordered list of RealSense depth post-processing filter "
+                     "configurations."}};
 
     // Class RGBD video metadata
     auto rgbd_video_metadata = static_cast<py::class_<RGBDVideoMetadata>>(
@@ -196,6 +202,23 @@ void pybind_sensor_definitions(py::module &m) {
     rgbd_sensor.def("__repr__", &RGBDSensor::ToString);
 
 #ifdef BUILD_LIBREALSENSE
+    auto post_processing_filter =
+            static_cast<py::class_<RSBagReader::PostProcessingFilter>>(
+                    m.attr("RSBagReader").attr("PostProcessingFilter"));
+    post_processing_filter
+            .def(py::init([](const std::string &filter_name,
+                             const std::unordered_map<std::string, float>
+                                     &options) {
+                     return RSBagReader::PostProcessingFilter{filter_name,
+                                                              options};
+                 }),
+                 "filter_name"_a, "options"_a,
+                 "Create a RealSense depth post-processing filter.")
+            .def_readwrite("filter_name",
+                           &RSBagReader::PostProcessingFilter::filter_name_)
+            .def_readwrite("options",
+                           &RSBagReader::PostProcessingFilter::options_);
+
     // Class RS bag reader
     auto rs_bag_reader =
             static_cast<py::class_<RSBagReader, std::unique_ptr<RSBagReader>,
@@ -205,9 +228,19 @@ void pybind_sensor_definitions(py::module &m) {
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open", &RSBagReader::Open,
+            .def("open",
+                 py::overload_cast<const std::string &>(&RSBagReader::Open),
                  py::call_guard<py::gil_scoped_release>(), "filename"_a,
                  "Open an RS bag playback.")
+            .def(
+                    "open",
+                    [](RSBagReader &reader, const fs::path &filename,
+                       const std::vector<RSBagReader::PostProcessingFilter>
+                               &filters) {
+                        py::gil_scoped_release release;
+                        return reader.Open(filename.string(), filters);
+                    },
+                    "filename"_a, "filters"_a, "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
             .def("is_eof", &RSBagReader::IsEOF,
