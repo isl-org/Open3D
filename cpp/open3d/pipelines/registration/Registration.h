@@ -122,7 +122,7 @@ public:
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
-    /// in target). Higher is better.
+    /// in source). Higher is better.
     /// For RANSAC: inlier ratio (# of inlier correspondences / # of
     /// all correspondences)
     double fitness_;
