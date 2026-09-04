@@ -17,7 +17,7 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2025 www.open3d.org")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2026 www.open3d.org")
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
@@ -55,6 +55,8 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}" "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
         if (UNIX)
+            install(FILES "$<TARGET_FILE:TBB::tbb>"
+                DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}")
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
@@ -131,6 +133,17 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
     elseif (WIN32)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+        # Suppress the console window while keeping the standard main() entry point (no WinMain).
+        set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+            target_link_options(${TARGET_NAME} PRIVATE
+                                "-Xlinker" "/ENTRY:mainCRTStartup")
+        elseif (MSVC)
+            target_link_options(${TARGET_NAME} PRIVATE "/ENTRY:mainCRTStartup")
+        else()
+            target_link_options(${TARGET_NAME} PRIVATE
+                                "-Xlinker" "/ENTRY:mainCRTStartup")
+        endif()
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
@@ -155,6 +168,18 @@ endmacro()
 if (BUILD_GUI)
     open3d_add_app_common(Open3DViewer Open3D Open3DViewer)
     open3d_add_app_gui(Open3DViewer Open3D Open3DViewer)
+    if (WIN32)
+        add_custom_target(Open3DViewerMSIX
+            COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}"
+                --config "$<CONFIG>"
+            COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass
+                    -File "${PROJECT_SOURCE_DIR}/cpp/apps/Open3DViewer/WindowsMSIX/build_msix.ps1"
+                    -InstallDir "${CMAKE_INSTALL_PREFIX}/bin/Open3D"
+                    -Version "${PROJECT_VERSION}"
+                    -OutDir "${CMAKE_BINARY_DIR}/msix-package"
+            VERBATIM)
+            add_dependencies(Open3DViewerMSIX Open3DViewer)
+    endif()
 endif()
 
 open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)

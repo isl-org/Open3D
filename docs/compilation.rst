@@ -332,11 +332,18 @@ ML Module
 The ML module consists of primitives like operators and layers as well as high
 level code for models and pipelines. To build the operators and layers, set
 ``BUILD_PYTORCH_OPS=ON`` and/or ``BUILD_TENSORFLOW_OPS=ON``.  Don't forget to also
-enable ``BUILD_CUDA_MODULE=ON`` for GPU support. To include the models and
-pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
-``OPEN3D_ML_ROOT`` to the Open3D-ML repository. You can directly download
-Open3D-ML from GitHub during the build with
-``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
+enable ``BUILD_CUDA_MODULE=ON`` for GPU support. Set ``OPEN3D_ML_ROOT`` to the
+Open3D-ML repository to also bundle its models and pipelines into the Python
+package: this is the default (``BUNDLE_OPEN3D_ML=ON``) whenever ML ops are built
+and ``OPEN3D_ML_ROOT`` is available. You can directly download Open3D-ML from
+GitHub during the build with
+``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``. To build only the
+ops and layers, e.g. when developing against a local Open3D-ML checkout, set
+``BUNDLE_OPEN3D_ML=OFF``.
+
+.. note:: The Python dependencies of Open3D-ML (PyYAML, scikit-learn, pandas,
+    matplotlib, ...) are not installed with the wheel. Users of the bundled ML
+    code install them with the ``ml`` extra, e.g. ``pip install open3d[ml]``.
 
 .. warning:: Compiling PyTorch ops with PyTorch < 1.9 may have
     stability issues. See `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_
@@ -361,7 +368,6 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
           -DGLIBCXX_USE_CXX11_ABI=OFF \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
-          -DBUNDLE_OPEN3D_ML=ON \
           -DOPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git \
           ..
     # Install the python wheel with pip

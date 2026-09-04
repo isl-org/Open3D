@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,6 +16,7 @@
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/GeneralizedICP.h"
+#include "open3d/pipelines/registration/NormalDistributionsTransform.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/SymmetricICP.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
@@ -126,6 +127,9 @@ void pybind_registration_declarations(py::module &m) {
                TransformationEstimation>
             te_gicp(m_registration, "TransformationEstimationForGeneralizedICP",
                     "Class to estimate a transformation for Generalized ICP.");
+    py::class_<NormalDistributionsTransformOption> ndt_option(
+            m_registration, "NormalDistributionsTransformOption",
+            "Options for 3D Normal Distributions Transform registration.");
     py::class_<CorrespondenceChecker,
                PyCorrespondenceChecker<CorrespondenceChecker>>
             cc(m_registration, "CorrespondenceChecker",
@@ -435,6 +439,78 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def_readwrite("kernel",
                            &TransformationEstimationForGeneralizedICP::kernel_,
                            "Robust Kernel used in the Optimization");
+
+    // open3d.registration.NormalDistributionsTransformOption:
+    auto ndt_option =
+            static_cast<py::class_<NormalDistributionsTransformOption>>(
+                    m_registration.attr("NormalDistributionsTransformOption"));
+    py::detail::bind_copy_functions<NormalDistributionsTransformOption>(
+            ndt_option);
+    ndt_option
+            .def(py::init<double, int, double, double, double, int, double,
+                          int>(),
+                 "voxel_size"_a = 1.0, "min_points_per_voxel"_a = 6,
+                 "covariance_regularization"_a = 1e-3,
+                 "transformation_epsilon"_a = 1e-6,
+                 "relative_objective"_a = 1e-6, "max_iteration"_a = 30,
+                 "outlier_threshold"_a = 9.0, "neighbor_search_type"_a = 1)
+            .def_readwrite("voxel_size",
+                           &NormalDistributionsTransformOption::voxel_size_,
+                           "Target voxel size used to build the Gaussian "
+                           "model.")
+            .def_readwrite(
+                    "min_points_per_voxel",
+                    &NormalDistributionsTransformOption::min_points_per_voxel_,
+                    "Minimum number of target points needed for a voxel "
+                    "Gaussian.")
+            .def_readwrite("covariance_regularization",
+                           &NormalDistributionsTransformOption::
+                                   covariance_regularization_,
+                           "Minimum eigenvalue ratio used to regularize voxel "
+                           "covariances.")
+            .def_readwrite(
+                    "transformation_epsilon",
+                    &NormalDistributionsTransformOption::
+                            transformation_epsilon_,
+                    "Stop optimization when the update vector norm is lower "
+                    "than this value.")
+            .def_readwrite(
+                    "relative_objective",
+                    &NormalDistributionsTransformOption::relative_objective_,
+                    "Stop optimization when the relative change in mean "
+                    "Mahalanobis objective is lower than this value.")
+            .def_readwrite("max_iteration",
+                           &NormalDistributionsTransformOption::max_iteration_,
+                           "Maximum number of Gauss-Newton iterations.")
+            .def_readwrite(
+                    "outlier_threshold",
+                    &NormalDistributionsTransformOption::outlier_threshold_,
+                    "Maximum squared Mahalanobis distance accepted for a "
+                    "point-to-voxel residual.")
+            .def_readwrite(
+                    "neighbor_search_type",
+                    &NormalDistributionsTransformOption::neighbor_search_type_,
+                    "0 uses the rounded center voxel; 1 also uses the six "
+                    "face-adjacent voxels.")
+            .def("__repr__",
+                 [](const NormalDistributionsTransformOption &option) {
+                     return fmt::format(
+                             "NormalDistributionsTransformOption("
+                             "voxel_size={}, "
+                             "min_points_per_voxel={}, "
+                             "covariance_regularization={}, "
+                             "transformation_epsilon={}, "
+                             "relative_objective={}, "
+                             "max_iteration={}, "
+                             "outlier_threshold={}, "
+                             "neighbor_search_type={})",
+                             option.voxel_size_, option.min_points_per_voxel_,
+                             option.covariance_regularization_,
+                             option.transformation_epsilon_,
+                             option.relative_objective_, option.max_iteration_,
+                             option.outlier_threshold_,
+                             option.neighbor_search_type_);
+                 });
 
     // open3d.registration.CorrespondenceChecker
     auto cc = static_cast<
@@ -783,6 +859,19 @@ must hold true for all edges.)");
                        "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m_registration, "registration_generalized_icp",
                                  map_shared_argument_docstrings);
+
+    m_registration.def("registration_ndt", &RegistrationNDT,
+                       py::call_guard<py::gil_scoped_release>(),
+                       "Function for 3D Normal Distributions Transform "
+                       "registration",
+                       "source"_a, "target"_a,
+                       "option"_a = NormalDistributionsTransformOption(),
+                       "init"_a = Eigen::Matrix4d::Identity());
+    auto ndt_argument_docstrings = map_shared_argument_docstrings;
+    ndt_argument_docstrings["option"] =
+            "Normal Distributions Transform registration option.";
+    docstring::FunctionDocInject(m_registration, "registration_ndt",
+                                 ndt_argument_docstrings);
 
     m_registration.def(
             "registration_ransac_based_on_correspondence",

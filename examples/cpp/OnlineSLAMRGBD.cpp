@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ void PrintHelp() {
     utility::LogInfo("                      provided, default dataset will be used.");
     utility::LogInfo("    [--intrinsic_path camera_intrinsic.json]");
     utility::LogInfo("    [--align]");
-    utility::LogInfo("    [--device CUDA:0]");
+    utility::LogInfo("    [--device CUDA:0 or SYCL:0]");
     utility::LogInfo("    [--default_dataset lounge]");
     utility::LogInfo("                    - To change default dataset (used when");
     utility::LogInfo("                      dataset_path is not set).");

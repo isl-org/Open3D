@@ -6,7 +6,7 @@ if(WIN32)
     set(CPACK_GENERATOR ZIP)
 endif()
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set(CPACK_PACKAGE_VERSION ${OPEN3D_VERSION})
+set(CPACK_PACKAGE_VERSION ${OPEN3D_PACKAGE_VERSION})
 set(CPACK_PACKAGE_VENDOR "Open3D Team")
 set(CPACK_PACKAGE_CONTACT "${PROJECT_EMAIL}")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
@@ -33,7 +33,7 @@ if (NOT MSVC)
     set(CPACK_STRIP_FILES ON)  # Don't strip MSVC Debug build
 endif()
 set(CPACK_PACKAGE_FILE_NAME
-    "open3d-devel-${_sys}-${OPEN3D_VERSION_FULL}")
+    "open3d-devel-${_sys}-${OPEN3D_PACKAGE_VERSION}")
 set(CPACK_THREADS 0)  # Use all cores for compressing package
 
 include(CPack)

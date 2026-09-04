@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ class CppFormatter:
     standard_header = """// ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 """
@@ -124,7 +124,7 @@ class PythonFormatter:
     standard_header = """# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """
@@ -322,6 +322,28 @@ def _filter_files(files, ignored_patterns):
     ]
 
 
+def _filter_changed_files(files):
+    """Keep files changed in Git, including untracked files."""
+    open3d_root_dir = Path(__file__).resolve().parent.parent
+    changed_files = subprocess.check_output(
+        ["git", "diff", "--name-only", "HEAD"],
+        cwd=open3d_root_dir,
+        text=True,
+    ).splitlines()
+    untracked_files = subprocess.check_output(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=open3d_root_dir,
+        text=True,
+    ).splitlines()
+    changed_paths = {
+        str((open3d_root_dir / file_path).resolve())
+        for file_path in changed_files + untracked_files
+    }
+    return [
+        file for file in files if str(Path(file).resolve()) in changed_paths
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -345,6 +367,13 @@ def main():
         default=False,
         help="If true, prints file names while formatting.",
     )
+    parser.add_argument(
+        "--changed-only",
+        dest="changed_only",
+        action="store_true",
+        default=False,
+        help="Only process files changed in Git.",
+    )
     args = parser.parse_args()
 
     # Check formatting libs
@@ -360,13 +389,19 @@ def main():
         CPP_FORMAT_DIRS,
         ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in", "mm", "comp"])
     cpp_files = _filter_files(cpp_files, cpp_ignored_files)
+    python_files = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
+    jupyter_files = _glob_files(JUPYTER_FORMAT_DIRS, ["ipynb"])
+
+    if args.changed_only:
+        cpp_files = _filter_changed_files(cpp_files)
+        python_files = _filter_changed_files(python_files)
+        jupyter_files = _filter_changed_files(jupyter_files)
 
     # Check or apply style
     cpp_formatter = CppFormatter(cpp_files, clang_format_bin=clang_format_bin)
-    python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
+    python_formatter = PythonFormatter(python_files,
                                        style_config=python_style_config)
-    jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
-                                                     ["ipynb"]),
+    jupyter_formatter = JupyterFormatter(jupyter_files,
                                          style_config=python_style_config)
 
     changed_files = []

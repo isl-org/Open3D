@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -26,8 +26,7 @@ def read_legacy_rgbd_image(color_file, depth_file, convert_rgb_to_intensity):
 
 
 def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
-    # TODO: load it from config
-    device = o3c.Device('CUDA:0')
+    device = o3c.Device(config.device)
 
     interval = config.odometry_loop_interval
     n_files = len(depth_list)
@@ -89,8 +88,7 @@ def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
 
 
 def rgbd_odometry(depth_list, color_list, intrinsic, config):
-    # TODO: load it from config
-    device = o3c.Device('CUDA:0')
+    device = o3c.Device(config.device)
 
     n_files = len(depth_list)
 

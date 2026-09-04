@@ -1,4 +1,5 @@
 ## Main
+-   Reduce the installed size of the Open3D wheel: Open3D-ML Python dependencies are now an optional extra (`pip install open3d[ml]`, ~335 MB smaller for core-only installs) and `open3d.ml` submodules are imported lazily. `BUNDLE_OPEN3D_ML` now defaults to ON when ML ops are built and `OPEN3D_ML_ROOT` is set, and Windows wheels bundle Open3D-ML too (PR #7540).
 -   Add symmetric ICP registration to the legacy and Tensor pipelines (PR #7276).
 -   Replace OpenMP with oneAPI TBB for all CPU parallelism; Open3D no longer depends on OpenMP. This removes the `libomp` / `libgomp` runtime dependency and the thread oversubscription and crashes caused by loading multiple OpenMP runtimes in one process (e.g. alongside PyTorch in Python). The `WITH_OPENMP` CMake option is removed, oneTBB >= 2021.4.0 is required, and `OMP_NUM_THREADS` is replaced by `open3d.utility.set_max_threads()` (C++: `utility::SetMaxThreads()` or a `tbb::task_arena`). `utility::OMPProgressBar` is removed in favor of the thread-safe `utility::ProgressBar`; `utility::GetThreadNum()` and `utility::InParallel()` are removed (PR #6626) (issues #6196, #6544, #6750)
 -   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
@@ -11,6 +12,7 @@
 -   Convolution ops' `allow_tf32` acceleration on SYCL requires channel counts and leading dimensions to be divisible by 4; falls back to IEEE float32 with a one-time warning otherwise. See `docs/sycl.rst`.
 -   Document a RoI-pool point-selection divergence between the SYCL and CPU/CUDA backends when more than `sampled_pts_num` points fall inside a box (both are valid samples; downstream counts and `pooled_empty_flag` remain identical). See `docs/sycl.rst`.
 -   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
 -   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
 -   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
 -   Add RealSense depth post-processing filters for RSBagReader playback (issue #6164).
@@ -58,6 +60,7 @@
 -   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Add 3D Normal Distributions Transform registration with C++ and Python APIs (PR #7517).
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)

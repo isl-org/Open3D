@@ -7,6 +7,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Required build args, should be specified in docker_build.sh
 ARG DEVELOPER_BUILD
+ARG OPEN3D_GIT_HASH
 ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG PYTHON_VERSION
@@ -17,6 +18,7 @@ ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
 ARG BUILD_SYCL_MODULE
 ARG CI
+ARG OPEN3D_ML_VERSION
 
 RUN if [[ -z "${DEVELOPER_BUILD}"      ]]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [[ -z "${CCACHE_TAR_NAME}"      ]]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -43,6 +45,7 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
 # Forward all ARG to ENV
 # ci_utils.sh may require these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV OPEN3D_GIT_HASH=${OPEN3D_GIT_HASH}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
@@ -142,16 +145,16 @@ RUN ccache --version \
  && ccache -M 4G \
  && ccache -s
 
-# Checkout Open3D-ML main branch
-# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+# Checkout Open3D-ML (tag or main branch)
+# OPEN3D_ML_VERSION can be set to a tag (e.g. v0.19.0) or branch; defaults to main.
 # Install Open3D-ML if it is not already present in BASE_IMAGE.
-# TODO(ss/sycl-mlops): switch back to main once requirements-torch-xpu.txt on
-# ss/xpu is merged upstream.
+ARG OPEN3D_ML_VERSION
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then OPEN3D_ML_REF=ss/xpu; else OPEN3D_ML_REF=main; fi \
- && if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
-        git clone --depth 1 https://github.com/isl-org/Open3D-ML.git \
-            -b "${OPEN3D_ML_REF}" ${OPEN3D_ML_ROOT}; \
+ENV OPEN3D_ML_VERSION=${OPEN3D_ML_VERSION:-main}
+RUN if [ ! -d "${OPEN3D_ML_ROOT}/.git" ]; then \
+          git clone --depth 1 --branch "${OPEN3D_ML_VERSION:-main}" \
+              https://github.com/isl-org/Open3D-ML.git \
+            ${OPEN3D_ML_ROOT}; \
     fi
 
 # Open3D repo
@@ -171,6 +174,9 @@ RUN source util/ci_utils.sh \
     else \
         install_python_dependencies with-jupyter; \
     fi \
+ && if [ "${BUILD_TENSORFLOW_OPS}" = "ON" ] || [ "${BUILD_PYTORCH_OPS}" = "ON" ]; then \
+        install_open3d_ml_python_requirements; \
+    fi \
  && pip install -r python/requirements_test.txt \
  && install_nodejs_linux
 
@@ -185,21 +191,27 @@ RUN \
         export CMAKE_C_COMPILER=gcc; \
         export BUILD_ISPC_MODULE=ON; \
     fi \
+ && if [ "${BUILD_TENSORFLOW_OPS}" = "ON" ] || [ "${BUILD_PYTORCH_OPS}" = "ON" ]; then \
+        git -C "${OPEN3D_ML_ROOT}" fetch --tags --quiet || true; \
+    fi \
  && mkdir -p build \
  && cd build \
  && cmake --fresh -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
           -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+          -DPython3_EXECUTABLE=${PYENV_ROOT}/versions/${PYTHON_VERSION}/bin/python \
           -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
           -DBUILD_ISPC_MODULE=${BUILD_ISPC_MODULE} \
           -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+          -DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH} \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=${BUILD_ISPC_MODULE} \
           -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
           -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
+          -DOPEN3D_ML_VERSION=${OPEN3D_ML_VERSION} \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=OFF \
@@ -215,16 +227,15 @@ RUN \
  && if [[ "${CI:-}a" != "a" ]]; then rm -rf _deps assimp embree ipp mkl mkl_install webrtc librealsense; fi
 # If CI is not null or unset, remove all large build folders to save disk space
 
-# Compress ccache folder, move to / directory
+# Move build artifacts to the image root. The ccache archive is created by the
+# host-mounted docker run in docker_build.sh to keep it out of the image layer.
 RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
- && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
- && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
- && cd ${CCACHE_DIR_PARENT} \
- && tar -caf /${CCACHE_TAR_NAME}.tar.xz ${CCACHE_DIR_NAME} \
  && if [[ "${PACKAGE}" = "ON" ]]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && if [[ "${PACKAGE}" = "VIEWER" ]]; then mv /root/Open3D/build/package-Open3DViewer-deb/open3d-viewer-*-Linux.deb /; fi \
- && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; fi \
+ && if [[ "${BUILD_SHARED_LIBS}" = "ON" ]]; then \
+        rm -f /open3d*.whl; \
+        mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; \
+    fi \
  && ls -alh /
 
 RUN echo "Docker build done."

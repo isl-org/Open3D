@@ -33,12 +33,19 @@ Currently, to use our optimized function, we assume the below combinations of da
    :lineno-start: 212
    :lines: 212-218
 
-and CUDA
+CUDA
 
 .. literalinclude:: ../../../cpp/open3d/t/geometry/kernel/VoxelBlockGridCUDA.cu
    :language: cpp
    :lineno-start: 238
    :lines: 238-244
+
+and SYCL
+
+.. literalinclude:: ../../../cpp/open3d/t/geometry/kernel/VoxelBlockGridSYCL.cpp
+   :language: cpp
+   :lineno-start: 273
+   :lines: 273-277
 
 For more generalized functionalities, you may extend the macros and/or the kernel functions and compile Open3D from scratch to achieve the maximal performance (~100Hz on a GTX 1070), or follow :ref:`customized_integration` and implement a fast prototype (~25Hz).
 
@@ -73,4 +80,4 @@ The ``.npz`` file of the aforementioned voxel block grid contains the following 
 - ``key``: all the active keys
 - ``block_resolution``: 8
 - ``voxel_size``: 0.0059 = 3.0 / 512
-- ``CUDA:0``: the device
+- ``CUDA:0`` or ``SYCL:0``: the accelerator device

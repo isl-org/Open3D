@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -174,12 +174,27 @@ void pybind_o3dvisualizer_definitions(py::module& m) {
                  "have a menubar.",
                  "show"_a)
             // from O3DVisualizer
-            .def("add_action", &O3DVisualizer::AddAction,
-                 "Adds a button to the custom actions section of the UI and a "
-                 "corresponding menu item in the \"Actions\" menu. The "
-                 "callback will be given one parameter, the O3DVisualizer "
-                 "instance, and does not return any value.",
-                 "name"_a, "callback"_a)
+            .def(
+                    "add_action",
+                    [](O3DVisualizer& self, const std::string& name,
+                       py::function callback) {
+                        // Pre-cast self to py::object while GIL is held
+                        // (called from Python). Avoids pybind11 cast of
+                        // O3DVisualizer& at callback time, which can block
+                        // after multiple GIL save/restore cycles.
+                        py::object self_obj = py::cast(
+                                self, py::return_value_policy::reference);
+                        auto wrapper = [self_obj, callback](O3DVisualizer&) {
+                            callback(self_obj);
+                        };
+                        self.AddAction(name, wrapper);
+                    },
+                    "Adds a button to the custom actions section of the UI and "
+                    "a "
+                    "corresponding menu item in the \"Actions\" menu. The "
+                    "callback will be given one parameter, the O3DVisualizer "
+                    "instance, and does not return any value.",
+                    "name"_a, "callback"_a)
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<geometry::Geometry3D>,

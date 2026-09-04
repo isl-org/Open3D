@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,6 +14,9 @@
 // intentionally not used because Filament's Linux OpenGL path is GLX-only.
 
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
 
 #if !defined(__APPLE__)
 
@@ -49,6 +52,10 @@ public:
     ///   Linux   -> GLXContext
     ///   Windows -> HGLRC
     void* GetNativeContext() const;
+
+    /// Returns the underlying GLFWwindow* (as void*), for adapter-identity
+    /// lookups (see GpuAdapterSelection.h's GetAdapterInfoForWindow()).
+    void* GetNativeWindowHandle() const { return glfw_window_; }
 
     /// Destroys the context and associated resources.
     void Shutdown();

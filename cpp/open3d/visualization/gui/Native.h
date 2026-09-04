@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,6 +19,11 @@ namespace visualization {
 namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window);
+// GLFW uses the generic Windows application icon unless the native window is
+// assigned the icon embedded in the executable.
+#ifdef _WIN32
+void SetNativeWindowIcon(GLFWwindow* glfw_window);
+#endif  // _WIN32
 // Note that Windows cannot post an expose event so it must draw immediately.
 // Therefore this function cannot be called while drawing.
 void PostNativeExposeEvent(GLFWwindow* glfw_window);

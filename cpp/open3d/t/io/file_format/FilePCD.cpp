@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -1052,31 +1052,43 @@ static bool WritePCDData(FILE *file,
             }
         }
     } else if (header.datatype == PCDDataType::BINARY) {
-        std::vector<char> buffer((header.pointsize * header.points));
-        std::uint32_t buffer_index = 0;
-        for (std::int64_t i = 0; i < num_points; ++i) {
-            for (auto &it : attribute_ptrs) {
-                DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
-                    const scalar_t *data_ptr =
-                            static_cast<const scalar_t *>(it.data_ptr_);
+        constexpr std::size_t kMaxChunkSizeInBytes = 32 * 1024 * 1024;
+        const std::int64_t points_per_chunk = std::max<std::int64_t>(
+                1, kMaxChunkSizeInBytes / header.pointsize);
+        std::vector<char> buffer(static_cast<std::size_t>(
+                std::min(num_points, points_per_chunk) * header.pointsize));
 
-                    for (int idx_offset = it.group_size_ * i;
-                         idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
-                        std::memcpy(buffer.data() + buffer_index,
-                                    reinterpret_cast<const char *>(
-                                            &data_ptr[idx_offset]),
-                                    sizeof(scalar_t));
-                        buffer_index += sizeof(scalar_t);
-                    }
-                });
+        for (std::int64_t chunk_start = 0; chunk_start < num_points;
+             chunk_start += points_per_chunk) {
+            const std::int64_t chunk_end =
+                    std::min(num_points, chunk_start + points_per_chunk);
+            std::size_t buffer_index = 0;
+            for (std::int64_t i = chunk_start; i < chunk_end; ++i) {
+                for (auto &it : attribute_ptrs) {
+                    DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
+                        const scalar_t *data_ptr =
+                                static_cast<const scalar_t *>(it.data_ptr_);
+
+                        for (int idx_offset = it.group_size_ * i;
+                             idx_offset < it.group_size_ * (i + 1);
+                             ++idx_offset) {
+                            std::memcpy(buffer.data() + buffer_index,
+                                        reinterpret_cast<const char *>(
+                                                &data_ptr[idx_offset]),
+                                        sizeof(scalar_t));
+                            buffer_index += sizeof(scalar_t);
+                        }
+                    });
+                }
             }
 
-            if (i % 1000 == 0) {
-                reporter.Update(i);
+            if (fwrite(buffer.data(), sizeof(char), buffer_index, file) !=
+                buffer_index) {
+                utility::LogWarning("[WritePCDData] Failed to write data.");
+                return false;
             }
+            reporter.Update(chunk_end);
         }
-
-        fwrite(buffer.data(), sizeof(char), buffer.size(), file);
     } else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
         // BINARY_COMPRESSED data contains attributes in column layout
         // for better compression.

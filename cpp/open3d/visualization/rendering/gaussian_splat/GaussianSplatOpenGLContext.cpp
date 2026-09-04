@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -93,7 +93,10 @@ bool GaussianSplatOpenGLContext::InitializeStandalone() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+    // NVIDIA's GLX driver does not expose a compatible single-buffered
+    // framebuffer configuration for this core-profile context. The helper
+    // window never presents, so double buffering has no runtime cost here.
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 
     GLFWwindow* window =
             glfwCreateWindow(1, 1, "O3D_GS_Helper", nullptr, nullptr);

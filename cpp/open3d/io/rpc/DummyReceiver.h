@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -19,6 +19,7 @@ namespace rpc {
 class DummyReceiver : public ZMQReceiver {
 public:
     DummyReceiver(const std::string& address, int timeout);
+    using ZMQReceiver::GetLastEndpoint;
 };
 
 }  // namespace rpc

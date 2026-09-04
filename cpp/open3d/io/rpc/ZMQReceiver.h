@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -59,6 +59,10 @@ public:
 
     /// Returns the last error from the mainloop thread.
     std::runtime_error GetLastError();
+
+    /// Returns the endpoint the OS actually bound to (e.g. when address_ is
+    /// tcp://localhost:0). Must be called after Start() succeeds.
+    std::string GetLastEndpoint() const;
 
     /// Sets the message processor object which will process incoming messages.
     void SetMessageProcessor(std::shared_ptr<MessageProcessorBase> processor);

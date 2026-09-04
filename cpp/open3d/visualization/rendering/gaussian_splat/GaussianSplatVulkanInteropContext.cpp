@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -41,6 +41,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include "open3d/utility/Logging.h"
@@ -113,11 +114,16 @@ bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
     return true;
 }
 
+/// Sentinel returned by ScoreDevice() for devices that must never be picked
+/// (no compute queue, missing required extensions, or API version too low).
+/// Distinct from the emulated-device penalty below, which keeps the device
+/// eligible as a last resort when nothing better is available.
+constexpr int kDeviceRejected = std::numeric_limits<int>::min();
+
 /// Score a physical device for interop suitability.  Higher is better.
-///  +2  : discrete GPU
-///  +1  : integrated GPU
-///   0  : any compute-capable device
-///  -∞  : no compute queue or missing required extensions → reject
+/// Native discrete > native integrated > other native > D3D12 translation >
+/// CPU.
+///  kDeviceRejected : no compute queue or missing required extensions/version
 int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     // Check for a compute queue.
     const auto qfams = dev.getQueueFamilyProperties();
@@ -128,7 +134,7 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
             break;
         }
     }
-    if (!has_compute) return -1;
+    if (!has_compute) return kDeviceRejected;
 
     // Check device extensions.
     const auto exts = dev.enumerateDeviceExtensionProperties();
@@ -137,16 +143,33 @@ int ScoreDevice(const vk::raii::PhysicalDevice& dev) {
     const bool ok =
             CheckExtensions(exts, kRequiredDeviceExtensions,
                             std::size(kRequiredDeviceExtensions), missing);
-    if (!ok) return -1;
+    if (!ok) return kDeviceRejected;
+
+    const auto props = dev.getProperties();
 
     // Shaders are compiled for Vulkan 1.3 (SPIR-V 1.6); reject older devices.
-    const auto props = dev.getProperties();
-    if (props.apiVersion < VK_API_VERSION_1_3) return -1;
+    if (props.apiVersion < VK_API_VERSION_1_3) return kDeviceRejected;
 
-    // Score device type.
-    if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) return 2;
-    if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) return 1;
-    return 0;
+    const std::string renderer(props.deviceName.data());
+    const bool software =
+            renderer.find("llvmpipe") != std::string::npos ||
+            renderer.find("SwiftShader") != std::string::npos ||
+            renderer.find("WARP") != std::string::npos ||
+            renderer.find("Basic Render Driver") != std::string::npos;
+    if (software) return 0;
+
+    int score = 10;
+    if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+        score = 30;
+    } else if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu) {
+        score = 20;
+    }
+    // Penalize emulated Vulkan-on-D3D12 devices (e.g. WSL2)
+    if (renderer.find("D3D12") != std::string::npos ||
+        renderer.find("Dozen") != std::string::npos) {
+        --score;
+    }
+    return score;
 }
 
 }  // namespace
@@ -169,7 +192,8 @@ GaussianSplatVulkanInteropContext::~GaussianSplatVulkanInteropContext() {
 // Initialize / Shutdown
 // ---------------------------------------------------------------------------
 
-bool GaussianSplatVulkanInteropContext::Initialize() {
+bool GaussianSplatVulkanInteropContext::Initialize(
+        const GpuAdapterInfo* required_adapter) {
     if (initialized_) return true;
 
     // Initialize the global dynamic dispatcher with vkGetInstanceProcAddr
@@ -192,7 +216,8 @@ bool GaussianSplatVulkanInteropContext::Initialize() {
     // function pointers (required for physical device enumeration etc.).
     VULKAN_HPP_DEFAULT_DISPATCHER.init(static_cast<vk::Instance>(*instance_));
 
-    if (!SelectPhysicalDevice()) return false;
+    if (!SelectPhysicalDevice(required_adapter)) return false;
+
     if (!CreateLogicalDevice()) return false;
 
     // After device creation, update the dispatcher with device-level
@@ -314,7 +339,8 @@ bool GaussianSplatVulkanInteropContext::CreateInstance() {
 // Physical device selection
 // ---------------------------------------------------------------------------
 
-bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
+bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice(
+        const GpuAdapterInfo* required_adapter) {
     auto devices = instance_.enumeratePhysicalDevices();
     if (devices.empty()) {
         last_error_ = "No Vulkan-capable devices found";
@@ -322,10 +348,17 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
         return false;
     }
 
-    int best_score = -1;
+    int best_score = kDeviceRejected;
     std::size_t best_idx = devices.size();
     for (std::size_t i = 0; i < devices.size(); ++i) {
         const int score = ScoreDevice(devices[i]);
+        if (score == kDeviceRejected) continue;
+        if (required_adapter && required_adapter->valid &&
+            !SameAdapter(GetAdapterInfo(static_cast<vk::PhysicalDevice::CType>(
+                                 *devices[i])),
+                         *required_adapter)) {
+            continue;  // not the required adapter; skip
+        }
         if (score > best_score) {
             best_score = score;
             best_idx = i;
@@ -334,9 +367,13 @@ bool GaussianSplatVulkanInteropContext::SelectPhysicalDevice() {
 
     if (best_idx == devices.size()) {
         last_error_ =
-                "No suitable Vulkan device found with required interop "
-                "extensions. Required "
-                "extensions: " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+                required_adapter && required_adapter->valid
+                        ? "No Vulkan device matched the required adapter '" +
+                                  required_adapter->device_name + "'"
+                        : "No suitable Vulkan device found with required "
+                          "interop extensions. Required "
+                          "extensions:"
+                          " " VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
         utility::LogWarning("GaussianSplat Vulkan: {}", last_error_);
         return false;
     }
@@ -474,7 +511,7 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         VkImageUsageFlags usage,
         VkImage& out_image,
         VkDeviceMemory& out_memory,
-        int& out_fd) const {
+        intptr_t& out_fd) const {
     const vk::Format format = static_cast<vk::Format>(vk_format);
     const vk::ImageUsageFlags vk_usage =
             static_cast<vk::ImageUsageFlags>(usage);
@@ -576,10 +613,12 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
         dev.destroyImage(image);
         return false;
     }
-    out_fd = static_cast<int>(reinterpret_cast<intptr_t>(win32_handle));
+    // Stored as intptr_t (not int) to avoid truncating/sign-extending the
+    // 64-bit HANDLE, which previously corrupted the value passed to GL.
+    out_fd = reinterpret_cast<intptr_t>(win32_handle);
     // NOTE: on Windows, HANDLE values are not real file descriptors and should
     // be closed with CloseHandle() after being imported into GL. However, the
-    // current design passes them as int (out_fd) to ImportFDIntoGL, which will
+    // current design passes them as out_fd to ImportFDIntoGL, which will
     // pass them to glImportMemoryWin32HandleEXT. GL takes ownership of the
     // HANDLE import, so we cannot close it here. The HANDLE lifetime is managed
     // by GL and Vulkan.
@@ -602,7 +641,7 @@ bool GaussianSplatVulkanInteropContext::AllocateExportableImage(
 }
 
 bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
-        int fd,
+        intptr_t fd,
         std::uint32_t width,
         std::uint32_t height,
         VkDeviceSize memory_size,
@@ -617,9 +656,20 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
         return false;
     }
 
+    // AllocateExportableImage() always allocates via
+    // vk::MemoryDedicatedAllocateInfo, so GL must be told this memory object
+    // is dedicated to a single resource before the handle/fd is imported.
+    // Omitting this causes some Windows GL drivers to silently fail the
+    // import (GL_OUT_OF_MEMORY) and crash on the subsequent storage call.
+    {
+        const GLint dedicated = GL_TRUE;
+        glMemoryObjectParameterivEXT(out_gl_memory_object,
+                                     GL_DEDICATED_MEMORY_OBJECT_EXT,
+                                     &dedicated);
+    }
+
 #if defined(_WIN32)
-    const HANDLE win32_handle =
-            reinterpret_cast<HANDLE>(static_cast<intptr_t>(fd));
+    const HANDLE win32_handle = reinterpret_cast<HANDLE>(fd);
     glImportMemoryWin32HandleEXT(out_gl_memory_object,
                                  static_cast<GLuint64>(memory_size),
                                  GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, win32_handle);
@@ -630,7 +680,7 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
 #else
     glImportMemoryFdEXT(out_gl_memory_object,
                         static_cast<GLuint64>(memory_size),
-                        GL_HANDLE_TYPE_OPAQUE_FD_EXT, fd);
+                        GL_HANDLE_TYPE_OPAQUE_FD_EXT, static_cast<int>(fd));
     // FD ownership is transferred to GL; do not close it.
 #endif
 
@@ -642,6 +692,13 @@ bool GaussianSplatVulkanInteropContext::ImportFDIntoGL(
         utility::LogWarning("GaussianSplat GL: glCreateTextures returned 0");
         return false;
     }
+
+    // The imported Vulkan image was allocated with optimal (driver-opaque)
+    // tiling; GL defaults imported textures to linear tiling, so this must be
+    // set explicitly or glTextureStorageMem2DEXT operates on a mismatched
+    // memory layout (crashes some Windows drivers instead of erroring).
+    glTextureParameteri(out_gl_texture, GL_TEXTURE_TILING_EXT,
+                        GL_OPTIMAL_TILING_EXT);
 
     // Allocate GL texture storage bound to the imported memory.
     GLenum gl_internal_format = 0;
@@ -704,7 +761,7 @@ SharedImageDesc GaussianSplatVulkanInteropContext::CreateSharedImage(
             break;
     }
 
-    int export_fd = -1;
+    intptr_t export_fd = -1;
     {
         // Probe memory requirements using a temporary image (no exportable
         // memory yet) to determine the actual allocation size for GL import.
