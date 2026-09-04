@@ -496,8 +496,17 @@ public:
     // so no queue-family ownership transfer is needed. FilamentRenderer's
     // flushAndWait() bracketing provides the cross-API execution ordering, and
     // ResolveImageView() emits any required layout transition per binding.
-    void BeginCompositePass() override { BeginCmdBuf(); }
-    void EndCompositePass() override { SubmitAndWait(); }
+    void BeginCompositePass() override {
+        BeginCmdBuf();
+        for (auto& item : textures_) {
+            auto& entry = item.second;
+            entry.used_in_composite = false;
+        }
+    }
+    void EndCompositePass() override {
+        ReleaseImportedImages();
+        SubmitAndWait();
+    }
 
     void WaitForGeometryPass() override { WaitForPendingSubmit(); }
 
@@ -547,13 +556,14 @@ public:
         e.format = format;
         e.width = w;
         e.height = h;
-        // Filament finishes rendering with color images in
-        // COLOR_ATTACHMENT_OPTIMAL and depth images in
-        // DEPTH_STENCIL_ATTACHMENT_OPTIMAL. Track these as the initial
-        // layout so the first compute transition does not discard contents.
-        e.current_layout = (format == VK_FORMAT_D32_SFLOAT)
-                                   ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                                   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        // Composite starts only after Filament has completed its render pass.
+        // Filament keeps color attachments in GENERAL and depth attachments in
+        // DEPTH_STENCIL_ATTACHMENT_OPTIMAL.
+        e.current_layout =
+                (format == VK_FORMAT_D32_SFLOAT)
+                        ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                        : VK_IMAGE_LAYOUT_GENERAL;
+        e.imported = true;
         uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
     }
@@ -608,6 +618,8 @@ private:
         std::uint32_t width = 0;
         std::uint32_t height = 0;
         VkImageLayout current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        bool imported = false;
+        bool used_in_composite = false;
     };
     std::unordered_map<uintptr_t, TexEntry> textures_;
     // Start at a large value so internal handles never collide with VkImage
@@ -925,6 +937,41 @@ private:
 
     // --- Image / view helpers ---------------------------------------------
 
+    void ReleaseImportedImages() {
+        for (auto& item : textures_) {
+            auto& entry = item.second;
+            if (!entry.imported || !entry.used_in_composite) continue;
+            if (entry.format == VK_FORMAT_D32_SFLOAT) {
+                if (entry.current_layout ==
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+                    TransitionImageLayout(
+                            entry.image, entry.format, entry.current_layout,
+                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                    entry.current_layout =
+                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                }
+                continue;
+            }
+            VkImageMemoryBarrier2 barrier{
+                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+            barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+            barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = entry.image;
+            barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+            VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+            dependency.imageMemoryBarrierCount = 1;
+            dependency.pImageMemoryBarriers = &barrier;
+            VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
+                    static_cast<VkCommandBuffer>(*cmd_), &dependency);
+        }
+    }
+
     /// Resolve a texture handle to a VkImageView. Also ensures the image
     /// layout via a barrier.
     VkImageView ResolveImageView(std::uintptr_t handle,
@@ -932,10 +979,33 @@ private:
         auto it = textures_.find(handle);
         if (it == textures_.end()) return VK_NULL_HANDLE;
         auto& e = it->second;
+        const bool first_imported_use = e.imported && !e.used_in_composite;
+        e.used_in_composite = e.imported;
         if (e.current_layout != needed_layout) {
             TransitionImageLayout(e.image, e.format, e.current_layout,
                                   needed_layout);
             e.current_layout = needed_layout;
+        } else if (first_imported_use &&
+                   needed_layout == VK_IMAGE_LAYOUT_GENERAL) {
+            VkImageMemoryBarrier2 barrier{
+                    VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+            barrier.srcStageMask =
+                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+            barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            barrier.dstAccessMask =
+                    VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = e.image;
+            barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+            VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+            dependency.imageMemoryBarrierCount = 1;
+            dependency.pImageMemoryBarriers = &barrier;
+            VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
+                    static_cast<VkCommandBuffer>(*cmd_), &dependency);
         }
         return static_cast<VkImageView>(*e.view);
     }
@@ -978,11 +1048,23 @@ private:
                            vk::AccessFlagBits2::eShaderRead);
         const auto dst_stage =
                 (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                        ? vk::PipelineStageFlagBits2::eTransfer
-                        : vk::PipelineStageFlagBits2::eComputeShader;
+                        ? vk::PipelineStageFlags2(
+                                  vk::PipelineStageFlagBits2::eTransfer)
+                : (new_layout ==
+                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                        ? vk::PipelineStageFlags2(vk::PipelineStageFlagBits2::
+                                                          eEarlyFragmentTests |
+                                                  vk::PipelineStageFlagBits2::
+                                                          eLateFragmentTests)
+                        : vk::PipelineStageFlags2(
+                                  vk::PipelineStageFlagBits2::eComputeShader);
         const vk::AccessFlags2 dst_access =
                 (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                         ? vk::AccessFlagBits2::eTransferRead
+                : (new_layout ==
+                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+                        ? (vk::AccessFlagBits2::eDepthStencilAttachmentRead |
+                           vk::AccessFlagBits2::eDepthStencilAttachmentWrite)
                 : (new_layout == VK_IMAGE_LAYOUT_GENERAL)
                         ? (vk::AccessFlagBits2::eShaderWrite |
                            vk::AccessFlagBits2::eShaderRead)

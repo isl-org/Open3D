@@ -1,6 +1,6 @@
 # Gaussian Splat Vulkan Interactive Debug Report
 
-Last updated: 2026-09-02
+Last updated: 2026-09-04
 
 ## Status and locked scope
 
@@ -610,6 +610,65 @@ The Linux campaign is complete when:
 
 ## Progress log
 
+- 2026-09-04: Implemented an Open3D-side no-copy layout hand-off for imported
+   Vulkan render targets. Imported RGBA16F color now follows Filament's actual
+   `VK_IMAGE_LAYOUT_GENERAL` policy, with `GENERAL`-to-`GENERAL` memory barriers
+   around compute access. Imported D32 depth is transitioned from
+   `VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL` to
+   `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL` for exact `texelFetch()` reads and
+   restored to the Filament-tracked attachment layout before composite
+   submission completes. Filament's import patch no longer seeds new color
+   images as already `GENERAL`, allowing Filament to perform the real initial
+   transition from `UNDEFINED`. `GaussianSplat` and `tests` build in
+   `RelWithDebInfo`; all three `*GaussianSplatRender*` tests pass on the B580.
+   An interactive `hornedlizard.spz` run displayed correctly on the B580,
+   replacing the previously blank/unresponsive result. The same run still
+   emitted VUID 09600 from Open3D's `vkQueueSubmit2`: the composite descriptor
+   expected the imported D32 image in
+   `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`, but validation observed
+   `VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL`. Investigation found that
+   `RunGaussianCompositePass()` calls `FinishGpuWork()`, ending and submitting
+   the Vulkan command buffer before the `GpuComputeFrame` destructor calls
+   `EndCompositePass()`. The latter consequently attempts to record the depth
+   restore after submission and updates Open3D's software tracker even though
+   no valid restore command was recorded. Replaced `FinishGpuWork()` with
+   `frame.End()` on the normal path. This records the restore while the command
+   buffer is active and then submits/waits exactly once; RAII still closes
+   early-return paths. The `RelWithDebInfo` `GaussianSplat` and `tests` targets
+   rebuilt successfully, and all three `*GaussianSplatRender*` tests pass on the
+   B580. A subsequent interactive validation run still reported VUID 09600 with
+   the sampled-depth descriptor expecting `SHADER_READ_ONLY_OPTIMAL` while the
+   actual image was `DEPTH_STENCIL_ATTACHMENT_OPTIMAL`. The sequencing bug was
+   real, but fixing it did not remove the validation error and is not a complete
+   shared-depth ownership solution. Interactive and offscreen rendering are
+   visually correct; investigation of the remaining VUID and long-running
+   freeze/device failure is paused at this checkpoint.
+- 2026-09-04: Reproduced the Windows failure on an Intel Arc B580 using a
+   source-Filament `RelWithDebInfo` build (`BUILD_FILAMENT_FROM_SOURCE=ON`) and
+   deployed `Open3D.dll` and `tbb12.dll` beside `GaussianSplat.exe`. CDB plus
+   `VK_LAYER_KHRONOS_validation` and `VK_LAYER_LUNARG_crash_diagnostic` reached
+   the expected Vulkan device (`fam=0 gs_q=0 fil_q=0`). The focused
+   `*GaussianSplatRender*` tests passed 3/3, matching the report's distinction
+   between passing offscreen tests and the failing interactive Windows path.
+   The first pre-source-Filament run crashed in
+   `VulkanTexture::getLayout()` with a null `RangeMap` owner; this was not a
+   valid comparison and was superseded by the source-Filament run.
+- 2026-09-04: The comparable B580 run reproduced the GS-specific imported
+   depth layout error (`VUID-vkCmdDraw-None-09600`), generic Filament layer/
+   framebuffer/descriptor errors, and present semaphore reuse
+   (`VUID-vkQueueSubmit-pSignalSemaphores-00067`). GPU-assisted validation also
+   reported a shared-memory warning for `s_stolen_tile` in
+   `gaussian_composite.comp`, but the shader already has a workgroup barrier
+   immediately after the thread-0 write, so this is not treated as a confirmed
+   shader defect. Crash diagnostics recorded the B580 queue at
+   `completedSeq=372`, `submittedSeq=372`, with no command buffers listed after
+   the watchdog, indicating a device/driver stall rather than a CPU exception.
+- 2026-09-04: Tested and reverted an Open3D-side A/B experiment that seeded
+   newly created imported images as `VK_IMAGE_LAYOUT_UNDEFINED` instead of the
+   assumed attachment layouts. It removed the first depth-layout report but a
+   later depth mismatch, semaphore reuse, and device stall remained. The
+   experiment passed the focused tests but did not resolve the interactive
+   failure, so no speculative tracker change is retained.
 - 2026-09-02: Ran the visually correct non-GS `Draw` example under core,
   synchronization, GPU-assisted, and best-practices plus thread-safety
   validation. It reproduced eight core VUIDs previously seen in the GS run,

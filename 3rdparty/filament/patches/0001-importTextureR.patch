@@ -18,11 +18,6 @@ index bf5604a0d..aa20c0020 100644
 +    auto vktexture = mResourceAllocator.construct<VulkanTexture>(th, mPlatform->getDevice(),
 +            mAllocator, &mCommands, (VkImage)id, getVkFormat(format),
 +            samples, w, h, usage, mStagePool);
-+    // Non-depth imports are populated externally in GENERAL layout. Depth
-+    // imports remain UNDEFINED so Filament performs their initial transition.
-+    if (!any(usage & TextureUsage::DEPTH_ATTACHMENT)) {
-+        vktexture->setLayout(vktexture->getFullViewRange(), VulkanLayout::READ_WRITE);
-+    }
 +    mResourceManager.acquire(vktexture);
  }
  
