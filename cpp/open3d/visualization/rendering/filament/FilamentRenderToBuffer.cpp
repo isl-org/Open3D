@@ -52,36 +52,32 @@ namespace rendering {
 
 namespace {
 
+float HalfBitsToFloat(std::uint16_t bits) {
+    return static_cast<float>(filament::math::makeHalf(bits));
+}
+
+std::uint8_t ToUnorm8(float value) {
+    return static_cast<std::uint8_t>(std::clamp(value, 0.0f, 1.0f) * 255.0f +
+                                     0.5f);
+}
+
 #if defined(__APPLE__)
+/// Composite shader stores premultiplied RGB in \p gs_rgba_bits; blend like
+/// ImGui One / OneMinusSrcAlpha over an opaque Filament base.
 void BlendPremultipliedSplatOverRgb8(uint8_t* base_rgb,
                                      int n_channels,
                                      const std::uint16_t* gs_rgba_bits,
-                                     int w,
-                                     int h) {
-    const auto to_float = [](std::uint16_t bits) {
-        return static_cast<float>(filament::math::makeHalf(bits));
-    };
-    const int n = w * h;
-    for (int i = 0; i < n; ++i) {
-        const float fr = to_float(gs_rgba_bits[i * 4 + 0]);
-        const float fg = to_float(gs_rgba_bits[i * 4 + 1]);
-        const float fb = to_float(gs_rgba_bits[i * 4 + 2]);
-        const float fa = to_float(gs_rgba_bits[i * 4 + 3]);
-        const float br =
-                static_cast<float>(base_rgb[i * n_channels + 0]) / 255.0f;
-        const float bg =
-                static_cast<float>(base_rgb[i * n_channels + 1]) / 255.0f;
-        const float bb =
-                static_cast<float>(base_rgb[i * n_channels + 2]) / 255.0f;
-        base_rgb[i * n_channels + 0] = static_cast<uint8_t>(
-                std::clamp(fr + br * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        base_rgb[i * n_channels + 1] = static_cast<uint8_t>(
-                std::clamp(fg + bg * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        base_rgb[i * n_channels + 2] = static_cast<uint8_t>(
-                std::clamp(fb + bb * (1.0f - fa), 0.0f, 1.0f) * 255.0f + 0.5f);
-        if (n_channels == 4) {
-            base_rgb[i * n_channels + 3] = 255;
+                                     int n_pixels) {
+    for (int i = 0; i < n_pixels; ++i) {
+        uint8_t* base = base_rgb + i * n_channels;
+        const std::uint16_t* splat = gs_rgba_bits + i * 4;
+        const float splat_alpha = HalfBitsToFloat(splat[3]);
+        for (int channel = 0; channel < 3; ++channel) {
+            base[channel] =
+                    ToUnorm8(HalfBitsToFloat(splat[channel]) +
+                             base[channel] / 255.0f * (1.0f - splat_alpha));
         }
+        if (n_channels == 4) base[3] = 255;
     }
 }
 #endif
@@ -212,6 +208,16 @@ void FilamentRenderToBuffer::CopySettings(const View* view) {
 
 View& FilamentRenderToBuffer::GetView() { return *view_; }
 
+void FilamentRenderToBuffer::DeliverFrame(bool ok) {
+    if (callback_) {
+        callback_(
+                ok ? Buffer{width_, height_, n_channels_, buffer_, buffer_size_}
+                   : Buffer{0, 0, 0, nullptr, 0});
+        callback_ = nullptr;
+    }
+    frame_done_ = true;
+}
+
 struct PBDParams {
     FilamentRenderToBuffer* self;
     FilamentRenderToBuffer::BufferReadyCallback callback;
@@ -252,9 +258,8 @@ void FilamentRenderToBuffer::Render() {
     frame_done_ = false;
     scene_->HideRefractedMaterials();
 
-    const bool has_gaussian =
+    const bool run_gs_pipeline =
             gaussian_splat_renderer_ && scene_->HasGaussianSplatGeometry();
-    const bool run_gs_pipeline = has_gaussian;
 
     if (run_gs_pipeline) {
         gaussian_splat_renderer_->RequestRedrawForView(*view_);
@@ -292,86 +297,56 @@ void FilamentRenderToBuffer::Render() {
             }
         }
 
+        const size_t n_pixels = static_cast<size_t>(width_) * height_;
+        const size_t n_gs_elems = n_pixels * 4;
+        const int nc = static_cast<int>(n_channels_);
+
 #if !defined(__APPLE__)
         renderer_->endFrame();
         engine_.flushAndWait();
 
-        if (run_gs_pipeline && native_view_rt && !depth_image_) {
+        if (run_gs_pipeline) {
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
+        }
 
-            // Read the fully composited Vulkan colour image directly. Metal
-            // retains the separate overlay path below.
-            const size_t n_pixels = static_cast<size_t>(width_) * height_;
-            const size_t n_color_elems = n_pixels * 4;
+        // The composite pass blended splats in place into the shared RGBA16F
+        // image, so that image alone is the finished colour frame.
+        if (run_gs_pipeline && native_view_rt && !depth_image_) {
             std::vector<std::uint16_t> gs_rgba_bits;
             const bool got_gs_rgba =
                     gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
                             *view_, gs_rgba_bits) &&
-                    gs_rgba_bits.size() == n_color_elems;
+                    gs_rgba_bits.size() == n_gs_elems;
 
             engine_.flushAndWait();
 
-            if (got_gs_rgba) {
-                const int nc = static_cast<int>(n_channels_);
-                for (size_t i = 0; i < n_pixels; ++i) {
-                    for (int channel = 0; channel < std::min(nc, 4);
-                         ++channel) {
-                        const float value =
-                                static_cast<float>(filament::math::makeHalf(
-                                        gs_rgba_bits[i * 4 + channel]));
-                        buffer_[i * nc + channel] = static_cast<uint8_t>(
-                                std::clamp(value, 0.0f, 1.0f) * 255.0f + 0.5f);
-                    }
-                }
-                if (callback_) {
-                    callback_({static_cast<std::size_t>(width_),
-                               static_cast<std::size_t>(height_),
-                               static_cast<std::size_t>(n_channels_), buffer_,
-                               buffer_size_});
-                    callback_ = nullptr;
-                }
-                frame_done_ = true;
-            } else {
+            if (!got_gs_rgba) {
                 utility::LogWarning(
                         "FilamentRenderToBuffer: Vulkan direct readback "
                         "failed; returning empty frame.");
-                if (callback_) {
-                    callback_(Buffer{0, 0, 0, nullptr, 0});
-                    callback_ = nullptr;
+                DeliverFrame(false);
+            } else {
+                for (size_t i = 0; i < n_pixels; ++i) {
+                    for (int channel = 0; channel < std::min(nc, 4);
+                         ++channel) {
+                        buffer_[i * nc + channel] = ToUnorm8(
+                                HalfBitsToFloat(gs_rgba_bits[i * 4 + channel]));
+                    }
                 }
-                frame_done_ = true;
+                DeliverFrame();
             }
-        } else if (run_gs_pipeline) {
-            gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
-#endif
-
-#if defined(__APPLE__)
+#else
         renderer_->endFrame();
         if (run_gs_pipeline) {
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
-#endif
-
         engine_.flushAndWait();
 
-#if defined(__APPLE__)
-        RenderTargetHandle gs_rt =
-                run_gs_pipeline
-                        ? gaussian_splat_renderer_->GetColorReadbackRT(*view_)
-                        : RenderTargetHandle();
-        filament::RenderTarget* native_gs_rt = nullptr;
-        if (gs_rt) {
-            auto weak_rt = resource_mgr->GetRenderTarget(gs_rt);
-            if (auto rt_sptr = weak_rt.lock()) {
-                native_gs_rt = rt_sptr.get();
-            }
-        }
-
-        if (!depth_image_ && run_gs_pipeline && native_view_rt) {
-            const size_t n_pixels = static_cast<size_t>(width_) * height_;
-            const size_t n_gs_elems = n_pixels * 4;
-            std::vector<uint8_t> base_rgba(n_pixels * 4, 0);
+        // Metal keeps splats in a separate transparent overlay, so the base
+        // scene and the overlay are read back and blended on the CPU.
+        if (run_gs_pipeline && native_view_rt && !depth_image_) {
+            std::vector<uint8_t> base_rgba(n_gs_elems, 0);
             PixelBufferDescriptor base_pd(
                     base_rgba.data(), base_rgba.size(), PixelDataFormat::RGBA,
                     PixelDataType::UBYTE, [](void*, size_t, void*) {}, nullptr);
@@ -379,109 +354,74 @@ void FilamentRenderToBuffer::Render() {
                                   vp.height, std::move(base_pd));
 
             std::vector<std::uint16_t> gs_rgba_bits;
-            const bool got_gs_rgba =
-                    gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
-                            *view_, gs_rgba_bits) &&
-                    gs_rgba_bits.size() == n_gs_elems;
-            if (!got_gs_rgba && native_gs_rt) {
-                gs_rgba_bits.assign(n_gs_elems, 0);
-                PixelBufferDescriptor gs_pd(
-                        gs_rgba_bits.data(),
-                        gs_rgba_bits.size() * sizeof(std::uint16_t),
-                        PixelDataFormat::RGBA, PixelDataType::HALF,
-                        [](void*, size_t, void*) {}, nullptr);
-                renderer_->readPixels(native_gs_rt, vp.left, vp.bottom,
-                                      vp.width, vp.height, std::move(gs_pd));
-            } else if (!got_gs_rgba) {
-                gs_rgba_bits.clear();
+            bool got_gs_rgba = gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
+                                       *view_, gs_rgba_bits) &&
+                               gs_rgba_bits.size() == n_gs_elems;
+            RenderTargetHandle gs_rt =
+                    gaussian_splat_renderer_->GetColorReadbackRT(*view_);
+            if (!got_gs_rgba && gs_rt) {
+                if (auto rt = resource_mgr->GetRenderTarget(gs_rt).lock()) {
+                    gs_rgba_bits.assign(n_gs_elems, 0);
+                    PixelBufferDescriptor gs_pd(
+                            gs_rgba_bits.data(),
+                            gs_rgba_bits.size() * sizeof(std::uint16_t),
+                            PixelDataFormat::RGBA, PixelDataType::HALF,
+                            [](void*, size_t, void*) {}, nullptr);
+                    renderer_->readPixels(rt.get(), vp.left, vp.bottom,
+                                          vp.width, vp.height,
+                                          std::move(gs_pd));
+                    got_gs_rgba = true;
+                }
             }
 
             engine_.flushAndWait();
 
-            const uint8_t* src = base_rgba.data();
-            uint8_t* dst = buffer_;
-            const int nc = static_cast<int>(n_channels_);
-            const int np = static_cast<int>(n_pixels);
-            for (int i = 0; i < np; ++i) {
-                dst[i * nc + 0] = src[i * 4 + 0];
-                dst[i * nc + 1] = src[i * 4 + 1];
-                dst[i * nc + 2] = src[i * 4 + 2];
-                if (nc == 4) dst[i * nc + 3] = src[i * 4 + 3];
+            for (size_t i = 0; i < n_pixels; ++i) {
+                for (int channel = 0; channel < nc; ++channel) {
+                    buffer_[i * nc + channel] = base_rgba[i * 4 + channel];
+                }
             }
-            if (gs_rgba_bits.size() == n_gs_elems) {
+            if (got_gs_rgba) {
                 BlendPremultipliedSplatOverRgb8(buffer_, nc,
                                                 gs_rgba_bits.data(),
-                                                int(width_), int(height_));
+                                                static_cast<int>(n_pixels));
             }
-            if (callback_) {
-                callback_({static_cast<std::size_t>(width_),
-                           static_cast<std::size_t>(height_),
-                           static_cast<std::size_t>(n_channels_), buffer_,
-                           buffer_size_});
-                callback_ = nullptr;
-            }
-            frame_done_ = true;
+            DeliverFrame();
         }
-#endif  // defined(__APPLE__)
+#endif
 
-        if (!frame_done_ && depth_image_ && run_gs_pipeline &&
-            gaussian_splat_renderer_) {
-            // GPU-merged depth path: the composite pass has already merged
-            // GS and Filament depth into a normalised R16UI texture.
-            // Read it back directly — no CPU merge required.
+        if (!frame_done_ && depth_image_ && run_gs_pipeline) {
+            // The composite pass already merged GS and Filament depth into a
+            // normalised R16UI texture, so no CPU merge is required.
+            // Renderer::RenderToDepthImage applies the final user-facing
+            // conversion for z_in_view_space/normalized modes.
+            float* dst = reinterpret_cast<float*>(buffer_);
             std::vector<std::uint16_t> merged_u16;
-            const bool got_merged =
-                    gaussian_splat_renderer_->ReadMergedDepthToUint16Cpu(
-                            *view_, merged_u16,
-                            static_cast<std::uint32_t>(width_),
-                            static_cast<std::uint32_t>(height_)) &&
-                    merged_u16.size() == width_ * height_;
-            if (got_merged) {
-                // Convert normalised uint16 [0,65535] -> Filament inverse
-                // depth [0,1]. Renderer::RenderToDepthImage applies the final
-                // user-facing conversion for z_in_view_space/normalized modes.
-                float* dst = reinterpret_cast<float*>(buffer_);
-                for (size_t i = 0; i < merged_u16.size(); ++i) {
+            std::vector<float> gs_depth;
+            if (gaussian_splat_renderer_->ReadMergedDepthToUint16Cpu(
+                        *view_, merged_u16, static_cast<std::uint32_t>(width_),
+                        static_cast<std::uint32_t>(height_)) &&
+                merged_u16.size() == n_pixels) {
+                for (size_t i = 0; i < n_pixels; ++i) {
                     dst[i] = merged_u16[i] / 65535.f;
                 }
-                if (callback_) {
-                    callback_({static_cast<std::size_t>(width_),
-                               static_cast<std::size_t>(height_), 1u, buffer_,
-                               buffer_size_});
-                    callback_ = nullptr;
-                }
-                frame_done_ = true;
+                DeliverFrame();
+            } else if (gaussian_splat_renderer_->ReadCompositeDepthToFloatCpu(
+                               *view_, gs_depth,
+                               static_cast<std::uint32_t>(width_),
+                               static_cast<std::uint32_t>(height_)) &&
+                       gs_depth.size() == n_pixels) {
+                // GS-only depth when no scene depth was available for merging.
+                std::copy(gs_depth.begin(), gs_depth.end(), dst);
+                DeliverFrame();
             } else {
-                // Try GS-only composite depth (R32F) when no scene depth
-                // was available for merging.
-                std::vector<float> gs_depth;
-                const bool got_gs_depth =
-                        gaussian_splat_renderer_->ReadCompositeDepthToFloatCpu(
-                                *view_, gs_depth,
-                                static_cast<std::uint32_t>(width_),
-                                static_cast<std::uint32_t>(height_)) &&
-                        gs_depth.size() == width_ * height_;
-                if (got_gs_depth) {
-                    float* dst = reinterpret_cast<float*>(buffer_);
-                    std::copy(gs_depth.begin(), gs_depth.end(), dst);
-                    if (callback_) {
-                        callback_({static_cast<std::size_t>(width_),
-                                   static_cast<std::size_t>(height_), 1u,
-                                   buffer_, buffer_size_});
-                        callback_ = nullptr;
-                    }
-                    frame_done_ = true;
-                } else {
-                    // Final fallback: Filament depth only via readPixels
-                    // (backend unsupported or no GS depth available).
-                    auto* user_param = new PBDParams{this, callback_};
-                    PixelBufferDescriptor pd(buffer_, buffer_size_,
-                                             PixelDataFormat::DEPTH_COMPONENT,
-                                             PixelDataType::FLOAT,
-                                             ReadPixelsCallback, user_param);
-                    renderer_->readPixels(vp.left, vp.bottom, vp.width,
-                                          vp.height, std::move(pd));
-                }
+                // Final fallback: Filament depth only via readPixels.
+                auto* user_param = new PBDParams{this, callback_};
+                PixelBufferDescriptor pd(
+                        buffer_, buffer_size_, PixelDataFormat::DEPTH_COMPONENT,
+                        PixelDataType::FLOAT, ReadPixelsCallback, user_param);
+                renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
+                                      std::move(pd));
             }
         } else if (!frame_done_) {
             if (!depth_image_ && run_gs_pipeline && !native_view_rt) {

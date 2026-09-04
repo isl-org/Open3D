@@ -128,6 +128,66 @@ static_assert(std::size(kShaderBindings) ==
                       static_cast<std::size_t>(ComputeProgramId::kCount),
               "kShaderBindings must match ComputeProgramId::kCount");
 
+namespace {
+
+/// Synchronization scope for one side of an image layout transition.
+struct ImageSyncScope {
+    vk::PipelineStageFlags2 stage;
+    vk::AccessFlags2 access;
+};
+
+/// Scope covering all prior accesses that the old layout implies.
+ImageSyncScope SrcScopeForLayout(VkImageLayout layout) {
+    using Stage = vk::PipelineStageFlagBits2;
+    using Access = vk::AccessFlagBits2;
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return {Stage::eNone, {}};
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return {Stage::eColorAttachmentOutput,
+                    Access::eColorAttachmentWrite};
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return {Stage::eEarlyFragmentTests | Stage::eLateFragmentTests,
+                    Access::eDepthStencilAttachmentWrite};
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return {Stage::eTransfer, Access::eTransferRead};
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            // Read-only layout: declaring eShaderWrite here would be incorrect
+            // and trips BestPractices-ImageBarrierAccessLayout.
+            return {Stage::eComputeShader, Access::eShaderRead};
+        default:
+            return {Stage::eComputeShader,
+                    Access::eShaderWrite | Access::eShaderRead};
+    }
+}
+
+/// Scope covering all subsequent accesses that the new layout enables.
+ImageSyncScope DstScopeForLayout(VkImageLayout layout) {
+    using Stage = vk::PipelineStageFlagBits2;
+    using Access = vk::AccessFlagBits2;
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return {Stage::eTransfer, Access::eTransferRead};
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return {Stage::eEarlyFragmentTests | Stage::eLateFragmentTests,
+                    Access::eDepthStencilAttachmentRead |
+                            Access::eDepthStencilAttachmentWrite};
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return {Stage::eComputeShader,
+                    Access::eShaderWrite | Access::eShaderRead};
+        default:
+            return {Stage::eComputeShader, Access::eShaderRead};
+    }
+}
+
+vk::ImageSubresourceRange FullSubresource(VkFormat format) {
+    return {format == VK_FORMAT_D32_SFLOAT ? vk::ImageAspectFlagBits::eDepth
+                                           : vk::ImageAspectFlagBits::eColor,
+            0, 1, 0, 1};
+}
+
+}  // namespace
+
 // ---------------------------------------------------------------------------
 // Vulkan compute backend class
 // ---------------------------------------------------------------------------
@@ -144,26 +204,24 @@ public:
         programs_loaded_ = true;
         programs_valid_ = false;
 
-        auto& interop = GaussianSplatVulkanContext::GetInstance();
-        if (!interop.IsValid()) {
+        auto& vk_ctx = GaussianSplatVulkanContext::GetInstance();
+        if (!vk_ctx.IsValid()) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: interop context not initialized");
+                    "GaussianSplatVulkan: Vulkan context not initialized");
             return false;
         }
 
-        device_ = interop.GetDevice();
-        physical_device_ = interop.GetPhysicalDevice();
-        compute_queue_ = interop.GetComputeQueue();
-        queue_family_ = interop.GetComputeQueueFamily();
-        debug_utils_enabled_ = interop.GetDebugUtilsEnabled();
+        device_ = vk_ctx.GetDevice();
+        physical_device_ = vk_ctx.GetPhysicalDevice();
+        compute_queue_ = vk_ctx.GetComputeQueue();
+        queue_family_ = vk_ctx.GetComputeQueueFamily();
+        debug_utils_enabled_ = vk_ctx.GetDebugUtilsEnabled();
         NameObject(vk::ObjectType::eQueue,
-               reinterpret_cast<std::uintptr_t>(compute_queue_),
-               "gs.queue.compute");
+                   reinterpret_cast<std::uintptr_t>(compute_queue_),
+                   "gs.queue.compute");
 
         if (!InitVma()) return false;
-        if (!InitCommandPool()) return false;
-        if (!InitFence()) return false;
-        if (!InitSampler()) return false;
+        if (!InitDeviceObjects()) return false;
 
         // Shaders are compiled with -V --target-env vulkan1.3 by
         // open3d_add_compute_shaders.
@@ -225,12 +283,7 @@ public:
     std::uintptr_t ResizeBuffer(std::uintptr_t buf,
                                 std::size_t new_size,
                                 const char* label = nullptr) override {
-        if (buf == 0) return CreateBuffer(new_size, label);
-        auto it = buffers_.find(buf);
-        if (it == buffers_.end()) return CreateBuffer(new_size, label);
-        if (it->second.size == new_size) return buf;
-        DestroyBuffer(buf);
-        return CreateBuffer(new_size, label);
+        return ReallocBuf(buf, new_size, false, label);
     }
 
     std::uintptr_t ResizePrivateBuffer(std::uintptr_t buf,
@@ -240,12 +293,7 @@ public:
             DestroyBuffer(buf);
             return 0;
         }
-        if (buf == 0) return CreatePrivateBuffer(new_size, label);
-        auto it = buffers_.find(buf);
-        if (it == buffers_.end()) return CreatePrivateBuffer(new_size, label);
-        if (it->second.size == new_size) return buf;
-        DestroyBuffer(buf);
-        return CreatePrivateBuffer(new_size, label);
+        return ReallocBuf(buf, new_size, true, label);
     }
 
     void UploadBuffer(std::uintptr_t buf,
@@ -294,36 +342,23 @@ public:
     // --- Bindings ---------------------------------------------------------
 
     void BindSSBO(std::uint32_t binding, std::uintptr_t buf) override {
-        auto it = buffers_.find(buf);
-        if (it == buffers_.end()) return;
-        PendingWrite pw{};
-        pw.binding = binding;
-        pw.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        pw.buf = {it->second.buffer, 0, VK_WHOLE_SIZE};
-        pending_.push_back(pw);
+        PushBufferWrite(binding, buf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0,
+                        VK_WHOLE_SIZE);
     }
 
     void BindUBO(std::uint32_t binding, std::uintptr_t buf) override {
         auto it = buffers_.find(buf);
         if (it == buffers_.end()) return;
-        PendingWrite pw{};
-        pw.binding = binding;
-        pw.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        pw.buf = {it->second.buffer, 0, it->second.size};
-        pending_.push_back(pw);
+        PushBufferWrite(binding, buf, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0,
+                        it->second.size);
     }
 
     void BindUBORange(std::uint32_t binding,
                       std::uintptr_t buf,
                       std::size_t offset,
                       std::size_t range_size) override {
-        auto it = buffers_.find(buf);
-        if (it == buffers_.end()) return;
-        PendingWrite pw{};
-        pw.binding = binding;
-        pw.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        pw.buf = {it->second.buffer, offset, range_size};
-        pending_.push_back(pw);
+        PushBufferWrite(binding, buf, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, offset,
+                        range_size);
     }
 
     void BindImage(std::uint32_t binding,
@@ -346,28 +381,17 @@ public:
                     binding);
             return;
         }
-        auto view = ResolveImageView(tex, VK_IMAGE_LAYOUT_GENERAL);
-        if (view == VK_NULL_HANDLE) return;
-        PendingWrite pw{};
-        pw.binding = binding;
-        pw.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        pw.img = {VK_NULL_HANDLE, view, VK_IMAGE_LAYOUT_GENERAL};
-        pending_.push_back(pw);
+        PushImageWrite(binding, tex, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                       VK_IMAGE_LAYOUT_GENERAL, VK_NULL_HANDLE);
     }
 
     void BindSamplerTexture(std::uint32_t unit,
                             std::uintptr_t tex,
                             std::uint32_t /*width*/,
                             std::uint32_t /*height*/) override {
-        auto view =
-                ResolveImageView(tex, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        if (view == VK_NULL_HANDLE) return;
-        PendingWrite pw{};
-        pw.binding = unit;
-        pw.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        pw.img = {static_cast<VkSampler>(*nearest_sampler_), view,
-                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-        pending_.push_back(pw);
+        PushImageWrite(unit, tex, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                       static_cast<VkSampler>(*nearest_sampler_));
     }
 
     // --- Dispatch ---------------------------------------------------------
@@ -424,7 +448,7 @@ public:
                         VK_IMAGE_USAGE_STORAGE_BIT |
                                 VK_IMAGE_USAGE_SAMPLED_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT, label);
+                        VK_IMAGE_ASPECT_COLOR_BIT, label);
     }
 
     void DestroyTexture(std::uintptr_t tex) override {
@@ -441,12 +465,7 @@ public:
                                        std::uint32_t w,
                                        std::uint32_t h,
                                        const char* label) override {
-        if (tex == 0) return CreateTexture2DR32F(w, h, label);
-        auto it = textures_.find(tex);
-        if (it != textures_.end() && it->second.width == w &&
-            it->second.height == h)
-            return tex;
-        DestroyTexture(tex);
+        if (KeepTextureOfSize(tex, w, h)) return tex;
         return CreateTexture2DR32F(w, h, label);
     }
 
@@ -454,13 +473,7 @@ public:
                                         std::uint32_t w,
                                         std::uint32_t h,
                                         const char* label) override {
-        if (tex != 0) {
-            auto it = textures_.find(tex);
-            if (it != textures_.end() && it->second.width == w &&
-                it->second.height == h)
-                return tex;
-            DestroyTexture(tex);
-        }
+        if (KeepTextureOfSize(tex, w, h)) return tex;
         return AllocTex(
                 w, h, VK_FORMAT_R16_UINT,
                 VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -667,78 +680,46 @@ private:
         return true;
     }
 
-    bool InitCommandPool() {
+    /// Create the command pool/buffer, submission fence and nearest sampler
+    /// used by every pass. All handles are RAII, so a failure part-way through
+    /// releases whatever was created before it.
+    bool InitDeviceObjects() {
         auto& raii_dev =
                 GaussianSplatVulkanContext::GetInstance().GetRaiiDevice();
-        vk::CommandPoolCreateInfo ci{{}, queue_family_};
         try {
-            cmd_pool_ = raii_dev.createCommandPool(ci);
+            cmd_pool_ = raii_dev.createCommandPool({{}, queue_family_});
             NameObject(vk::ObjectType::eCommandPool,
-                   reinterpret_cast<std::uintptr_t>(
-                       static_cast<VkCommandPool>(*cmd_pool_)),
-                   "gs.command_pool");
-        } catch (const vk::SystemError& e) {
-            utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateCommandPool failed: {}",
-                    e.what());
-            return false;
-        }
-        vk::CommandBufferAllocateInfo ai{
-                *cmd_pool_,
-                vk::CommandBufferLevel::ePrimary,
-                1,
-        };
-        try {
-            auto cmds = raii_dev.allocateCommandBuffers(ai);
-            cmd_ = std::move(cmds.front());
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkCommandPool>(*cmd_pool_)),
+                       "gs.command_pool");
+
+            cmd_ = std::move(
+                    raii_dev.allocateCommandBuffers(
+                                    {*cmd_pool_,
+                                     vk::CommandBufferLevel::ePrimary, 1})
+                            .front());
             NameObject(vk::ObjectType::eCommandBuffer,
-                   reinterpret_cast<std::uintptr_t>(
-                       static_cast<VkCommandBuffer>(*cmd_)),
-                   "gs.command_buffer");
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkCommandBuffer>(*cmd_)),
+                       "gs.command_buffer");
+
+            fence_ = raii_dev.createFence({});
+
+            nearest_sampler_ = raii_dev.createSampler(
+                    {{},
+                     vk::Filter::eNearest,
+                     vk::Filter::eNearest,
+                     vk::SamplerMipmapMode::eNearest,
+                     vk::SamplerAddressMode::eClampToEdge,
+                     vk::SamplerAddressMode::eClampToEdge,
+                     vk::SamplerAddressMode::eClampToEdge});
+            NameObject(vk::ObjectType::eSampler,
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkSampler>(*nearest_sampler_)),
+                       "gs.sampler.nearest");
         } catch (const vk::SystemError& e) {
             utility::LogWarning(
-                    "GaussianSplatVulkan: vkAllocateCommandBuffers failed: {}",
-                    e.what());
-            return false;
-        }
-        return true;
-    }
-
-    bool InitFence() {
-        try {
-            fence_ = GaussianSplatVulkanContext::GetInstance()
-                             .GetRaiiDevice()
-                             .createFence({});
-        } catch (const vk::SystemError& e) {
-            utility::LogWarning("GaussianSplatVulkan: vkCreateFence failed: {}",
-                                e.what());
-            return false;
-        }
-        return true;
-    }
-
-    bool InitSampler() {
-        vk::SamplerCreateInfo si{
-                {},
-                vk::Filter::eNearest,
-                vk::Filter::eNearest,
-                vk::SamplerMipmapMode::eNearest,
-                vk::SamplerAddressMode::eClampToEdge,
-                vk::SamplerAddressMode::eClampToEdge,
-                vk::SamplerAddressMode::eClampToEdge,
-        };
-        try {
-            nearest_sampler_ = GaussianSplatVulkanContext::GetInstance()
-                                       .GetRaiiDevice()
-                                       .createSampler(si);
-                NameObject(
-                    vk::ObjectType::eSampler,
-                    reinterpret_cast<std::uintptr_t>(
-                        static_cast<VkSampler>(*nearest_sampler_)),
-                    "gs.sampler.nearest");
-        } catch (const vk::SystemError& e) {
-            utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateSampler failed: {}",
+                    "GaussianSplatVulkan: device object creation failed: {}",
                     e.what());
             return false;
         }
@@ -759,117 +740,76 @@ private:
             return false;
         }
 
-        // RAII device: all vk::raii::Xxx handles auto-destroy on exception.
-        auto& raii_dev =
-                GaussianSplatVulkanContext::GetInstance().GetRaiiDevice();
-        vk::ShaderModuleCreateInfo smi{
-                {},
-                bytes.size(),
-                reinterpret_cast<const std::uint32_t*>(bytes.data()),
-        };
-        vk::raii::ShaderModule shader_module{nullptr};
-        try {
-            shader_module = raii_dev.createShaderModule(smi);
-        } catch (const vk::SystemError& e) {
-            utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateShaderModule failed for {}: "
-                    "{}",
-                    name, e.what());
-            return false;
-        }
-        NameObject(
-            vk::ObjectType::eShaderModule,
-            reinterpret_cast<std::uintptr_t>(
-                static_cast<VkShaderModule>(*shader_module)),
-            (name + ".shader").c_str());
-
-        // Build descriptor set layout for this pipeline
+        // Declare the exact bindings this shader uses; push descriptors
+        // require a fully specified layout.
         const auto& bt = kShaderBindings[i];
         std::vector<vk::DescriptorSetLayoutBinding> layout_bindings(bt.count);
         std::uint64_t binding_mask = 0;
         for (std::uint32_t j = 0; j < bt.count; ++j) {
-            auto& lb = layout_bindings[j];
-            lb.binding = bt.descs[j].binding;
-            lb.descriptorType =
-                    static_cast<vk::DescriptorType>(bt.descs[j].type);
-            lb.descriptorCount = 1;
-            lb.stageFlags = vk::ShaderStageFlagBits::eCompute;
-            if (lb.binding < 64) binding_mask |= (uint64_t(1) << lb.binding);
+            layout_bindings[j] = {
+                    bt.descs[j].binding,
+                    static_cast<vk::DescriptorType>(bt.descs[j].type), 1,
+                    vk::ShaderStageFlagBits::eCompute};
+            if (bt.descs[j].binding < 64) {
+                binding_mask |= std::uint64_t(1) << bt.descs[j].binding;
+            }
         }
 
-        vk::DescriptorSetLayoutCreateInfo dslci{};
-        // Enable push descriptors for this layout.
-        dslci.flags = static_cast<vk::DescriptorSetLayoutCreateFlags>(
-                VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
-        dslci.bindingCount = bt.count;
-        dslci.pBindings = layout_bindings.data();
-        vk::raii::DescriptorSetLayout dset_layout{nullptr};
+        // Every intermediate is a vk::raii handle, so an exception at any step
+        // releases the objects created before it.
+        auto& raii_dev =
+                GaussianSplatVulkanContext::GetInstance().GetRaiiDevice();
         try {
-            dset_layout = raii_dev.createDescriptorSetLayout(dslci);
+            vk::raii::ShaderModule shader_module = raii_dev.createShaderModule(
+                    {{},
+                     bytes.size(),
+                     reinterpret_cast<const std::uint32_t*>(bytes.data())});
+            NameObject(vk::ObjectType::eShaderModule,
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkShaderModule>(*shader_module)),
+                       (name + ".shader").c_str());
+
+            vk::raii::DescriptorSetLayout dset_layout =
+                    raii_dev.createDescriptorSetLayout(
+                            {vk::DescriptorSetLayoutCreateFlagBits::
+                                     ePushDescriptorKHR,
+                             layout_bindings});
+
+            const vk::DescriptorSetLayout dsl_handle = *dset_layout;
+            vk::raii::PipelineLayout pipeline_layout =
+                    raii_dev.createPipelineLayout({{}, 1, &dsl_handle});
+            NameObject(vk::ObjectType::ePipelineLayout,
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkPipelineLayout>(*pipeline_layout)),
+                       (name + ".layout").c_str());
+
+            vk::raii::Pipeline pipeline = raii_dev.createComputePipeline(
+                    nullptr, {{},
+                              vk::PipelineShaderStageCreateInfo{
+                                      {},
+                                      vk::ShaderStageFlagBits::eCompute,
+                                      *shader_module,
+                                      "main"},
+                              *pipeline_layout});
+            NameObject(vk::ObjectType::ePipeline,
+                       reinterpret_cast<std::uintptr_t>(
+                               static_cast<VkPipeline>(*pipeline)),
+                       name.c_str());
+
+            // The shader module is released here; the pipeline owns its code.
+            auto& p = pipelines_[i];
+            p.dset_layout = std::move(dset_layout);
+            p.layout = std::move(pipeline_layout);
+            p.pipeline = std::move(pipeline);
+            p.binding_mask = binding_mask;
+            p.valid = true;
         } catch (const vk::SystemError& e) {
-            // shader_module auto-destroyed by RAII
             utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateDescriptorSetLayout failed "
-                    "for {}: {}",
+                    "GaussianSplatVulkan: compute pipeline creation failed for "
+                    "{}: {}",
                     name, e.what());
             return false;
         }
-
-        const vk::DescriptorSetLayout dsl_handle = *dset_layout;
-        vk::PipelineLayoutCreateInfo plci{{}, 1, &dsl_handle};
-        vk::raii::PipelineLayout pipeline_layout{nullptr};
-        try {
-            pipeline_layout = raii_dev.createPipelineLayout(plci);
-        } catch (const vk::SystemError& e) {
-            // dset_layout, shader_module auto-destroyed by RAII
-            utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreatePipelineLayout failed "
-                    "for {}: {}",
-                    name, e.what());
-            return false;
-        }
-        NameObject(
-            vk::ObjectType::ePipelineLayout,
-            reinterpret_cast<std::uintptr_t>(
-                static_cast<VkPipelineLayout>(*pipeline_layout)),
-            (name + ".layout").c_str());
-
-        vk::ComputePipelineCreateInfo pci{
-                {},
-                vk::PipelineShaderStageCreateInfo{
-                        {},
-                        vk::ShaderStageFlagBits::eCompute,
-                        *shader_module,
-                        "main",
-                },
-                *pipeline_layout,
-        };
-        vk::raii::Pipeline pipeline{nullptr};
-        try {
-            pipeline = raii_dev.createComputePipeline(nullptr, pci);
-        } catch (const vk::SystemError& e) {
-            // pipeline_layout, dset_layout, shader_module auto-destroyed by
-            // RAII
-            utility::LogWarning(
-                    "GaussianSplatVulkan: vkCreateComputePipelines failed "
-                    "for {}: {}",
-                    name, e.what());
-            return false;
-        }
-        NameObject(
-            vk::ObjectType::ePipeline,
-            reinterpret_cast<std::uintptr_t>(
-                static_cast<VkPipeline>(*pipeline)),
-            name.c_str());
-        // shader_module auto-destroyed here (pipeline compiled; module no
-        // longer needed)
-
-        auto& p = pipelines_[i];
-        p.dset_layout = std::move(dset_layout);
-        p.layout = std::move(pipeline_layout);
-        p.pipeline = std::move(pipeline);
-        p.binding_mask = binding_mask;
-        p.valid = true;
         utility::LogDebug("GaussianSplatVulkan: loaded {}", name);
         return true;
     }
@@ -887,7 +827,8 @@ private:
                     .GetRaiiDevice()
                     .setDebugUtilsObjectNameEXT(info);
         } catch (const vk::SystemError&) {
-            // Object naming is diagnostic metadata and must not affect rendering.
+            // Object naming is diagnostic metadata and must not affect
+            // rendering.
         }
     }
 
@@ -941,6 +882,34 @@ private:
     }
 
     // --- Descriptor helpers -----------------------------------------------
+
+    void PushBufferWrite(std::uint32_t binding,
+                         std::uintptr_t buf,
+                         VkDescriptorType type,
+                         std::size_t offset,
+                         VkDeviceSize range) {
+        auto it = buffers_.find(buf);
+        if (it == buffers_.end()) return;
+        PendingWrite pw{};
+        pw.binding = binding;
+        pw.type = type;
+        pw.buf = {it->second.buffer, offset, range};
+        pending_.push_back(pw);
+    }
+
+    void PushImageWrite(std::uint32_t binding,
+                        std::uintptr_t tex,
+                        VkDescriptorType type,
+                        VkImageLayout layout,
+                        VkSampler sampler) {
+        const VkImageView view = ResolveImageView(tex, layout);
+        if (view == VK_NULL_HANDLE) return;
+        PendingWrite pw{};
+        pw.binding = binding;
+        pw.type = type;
+        pw.img = {sampler, view, layout};
+        pending_.push_back(pw);
+    }
 
     void FlushPendingBindings() {
         if (active_id_ < 0 || pending_.empty()) return;
@@ -1000,24 +969,13 @@ private:
                 }
                 continue;
             }
-            VkImageMemoryBarrier2 barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
-            barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = entry.image;
-            barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-            VkDependencyInfo dependency{};
-            dependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-            dependency.imageMemoryBarrierCount = 1;
-            dependency.pImageMemoryBarriers = &barrier;
-            VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
-                    static_cast<VkCommandBuffer>(*cmd_), &dependency);
+            // Make composite writes visible to Filament's sampling of the
+            // shared colour image in the next frame.
+            MemoryBarrierInLayout(entry.image, VK_IMAGE_LAYOUT_GENERAL,
+                                  vk::PipelineStageFlagBits2::eComputeShader,
+                                  vk::AccessFlagBits2::eShaderWrite,
+                                  vk::PipelineStageFlagBits2::eFragmentShader,
+                                  vk::AccessFlagBits2::eShaderSampledRead);
         }
     }
 
@@ -1036,26 +994,15 @@ private:
             e.current_layout = needed_layout;
         } else if (first_imported_use &&
                    needed_layout == VK_IMAGE_LAYOUT_GENERAL) {
-            VkImageMemoryBarrier2 barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            barrier.srcStageMask =
-                    VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-            barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            barrier.dstAccessMask =
-                    VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = e.image;
-            barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-            VkDependencyInfo dependency{};
-            dependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-            dependency.imageMemoryBarrierCount = 1;
-            dependency.pImageMemoryBarriers = &barrier;
-            VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdPipelineBarrier2(
-                    static_cast<VkCommandBuffer>(*cmd_), &dependency);
+            // Filament's colour-attachment writes must be visible before the
+            // composite pass reads and blends over them.
+            MemoryBarrierInLayout(
+                    e.image, VK_IMAGE_LAYOUT_GENERAL,
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::PipelineStageFlagBits2::eComputeShader,
+                    vk::AccessFlagBits2::eShaderRead |
+                            vk::AccessFlagBits2::eShaderWrite);
         }
         return static_cast<VkImageView>(*e.view);
     }
@@ -1067,74 +1014,45 @@ private:
                                VkFormat format,
                                VkImageLayout old_layout,
                                VkImageLayout new_layout) {
-        const bool is_depth = (format == VK_FORMAT_D32_SFLOAT);
-        const auto src_stage =
-                (old_layout == VK_IMAGE_LAYOUT_UNDEFINED)
-                        ? vk::PipelineStageFlagBits2::eNone
-                : (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                        ? vk::PipelineStageFlagBits2::eColorAttachmentOutput
-                : (old_layout ==
-                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-                        ? (vk::PipelineStageFlagBits2::eEarlyFragmentTests |
-                           vk::PipelineStageFlagBits2::eLateFragmentTests)
-                : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                        ? vk::PipelineStageFlagBits2::eTransfer
-                        : vk::PipelineStageFlagBits2::eComputeShader;
-        const auto src_access =
-                (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) ? vk::AccessFlags2{}
-                : (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                        ? vk::AccessFlagBits2::eColorAttachmentWrite
-                : (old_layout ==
-                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-                        ? vk::AccessFlagBits2::eDepthStencilAttachmentWrite
-                : (old_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                        ? vk::AccessFlagBits2::eTransferRead
-                // SHADER_READ_ONLY_OPTIMAL is a read-only layout;
-                // using eShaderWrite here would be incorrect and
-                // triggers BestPractices-ImageBarrierAccessLayout.
-                : (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                        ? vk::AccessFlagBits2::eShaderRead
-                        : (vk::AccessFlagBits2::eShaderWrite |
-                           vk::AccessFlagBits2::eShaderRead);
-        const auto dst_stage =
-                (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                        ? vk::PipelineStageFlags2(
-                                  vk::PipelineStageFlagBits2::eTransfer)
-                : (new_layout ==
-                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-                        ? vk::PipelineStageFlags2(vk::PipelineStageFlagBits2::
-                                                          eEarlyFragmentTests |
-                                                  vk::PipelineStageFlagBits2::
-                                                          eLateFragmentTests)
-                        : vk::PipelineStageFlags2(
-                                  vk::PipelineStageFlagBits2::eComputeShader);
-        const vk::AccessFlags2 dst_access =
-                (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                        ? vk::AccessFlagBits2::eTransferRead
-                : (new_layout ==
-                   VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-                        ? (vk::AccessFlagBits2::eDepthStencilAttachmentRead |
-                           vk::AccessFlagBits2::eDepthStencilAttachmentWrite)
-                : (new_layout == VK_IMAGE_LAYOUT_GENERAL)
-                        ? (vk::AccessFlagBits2::eShaderWrite |
-                           vk::AccessFlagBits2::eShaderRead)
-                        : vk::AccessFlagBits2::eShaderRead;
-        vk::ImageMemoryBarrier2 b{
-                src_stage,
-                src_access,
-                dst_stage,
-                dst_access,
+        const ImageSyncScope src = SrcScopeForLayout(old_layout);
+        const ImageSyncScope dst = DstScopeForLayout(new_layout);
+        const vk::ImageMemoryBarrier2 barrier{
+                src.stage,
+                src.access,
+                dst.stage,
+                dst.access,
                 static_cast<vk::ImageLayout>(old_layout),
                 static_cast<vk::ImageLayout>(new_layout),
                 VK_QUEUE_FAMILY_IGNORED,
                 VK_QUEUE_FAMILY_IGNORED,
                 vk::Image(image),
-                vk::ImageSubresourceRange{
-                        is_depth ? vk::ImageAspectFlagBits::eDepth
-                                 : vk::ImageAspectFlagBits::eColor,
-                        0, 1, 0, 1},
+                FullSubresource(format),
         };
-        cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, b});
+        cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barrier});
+    }
+
+    /// Execution/memory barrier that keeps the layout unchanged. Used to order
+    /// Filament's attachment writes against GS compute access to the same
+    /// shared image, which stays in GENERAL for both.
+    void MemoryBarrierInLayout(VkImage image,
+                               VkImageLayout layout,
+                               vk::PipelineStageFlags2 src_stage,
+                               vk::AccessFlags2 src_access,
+                               vk::PipelineStageFlags2 dst_stage,
+                               vk::AccessFlags2 dst_access) {
+        const vk::ImageMemoryBarrier2 barrier{
+                src_stage,
+                src_access,
+                dst_stage,
+                dst_access,
+                static_cast<vk::ImageLayout>(layout),
+                static_cast<vk::ImageLayout>(layout),
+                VK_QUEUE_FAMILY_IGNORED,
+                VK_QUEUE_FAMILY_IGNORED,
+                vk::Image(image),
+                FullSubresource(VK_FORMAT_UNDEFINED),
+        };
+        cmd_.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, barrier});
     }
 
     vk::raii::ImageView CreateImageView(VkImage image,
@@ -1195,8 +1113,22 @@ private:
         e.mapped = priv ? nullptr : info.pMappedData;
         e.is_private = priv;
         NameObject(vk::ObjectType::eBuffer,
-               reinterpret_cast<std::uintptr_t>(buf), label);
+                   reinterpret_cast<std::uintptr_t>(buf), label);
         return handle;
+    }
+
+    /// Reuse the existing allocation when the size is unchanged, otherwise
+    /// destroy and allocate a fresh buffer with a new handle.
+    std::uintptr_t ReallocBuf(std::uintptr_t buf,
+                              std::size_t new_size,
+                              bool priv,
+                              const char* label) {
+        auto it = buffers_.find(buf);
+        if (it != buffers_.end()) {
+            if (it->second.size == new_size) return buf;
+            DestroyBuffer(buf);
+        }
+        return AllocBuf(new_size, priv, label);
     }
 
     // --- Texture/image allocation -----------------------------------------
@@ -1241,12 +1173,27 @@ private:
         e.height = h;
         e.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
         NameObject(vk::ObjectType::eImage,
-               reinterpret_cast<std::uintptr_t>(image), label);
+                   reinterpret_cast<std::uintptr_t>(image), label);
         NameObject(vk::ObjectType::eImageView,
-               reinterpret_cast<std::uintptr_t>(
-                   static_cast<VkImageView>(*e.view)),
-               label);
+                   reinterpret_cast<std::uintptr_t>(
+                           static_cast<VkImageView>(*e.view)),
+                   label);
         return handle;
+    }
+
+    /// True when \p tex already has the requested size; otherwise destroys it
+    /// so the caller can allocate a replacement.
+    bool KeepTextureOfSize(std::uintptr_t tex,
+                           std::uint32_t w,
+                           std::uint32_t h) {
+        if (tex == 0) return false;
+        auto it = textures_.find(tex);
+        if (it != textures_.end() && it->second.width == w &&
+            it->second.height == h) {
+            return true;
+        }
+        DestroyTexture(tex);
+        return false;
     }
 
     // --- Download helpers -------------------------------------------------
@@ -1372,11 +1319,10 @@ void UnregisterVkImageFromComputeContext(GaussianSplatGpuContext& ctx,
 }
 
 std::unique_ptr<GaussianSplatGpuContext> CreateComputeGpuContextVulkan() {
-    auto& interop = GaussianSplatVulkanContext::GetInstance();
-    if (!interop.IsValid()) {
+    if (!GaussianSplatVulkanContext::GetInstance().IsValid()) {
         utility::LogWarning(
-                "GaussianSplatVulkan: interop context not initialized; "
-                "Vulkan compute context not created");
+                "GaussianSplatVulkan: Vulkan context not initialized; "
+                "compute context not created");
         return nullptr;
     }
     return std::make_unique<GaussianSplatGpuContextVulkan>();

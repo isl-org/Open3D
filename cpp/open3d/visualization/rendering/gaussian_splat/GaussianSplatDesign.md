@@ -10,9 +10,11 @@ per-splat occlusion.  Multiple Gaussian scenes are supported.  The full pipeline
 offscreen `RenderToImage` / `RenderToDepthImage` captures.
 
 **Implemented backends**: Vulkan on non-Apple platforms and Metal on macOS.
-The shared-device Vulkan path has been exercised locally only on Linux with an
-NVIDIA RTX 4090. Windows, AMD, Intel, hybrid graphics, desktop X11/XWayland,
-and macOS/Metal still require explicit validation.
+The shared-device Vulkan path has been exercised locally on Linux with two
+vendors: NVIDIA RTX 3070 Laptop (proprietary driver 580.173.02, two queues) and
+Intel UHD Graphics CML GT2 (Mesa 25.2.8, single queue). Both produce identical
+focused-test output. Windows, AMD, hybrid graphics, desktop X11/XWayland, and
+macOS/Metal still require explicit validation.
 
 **Renderer backend**: Pure Vulkan on non-Apple platforms (GPU compute and the
 Filament Vulkan backend share one `VkDevice`), Metal on macOS. The former
@@ -172,9 +174,11 @@ GS and Filament depth values directly in reversed-Z space.
 
 **Shared colour image**: an RGBA16F image is imported as `SAMPLEABLE |
 COLOR_ATTACHMENT | BLIT_SRC` and installed as the view colour attachment. The
-composite shader loads the mesh colour, applies premultiplied source-over
-blending, and stores the final colour back into that image. Vulkan ImGui must not
-apply a second splat overlay.
+composite shader loads the mesh colour with `imageLoad`, applies premultiplied
+source-over blending, and stores the final colour back with `imageStore`.
+`FilamentView::GetColorBuffer()` returns this image, so Vulkan ImGui presents it
+once without a second splat overlay. Metal keeps its separate-overlay path until
+an equivalent imported writable view attachment is implemented and tested there.
 
 **MSAA**: disabled for GS views.  Filament asserts `!msaa.enabled || !hasSampleableDepth()`.
 3DGS uses Gaussian kernel anti-aliasing instead.
@@ -495,7 +499,7 @@ consistency even though the shader does not evaluate them.
 | Vulkan surface extensions on Linux | The shared context enables `VK_KHR_xlib_surface` for Filament's Linux Vulkan surface path. The focused local tests use GLFW headless fallback; X11/XWayland desktop behavior is not yet validated. |
 | Vulkan compute instead of GL compute | GL compute shaders have limited/no subgroup support on Intel hardware. Vulkan compute provides full `VK_KHR_shader_subgroup` on all major vendors (NVIDIA, AMD, Intel), enabling subgroup-optimized sort and projection shaders. |
 | Fire-and-forget geometry stage | `EndGeometryPass()` submits the Vulkan command buffer and signals a fence without waiting.  Vulkan geometry overlaps Filament's `beginFrame()` and scene draw.  `WaitForGeometryPass()` before composite is typically a no-op because geometry finishes during Filament's draw. |
-| Same queue family for Filament + GS compute | Eliminates queue-family ownership transfers.  Two queue indices where available (index 0 = GS, index 1 = Filament).  On single-queue GPUs both indices are 0, with `flushAndWait()` providing mutual exclusion. |
+| Same queue family for Filament + GS compute | Eliminates queue-family ownership transfers.  Two queue indices where available (index 0 = GS, index 1 = Filament).  On single-queue GPUs both indices are 0, with `flushAndWait()` providing mutual exclusion.  Both branches are exercised locally: NVIDIA RTX 3070 takes the two-queue path, Intel UHD CML GT2 the single-queue path. |
 | `engine_.flushAndWait()` for synchronization with Filament | Filament's driver-thread command stream is opaque; Open3D cannot inject semaphore operations into its submissions. CPU waits bracket GS dispatches so shared-image access is ordered. Removing those stalls requires a larger Filament synchronization API change. |
 | Shared sampleable depth texture | Zero-copy: Filament writes depth, composite reads it without any CPU staging. The MSAA restriction is acceptable because 3DGS uses Gaussian kernel anti-aliasing. |
 | Shared Vulkan color attachment | Open3D allocates an RGBA16F image with `STORAGE`, `COLOR_ATTACHMENT`, `SAMPLED`, and `TRANSFER_SRC` usage, then imports it into Filament as the view color attachment. The composite shader reads and writes this image in `GENERAL` layout, eliminating the Vulkan offscreen base readback and CPU blend. |
@@ -519,10 +523,16 @@ consistency even though the shader does not evaluate them.
 
 1. **Acceptance validation.** Run the interactive example, Vulkan validation
   layers, Python visualization tests, patched prebuilt-Filament flow, and the
-  Linux/Windows/AMD/Intel/hybrid hardware matrix. The local evidence is limited
-  to headless Linux on an NVIDIA RTX 4090.
-2. **Single-queue hardware.** Validate that the existing `flushAndWait()` ordering
-  safely serializes GS and Filament submissions when only queue index 0 exists.
+  Windows/AMD/hybrid hardware matrix. The local evidence is limited to the
+  focused offscreen tests on headless Linux, on NVIDIA and Intel. Larger
+  viewports, multi-tile sorting, and the subgroup-heavy radix scatter path are
+  not covered at scale on Intel, which is the vendor that motivated the move
+  from GL compute to Vulkan compute.
+2. **Single-queue hardware.** Done for the focused tests: Intel UHD CML GT2
+  exposes one queue in family 0, so GS compute and Filament both use queue
+  index 0 and rely on `flushAndWait()` bracketing for mutual exclusion. The
+  focused tests pass there, byte-identical to the two-queue NVIDIA run.
+  Sustained interactive use on single-queue hardware is still unvalidated.
 3. **Metal parity.** Retain and test Metal's separate-overlay/CPU-blend path;
   do not port Vulkan's imported writable colour attachment without dedicated
   Metal coverage.
@@ -566,22 +576,6 @@ consistency even though the shader does not evaluate them.
 | `FilamentView.h/.cpp` | `EnableViewCaching()` invalidation fix; `GetRenderTargetHandle()` for offscreen readback |
 | `FilamentScene.h/.cpp` | `per_object_gs_attrs_` / `merged_gs_attrs_`; `RebuildMergedGaussianData()`; `HasNonGaussianVisibleGeometry()` |
 | `FilamentRenderToBuffer.h/.cpp` | Offscreen GS pipeline. Vulkan downloads the final shared RGBA16F image directly; Metal retains readback plus CPU overlay blend. |
-
-### Vulkan GPU-side scene-colour compositing
-
-On Linux and Windows, Open3D allocates the storage-capable RGBA16F image rather
-than asking Filament to allocate `FilamentView::color_buffer_`; Filament imports
-that image and renders the scene directly into it. The composite shader reads the
-base colour with `imageLoad`, applies premultiplied source-over blending, and
-writes the final colour with `imageStore`. `FilamentView::GetColorBuffer()`
-returns that image, so Vulkan ImGui presents it once without a Gaussian overlay.
-
-The shared image uses `GENERAL` layout for both Filament color-attachment access
-and compute storage-image access. Vulkan device initialization rejects devices
-without optimal-tiled RGBA16F storage-image support. Metal intentionally retains
-its separate-overlay path until the equivalent imported writable view attachment
-is implemented and tested.
-
 | `FilamentRenderer.h/.cpp` | Frame schedule and GS output forwarding; `SetOnGaussianCompositeComplete` |
 | `FilamentEngine.cpp` | Pre-Filament Vulkan context setup (init + shutdown, shared VkDevice lifecycle) |
 | `Window.cpp` | Registers composite-complete callback -> `PostRedraw()` (first-frame fix) |
@@ -601,5 +595,20 @@ is implemented and tested.
 
 | File | Purpose |
 |------|---------|
-| `cpp/tests/visualization/rendering/GaussianSplatRender.cpp` | Focused 8×8 `RenderToImage` and `RenderToDepthImage` goldens for two splats and a mixed parameterized-blue-mesh/splat occlusion scene. Locally passing on Linux/NVIDIA headless fallback. |
+| `cpp/tests/visualization/rendering/GaussianSplatRender.cpp` | Focused 8×8 `RenderToImage` and `RenderToDepthImage` goldens for two splats and a mixed parameterized-blue-mesh/splat occlusion scene. Every pixel is compared exactly; a mismatch prints both grids as paste-ready initializer rows. Byte-identical on Linux/NVIDIA and Linux/Intel, so the goldens are vendor-independent and need no tolerance. |
 | `examples/cpp/GaussianSplat.cpp` | Interactive viewer with a red sphere for depth-compositing validation; not yet run for this implementation update. |
+
+To check frame rate:
+
+* Mesa (Intel / AMD) GPU on Linux:
+
+  ```sh
+  export VK_INSTANCE_LAYERS=VK_LAYER_MESA_overlay VK_LAYER_MESA_OVERLAY_CONFIG="fps,position=top-left"
+  ```
+
+* Windows: XBox Game Bar (hotkey: Win + G) -> Performance widget
+* macOS:
+
+  ```sh
+  export MTL_HUD_ENABLED=1
+  ```

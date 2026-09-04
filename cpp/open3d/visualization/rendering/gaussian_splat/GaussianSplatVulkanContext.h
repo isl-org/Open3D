@@ -86,8 +86,6 @@ struct VkImageDesc {
 /// Manages a headless Vulkan instance, physical device selection, logical
 /// device and compute queue. The same VkDevice is shared with Filament so
 /// that GS compute output images are immediately visible without export/import.
-///
-/// Singleton, replaces the old GaussianSplatVulkanInteropContext.
 class GaussianSplatVulkanContext {
 public:
     static GaussianSplatVulkanContext& GetInstance();

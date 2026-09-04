@@ -8,16 +8,19 @@
 // Offscreen Gaussian splat rendering tests.
 //
 // Renders test splats (plus, in the mixed-geometry test, an opaque mesh cube)
-// into an 8x8 offscreen color/depth grid and compares the grayscale values
-// against deterministic golden references.
+// into an 8x8 offscreen color/depth grid and compares every grayscale value
+// against deterministic golden references exactly.
 
 #include <gtest/gtest.h>
 
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <iomanip>
 #include <limits>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "open3d/Open3D.h"
@@ -41,13 +44,13 @@ namespace {
 
 const std::vector<uint8_t> kRefColorGray = {
         255, 255, 255, 255, 255, 255, 255, 255,  //
-        247, 245, 247, 251, 255, 246, 223, 245,  //
-        223, 221, 229, 241, 249, 222, 150, 222,  //
-        175, 172, 193, 221, 242, 241, 222, 245,  //
+        247, 245, 247, 251, 255, 246, 223, 244,  //
+        223, 221, 229, 240, 249, 221, 150, 222,  //
+        175, 172, 193, 221, 242, 240, 222, 245,  //
         114, 113, 152, 200, 234, 249, 255, 255,  //
         81,  85,  135, 193, 232, 249, 255, 255,  //
         106, 114, 158, 207, 237, 250, 255, 255,  //
-        167, 173, 200, 228, 246, 255, 255, 255,  //
+        166, 173, 200, 228, 245, 255, 255, 255,  //
 };
 const std::vector<uint8_t> kRefDepthGray = {
         0,  0,  0,  0, 0, 0, 0,   0,  //
@@ -63,25 +66,30 @@ const std::vector<uint8_t> kRefDepthGray = {
 // Mixed-geometry (splats + mesh) scene: an opaque blue cube occludes the lower
 // green splat. The splat is at (0.72, 0.43, 3.0); the cube is at z=2.8 and its
 // XY coordinates scale by 2.8 / 3.0 to project to the same image position.
+// The cube darkens (row 2, col 5) to 57 and (row 2, col 6) to 15, where the
+// splat-only scene shows 221 and 150.
 const std::vector<uint8_t> kRefMixedColorGray = {
         255, 255, 255, 255, 255, 255, 255, 255,  //
-        247, 245, 247, 251, 255, 246, 223, 245,  //
-        223, 221, 229, 241, 249, 57,  150, 222,  //
-        175, 172, 193, 221, 242, 241, 222, 245,  //
+        247, 245, 247, 251, 255, 246, 223, 244,  //
+        223, 221, 229, 240, 249, 57,  15,  222,  //
+        175, 172, 193, 221, 242, 240, 222, 245,  //
         114, 113, 152, 200, 234, 249, 255, 255,  //
         81,  85,  135, 193, 232, 249, 255, 255,  //
         106, 114, 158, 207, 237, 250, 255, 255,  //
-        167, 173, 200, 228, 246, 255, 255, 255,  //
+        166, 173, 200, 228, 245, 255, 255, 255,  //
 };
+// Depth encodes linear view-space distance as distance * 64, so the cube at
+// z=2.8 (2.2 m from the camera at z=5) reads 140, the near splat at z=3.0
+// reads 128, and the far splat at z=4.55 reads 29.
 const std::vector<uint8_t> kRefMixedDepthGray = {
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 128, 0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        29, 29, 29, 0, 0, 0, 0,   0,  //
-        0,  0,  0,  0, 0, 0, 0,   0,  //
+        0,  0,  0,  0, 0, 0,   0,   0,  //
+        0,  0,  0,  0, 0, 0,   0,   0,  //
+        0,  0,  0,  0, 0, 140, 128, 0,  //
+        0,  0,  0,  0, 0, 0,   0,   0,  //
+        29, 29, 29, 0, 0, 0,   0,   0,  //
+        29, 29, 29, 0, 0, 0,   0,   0,  //
+        29, 29, 29, 0, 0, 0,   0,   0,  //
+        0,  0,  0,  0, 0, 0,   0,   0,  //
 };
 
 // ---------------------------------------------------------------------------
@@ -147,18 +155,43 @@ std::vector<uint8_t> ImageToGray(const geometry::Image& image, bool is_color) {
     return gray;
 }
 
-size_t CountPixelsOutsideTolerance(const std::vector<uint8_t>& actual,
-                                   const std::vector<uint8_t>& expected,
-                                   uint8_t tolerance) {
-    size_t count = 0;
+constexpr int kW = 8;
+constexpr int kH = 8;
+
+/// Formats an 8x8 grid as C++ initializer rows so a failure message can be
+/// pasted straight into the golden references above.
+std::string FormatGrid(const std::vector<uint8_t>& values) {
+    std::ostringstream out;
+    for (int row = 0; row < kH; ++row) {
+        out << "\n        ";
+        for (int col = 0; col < kW; ++col) {
+            out << std::setw(3) << static_cast<int>(values[row * kW + col])
+                << ", ";
+        }
+        out << " //";
+    }
+    return out.str();
+}
+
+/// Compares a rendered 8x8 grid against its golden reference exactly. Any
+/// mismatch is a real change in rendered output, so it must be investigated
+/// and the golden updated deliberately rather than absorbed by a tolerance.
+void ExpectGridEq(const std::vector<uint8_t>& actual,
+                  const std::vector<uint8_t>& expected,
+                  const char* label) {
+    ASSERT_EQ(actual.size(), expected.size());
     for (size_t index = 0; index < actual.size(); ++index) {
-        const int difference = std::abs(static_cast<int>(actual[index]) -
-                                        static_cast<int>(expected[index]));
-        if (difference > tolerance) {
-            ++count;
+        if (actual[index] != expected[index]) {
+            ADD_FAILURE() << label << " differs from the golden reference.\n"
+                          << "First mismatch at (row " << index / kW << ", col "
+                          << index % kW
+                          << "): actual=" << static_cast<int>(actual[index])
+                          << " expected=" << static_cast<int>(expected[index])
+                          << "\nActual grid:" << FormatGrid(actual)
+                          << "\nExpected grid:" << FormatGrid(expected);
+            return;
         }
     }
-    return count;
 }
 
 geometry::Image MakeDepthPreview(const geometry::Image& depth_image) {
@@ -192,9 +225,6 @@ geometry::Image MakeDepthPreview(const geometry::Image& depth_image) {
     return preview;
 }
 
-constexpr int kW = 8;
-constexpr int kH = 8;
-
 void SetUpTestCamera(visualization::rendering::Open3DScene& scene) {
     auto* cam = scene.GetCamera();
     cam->SetProjection(60.0f, static_cast<float>(kW) / kH, 0.1f, 50.0f,
@@ -202,16 +232,14 @@ void SetUpTestCamera(visualization::rendering::Open3DScene& scene) {
     cam->LookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 5.0f}, {0.0f, 1.0f, 0.0f});
 }
 
-/// Renders `scene` to an 8x8 color/depth pair and checks it against the given
-/// golden grayscale references. `dump_prefix`, when non-null, writes the
-/// rendered images to /tmp/<dump_prefix>_{color,depth}_8x8.png for visual
+/// Renders `scene` to an 8x8 color/depth pair and checks every pixel against
+/// the given golden grayscale references. `dump_prefix`, when non-null, writes
+/// the rendered images to /tmp/<dump_prefix>_{color,depth}_8x8.png for visual
 /// inspection while calibrating new golden references.
 void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
                           visualization::rendering::Open3DScene& scene,
                           const std::vector<uint8_t>& ref_color,
                           const std::vector<uint8_t>& ref_depth,
-                          size_t max_color_outliers,
-                          size_t max_depth_outliers,
                           const char* dump_prefix = nullptr) {
     auto& app = visualization::gui::Application::GetInstance();
 
@@ -236,35 +264,13 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
                        depth_preview);
     }
 
-    auto gray_color = ImageToGray(*color_img, true);
-    auto gray_depth = ImageToGray(*depth_img, false);
+    const auto gray_color = ImageToGray(*color_img, true);
+    const auto gray_depth = ImageToGray(*depth_img, false);
     ASSERT_EQ(gray_color.size(), 64u);
     ASSERT_EQ(gray_depth.size(), 64u);
 
-    const auto max_difference = [](const std::vector<uint8_t>& actual,
-                                   const std::vector<uint8_t>& expected) {
-        uint8_t maximum = 0;
-        for (size_t index = 0; index < actual.size(); ++index) {
-            maximum = std::max(maximum,
-                               static_cast<uint8_t>(std::abs(
-                                       static_cast<int>(actual[index]) -
-                                       static_cast<int>(expected[index]))));
-        }
-        return maximum;
-    };
-    utility::LogInfo("Gaussian splat color max difference: {}",
-                     max_difference(gray_color, ref_color));
-    utility::LogInfo("Gaussian splat depth max difference: {}",
-                     max_difference(gray_depth, ref_depth));
-    // Half-float conversion may vary by one intensity level across Vulkan
-    // drivers. Rasterization of a mesh edge may cover one adjacent 8x8 pixel.
-    constexpr uint8_t kPixelTolerance = 1;
-    EXPECT_LE(
-            CountPixelsOutsideTolerance(gray_color, ref_color, kPixelTolerance),
-            max_color_outliers);
-    EXPECT_LE(
-            CountPixelsOutsideTolerance(gray_depth, ref_depth, kPixelTolerance),
-            max_depth_outliers);
+    ExpectGridEq(gray_color, ref_color, "Gaussian splat color");
+    ExpectGridEq(gray_depth, ref_depth, "Gaussian splat depth");
 }
 
 // =========================================================================
@@ -333,11 +339,11 @@ TEST_F(GaussianSplatRenderTest, FastLodPreservesGaussianSplatComposite) {
     SetUpTestCamera(*scene);
     scene->SetLOD(visualization::rendering::Open3DScene::LOD::FAST);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
-                         kRefMixedDepthGray, 1, 1);
+                         kRefMixedDepthGray);
 
     scene->SetLOD(visualization::rendering::Open3DScene::LOD::HIGH_DETAIL);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
-                         kRefMixedDepthGray, 1, 1);
+                         kRefMixedDepthGray);
 }
 
 // ---------------------------------------------------------------------------
@@ -365,7 +371,7 @@ TEST_F(GaussianSplatRenderTest, RenderToImageTwoSplats) {
     scene->AddGeometry("test_splats", &pcd, mat);
 
     SetUpTestCamera(*scene);
-    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray, 0, 0,
+    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray,
                          "twosplats_");
 }
 
@@ -405,5 +411,5 @@ TEST_F(GaussianSplatRenderTest, RenderToImageSplatsAndMeshOcclusion) {
 
     SetUpTestCamera(*scene);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
-                         kRefMixedDepthGray, 1, 1, "mixed_");
+                         kRefMixedDepthGray, "mixed_");
 }

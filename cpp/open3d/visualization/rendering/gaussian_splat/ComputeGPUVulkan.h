@@ -13,9 +13,9 @@
 //     loaded from SPIR-V assets at resources/gaussian_splat/.
 //   - Uses VK_KHR_push_descriptor for efficient per-dispatch binding (no
 //     descriptor pool allocation per frame).
-//   - Uses VMA for general buffer/image allocation.  Shared cross-API images
-//     (color, depth) are registered via RegisterSharedImageInVulkanContext()
-//     rather than allocated here; VulkanInteropContext owns those.
+//   - Uses VMA for internal buffer/image allocation.  Images shared with
+//     Filament (color, depth) are owned by GaussianSplatVulkanContext and
+//     registered here via RegisterVkImageInComputeContext().
 //   - Synchronisation: each EndXxxPass() submits and waits (fence-based) so
 //     the rest of the pipeline sees a completed GPU result.
 

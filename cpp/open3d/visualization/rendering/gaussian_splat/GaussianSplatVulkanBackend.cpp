@@ -138,8 +138,6 @@ public:
                     height);
         }
 
-        if (targets.color_vk_image == 0) return false;
-
         using Tex = filament::Texture;
         targets.depth = resource_mgr.CreateImportedTexture(
                 static_cast<intptr_t>(targets.depth_vk_image), int(width),
@@ -155,16 +153,13 @@ public:
 
         if (!targets.color) return false;
 
-        if (targets.depth) {
-            targets.render_target = resource_mgr.CreateRenderTarget(
-                    targets.color, targets.depth);
-        } else {
-            auto owned_depth = resource_mgr.CreateDepthAttachmentTexture(
+        if (!targets.depth) {
+            targets.depth = resource_mgr.CreateDepthAttachmentTexture(
                     int(width), int(height));
-            targets.depth = owned_depth;
-            targets.render_target = resource_mgr.CreateRenderTarget(
-                    targets.color, targets.depth);
         }
+        targets.render_target =
+                resource_mgr.CreateRenderTarget(targets.color, targets.depth);
+
         // Disable MSAA before binding the render target: Filament validates
         // MSAA/sampleable-depth compatibility inside SetRenderTarget()
         auto* native = view.GetNativeView();
@@ -181,42 +176,18 @@ public:
     void ReleaseOutputTextures(
             FilamentResourceManager&,
             GaussianSplatRenderer::OutputTargets& targets) override {
-        if (targets.depth_vk_image == 0 && targets.color_vk_image == 0) {
-            return;
-        }
+        if (!targets.uses_vulkan_interop) return;
 
-        if (gpu_ && targets.uses_vulkan_interop) {
+        // Drain in-flight compute before dropping the views and the images
+        // they reference.
+        if (gpu_) {
             gpu_->WaitForGeometryPass();
-            if (targets.color_vk_image != 0)
-                UnregisterVkImageFromComputeContext(*gpu_,
-                                                    targets.color_vk_image);
-            if (targets.depth_vk_image != 0)
-                UnregisterVkImageFromComputeContext(*gpu_,
-                                                    targets.depth_vk_image);
+            UnregisterVkImageFromComputeContext(*gpu_, targets.color_vk_image);
+            UnregisterVkImageFromComputeContext(*gpu_, targets.depth_vk_image);
         }
-
-        if (targets.uses_vulkan_interop) {
-            auto& vk_ctx = GaussianSplatVulkanContext::GetInstance();
-            if (targets.color_vk_image != 0) {
-                VkImageDesc d;
-                d.vk_image = reinterpret_cast<VkImage>(targets.color_vk_image);
-                d.vk_memory = reinterpret_cast<VkDeviceMemory>(
-                        targets.color_vk_memory);
-                vk_ctx.DestroyImage(d);
-                targets.color_vk_image = 0;
-                targets.color_vk_memory = 0;
-            }
-            if (targets.depth_vk_image != 0) {
-                VkImageDesc d;
-                d.vk_image = reinterpret_cast<VkImage>(targets.depth_vk_image);
-                d.vk_memory = reinterpret_cast<VkDeviceMemory>(
-                        targets.depth_vk_memory);
-                vk_ctx.DestroyImage(d);
-                targets.depth_vk_image = 0;
-                targets.depth_vk_memory = 0;
-            }
-            targets.uses_vulkan_interop = false;
-        }
+        DestroySharedImage(targets.color_vk_image, targets.color_vk_memory);
+        DestroySharedImage(targets.depth_vk_image, targets.depth_vk_memory);
+        targets.uses_vulkan_interop = false;
     }
 
     bool RenderGeometryStage(
@@ -296,10 +267,19 @@ private:
             view_states_;
 
     bool EnsureGpuContext() {
-        if (gpu_) return gpu_->EnsureProgramsLoaded();
-        gpu_ = CreateComputeGpuContextVulkan();
-        if (!gpu_) return false;
-        return gpu_->EnsureProgramsLoaded();
+        if (!gpu_) gpu_ = CreateComputeGpuContextVulkan();
+        return gpu_ && gpu_->EnsureProgramsLoaded();
+    }
+
+    static void DestroySharedImage(std::uintptr_t& image,
+                                   std::uintptr_t& memory) {
+        if (image == 0) return;
+        VkImageDesc desc;
+        desc.vk_image = reinterpret_cast<VkImage>(image);
+        desc.vk_memory = reinterpret_cast<VkDeviceMemory>(memory);
+        GaussianSplatVulkanContext::GetInstance().DestroyImage(desc);
+        image = 0;
+        memory = 0;
     }
 
     void DestroyViewState(GaussianSplatViewGpuResources& vs) {
@@ -346,10 +326,9 @@ std::unique_ptr<GaussianSplatRenderer::Backend>
 CreateGaussianSplatVulkanBackend(
         FilamentResourceManager& /*resource_mgr*/,
         const GaussianSplatRenderer::RenderConfig& config) {
-    auto& interop = GaussianSplatVulkanContext::GetInstance();
-    if (!interop.IsValid()) {
+    if (!GaussianSplatVulkanContext::GetInstance().IsValid()) {
         utility::LogDebug(
-                "GaussianSplatVulkan: interop context not valid; Vulkan "
+                "GaussianSplatVulkan: Vulkan context not valid; Vulkan "
                 "backend not available");
         return nullptr;
     }

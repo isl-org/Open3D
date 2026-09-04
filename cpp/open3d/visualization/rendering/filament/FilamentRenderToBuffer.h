@@ -79,6 +79,9 @@ private:
 
     static void ReadPixelsCallback(void* buffer, size_t size, void* user);
     void CopySettings(const View* view);
+    /// Invoke the pending callback with the filled buffer and mark the frame
+    /// complete. Pass \p ok false to deliver an empty buffer on failure.
+    void DeliverFrame(bool ok = true);
 };
 
 }  // namespace rendering

@@ -71,24 +71,19 @@ namespace rendering {
 
 namespace {
 
-/// Returns true when all extensions in required[0..n-1] are present in
-/// available.  Sets out_missing to the first missing name.
-bool CheckExtensions(const std::vector<vk::ExtensionProperties>& available,
-                     const char* const* required,
-                     size_t count,
-                     std::string& out_missing) {
-    for (size_t i = 0; i < count; ++i) {
-        bool found = false;
-        for (const auto& ext : available) {
-            if (std::strcmp(ext.extensionName, required[i]) == 0) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            out_missing = required[i];
-            return false;
-        }
+bool HasExtension(const std::vector<vk::ExtensionProperties>& available,
+                  const char* name) {
+    return std::any_of(available.begin(), available.end(),
+                       [name](const vk::ExtensionProperties& ext) {
+                           return std::strcmp(ext.extensionName, name) == 0;
+                       });
+}
+
+bool HasAllExtensions(const std::vector<vk::ExtensionProperties>& available,
+                      const char* const* required,
+                      std::size_t count) {
+    for (std::size_t i = 0; i < count; ++i) {
+        if (!HasExtension(available, required[i])) return false;
     }
     return true;
 }
@@ -112,6 +107,62 @@ constexpr const char* kRequiredInstanceExts[] = {
 #endif
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 };
+
+// Device suitability score; the highest-scoring device is selected.
+constexpr int kScoreDiscreteGpu = 200;
+constexpr int kScoreIntegratedGpu = 100;
+constexpr int kScoreSoftware = 0;
+
+/// A device is usable only if it exposes a single queue family with both
+/// graphics (Filament) and compute (GS), avoiding queue-family ownership
+/// transfers for the shared images.
+bool FindGraphicsComputeQueueFamily(
+        const std::vector<vk::QueueFamilyProperties>& families,
+        std::uint32_t& out_index) {
+    constexpr auto kNeeded =
+            vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute;
+    for (std::uint32_t i = 0; i < families.size(); ++i) {
+        if ((families[i].queueFlags & kNeeded) == kNeeded) {
+            out_index = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+/// Devices meeting all hard requirements are ranked by type. Software
+/// renderers score lowest so a real GPU always wins when present.
+int ScorePhysicalDevice(const vk::raii::PhysicalDevice& device) {
+    const auto props = device.getProperties();
+    if (props.apiVersion < VK_API_VERSION_1_3) return -1;
+
+    std::uint32_t queue_family = 0;
+    if (!FindGraphicsComputeQueueFamily(device.getQueueFamilyProperties(),
+                                        queue_family)) {
+        return -1;
+    }
+    if (!HasAllExtensions(device.enumerateDeviceExtensionProperties(),
+                          kRequiredDeviceExts,
+                          std::size(kRequiredDeviceExts))) {
+        return -1;
+    }
+    // The shared colour image is written as an optimal-tiled storage image.
+    const auto color_features =
+            device.getFormatProperties(vk::Format::eR16G16B16A16Sfloat)
+                    .optimalTilingFeatures;
+    if (!(color_features & vk::FormatFeatureFlagBits::eStorageImage)) {
+        return -1;
+    }
+
+    const std::string name(props.deviceName.data());
+    const bool software = name.find("llvmpipe") != std::string::npos ||
+                          name.find("SwiftShader") != std::string::npos ||
+                          name.find("WARP") != std::string::npos;
+    if (software) return kScoreSoftware;
+    return props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu
+                   ? kScoreDiscreteGpu
+                   : kScoreIntegratedGpu;
+}
 
 }  // namespace
 
@@ -151,15 +202,11 @@ bool GaussianSplatVulkanContext::Initialize() {
     // ---- Instance --------------------------------------------------------
     std::vector<const char*> inst_exts(std::begin(kRequiredInstanceExts),
                                        std::end(kRequiredInstanceExts));
-    const auto available_instance_exts =
-            context_.enumerateInstanceExtensionProperties();
-    const char* debug_utils_exts[] = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
-    std::string missing_debug_utils;
-    if (CheckExtensions(available_instance_exts,
-                 debug_utils_exts, 1,
-                         missing_debug_utils)) {
+    debug_utils_enabled_ =
+            HasExtension(context_.enumerateInstanceExtensionProperties(),
+                         VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (debug_utils_enabled_) {
         inst_exts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        debug_utils_enabled_ = true;
     }
 
     vk::ApplicationInfo app_info{"Open3D GS", 1, "Open3D", 1,
@@ -184,53 +231,14 @@ bool GaussianSplatVulkanContext::Initialize() {
     std::size_t best = phys_devices.size();
     int best_score = -1;
     for (std::size_t i = 0; i < phys_devices.size(); ++i) {
-        const auto& pd = phys_devices[i];
-        const auto props = pd.getProperties();
-        if (props.apiVersion < VK_API_VERSION_1_3) continue;
-
-        // Need a graphics+compute queue family for Filament + GS on the
-        // same family (no queue-family ownership transfers).
-        const auto qfams = pd.getQueueFamilyProperties();
-        bool has_gr_cp = false;
-        for (const auto& qf : qfams) {
-            if ((qf.queueFlags & vk::QueueFlagBits::eGraphics) &&
-                (qf.queueFlags & vk::QueueFlagBits::eCompute)) {
-                has_gr_cp = true;
-                break;
-            }
-        }
-        if (!has_gr_cp) continue;
-
-        std::string missing;
-        if (!CheckExtensions(pd.enumerateDeviceExtensionProperties(),
-                             kRequiredDeviceExts,
-                             std::size(kRequiredDeviceExts), missing)) {
-            continue;
-        }
-        const auto color_format_properties =
-                pd.getFormatProperties(vk::Format::eR16G16B16A16Sfloat);
-        if ((color_format_properties.optimalTilingFeatures &
-             vk::FormatFeatureFlagBits::eStorageImage) ==
-            vk::FormatFeatureFlags{}) {
-            continue;
-        }
-
-        const std::string name(props.deviceName.data());
-        const bool software = name.find("llvmpipe") != std::string::npos ||
-                              name.find("SwiftShader") != std::string::npos ||
-                              name.find("WARP") != std::string::npos;
-        const int device_score =
-                software ? 0
-                : props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu
-                        ? 200
-                        : 100;
-        if (device_score > best_score) {
+        const int score = ScorePhysicalDevice(phys_devices[i]);
+        if (score > best_score) {
             best = i;
-            best_score = device_score;
+            best_score = score;
         }
     }
 
-    if (best == phys_devices.size()) {
+    if (best_score < 0) {
         last_error_ =
                 "No suitable Vulkan device (need Vulkan 1.3, graphics+compute "
                 "queue family, VK_KHR_push_descriptor, VK_KHR_swapchain)";
@@ -245,16 +253,9 @@ bool GaussianSplatVulkanContext::Initialize() {
                       pd_props.deviceName.data());
 
     // ---- Logical device --------------------------------------------------
+    // ScorePhysicalDevice() already verified such a family exists.
     const auto qfams = physical_device_.getQueueFamilyProperties();
-    graphics_queue_family_ = UINT32_MAX;
-    for (std::uint32_t i = 0; i < (std::uint32_t)qfams.size(); ++i) {
-        const auto flags = qfams[i].queueFlags;
-        if ((flags & vk::QueueFlagBits::eGraphics) &&
-            (flags & vk::QueueFlagBits::eCompute)) {
-            graphics_queue_family_ = i;
-            break;
-        }
-    }
+    FindGraphicsComputeQueueFamily(qfams, graphics_queue_family_);
 
     // At least 2 queues preferred (index 0 = GS, index 1 = Filament).
     // Fall back to index 0 for both on single-queue families, where mutual
@@ -279,22 +280,16 @@ bool GaussianSplatVulkanContext::Initialize() {
         return false;
     }
 
+    // Enable only the core features Filament needs, plus synchronization2.
+    const auto& available = feat.get<vk::PhysicalDeviceFeatures2>().features;
     vk::StructureChain<vk::PhysicalDeviceFeatures2,
                        vk::PhysicalDeviceVulkan13Features>
             enabled_feat;
-    enabled_feat.get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy =
-            feat.get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy;
-    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
-            .features.textureCompressionETC2 =
-            feat.get<vk::PhysicalDeviceFeatures2>()
-                    .features.textureCompressionETC2;
-    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
-            .features.textureCompressionBC =
-            feat.get<vk::PhysicalDeviceFeatures2>()
-                    .features.textureCompressionBC;
-    enabled_feat.get<vk::PhysicalDeviceFeatures2>()
-            .features.shaderClipDistance =
-            feat.get<vk::PhysicalDeviceFeatures2>().features.shaderClipDistance;
+    auto& enabled = enabled_feat.get<vk::PhysicalDeviceFeatures2>().features;
+    enabled.samplerAnisotropy = available.samplerAnisotropy;
+    enabled.textureCompressionETC2 = available.textureCompressionETC2;
+    enabled.textureCompressionBC = available.textureCompressionBC;
+    enabled.shaderClipDistance = available.shaderClipDistance;
     enabled_feat.get<vk::PhysicalDeviceVulkan13Features>().synchronization2 =
             VK_TRUE;
 
@@ -386,60 +381,39 @@ VkImageDesc GaussianSplatVulkanContext::CreateImage(std::uint32_t width,
     VkImageDesc desc{};
     if (!initialized_) return desc;
 
-    const vk::Device dev(*device_);
-    const vk::Format format = static_cast<vk::Format>(vk_format);
+    const vk::ImageCreateInfo ici{{},
+                                  vk::ImageType::e2D,
+                                  static_cast<vk::Format>(vk_format),
+                                  {width, height, 1},
+                                  1,
+                                  1,
+                                  vk::SampleCountFlagBits::e1,
+                                  vk::ImageTiling::eOptimal,
+                                  static_cast<vk::ImageUsageFlags>(usage),
+                                  vk::SharingMode::eExclusive};
 
-    vk::ImageCreateInfo ici{{},
-                            vk::ImageType::e2D,
-                            format,
-                            {width, height, 1},
-                            1,
-                            1,
-                            vk::SampleCountFlagBits::e1,
-                            vk::ImageTiling::eOptimal,
-                            static_cast<vk::ImageUsageFlags>(usage),
-                            vk::SharingMode::eExclusive};
-    vk::Image image;
+    // RAII handles release the image and memory automatically if a later step
+    // throws; ownership is released to the plain handles only on success.
     try {
-        image = dev.createImage(ici);
+        vk::raii::Image image(device_, ici);
+        const vk::MemoryRequirements reqs = image.getMemoryRequirements();
+        const std::uint32_t mem_type = FindMemoryType(
+                reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        if (mem_type == UINT32_MAX) {
+            utility::LogWarning("VulkanContext: no mem type for '{}'", label);
+            return desc;
+        }
+        vk::raii::DeviceMemory memory(
+                device_, vk::MemoryAllocateInfo{reqs.size, mem_type});
+        image.bindMemory(*memory, 0);
+
+        desc.vk_image = static_cast<VkImage>(image.release());
+        desc.vk_memory = static_cast<VkDeviceMemory>(memory.release());
     } catch (const vk::SystemError& e) {
-        utility::LogWarning("VulkanContext: vkCreateImage '{}': {}", label,
+        utility::LogWarning("VulkanContext: image creation for '{}': {}", label,
                             e.what());
-        return desc;
+        desc = VkImageDesc{};
     }
-
-    const vk::MemoryRequirements reqs = dev.getImageMemoryRequirements(image);
-    const std::uint32_t mem_type = FindMemoryType(
-            reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    if (mem_type == UINT32_MAX) {
-        dev.destroyImage(image);
-        utility::LogWarning("VulkanContext: no mem type for '{}'", label);
-        return desc;
-    }
-
-    vk::DeviceMemory memory;
-    try {
-        memory =
-                dev.allocateMemory(vk::MemoryAllocateInfo{reqs.size, mem_type});
-    } catch (const vk::SystemError& e) {
-        dev.destroyImage(image);
-        utility::LogWarning("VulkanContext: vkAllocateMemory '{}': {}", label,
-                            e.what());
-        return desc;
-    }
-
-    try {
-        dev.bindImageMemory(image, memory, 0);
-    } catch (const vk::SystemError& e) {
-        dev.freeMemory(memory);
-        dev.destroyImage(image);
-        utility::LogWarning("VulkanContext: vkBindImageMemory '{}': {}", label,
-                            e.what());
-        return desc;
-    }
-
-    desc.vk_image = static_cast<VkImage>(image);
-    desc.vk_memory = static_cast<VkDeviceMemory>(memory);
     return desc;
 }
 
