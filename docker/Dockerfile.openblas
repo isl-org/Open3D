@@ -35,6 +35,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     libgl1 \
     libtbb12 \
+    libvulkan1 \
+    mesa-vulkan-drivers \
  && rm -rf /var/lib/apt/lists/*
 
 # Minimal dependencies for building python
@@ -119,9 +121,11 @@ RUN mkdir -p build \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     -DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH} \
     -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
+    -DBUILD_FILAMENT_FROM_SOURCE=ON \
     .. \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
  && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
- && make install -j$NPROC
+ && make install -j$NPROC \
+ && tar -czf /filament-binaries.tar.gz -C /root/Open3D/build filament-binaries
 RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi

@@ -126,9 +126,9 @@ docker_run_setup() {
         if [ -e /dev/dri ]; then
             docker_run="${docker_run} --device=/dev/dri"
         fi
-        if [ -n "${CI:-}" ]; then
-            docker_run="${docker_run} --env CI=${CI}"
-        fi
+    fi
+    if [ -n "${CI:-}" ]; then
+        docker_run="${docker_run} --env CI=${CI}"
     fi
 
     if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then

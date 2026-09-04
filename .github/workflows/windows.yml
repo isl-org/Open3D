@@ -54,30 +54,42 @@ jobs:
             STATIC_RUNTIME: ON
             device: cpu
             CONFIG: Release
+            FILAMENT_ARTIFACT_NAME: filament-windows-msvc-release-static-mt
 
           # Shared Windows CUDA Release
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: OFF
             device: cuda
             CONFIG: Release
+            FILAMENT_ARTIFACT_NAME: filament-windows-msvc-release-shared-md
 
           # Shared Windows CPU Release
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: OFF
             device: cpu
             CONFIG: Release
+            FILAMENT_ARTIFACT_NAME: filament-windows-msvc-release-shared-md
 
           # Shared Windows SYCL/XPU Release
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: OFF
             device: xpu
             CONFIG: Release 
+            FILAMENT_ARTIFACT_NAME: filament-windows-intelllvm-release-shared-md
+
+          # Shared Windows SYCL/XPU Debug
+          - BUILD_SHARED_LIBS: ON
+            STATIC_RUNTIME: OFF
+            device: xpu
+            CONFIG: Debug
+            FILAMENT_ARTIFACT_NAME: filament-windows-intelllvm-debug-shared-md
 
           # Shared Windows CPU Debug -> Debug only with CPU + shared lib
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: OFF
             device: cpu
             CONFIG: Debug
+            FILAMENT_ARTIFACT_NAME: filament-windows-msvc-debug-shared-md
     env:
       BUILD_CUDA_MODULE: ${{ matrix.device == 'cuda' && 'ON' || 'OFF' }}
       BUILD_SYCL_MODULE: ${{ matrix.device == 'xpu' && 'ON' || 'OFF' }}
@@ -206,9 +218,10 @@ jobs:
             -DBUILD_CUDA_MODULE=${{ env.BUILD_CUDA_MODULE }} `
             -DBUILD_SYCL_MODULE=${{ env.BUILD_SYCL_MODULE }} `
             -DBUILD_PYTORCH_OPS=${{ env.BUILD_PYTORCH_OPS }} `
+            -DBUILD_FILAMENT_FROM_SOURCE=${{ matrix.device != 'xpu' && 'ON' || 'OFF' }} `
             ${{ env.SRC_DIR }}
 
-      - name: Build
+      - name: Build (build-lib)
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -239,6 +252,14 @@ jobs:
           $DEVEL_PKG_NAME=(Get-ChildItem package/open3d-devel-*.zip).Name
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $Env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload patched Filament to GitHub artifacts
+        if: ${{ matrix.device != 'cuda' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.FILAMENT_ARTIFACT_NAME }}
+          path: ${{ env.BUILD_DIR }}/filament-binaries
+          if-no-files-found: error
 
       - name: Generate package attestation
         if: ${{ github.ref == 'refs/heads/main' && matrix.BUILD_SHARED_LIBS == 'ON' }}

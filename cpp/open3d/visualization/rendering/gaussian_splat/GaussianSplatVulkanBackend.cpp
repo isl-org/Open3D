@@ -11,7 +11,8 @@
 //   - Geometry and composite passes run on the Vulkan compute queue (no GL
 //     context needed for compute).
 //   - Output textures (color RGBA16F, scene depth DEPTH32F) are Vulkan-owned
-//     images imported into OpenGL via EXT_memory_object (same as GL backend).
+//     images imported into Filament via importTextureR() on the shared
+//     VkDevice — no GL interop required.
 //   - Internal textures (composite_depth R32F, merged_depth R16UI) are pure
 //     Vulkan images allocated by ComputeGPUVulkan.
 
@@ -28,7 +29,7 @@
 
 // VkFormat constants (VK_FORMAT_R16G16B16A16_SFLOAT etc.) are provided via
 // vulkan_raii.hpp included transitively through
-// GaussianSplatVulkanInteropContext.h.
+// GaussianSplatVulkanContext.h.
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -37,9 +38,8 @@
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPUVulkan.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatDataPacking.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatOpenGLContext.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatPassRunner.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanContext.h"
 
 namespace open3d {
 namespace visualization {
@@ -84,101 +84,82 @@ public:
             std::uint32_t width,
             std::uint32_t height,
             GaussianSplatRenderer::OutputTargets& targets) override {
-        // Shared GL interop textures: same path as the GL backend.
-        // The GL context must be current for EXT_memory_object import.
-        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
-        if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
+        // Create plain Vulkan images on the same device as Filament.
+        // Filament imports them directly via importTextureR() — no GL
+        // context or EXT_memory_object export needed.
+        auto& vk_ctx = GaussianSplatVulkanContext::GetInstance();
+        if (!vk_ctx.IsValid()) return false;
+
+        VkImageDesc color_img = vk_ctx.CreateImage(
+                width, height, VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                "gs.color");
+        if (!color_img.IsValid()) {
+            utility::LogWarning(
+                    "GaussianSplatVulkan: color VkImage creation failed");
             return false;
         }
 
-        auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-
-        if (vk_ctx.IsValid() && vk_ctx.AreGLExtensionsReady()) {
-            SharedImageDesc color_img =
-                    vk_ctx.CreateSharedColorImage(width, height, "gs.color");
-            if (!color_img.IsValid()) {
-                utility::LogWarning(
-                        "GaussianSplatVulkan: shared color image failed; "
-                        "falling back to GL textures");
-            } else {
-                SharedImageDesc depth_img = vk_ctx.CreateSharedDepthImage(
-                        width, height, "gs.scene_depth");
-                if (!depth_img.IsValid()) {
-                    vk_ctx.DestroySharedImage(color_img);
-                    utility::LogWarning(
-                            "GaussianSplatVulkan: shared depth image failed; "
-                            "falling back to GL textures");
-                } else {
-                    targets.color_gl_handle = color_img.gl_texture;
-                    targets.color_vk_image = reinterpret_cast<std::uintptr_t>(
-                            color_img.vk_image);
-                    targets.color_vk_memory = reinterpret_cast<std::uintptr_t>(
-                            color_img.vk_memory);
-                    targets.color_gl_mem_obj = color_img.gl_memory_object;
-                    targets.scene_depth_gl_handle = depth_img.gl_texture;
-                    targets.depth_vk_image = reinterpret_cast<std::uintptr_t>(
-                            depth_img.vk_image);
-                    targets.depth_vk_memory = reinterpret_cast<std::uintptr_t>(
-                            depth_img.vk_memory);
-                    targets.depth_gl_mem_obj = depth_img.gl_memory_object;
-                    targets.uses_vulkan_interop = true;
-
-                    // Register shared images in the Vulkan compute context
-                    // so BindImage/BindSamplerTexture can resolve GL names
-                    // to VkImages during compute dispatch.
-                    EnsureGpuContext();
-                    if (gpu_) {
-                        RegisterSharedImageInVulkanContext(
-                                *gpu_, color_img.gl_texture,
-                                reinterpret_cast<std::uintptr_t>(
-                                        color_img.vk_image),
-                                static_cast<std::uint32_t>(
-                                        VK_FORMAT_R16G16B16A16_SFLOAT),
-                                width, height);
-                        RegisterSharedImageInVulkanContext(
-                                *gpu_, depth_img.gl_texture,
-                                reinterpret_cast<std::uintptr_t>(
-                                        depth_img.vk_image),
-                                static_cast<std::uint32_t>(
-                                        VK_FORMAT_D32_SFLOAT),
-                                width, height);
-                    }
-                }
-            }
+        VkImageDesc depth_img = vk_ctx.CreateImage(
+                width, height, VK_FORMAT_D32_SFLOAT,
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                "gs.scene_depth");
+        if (!depth_img.IsValid()) {
+            vk_ctx.DestroyImage(color_img);
+            utility::LogWarning(
+                    "GaussianSplatVulkan: depth VkImage creation failed");
+            return false;
         }
 
-        gl_ctx.ReleaseCurrent();
+        targets.color_vk_image =
+                reinterpret_cast<std::uintptr_t>(color_img.vk_image);
+        targets.color_vk_memory =
+                reinterpret_cast<std::uintptr_t>(color_img.vk_memory);
+        targets.depth_vk_image =
+                reinterpret_cast<std::uintptr_t>(depth_img.vk_image);
+        targets.depth_vk_memory =
+                reinterpret_cast<std::uintptr_t>(depth_img.vk_memory);
+        targets.uses_vulkan_interop = true;
 
-        if (targets.color_gl_handle == 0) return false;
+        // Register VkImages directly in the compute context so
+        // BindImage/BindSamplerTexture can resolve them during dispatch.
+        EnsureGpuContext();
+        if (gpu_) {
+            RegisterVkImageInComputeContext(
+                    *gpu_, targets.color_vk_image,
+                    static_cast<std::uint32_t>(VK_FORMAT_R16G16B16A16_SFLOAT),
+                    width, height);
+            RegisterVkImageInComputeContext(
+                    *gpu_, targets.depth_vk_image,
+                    static_cast<std::uint32_t>(VK_FORMAT_D32_SFLOAT), width,
+                    height);
+        }
 
         using Tex = filament::Texture;
-        if (targets.scene_depth_gl_handle != 0) {
-            targets.depth = resource_mgr.CreateImportedTexture(
-                    targets.scene_depth_gl_handle, int(width), int(height),
-                    static_cast<int>(Tex::InternalFormat::DEPTH32F),
-                    static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
-                                     Tex::Usage::SAMPLEABLE));
-        }
+        targets.depth = resource_mgr.CreateImportedTexture(
+                static_cast<intptr_t>(targets.depth_vk_image), int(width),
+                int(height), static_cast<int>(Tex::InternalFormat::DEPTH32F),
+                static_cast<int>(Tex::Usage::DEPTH_ATTACHMENT |
+                                 Tex::Usage::SAMPLEABLE));
         targets.color = resource_mgr.CreateImportedTexture(
-                targets.color_gl_handle, int(width), int(height),
-                static_cast<int>(Tex::InternalFormat::RGBA16F),
+                static_cast<intptr_t>(targets.color_vk_image), int(width),
+                int(height), static_cast<int>(Tex::InternalFormat::RGBA16F),
                 static_cast<int>(Tex::Usage::SAMPLEABLE |
                                  Tex::Usage::COLOR_ATTACHMENT |
                                  Tex::Usage::BLIT_SRC));
 
-        auto view_color = view.GetColorBuffer();
-        if (!view_color || !targets.color) return false;
+        if (!targets.color) return false;
 
-        if (targets.depth) {
-            targets.render_target =
-                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
-        } else {
-            auto owned_depth = resource_mgr.CreateDepthAttachmentTexture(
+        if (!targets.depth) {
+            targets.depth = resource_mgr.CreateDepthAttachmentTexture(
                     int(width), int(height));
-            targets.depth = owned_depth;
-            targets.render_target =
-                    resource_mgr.CreateRenderTarget(view_color, targets.depth);
         }
+        targets.render_target =
+                resource_mgr.CreateRenderTarget(targets.color, targets.depth);
+
         // Disable MSAA before binding the render target: Filament validates
         // MSAA/sampleable-depth compatibility inside SetRenderTarget()
         auto* native = view.GetNativeView();
@@ -195,61 +176,18 @@ public:
     void ReleaseOutputTextures(
             FilamentResourceManager&,
             GaussianSplatRenderer::OutputTargets& targets) override {
-        if (targets.scene_depth_gl_handle == 0 &&
-            targets.color_gl_handle == 0) {
-            return;
-        }
+        if (!targets.uses_vulkan_interop) return;
 
-        // Unregister shared images from the Vulkan compute context BEFORE
-        // destroying them (prevents stale VkImageView usage in next dispatch).
-        if (gpu_ && targets.uses_vulkan_interop) {
-            if (targets.color_gl_handle != 0)
-                UnregisterSharedImageFromVulkanContext(*gpu_,
-                                                       targets.color_gl_handle);
-            if (targets.scene_depth_gl_handle != 0)
-                UnregisterSharedImageFromVulkanContext(
-                        *gpu_, targets.scene_depth_gl_handle);
+        // Drain in-flight compute before dropping the views and the images
+        // they reference.
+        if (gpu_) {
+            gpu_->WaitForGeometryPass();
+            UnregisterVkImageFromComputeContext(*gpu_, targets.color_vk_image);
+            UnregisterVkImageFromComputeContext(*gpu_, targets.depth_vk_image);
         }
-
-        auto& gl_ctx = GaussianSplatOpenGLContext::GetInstance();
-        if (!gl_ctx.IsValid() || !gl_ctx.MakeCurrent()) {
-            utility::LogWarning(
-                    "GaussianSplatVulkan: MakeCurrent failed in "
-                    "ReleaseOutputTextures — handles may leak");
-            return;
-        }
-
-        if (targets.uses_vulkan_interop) {
-            auto& vk_ctx = GaussianSplatVulkanInteropContext::GetInstance();
-            if (targets.color_gl_handle != 0) {
-                SharedImageDesc d;
-                d.vk_image = reinterpret_cast<VkImage>(targets.color_vk_image);
-                d.vk_memory = reinterpret_cast<VkDeviceMemory>(
-                        targets.color_vk_memory);
-                d.gl_memory_object = targets.color_gl_mem_obj;
-                d.gl_texture = targets.color_gl_handle;
-                vk_ctx.DestroySharedImage(d);
-                targets.color_vk_image = 0;
-                targets.color_vk_memory = 0;
-                targets.color_gl_mem_obj = 0;
-                targets.color_gl_handle = 0;
-            }
-            if (targets.scene_depth_gl_handle != 0) {
-                SharedImageDesc d;
-                d.vk_image = reinterpret_cast<VkImage>(targets.depth_vk_image);
-                d.vk_memory = reinterpret_cast<VkDeviceMemory>(
-                        targets.depth_vk_memory);
-                d.gl_memory_object = targets.depth_gl_mem_obj;
-                d.gl_texture = targets.scene_depth_gl_handle;
-                vk_ctx.DestroySharedImage(d);
-                targets.depth_vk_image = 0;
-                targets.depth_vk_memory = 0;
-                targets.depth_gl_mem_obj = 0;
-                targets.scene_depth_gl_handle = 0;
-            }
-            targets.uses_vulkan_interop = false;
-        }
-        gl_ctx.ReleaseCurrent();
+        DestroySharedImage(targets.color_vk_image, targets.color_vk_memory);
+        DestroySharedImage(targets.depth_vk_image, targets.depth_vk_memory);
+        targets.uses_vulkan_interop = false;
     }
 
     bool RenderGeometryStage(
@@ -269,7 +207,7 @@ public:
         if (!frame.valid) return false;
 
         auto& vs = view_states_[&view];
-        const std::uint64_t scene_id = scene.GetGeometryChangeId();
+        const std::uint64_t scene_id = attrs->revision;
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
                  attrs->splat_count != vs.cached_splat_count);
@@ -314,6 +252,14 @@ public:
                                          height, out);
     }
 
+    bool ReadColorToRGBA16FCpu(
+            const GaussianSplatRenderer::OutputTargets& targets,
+            std::vector<std::uint16_t>& out) override {
+        if (!gpu_ || targets.color_vk_image == 0) return false;
+        return gpu_->DownloadTextureRGBA16F(targets.color_vk_image,
+                                            targets.width, targets.height, out);
+    }
+
 private:
     GaussianSplatRenderer::RenderConfig config_;
     std::unique_ptr<GaussianSplatGpuContext> gpu_;
@@ -321,10 +267,19 @@ private:
             view_states_;
 
     bool EnsureGpuContext() {
-        if (gpu_) return gpu_->EnsureProgramsLoaded();
-        gpu_ = CreateComputeGpuContextVulkan();
-        if (!gpu_) return false;
-        return gpu_->EnsureProgramsLoaded();
+        if (!gpu_) gpu_ = CreateComputeGpuContextVulkan();
+        return gpu_ && gpu_->EnsureProgramsLoaded();
+    }
+
+    static void DestroySharedImage(std::uintptr_t& image,
+                                   std::uintptr_t& memory) {
+        if (image == 0) return;
+        VkImageDesc desc;
+        desc.vk_image = reinterpret_cast<VkImage>(image);
+        desc.vk_memory = reinterpret_cast<VkDeviceMemory>(memory);
+        GaussianSplatVulkanContext::GetInstance().DestroyImage(desc);
+        image = 0;
+        memory = 0;
     }
 
     void DestroyViewState(GaussianSplatViewGpuResources& vs) {
@@ -371,10 +326,9 @@ std::unique_ptr<GaussianSplatRenderer::Backend>
 CreateGaussianSplatVulkanBackend(
         FilamentResourceManager& /*resource_mgr*/,
         const GaussianSplatRenderer::RenderConfig& config) {
-    auto& interop = GaussianSplatVulkanInteropContext::GetInstance();
-    if (!interop.IsValid()) {
+    if (!GaussianSplatVulkanContext::GetInstance().IsValid()) {
         utility::LogDebug(
-                "GaussianSplatVulkan: interop context not valid; Vulkan "
+                "GaussianSplatVulkan: Vulkan context not valid; Vulkan "
                 "backend not available");
         return nullptr;
     }

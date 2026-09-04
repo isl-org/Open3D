@@ -133,20 +133,20 @@ bool PrepareAppleOutputTextures(FilamentView& view,
                              Tex::Usage::COLOR_ATTACHMENT |
                              Tex::Usage::BLIT_SRC));
 
-    if (!targets.color) {
-        ReleaseAppleOutputTextures(targets);
-        return false;
-    }
-
     auto view_color = view.GetColorBuffer();
     if (!view_color) {
         ReleaseAppleOutputTextures(targets);
         return false;
     }
 
+    if (!targets.color) {
+        ReleaseAppleOutputTextures(targets);
+        return false;
+    }
+
     if (targets.depth) {
-        // Use shared depth: Filament writes into the depth texture that
-        // the GS composite shader will later sample.
+        // Filament renders the mesh into its own color buffer while the GS
+        // composite writes a separate transparent overlay.
         targets.render_target =
                 resource_mgr.CreateRenderTarget(view_color, targets.depth);
     } else {
@@ -242,7 +242,7 @@ public:
 
         auto& vs = view_states_[&view];
 
-        const std::uint64_t scene_id = scene.GetGeometryChangeId();
+        const std::uint64_t scene_id = attrs->revision;
         const bool scene_changed =
                 (scene_id != vs.cached_scene_id ||
                  attrs->splat_count != vs.cached_splat_count);

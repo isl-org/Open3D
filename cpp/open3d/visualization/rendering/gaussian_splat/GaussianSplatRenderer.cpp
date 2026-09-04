@@ -17,7 +17,7 @@
 #include "open3d/visualization/rendering/filament/FilamentView.h"
 #if !defined(__APPLE__)
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanBackend.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanInteropContext.h"
+#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatVulkanContext.h"
 #endif
 
 namespace open3d {
@@ -34,7 +34,7 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateGaussianSplatMetalBackend(
 
 namespace {
 
-/// No-op backend used on Vulkan/unsupported platforms so the renderer stays
+/// No-op backend used when no GPU backend is available, so the renderer stays
 /// valid without crashing; emits a one-time warning per view.
 class GaussianSplatPlaceholderBackend final
     : public GaussianSplatRenderer::Backend {
@@ -67,8 +67,8 @@ public:
                              GaussianSplatRenderer::OutputTargets&) override {
         if (logged_views_.insert(&view).second) {
             utility::LogWarning(
-                    "GaussianSplat backend '{}' is selected but GPU "
-                    "dispatch is not implemented yet.",
+                    "GaussianSplat rendering is {} on this configuration; "
+                    "splats will not be drawn.",
                     name_);
         }
         return false;
@@ -95,10 +95,13 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
 #if defined(__APPLE__)
             return CreateGaussianSplatMetalBackend(resource_mgr, config);
 #else
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend("Metal"));
+            break;
 #endif
+        // The GS compute pipeline shares images with Filament on a single
+        // VkDevice, so it requires Filament's Vulkan backend. There is no
+        // OpenGL path.
         case RenderingType::kOpenGL:
+            break;
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
@@ -107,15 +110,11 @@ std::unique_ptr<GaussianSplatRenderer::Backend> CreateBackend(
                 vk_backend) {
                 return vk_backend;
             }
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend(
-                            "Vulkan not available"));
-#else
-            return std::unique_ptr<GaussianSplatRenderer::Backend>(
-                    new GaussianSplatPlaceholderBackend("Unsupported"));
 #endif
+            break;
     }
-    return nullptr;
+    return std::unique_ptr<GaussianSplatRenderer::Backend>(
+            new GaussianSplatPlaceholderBackend("unsupported"));
 }
 
 /// Returns true when the platform-specific GS color texture handle is ready.
@@ -125,7 +124,7 @@ bool HasGsColorOutput(const GaussianSplatRenderer::OutputTargets& targets) {
 #if defined(__APPLE__)
     return targets.gs_color_mtl_texture != 0;
 #else
-    return targets.color_gl_handle != 0;
+    return targets.uses_vulkan_interop && targets.color_vk_image != 0;
 #endif
 }
 
@@ -141,14 +140,13 @@ bool GaussianSplatBackendSupported(RenderingType backend) {
 #else
             return false;
 #endif
+        // Requires Filament's Vulkan backend for single-device image sharing.
         case RenderingType::kOpenGL:
-            // On Linux/Windows, Filament uses OpenGL but 3DGS compute runs on
-            // Vulkan (GL compute has limited subgroup support on Intel
-            // hardware). Fall through to check Vulkan availability.
+            return false;
         case RenderingType::kDefault:
         case RenderingType::kVulkan:
 #if !defined(__APPLE__)
-            return GaussianSplatVulkanInteropContext::GetInstance().IsValid();
+            return GaussianSplatVulkanContext::GetInstance().IsValid();
 #else
             return false;
 #endif
@@ -253,15 +251,18 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
     // when transitioning between private-depth and shared sampleable depth
     // attachments during runtime geometry visibility changes.
     auto& targets = PrepareOutputTargets(view);
-    const std::uint64_t scene_change_id = scene.GetGeometryChangeId();
+    const auto* packed_attrs = scene.GetGaussianSplatPackedAttrs();
+    const std::uint64_t scene_change_id =
+            packed_attrs ? packed_attrs->revision : 0;
     const bool view_changed = UpdateViewRenderData(targets, view);
     const bool scene_changed = targets.last_scene_change_id != scene_change_id;
 
     if (view_changed || scene_changed) {
-        targets.needs_render = true;
+        targets.needs_geometry_render = true;
+        targets.needs_composite_render = true;
     }
 
-    if (!targets.needs_render) {
+    if (!targets.needs_geometry_render) {
         return;
     }
 
@@ -272,11 +273,14 @@ void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
     }
     if (rendered) {
         targets.last_scene_change_id = scene_change_id;
+        targets.needs_geometry_render = false;
+        targets.needs_composite_render = true;
     } else {
         // Geometry stage failed: prevent composite from consuming stale
         // intermediate buffers from the prior frame.
         targets.has_valid_output = false;
-        targets.needs_render = false;
+        targets.needs_geometry_render = false;
+        targets.needs_composite_render = false;
     }
 }
 
@@ -284,7 +288,7 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     // Run the composite compute pass for a single view; returns true on
     // success.
     auto it = outputs_.find(&view);
-    if (it == outputs_.end() || !it->second.needs_render) {
+    if (it == outputs_.end() || !it->second.needs_composite_render) {
         return false;
     }
 
@@ -301,7 +305,7 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
     }
 
     targets.has_valid_output = rendered;
-    targets.needs_render = false;
+    targets.needs_composite_render = false;
     targets.last_updated_frame = frame_index_;
     return rendered;
 }
@@ -310,7 +314,15 @@ void GaussianSplatRenderer::RequestRedrawForView(const FilamentView& view) {
     // Force the next frame to run both GS stages even if nothing has changed.
     auto it = outputs_.find(&view);
     if (it != outputs_.end()) {
-        it->second.needs_render = true;
+        it->second.needs_geometry_render = true;
+        it->second.needs_composite_render = true;
+    }
+}
+
+void GaussianSplatRenderer::RequestCompositeForView(const FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it != outputs_.end()) {
+        it->second.needs_composite_render = true;
     }
 }
 
@@ -388,7 +400,8 @@ void GaussianSplatRenderer::SetRenderConfig(const RenderConfig& config) {
     render_config_ = config;
     for (auto& pair : outputs_) {
         pair.second.has_valid_output = false;
-        pair.second.needs_render = true;
+        pair.second.needs_geometry_render = true;
+        pair.second.needs_composite_render = true;
     }
 }
 
@@ -433,18 +446,22 @@ bool GaussianSplatRenderer::ReadCompositeDepthToFloatCpu(
     return backend_->ReadCompositeDepthToFloatCpu(view, out, width, height);
 }
 
+bool GaussianSplatRenderer::ReadColorToRGBA16FCpu(
+        const FilamentView& view, std::vector<std::uint16_t>& out) {
+    auto found = outputs_.find(&view);
+    if (!backend_ || found == outputs_.end() ||
+        !found->second.has_valid_output) {
+        return false;
+    }
+    return backend_->ReadColorToRGBA16FCpu(found->second, out);
+}
+
 void GaussianSplatRenderer::RequestDepthReadbackForView(
         const FilamentView& view, bool wanted) {
     auto it = outputs_.find(&view);
     if (it != outputs_.end()) {
         it->second.wants_depth_readback = wanted;
     }
-}
-
-std::uint32_t GaussianSplatRenderer::GetSceneDepthGLHandle(
-        const FilamentView& view) const {
-    auto found = outputs_.find(&view);
-    return found != outputs_.end() ? found->second.scene_depth_gl_handle : 0;
 }
 
 const char* GaussianSplatRenderer::GetBackendName() const {
@@ -501,7 +518,8 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     targets.width = width;
     targets.height = height;
     targets.has_valid_output = false;
-    targets.needs_render = true;
+    targets.needs_geometry_render = true;
+    targets.needs_composite_render = true;
     return targets;
 }
 
@@ -525,12 +543,14 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
         targets.depth = TextureHandle();
     }
 
+    // Filament releases imported texture wrappers asynchronously. Complete
+    // those commands before the backend destroys their shared VkImages.
+    engine_.flushAndWait();
+
     // Release platform-specific textures via the backend.
     if (backend_) {
         backend_->ReleaseOutputTextures(resource_mgr_, targets);
     }
-    targets.scene_depth_gl_handle = 0;
-    targets.color_gl_handle = 0;
     targets.scene_depth_mtl_texture = 0;
     targets.gs_color_mtl_texture = 0;
 
@@ -538,7 +558,8 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.height = 0;
     targets.has_render_data = false;
     targets.has_valid_output = false;
-    targets.needs_render = true;
+    targets.needs_geometry_render = true;
+    targets.needs_composite_render = true;
     targets.wants_depth_readback = false;
     targets.last_scene_change_id = 0;
     targets.last_updated_frame = 0;
@@ -552,6 +573,8 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
     auto viewport = view.GetViewport();
     data.viewport_origin = Eigen::Vector2i(viewport[0], viewport[1]);
     data.viewport_size = Eigen::Vector2i(viewport[2], viewport[3]);
+    // Output textures use a top-left origin on Metal and Vulkan; only the
+    // OpenGL backend uses bottom-left image coordinates.
     data.screen_y_down =
             (EngineInstance::GetBackendType() != RenderingType::kOpenGL);
 
@@ -572,13 +595,14 @@ GaussianSplatRenderer::ExtractViewRenderData(const FilamentView& view) const {
 
 bool GaussianSplatRenderer::UpdateViewRenderData(OutputTargets& targets,
                                                  const FilamentView& view) {
-    // Detect camera/viewport changes; set needs_render when anything changed.
+    // Detect camera/viewport changes; re-run both GS stages when needed.
     const ViewRenderData new_data = ExtractViewRenderData(view);
     if (!targets.has_render_data ||
         !ViewRenderDataEquals(targets.render_data, new_data)) {
         targets.render_data = new_data;
         targets.has_render_data = true;
-        targets.needs_render = true;
+        targets.needs_geometry_render = true;
+        targets.needs_composite_render = true;
         return true;
     }
 

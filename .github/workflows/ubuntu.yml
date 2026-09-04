@@ -55,6 +55,8 @@ jobs:
             docker/docker_build.sh cpu-shared-ml-release
           fi
       - name: Docker test (C++ and integration)
+        id: cpp_test
+        continue-on-error: true
         run: |
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
             docker/docker_test.sh cpu-static lib
@@ -66,6 +68,8 @@ jobs:
             docker/docker_test.sh cpu-shared-ml-release lib
           fi
       - name: Docker test (Python)
+        id: python_test
+        continue-on-error: true
         run: |
           if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "OFF" ] && [ "${{ env.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON" ]; then
             docker/docker_test.sh cpu-static python
@@ -88,6 +92,14 @@ jobs:
         with:
           name: open3d-devel-linux-x86_64
           path: open3d-devel-*.tar.xz
+          if-no-files-found: error
+
+      - name: Upload patched Filament to GitHub artifacts
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: filament-linux-x86_64
+          path: filament-binaries.tar.gz
           if-no-files-found: error
 
       # The wheel is also built as part of the cpu-shared-ml Docker image and
@@ -125,6 +137,11 @@ jobs:
           else
             .github/workflows/update_release.sh open3d-viewer-*-Linux.deb
           fi
+      - name: Fail job if tests failed
+        if: ${{ always() && (steps.cpp_test.outcome == 'failure' || steps.python_test.outcome == 'failure') }}
+        run: |
+          echo "C++ or Python tests failed; artifacts were uploaded before failing the job."
+          exit 1
 
   # Builds documentation (Doxygen + Sphinx + Jupyter notebooks) from the
   # standard Open3D Python wheel produced above. EGL-based offscreen

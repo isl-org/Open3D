@@ -239,6 +239,19 @@ public:
         return false;
     }
 
+    /// Download an RGBA16F texture as four IEEE-754 half-float bit patterns
+    /// per pixel. Used for Vulkan GS offscreen color readback.
+    virtual bool DownloadTextureRGBA16F(std::uintptr_t tex,
+                                        std::uint32_t width,
+                                        std::uint32_t height,
+                                        std::vector<std::uint16_t>& out) {
+        (void)tex;
+        (void)width;
+        (void)height;
+        (void)out;
+        return false;
+    }
+
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,
                            std::uintptr_t tex,
@@ -296,8 +309,10 @@ public:
         : ctx_(ctx), kind_(kind) {
         if (kind_ == kGeometry) {
             ctx_.BeginGeometryPass();
+            ctx_.PushDebugGroup("gs_geometry_frame");
         } else {
             ctx_.BeginCompositePass();
+            ctx_.PushDebugGroup("gs_composite_frame");
         }
     }
     ~GpuComputeFrame() { End(); }
@@ -309,6 +324,7 @@ public:
     void End() {
         if (!ended_) {
             ended_ = true;
+            ctx_.PopDebugGroup();
             if (kind_ == kGeometry) {
                 ctx_.EndGeometryPass();
             } else {

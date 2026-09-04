@@ -258,6 +258,7 @@ struct Window::Impl {
     bool wants_auto_center_ = false;
     bool needs_layout_ = true;
     bool needs_redraw_ = true;  // set by PostRedraw to defer if already drawing
+    bool redraw_pending_ = false;
     bool is_resizing_ = false;
     bool is_drawing_ = false;
 };
@@ -416,9 +417,9 @@ void Window::CreateRenderer() {
             Application::GetInstance().GetWindowSystem().CreateRenderer(
                     impl_->window_);
     impl_->renderer_->SetClearColor({1.0f, 1.0f, 1.0f, 1.0f});
-    // Metal: GS composite runs after endFrame(); defer PostRedraw so the next
-    // frame samples the updated splat texture (see FilamentRenderer::EndFrame).
-    impl_->renderer_->SetOnAppleGaussianCompositeComplete(
+    // Widgets record ImGui commands before GS composite output is produced.
+    // Draw once more so they can bind the newly valid overlay texture.
+    impl_->renderer_->SetOnGaussianCompositeComplete(
             [this]() { PostRedraw(); });
 
     impl_->imgui_.imgui_bridge =
@@ -608,10 +609,23 @@ void Window::PostRedraw() {
     // (see the implementation for details).
     if (impl_->is_drawing_) {
         impl_->needs_redraw_ = true;
-    } else {
-        Application::GetInstance().GetWindowSystem().PostRedrawEvent(
-                impl_->window_);
+        return;
     }
+
+    // macOS rejects redraw requests while the application is still starting.
+    // Do not mark the request pending in that state; the native window's first
+    // expose/refresh event will trigger the initial draw once the run loop is
+    // active.
+    if (!Application::GetInstance().IsRunning()) {
+        return;
+    }
+
+    if (impl_->redraw_pending_) {
+        return;
+    }
+    impl_->redraw_pending_ = true;
+    Application::GetInstance().GetWindowSystem().PostRedrawEvent(
+            impl_->window_);
 }
 
 void Window::RaiseToTop() const {
@@ -1013,6 +1027,7 @@ Widget::DrawResult Window::DrawOnce(bool is_layout_pass) {
 }
 
 void Window::OnDraw() {
+    impl_->redraw_pending_ = false;
     impl_->is_drawing_ = true;
     bool needed_layout = impl_->needs_layout_;
 

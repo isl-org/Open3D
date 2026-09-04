@@ -55,7 +55,8 @@ struct alignas(16) GaussianViewParams {
     // z=max_tile_entries_total, w=tile_key_bits T = ceil(log2(tile_count)),
     // clamped to [1,31]: T bits for tile index, (32-T) bits for depth)
     std::uint32_t limits[4];
-    // vec4 depth_range_and_flags (x=near, y=far, z=reserved, w=0)
+    // vec4 depth_range_and_flags (x=near, y=far, z=composite_over_base,
+    // w=scene_depth_present)
     float depth_range_and_flags[4];
 };
 static_assert(sizeof(GaussianViewParams) == 288,
@@ -127,6 +128,8 @@ inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
 ///   dc_opacity      — fp16×4 as uvec2 pair, 8 B/splat
 ///   sh_coefficients — fp16 uvec2, stride = 3×degree×2 u32/splat
 struct GaussianSplatPackedAttrs {
+    /// Monotonic scene revision used by per-view GPU upload caches.
+    std::uint64_t revision = 0;
     std::vector<Std430Vec4> positions;  ///< fp32 vec4, 16 B/splat
     std::vector<std::uint32_t>
             scales;  ///< fp16×4 in uvec2 pair, 8 B/splat; linear

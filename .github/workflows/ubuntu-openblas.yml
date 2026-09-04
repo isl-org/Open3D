@@ -71,6 +71,13 @@ jobs:
           path: open3d-lib-arm64.tar.gz
           retention-days: 1
 
+      - name: Upload patched Filament to GitHub artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: filament-linux-arm64
+          path: filament-binaries.tar.gz
+          if-no-files-found: error
+
       - name: Docker test (C++ and integration)
         run: docker/docker_test.sh openblas-arm64-py310-dev lib
 

@@ -132,7 +132,6 @@ public:
     void OverrideMaterial(const std::string& object_name,
                           const TriangleMeshModel& model) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
-    std::uint64_t GetGeometryChangeId() const;
 
     void OverrideMaterialAll(const MaterialRecord& material,
                              bool shader_only = true) override;
@@ -216,6 +215,8 @@ public:
             override;
 
     void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
+    void ForEachViewToRender(
+            const std::function<void(FilamentView&)>& callback);
     /// Iterate over ALL views (including inactive/cached ones).
     void ForEachView(const std::function<void(FilamentView&)>& callback) const;
     bool HasGaussianSplatGeometry() const;
@@ -231,7 +232,8 @@ public:
     void InvalidateGaussianSplatOutput(FilamentView& view);
     const GaussianSplatPackedAttrs* GetGaussianSplatPackedAttrs() const;
 
-    void Draw(filament::Renderer& renderer);
+    void Draw(filament::Renderer& renderer,
+              std::vector<FilamentView*>& rendered_views);
 
     // NOTE: This method is to work around Filament limitation when rendering to
     // depth buffer. Materials with SSR require multiple passes which causes a
@@ -243,7 +245,7 @@ public:
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
-    void MarkGeometryChanged();
+    void MarkGaussianSplatChanged();
 
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
@@ -261,7 +263,7 @@ private:
     filament::Engine& engine_;
     FilamentResourceManager& resource_mgr_;
     filament::Scene* scene_ = nullptr;
-    std::uint64_t geometry_change_id_ = 1;
+    std::uint64_t gaussian_splat_revision_ = 1;
 
     struct TextureMaps {
         rendering::TextureHandle albedo_map =

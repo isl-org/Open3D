@@ -1520,12 +1520,16 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         else()  # WIN32
-            # Match the prebuilt Filament archive's runtime selection in
-            # filament_download.cmake.
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            if (BUILD_FILAMENT_FROM_SOURCE)
+                set(FILAMENT_RUNTIME_VER x86_64)
             else()
-                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+                # Match the prebuilt Filament archive's runtime selection in
+                # filament_download.cmake.
+                if (STATIC_WINDOWS_RUNTIME)
+                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+                else()
+                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+                endif()
             endif()
         endif()
         open3d_import_3rdparty_library(3rdparty_filament
