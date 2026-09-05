@@ -287,6 +287,10 @@ bool GaussianSplatVulkanContext::Initialize() {
             enabled_feat;
     auto& enabled = enabled_feat.get<vk::PhysicalDeviceFeatures2>().features;
     enabled.samplerAnisotropy = available.samplerAnisotropy;
+    // Filament's Vulkan pipelines enable depthClamp; the shared device must
+    // expose the matching feature or vkCreateGraphicsPipelines fails
+    // VUID-depthClampEnable-00782.
+    enabled.depthClamp = available.depthClamp;
     enabled.textureCompressionETC2 = available.textureCompressionETC2;
     enabled.textureCompressionBC = available.textureCompressionBC;
     enabled.shaderClipDistance = available.shaderClipDistance;

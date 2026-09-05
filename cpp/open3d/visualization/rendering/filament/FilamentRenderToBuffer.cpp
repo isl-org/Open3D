@@ -302,10 +302,14 @@ void FilamentRenderToBuffer::Render() {
         const int nc = static_cast<int>(n_channels_);
 
 #if !defined(__APPLE__)
-        renderer_->endFrame();
-        engine_.flushAndWait();
-
+        // Filament 1.76 requires swapchain readPixels() after beginFrame()
+        // and before endFrame(). PBR offscreen uses that path, so endFrame
+        // is delayed until after the fallback readback below. Gaussian Splat
+        // still ends the frame first so Filament's attachments are complete
+        // before the composite compute pass.
         if (run_gs_pipeline) {
+            renderer_->endFrame();
+            engine_.flushAndWait();
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
         }
 
@@ -458,6 +462,13 @@ void FilamentRenderToBuffer::Render() {
             renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
                                   std::move(pd));
         }
+#if !defined(__APPLE__)
+        // Close the Filament frame after PBR swapchain readPixels(). The
+        // Gaussian Splat path already ended the frame before compositing.
+        if (!run_gs_pipeline) {
+            renderer_->endFrame();
+        }
+#endif
     }
     scene_->HideRefractedMaterials(false);
 

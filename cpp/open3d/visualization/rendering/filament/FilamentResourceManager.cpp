@@ -930,6 +930,10 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     if (!mipmappable) {
         levels = 1;
     }
+    auto usage = Texture::Usage::SAMPLEABLE | Texture::Usage::UPLOADABLE;
+    if (mipmappable) {
+        usage |= Texture::Usage::GEN_MIPMAPPABLE;
+    }
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -940,6 +944,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                            .height(texture_settings.texel_height)
                            .levels(levels)
                            .format(texture_settings.format)
+                           .usage(usage)
                            .sampler(Texture::Sampler::SAMPLER_2D)
                            .build(engine_);
 
@@ -962,6 +967,10 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     if (mipmappable) {
         levels = 1;
     }
+    auto usage = Texture::Usage::SAMPLEABLE | Texture::Usage::UPLOADABLE;
+    if (mipmappable) {
+        usage |= Texture::Usage::GEN_MIPMAPPABLE;
+    }
 
     const size_t image_bytes = image.GetRows() * image.GetCols() *
                                image.GetChannels() *
@@ -978,6 +987,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .height(texture_settings.texel_height)
                                .levels(levels)
                                .format(texture_settings.format)
+                               .usage(usage)
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));
@@ -994,6 +1004,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .height(texture_settings.texel_height)
                                .levels(levels)
                                .format(texture_settings.format)
+                               .usage(usage)
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));

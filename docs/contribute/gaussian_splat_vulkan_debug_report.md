@@ -1,6 +1,6 @@
 # Gaussian Splat Vulkan Interactive Debug Report
 
-Last updated: 2026-09-04
+Last updated: 2026-09-05
 
 ## Status and locked scope
 
@@ -249,6 +249,30 @@ crash tools. For an application callback, create and register a
 registering a messenger. The existing layer stderr output already proves that
 core validation was active.
 
+### 2026-09-05 Vulkan validation results
+
+After the Open3D-side layout handoff and shared-device feature fixes, the
+GaussianSplat example was run interactively with
+`VK_LAYER_KHRONOS_validation` using `racoonfamily.spz`. The application closed
+cleanly with exit status 0 and reported no `VUID`, `UNASSIGNED`, `SYNC-`, or
+other validation messages. In particular, the former
+`VUID-vkCmdDraw-None-09600` and depth-clamp error no longer appeared.
+
+The same zero-error result was confirmed by all three
+`*GaussianSplatRender*` tests. Validation was exercised on NVIDIA discrete
+GPUs with two queues (`gs_q=0`, `fil_q=1`) and on an Intel iGPU with a single
+queue (`gs_q=0`, `fil_q=0`). Software Vulkan rendering through Mesa Lavapipe
+also now works for 3DGS; `GaussianSplat`, the focused tests, `Draw`, and
+`OffscreenRendering` all ran with Filament's Vulkan backend.
+
+The NVIDIA interactive run emitted only the existing Open3D warning that some
+large splats exceeded `gaussian_splat_max_tiles_per_splat` and were culled.
+
+One unrelated PBR-only issue remains: validation reports one
+`SYNC-HAZARD-WRITE-RACING-WRITE` during `OffscreenRendering` on the NVIDIA
+two-queue topology. It does not occur in the interactive GaussianSplat run and
+is tracked separately from the resolved GS validation errors.
+
 **GPU-Assisted Validation**
 
 GPU-AV was confirmed active on the Arc reproduction. It reported no dynamic
@@ -349,18 +373,26 @@ cannot expose presentation semaphore lifetime or window resize behavior.
 
 ## Filament patch audit
 
-As of 2026-09-01:
+As of 2026-09-05:
 
-- `3rdparty/filament` is a regular tracked subtree and is clean.
+- `3rdparty/filament` is a regular tracked subtree; its tracked source files
+   remain unchanged apart from the patch/build metadata listed below.
 - Generated Vulkan files under `build/filament/src/ext_filament` match the
   corresponding `3rdparty/filament` files.
 - No generated-source diagnostic or semaphore experiment remains.
-- No uncommitted Filament patch exists.
+- Filament v1.76.0 is used on Linux/Windows; Apple remains on v1.57.2 to
+   preserve the existing Metal shared-texture path.
+- The only required Filament patch is `0001-importTextureR.patch`, which adds
+   zero-copy Vulkan external-image import and preserves external image
+   ownership.
+- Obsolete swapchain patch `0002-handle-vulkan-swapchain-acquire.patch` was
+   removed because v1.76 already contains the upstream swapchain behavior.
 - The only tracked patch files are:
   - `0001-importTextureR.patch`
-  - `0002-handle-vulkan-swapchain-acquire.patch`
-- Patch 0002 includes `vkQueueWaitIdle()` only during swapchain destruction, not
-  in the per-frame render path.
+
+The v1.76 migration also required explicit Open3D texture usage flags for
+ordinary uploaded textures (`UPLOADABLE`, plus `GEN_MIPMAPPABLE` when needed).
+No PBR/mesh renderer interface change was required.
 
 Do not add another Filament patch until an Open3D-side experiment demonstrates
 that a Filament change is necessary and lower-cost alternatives are excluded.
@@ -610,6 +642,19 @@ The Linux campaign is complete when:
 
 ## Progress log
 
+- 2026-09-05: Completed the Open3D-side Vulkan validation cleanup. The shared
+   device now enables `depthClamp`, and imported-image handoffs follow
+   Filament v1.76's post-pass layouts: color returns to
+   `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL` and depth returns to
+   `VK_IMAGE_LAYOUT_GENERAL`. The interactive `GaussianSplat` example using
+   `racoonfamily.spz` exited cleanly with no validation messages. All three
+   `*GaussianSplatRender*` tests also passed with zero validation messages.
+   The result was verified on NVIDIA discrete GPUs using two queues and on an
+   Intel iGPU using a single queue. Mesa Lavapipe software Vulkan now also
+   supports 3DGS; `GaussianSplat`, the focused tests, `Draw`, and
+   `OffscreenRendering` ran with Filament's Vulkan backend. The only remaining
+   validation finding is the unrelated PBR-only offscreen two-queue
+   `SYNC-HAZARD-WRITE-RACING-WRITE`.
 - 2026-09-04: Implemented an Open3D-side no-copy layout hand-off for imported
    Vulkan render targets. Imported RGBA16F color now follows Filament's actual
    `VK_IMAGE_LAYOUT_GENERAL` policy, with `GENERAL`-to-`GENERAL` memory barriers
@@ -641,8 +686,9 @@ The Linux campaign is complete when:
    actual image was `DEPTH_STENCIL_ATTACHMENT_OPTIMAL`. The sequencing bug was
    real, but fixing it did not remove the validation error and is not a complete
    shared-depth ownership solution. Interactive and offscreen rendering are
-   visually correct; investigation of the remaining VUID and long-running
-   freeze/device failure is paused at this checkpoint.
+   visually correct; this intermediate checkpoint was superseded on
+   2026-09-05 by the corrected v1.76 layout handoff and shared-device feature
+   enablement, which removed the reported validation errors.
 - 2026-09-04: Reproduced the Windows failure on an Intel Arc B580 using a
    source-Filament `RelWithDebInfo` build (`BUILD_FILAMENT_FROM_SOURCE=ON`) and
    deployed `Open3D.dll` and `tbb12.dll` beside `GaussianSplat.exe`. CDB plus

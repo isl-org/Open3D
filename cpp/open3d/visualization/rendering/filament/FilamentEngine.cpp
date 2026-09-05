@@ -128,13 +128,13 @@ EngineInstance::EngineInstance() {
                     "EngineInstance: Vulkan context init failed: {}",
                     vk_ctx.GetLastError());
         }
-        if (vk_ctx.IsValid() && !vk_ctx.IsSoftwareDevice()) {
+        if (vk_ctx.IsValid()) {
+            if (vk_ctx.IsSoftwareDevice()) {
+                utility::LogInfo(
+                        "EngineInstance: Vulkan software device detected; "
+                        "using Filament's Vulkan backend");
+            }
             shared_context_ = vk_ctx.GetVulkanSharedContext();
-        } else if (vk_ctx.IsSoftwareDevice()) {
-            utility::LogInfo(
-                    "EngineInstance: Vulkan software device detected; using "
-                    "Filament's OpenGL backend");
-            backend = filament::backend::Backend::OPENGL;
         }
     }
 #endif

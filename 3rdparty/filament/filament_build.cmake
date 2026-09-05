@@ -36,22 +36,24 @@ set(filament_LIBRARIES
         meshoptimizer
         smol-v
         utils
-        vkshaders
 )
 
-set(FILAMENT_VER "v1.54.0")
-set(FILAMENT_VER_HASH "f4cb4eb81e3a5d66a9612ac131d16183e118b694f4f34c051506c523a8389e8d")
+set(FILAMENT_VER "v1.76.0")
+set(FILAMENT_VER_HASH "8cee7aa7aee72d2a62b5a1b3871d9f6d9e276e982fc4917960ac1da5c5b425dc")
 
 # Locate byproducts
 set(lib_dir lib)
 if(APPLE)
     set(FILAMENT_VER "v1.57.2")    # Metal shared texture support for 3DGS
     set(FILAMENT_VER_HASH "58a009e5e33674ea1841b0ea3481d19b682814db67048f93cd80da3df020051a")
+    list(APPEND filament_LIBRARIES vkshaders)
     if(APPLE_AARCH64)
         set(lib_dir lib/arm64)
     else()
         set(lib_dir lib/x86_64)
     endif()
+else()
+    list(APPEND filament_LIBRARIES shaders)
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
@@ -117,8 +119,6 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     # 0001: Implements VulkanDriver::importTextureR for zero-copy 3DGS texture sharing.
     PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
-    # 0002: Backports upstream Vulkan swapchain acquire retry/recovery on window resize.
-    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0002-handle-vulkan-swapchain-acquire.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}

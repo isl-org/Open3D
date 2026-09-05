@@ -7,10 +7,10 @@ Open3D supports CPU or software rendering on Linux when a GPU is unavailable
 or GPU rendering is not suitable. Software rendering is slower and less
 responsive than GPU rendering.
 
-On Linux and Windows, the Filament-based renderer uses Vulkan by default. When
-Vulkan reports a CPU device such as Mesa's llvmpipe, Open3D automatically uses
-Filament's OpenGL backend instead of its Vulkan backend. This avoids a known
-llvmpipe crash in Filament's Vulkan path.
+On Linux and Windows, the Filament-based renderer uses Vulkan by default,
+including CPU devices such as Mesa's llvmpipe. Older Filament versions crashed
+on llvmpipe's Vulkan path, so Open3D previously fell back to OpenGL. That
+workaround is no longer used.
 
 Select Software Rendering
 --------------------------

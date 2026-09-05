@@ -152,9 +152,19 @@ ImageSyncScope SrcScopeForLayout(VkImageLayout layout) {
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
             return {Stage::eTransfer, Access::eTransferRead};
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            // Read-only layout: declaring eShaderWrite here would be incorrect
-            // and trips BestPractices-ImageBarrierAccessLayout.
-            return {Stage::eComputeShader, Access::eShaderRead};
+            // Filament leaves sampleable color attachments in FRAG_READ
+            // (SHADER_READ_ONLY_OPTIMAL) after the render pass. Cover both
+            // Filament fragment sampling and later GS compute reads.
+            return {Stage::eFragmentShader | Stage::eComputeShader,
+                    Access::eShaderRead};
+        case VK_IMAGE_LAYOUT_GENERAL:
+            // Filament maps DEPTH_SAMPLER to GENERAL. Also used for GS
+            // storage-image writes of the shared colour target.
+            return {Stage::eComputeShader | Stage::eFragmentShader |
+                            Stage::eEarlyFragmentTests |
+                            Stage::eLateFragmentTests,
+                    Access::eShaderWrite | Access::eShaderRead |
+                            Access::eDepthStencilAttachmentWrite};
         default:
             return {Stage::eComputeShader,
                     Access::eShaderWrite | Access::eShaderRead};
@@ -173,8 +183,16 @@ ImageSyncScope DstScopeForLayout(VkImageLayout layout) {
                     Access::eDepthStencilAttachmentRead |
                             Access::eDepthStencilAttachmentWrite};
         case VK_IMAGE_LAYOUT_GENERAL:
-            return {Stage::eComputeShader,
-                    Access::eShaderWrite | Access::eShaderRead};
+            // Filament maps DEPTH_SAMPLER to GENERAL. Restoring that layout
+            // must also cover Filament's next-frame depth attachment/sample.
+            return {Stage::eComputeShader | Stage::eEarlyFragmentTests |
+                            Stage::eLateFragmentTests | Stage::eFragmentShader,
+                    Access::eShaderWrite | Access::eShaderRead |
+                            Access::eDepthStencilAttachmentRead |
+                            Access::eDepthStencilAttachmentWrite};
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return {Stage::eFragmentShader | Stage::eComputeShader,
+                    Access::eShaderRead};
         default:
             return {Stage::eComputeShader, Access::eShaderRead};
     }
@@ -573,12 +591,11 @@ public:
         e.width = w;
         e.height = h;
         // Composite starts only after Filament has completed its render pass.
-        // Filament keeps color attachments in GENERAL and depth attachments in
-        // DEPTH_STENCIL_ATTACHMENT_OPTIMAL.
-        e.current_layout =
-                (format == VK_FORMAT_D32_SFLOAT)
-                        ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                        : VK_IMAGE_LAYOUT_GENERAL;
+        // Filament v1.76 leaves sampleable color attachments in FRAG_READ
+        // (SHADER_READ_ONLY_OPTIMAL) and depth in DEPTH_SAMPLER (GENERAL).
+        e.current_layout = (format == VK_FORMAT_D32_SFLOAT)
+                                   ? VK_IMAGE_LAYOUT_GENERAL
+                                   : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         e.imported = true;
         uintptr_t handle = reinterpret_cast<uintptr_t>(image);
         textures_[handle] = std::move(e);
@@ -958,24 +975,30 @@ private:
         for (auto& item : textures_) {
             auto& entry = item.second;
             if (!entry.imported || !entry.used_in_composite) continue;
-            if (entry.format == VK_FORMAT_D32_SFLOAT) {
-                if (entry.current_layout ==
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-                    TransitionImageLayout(
-                            entry.image, entry.format, entry.current_layout,
-                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-                    entry.current_layout =
-                            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                }
-                continue;
+            // Restore Filament v1.76's post-pass layouts so the next Filament
+            // render pass still matches its RangeMap: color FRAG_READ,
+            // depth DEPTH_SAMPLER (GENERAL).
+            const VkImageLayout filament_layout =
+                    (entry.format == VK_FORMAT_D32_SFLOAT)
+                            ? VK_IMAGE_LAYOUT_GENERAL
+                            : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if (entry.current_layout != filament_layout) {
+                TransitionImageLayout(entry.image, entry.format,
+                                      entry.current_layout, filament_layout);
+                entry.current_layout = filament_layout;
+            } else {
+                MemoryBarrierInLayout(
+                        entry.image, filament_layout,
+                        vk::PipelineStageFlagBits2::eComputeShader,
+                        vk::AccessFlagBits2::eShaderWrite |
+                                vk::AccessFlagBits2::eShaderRead,
+                        vk::PipelineStageFlagBits2::eFragmentShader |
+                                vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                                vk::PipelineStageFlagBits2::eLateFragmentTests,
+                        vk::AccessFlagBits2::eShaderSampledRead |
+                                vk::AccessFlagBits2::eDepthStencilAttachmentRead |
+                                vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
             }
-            // Make composite writes visible to Filament's sampling of the
-            // shared colour image in the next frame.
-            MemoryBarrierInLayout(entry.image, VK_IMAGE_LAYOUT_GENERAL,
-                                  vk::PipelineStageFlagBits2::eComputeShader,
-                                  vk::AccessFlagBits2::eShaderWrite,
-                                  vk::PipelineStageFlagBits2::eFragmentShader,
-                                  vk::AccessFlagBits2::eShaderSampledRead);
         }
     }
 
@@ -992,14 +1015,19 @@ private:
             TransitionImageLayout(e.image, e.format, e.current_layout,
                                   needed_layout);
             e.current_layout = needed_layout;
-        } else if (first_imported_use &&
-                   needed_layout == VK_IMAGE_LAYOUT_GENERAL) {
-            // Filament's colour-attachment writes must be visible before the
-            // composite pass reads and blends over them.
+        } else if (first_imported_use) {
+            // Same-layout first use still needs Filament's prior attachment
+            // writes visible to GS compute. Color arrives in FRAG_READ;
+            // depth arrives in DEPTH_SAMPLER (GENERAL).
             MemoryBarrierInLayout(
-                    e.image, VK_IMAGE_LAYOUT_GENERAL,
-                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    e.image, needed_layout,
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput |
+                            vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                            vk::PipelineStageFlagBits2::eLateFragmentTests |
+                            vk::PipelineStageFlagBits2::eFragmentShader,
+                    vk::AccessFlagBits2::eColorAttachmentWrite |
+                            vk::AccessFlagBits2::eDepthStencilAttachmentWrite |
+                            vk::AccessFlagBits2::eShaderRead,
                     vk::PipelineStageFlagBits2::eComputeShader,
                     vk::AccessFlagBits2::eShaderRead |
                             vk::AccessFlagBits2::eShaderWrite);
