@@ -818,6 +818,7 @@ build_docs() {
     subst_version Doxyfile.in Doxyfile
     subst_version getting_started.in.rst getting_started.rst
     subst_version dev_wheels.in.rst dev_wheels.rst
+    subst_version sycl.in.rst sycl.rst
     subst_version docker.in.rst docker.rst
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always \
         --py_api_rst=always --py_example_rst=always --sphinx --doxygen
