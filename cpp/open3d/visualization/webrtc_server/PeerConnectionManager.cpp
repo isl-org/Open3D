@@ -142,6 +142,12 @@ PeerConnectionManager::PeerConnectionManager(
       ice_server_list_(ice_server_list),
       config_(config),
       publish_filter_(publish_filter) {
+        if (const char *stun_server = std::getenv("WEBRTC_STUN_SERVER");
+                stun_server != nullptr && stun_server[0] == '\0') {
+                webrtc::PeerConnectionFactoryInterface::Options options;
+                options.network_ignore_mask = 0;
+                peer_connection_factory_->SetOptions(options);
+        }
     webrtc_worker_thread_ = webrtc::Thread::Current();
     // Set the webrtc port range.
     webrtc_port_range_ = webrtc_udp_port_range;

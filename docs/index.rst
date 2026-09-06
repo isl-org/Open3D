@@ -61,6 +61,13 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.visualization
 
 .. toctree::
+    :maxdepth: 1
+    :caption: Agent Skills
+
+    agent_skills/open3d-python/SKILL
+    agent_skills/open3d-cpp/SKILL
+
+.. toctree::
     :maxdepth: 2
     :caption: Python Examples
 

@@ -3,6 +3,14 @@
 Headless rendering
 ------------------
 
+.. note::
+
+    This tutorial uses the legacy OpenGL rendering path. For new applications,
+    prefer the Filament-based rendering stack for physically based rendering,
+    remote visualization, GUI controls, and 3D Gaussian splatting. See
+    :doc:`/tutorial/visualization/index` and
+    :doc:`/tutorial/visualization/gaussian_splatting`.
+
 This tutorial shows how to render and save images from a terminal with no
 display attached, using ``open3d.visualization.Visualizer``.
 
