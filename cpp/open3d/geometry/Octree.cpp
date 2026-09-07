@@ -666,6 +666,43 @@ bool Octree::IsPointInBound(const Eigen::Vector3d& point,
     return rc;
 }
 
+Octree::NodeSphereRelationValue Octree::NodeSphereRelation(
+        const Eigen::Vector3d& origin,
+        const double& half_size,
+        const Eigen::Vector3d& point,
+        const double& radius) {
+    Eigen::Vector3d center_of_cube = origin.array() + half_size;
+    bool flag = true;
+    const double radius2 = radius * radius;
+    for (int dx = -1; dx <= 1; dx += 2) {
+        for (int dy = -1; dy <= 1; dy += 2) {
+            for (int dz = -1; dz <= 1; dz += 2) {
+                Eigen::Vector3d corner =
+                        center_of_cube + Eigen::Vector3d(dx * half_size,
+                                                         dy * half_size,
+                                                         dz * half_size);
+                if ((corner - point).squaredNorm() > radius2) {
+                    flag = false;
+                    break;
+                }
+            }
+        }
+    }
+    if (flag) return FULLY_INSIDE;
+
+    // ref: https://www.zhihu.com/question/24251545/answer/27184960
+    //      Arvo, J. (1990). A simple method for box-sphere intersection
+    //      testing. In Graphics gems (pp. 335-339).
+    // 1. Move octant space to origin, transform sphere to Quadrant I
+    // 2. Minimum length from sphere center to cube
+    double u2 = ((point - center_of_cube).array().abs() - half_size)
+                        .max(0.0)
+                        .square()
+                        .sum();
+
+    return u2 <= radius2 ? OVERLAP : NO_OVERLAP;
+}
+
 void Octree::Traverse(
         const std::function<bool(const std::shared_ptr<OctreeNode>&,
                                  const std::shared_ptr<OctreeNodeInfo>&)>& f) {
@@ -743,6 +780,63 @@ Octree::LocateLeafNode(const Eigen::Vector3d& point) const {
     };
     Traverse(f_locate_leaf_node);
     return std::make_pair(target_leaf_node, target_leaf_node_info);
+}
+
+std::vector<size_t> Octree::RadiusSearch(
+        const std::vector<Eigen::Vector3d>& point_cloud_points,
+        const Eigen::Vector3d& point,
+        const double& radius) {
+    std::vector<size_t> node_indices;
+    const double radius2 = radius * radius;
+
+    auto f_radius_search =
+            [&node_indices, &radius2, &point_cloud_points, &point, &radius](
+                    const std::shared_ptr<OctreeNode>& node,
+                    const std::shared_ptr<OctreeNodeInfo>& node_info) -> bool {
+        bool skip_children = false;
+        switch (NodeSphereRelation(node_info->origin_, node_info->size_ / 2,
+                                   point, radius)) {
+            case FULLY_INSIDE:
+                skip_children = true;
+                if (auto leaf_node =
+                            std::dynamic_pointer_cast<OctreePointColorLeafNode>(
+                                    node)) {
+                    node_indices.reserve(node_indices.size() +
+                                         leaf_node->indices_.size());
+                    node_indices.insert(node_indices.end(),
+                                        leaf_node->indices_.begin(),
+                                        leaf_node->indices_.end());
+
+                } else if (auto internal_node = std::dynamic_pointer_cast<
+                                   OctreeInternalPointNode>(node)) {
+                    node_indices.reserve(node_indices.size() +
+                                         internal_node->indices_.size());
+                    node_indices.insert(node_indices.end(),
+                                        internal_node->indices_.begin(),
+                                        internal_node->indices_.end());
+                }
+                break;
+            case OVERLAP:
+                if (auto leaf_node =
+                            std::dynamic_pointer_cast<OctreePointColorLeafNode>(
+                                    node)) {
+                    for (auto& index : leaf_node->indices_) {
+                        if ((point_cloud_points[index] - point).squaredNorm() <=
+                            radius2)
+                            node_indices.push_back(index);
+                    }
+                }
+                break;
+            case NO_OVERLAP:
+                skip_children = true;
+                break;
+        }
+
+        return skip_children;
+    };
+
+    Traverse(f_radius_search);
+    return node_indices;
 }
 
 std::shared_ptr<geometry::VoxelGrid> Octree::ToVoxelGrid() const {

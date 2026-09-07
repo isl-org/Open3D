@@ -140,3 +140,18 @@ def test_locate_leaf_node():
         assert node_info.depth == max_depth
         # Leaf node's size must match
         assert node_info.size == octree.size / np.power(2, max_depth)
+
+
+def test_radius_search():
+    pcd_data = o3d.data.PLYPointCloud()
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
+
+    expected = np.linalg.norm(np.array(pcd.points) - pcd.get_center(), axis=-1)
+    expected = np.where(expected <= 0.2)
+
+    for max_depth in range(1, 5, 2):
+        octree = o3d.geometry.Octree(max_depth)
+        octree.convert_from_point_cloud(pcd, 0.01)
+
+        indices_ = octree.radius_search(pcd.points, pcd.get_center(), 0.2)
+        assert np.all(sorted(indices_) == expected[0])
