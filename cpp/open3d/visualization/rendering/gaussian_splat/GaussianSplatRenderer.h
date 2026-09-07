@@ -118,6 +118,7 @@ public:
         bool has_valid_output = false;
         bool needs_geometry_render = true;
         bool needs_composite_render = true;
+        bool needs_followup_scene_render = false;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
         /// texture; cleared after each frame.
@@ -232,6 +233,10 @@ public:
     /// Marks the final composite pass dirty after Filament redraws its shared
     /// color target while the geometry pass inputs remain unchanged.
     void RequestCompositeForView(const FilamentView& view);
+
+    /// Returns and clears a one-shot cached scene render request created when
+    /// a Metal output target is recreated.
+    bool ConsumeFollowupSceneRenderRequest(const FilamentView& view);
 
     bool IsEnabled() const;
     void SetEnabled(bool enabled);

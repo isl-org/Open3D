@@ -114,6 +114,19 @@ The two mandatory CPU stalls (`flushAndWait`) cannot be eliminated without modif
 
 **Apple** (Metal): GS composite runs after `renderer_->endFrame()` on the same Metal queue
 ordering as Filament's submit. The first `Draw()` shows the previous frame's composite.
+When a Metal output target is recreated, its first successful composite schedules one cached
+scene render, reruns the GS geometry and composite stages, and
+`SetOnGaussianCompositeComplete` posts the needed redraws. This produces a final same-target
+GS result before the overlay is presented after resize settles. It is a mitigation: splats are
+present after resize settles, but the overlay can still flicker while the window is being resized.
+The likely cause is transient target recreation and Metal depth/overlay handoff during rapid
+resize; that explanation is not yet verified as the complete cause of the flicker.
+
+Filament v1.76 requires swapchain `readPixels()` during an active frame. Therefore,
+`FilamentRenderToBuffer` keeps ordinary PBR readback between `beginFrame()` and
+`endFrame()`. A GS capture instead commits the Filament frame before Stage B, because
+the composite samples Filament's cached attachments; it waits for the composite before
+reading the completed output.
 
 On every backend, widgets record ImGui commands before the current frame produces its GS
 output. `SetOnGaussianCompositeComplete` -> `PostRedraw()` schedules a second draw so the
@@ -209,6 +222,9 @@ render-target re-setup is needed when mesh visibility toggles.
 - `EnableViewCaching(true)` for the offscreen view (valid Filament color buffer for zero-copy setup).
 - `RequestRedrawForView` before each `Render()` forces the GS pipeline to re-run even
   when the scene and camera are unchanged.
+- **Viewport resize**: changing dimensions invalidates the old per-view GS render
+  targets before Filament replaces its cached attachments. The next draw recreates
+  size-matched targets and reruns both geometry and composite stages on Metal and Vulkan.
 - **Vulkan color readback**: Filament renders meshes and the composite shader blends splats
   in-place into one shared RGBA16F image. `ReadColorToRGBA16FCpu` downloads that final image;
   no Filament `readPixels` or CPU blend is used.
@@ -219,7 +235,8 @@ render-target re-setup is needed when mesh visibility toggles.
   converted to a finite-depth `uint8` preview first.
 - **Metal constraint**: Metal keeps the separate overlay and CPU blend path. Its `readPixels`
   always uses RGBA+UBYTE (Metal has no native RGB format); alpha is stripped when
-  `n_channels_ == 3`.
+  `n_channels_ == 3`. The offscreen path reads the opaque cached Filament base and the
+  premultiplied RGBA16F splat overlay, then blends the overlay over the base on CPU.
 
 ### Shared Vulkan Device Strategy (Linux/Windows)
 

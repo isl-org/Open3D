@@ -326,6 +326,17 @@ void GaussianSplatRenderer::RequestCompositeForView(const FilamentView& view) {
     }
 }
 
+bool GaussianSplatRenderer::ConsumeFollowupSceneRenderRequest(
+        const FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it == outputs_.end() || !it->second.needs_followup_scene_render ||
+        !it->second.has_valid_output) {
+        return false;
+    }
+    it->second.needs_followup_scene_render = false;
+    return true;
+}
+
 void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
     // Destroy GS outputs for the view, clearing the view's RT first to avoid
     // a use-after-free when Filament processes the pending destroy commands.
@@ -520,6 +531,8 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     targets.has_valid_output = false;
     targets.needs_geometry_render = true;
     targets.needs_composite_render = true;
+        targets.needs_followup_scene_render =
+            EngineInstance::GetBackendType() == RenderingType::kMetal;
     return targets;
 }
 
@@ -560,6 +573,7 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.has_valid_output = false;
     targets.needs_geometry_render = true;
     targets.needs_composite_render = true;
+    targets.needs_followup_scene_render = false;
     targets.wants_depth_readback = false;
     targets.last_scene_change_id = 0;
     targets.last_updated_frame = 0;

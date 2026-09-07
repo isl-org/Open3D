@@ -217,6 +217,7 @@ public:
     void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
     void ForEachViewToRender(
             const std::function<void(FilamentView&)>& callback);
+    bool SetRenderOnce(const FilamentView& view);
     /// Iterate over ALL views (including inactive/cached ones).
     void ForEachView(const std::function<void(FilamentView&)>& callback) const;
     bool HasGaussianSplatGeometry() const;

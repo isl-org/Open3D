@@ -418,8 +418,8 @@ public:
         if (tex == 0 || width == 0 || height == 0) return false;
         id<MTLTexture> src =
                 (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
-        return DownloadTextureImpl(src, width, height, sizeof(float), &out,
-                                   nullptr);
+        return DownloadTextureImpl(src, width, height, sizeof(float), 1, &out,
+                       nullptr);
     }
 
     bool DownloadTextureR16UI(std::uintptr_t tex,
@@ -430,7 +430,18 @@ public:
         id<MTLTexture> src =
                 (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
         return DownloadTextureImpl(src, width, height, sizeof(std::uint16_t),
-                                   nullptr, &out);
+                       1, nullptr, &out);
+    }
+
+    bool DownloadTextureRGBA16F(std::uintptr_t tex,
+                                std::uint32_t width,
+                                std::uint32_t height,
+                                std::vector<std::uint16_t>& out) override {
+        if (tex == 0 || width == 0 || height == 0) return false;
+        id<MTLTexture> src =
+                (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
+        return DownloadTextureImpl(src, width, height,
+                       4 * sizeof(std::uint16_t), 4, nullptr, &out);
     }
 
     void BindImage(std::uint32_t binding,
@@ -555,11 +566,13 @@ private:
                              std::uint32_t width,
                              std::uint32_t height,
                              std::size_t bytes_per_pixel,
+                     std::size_t elements_per_pixel,
                              std::vector<float>* f32_out,
                              std::vector<std::uint16_t>* u16_out) {
         if (!src || !queue_) return false;
-        const NSUInteger row_bytes =
+        const NSUInteger payload_row_bytes =
                 static_cast<NSUInteger>(width) * bytes_per_pixel;
+        const NSUInteger row_bytes = (payload_row_bytes + 255u) & ~255u;
         const NSUInteger total_bytes = row_bytes * height;
         // Allocate a shared (CPU-visible) staging buffer.
         id<MTLBuffer> staging =
@@ -582,15 +595,28 @@ private:
         [blit endEncoding];
         [cb commit];
         [cb waitUntilCompleted];
+        if ([cb status] == MTLCommandBufferStatusError) return false;
 
         const void* ptr = [staging contents];
         if (!ptr) return false;
         if (f32_out) {
-            f32_out->resize(static_cast<std::size_t>(width) * height);
-            std::memcpy(f32_out->data(), ptr, total_bytes);
+            f32_out->resize(static_cast<std::size_t>(width) * height *
+                            elements_per_pixel);
+            for (std::uint32_t row = 0; row < height; ++row) {
+                std::memcpy(f32_out->data() +
+                                    row * width * elements_per_pixel,
+                            static_cast<const uint8_t*>(ptr) + row * row_bytes,
+                            payload_row_bytes);
+            }
         } else if (u16_out) {
-            u16_out->resize(static_cast<std::size_t>(width) * height);
-            std::memcpy(u16_out->data(), ptr, total_bytes);
+            u16_out->resize(static_cast<std::size_t>(width) * height *
+                            elements_per_pixel);
+            for (std::uint32_t row = 0; row < height; ++row) {
+                std::memcpy(u16_out->data() +
+                                    row * width * elements_per_pixel,
+                            static_cast<const uint8_t*>(ptr) + row * row_bytes,
+                            payload_row_bytes);
+            }
         }
         return true;
     }

@@ -301,55 +301,26 @@ void FilamentRenderToBuffer::Render() {
         const size_t n_gs_elems = n_pixels * 4;
         const int nc = static_cast<int>(n_channels_);
 
-#if !defined(__APPLE__)
-        // Filament 1.76 requires swapchain readPixels() after beginFrame()
-        // and before endFrame(). PBR offscreen uses that path, so endFrame
-        // is delayed until after the fallback readback below. Gaussian Splat
-        // still ends the frame first so Filament's attachments are complete
-        // before the composite compute pass.
         if (run_gs_pipeline) {
+            // The Gaussian composite samples Filament's cached output, so its
+            // frame must be committed before the composite pass runs.
             renderer_->endFrame();
+#if !defined(__APPLE__)
             engine_.flushAndWait();
+#endif
             gaussian_splat_renderer_->RenderCompositeStage(*view_);
+            engine_.flushAndWait();
         }
 
-        // The composite pass blended splats in place into the shared RGBA16F
-        // image, so that image alone is the finished colour frame.
         if (run_gs_pipeline && native_view_rt && !depth_image_) {
             std::vector<std::uint16_t> gs_rgba_bits;
-            const bool got_gs_rgba =
-                    gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
-                            *view_, gs_rgba_bits) &&
-                    gs_rgba_bits.size() == n_gs_elems;
+            bool got_gs_rgba = gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
+                                       *view_, gs_rgba_bits) &&
+                               gs_rgba_bits.size() == n_gs_elems;
 
-            engine_.flushAndWait();
-
-            if (!got_gs_rgba) {
-                utility::LogWarning(
-                        "FilamentRenderToBuffer: Vulkan direct readback "
-                        "failed; returning empty frame.");
-                DeliverFrame(false);
-            } else {
-                for (size_t i = 0; i < n_pixels; ++i) {
-                    for (int channel = 0; channel < std::min(nc, 4);
-                         ++channel) {
-                        buffer_[i * nc + channel] = ToUnorm8(
-                                HalfBitsToFloat(gs_rgba_bits[i * 4 + channel]));
-                    }
-                }
-                DeliverFrame();
-            }
-        }
-#else
-        renderer_->endFrame();
-        if (run_gs_pipeline) {
-            gaussian_splat_renderer_->RenderCompositeStage(*view_);
-        }
-        engine_.flushAndWait();
-
-        // Metal keeps splats in a separate transparent overlay, so the base
-        // scene and the overlay are read back and blended on the CPU.
-        if (run_gs_pipeline && native_view_rt && !depth_image_) {
+#if defined(__APPLE__)
+            // Metal keeps splats in a transparent overlay, so blend it over
+            // Filament's base image after reading both targets back.
             std::vector<uint8_t> base_rgba(n_gs_elems, 0);
             PixelBufferDescriptor base_pd(
                     base_rgba.data(), base_rgba.size(), PixelDataFormat::RGBA,
@@ -357,10 +328,6 @@ void FilamentRenderToBuffer::Render() {
             renderer_->readPixels(native_view_rt, vp.left, vp.bottom, vp.width,
                                   vp.height, std::move(base_pd));
 
-            std::vector<std::uint16_t> gs_rgba_bits;
-            bool got_gs_rgba = gaussian_splat_renderer_->ReadColorToRGBA16FCpu(
-                                       *view_, gs_rgba_bits) &&
-                               gs_rgba_bits.size() == n_gs_elems;
             RenderTargetHandle gs_rt =
                     gaussian_splat_renderer_->GetColorReadbackRT(*view_);
             if (!got_gs_rgba && gs_rt) {
@@ -379,7 +346,6 @@ void FilamentRenderToBuffer::Render() {
             }
 
             engine_.flushAndWait();
-
             for (size_t i = 0; i < n_pixels; ++i) {
                 for (int channel = 0; channel < nc; ++channel) {
                     buffer_[i * nc + channel] = base_rgba[i * 4 + channel];
@@ -391,8 +357,26 @@ void FilamentRenderToBuffer::Render() {
                                                 static_cast<int>(n_pixels));
             }
             DeliverFrame();
-        }
+#else
+            // Vulkan compositing writes directly into the shared RGBA16F
+            // target, which is the completed color frame.
+            if (!got_gs_rgba) {
+                utility::LogWarning(
+                        "FilamentRenderToBuffer: Vulkan direct readback "
+                        "failed; returning empty frame.");
+                DeliverFrame(false);
+            } else {
+                for (size_t i = 0; i < n_pixels; ++i) {
+                    for (int channel = 0; channel < std::min(nc, 4);
+                         ++channel) {
+                        buffer_[i * nc + channel] = ToUnorm8(
+                                HalfBitsToFloat(gs_rgba_bits[i * 4 + channel]));
+                    }
+                }
+                DeliverFrame();
+            }
 #endif
+        }
 
         if (!frame_done_ && depth_image_ && run_gs_pipeline) {
             // The composite pass already merged GS and Filament depth into a
@@ -462,13 +446,11 @@ void FilamentRenderToBuffer::Render() {
             renderer_->readPixels(vp.left, vp.bottom, vp.width, vp.height,
                                   std::move(pd));
         }
-#if !defined(__APPLE__)
         // Close the Filament frame after PBR swapchain readPixels(). The
         // Gaussian Splat path already ended the frame before compositing.
         if (!run_gs_pipeline) {
             renderer_->endFrame();
         }
-#endif
     }
     scene_->HideRefractedMaterials(false);
 

@@ -645,6 +645,17 @@ void FilamentScene::SetRenderOnce(const ViewHandle& view_id) {
     }
 }
 
+bool FilamentScene::SetRenderOnce(const FilamentView& view) {
+    for (auto& [view_id, container] : views_) {
+        if (container.view.get() == &view) {
+            container.is_active = true;
+            container.render_count = 1;
+            return true;
+        }
+    }
+    return false;
+}
+
 void FilamentScene::RemoveView(const ViewHandle& view_id) {
     views_.erase(view_id);
 }
@@ -728,6 +739,11 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
             utility::LogWarning(
                     "Internal error: could not create downsampled point cloud");
         }
+    }
+    if (success) {
+        // Mesh changes alter the cached Filament color/depth attachments that
+        // Gaussian compositing samples, so invalidate its per-view render data.
+        MarkGaussianSplatChanged();
     }
     return success;
 }
@@ -828,6 +844,11 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
             CreateAndAddFilamentEntity(downsampled_name, *buffer_builder, aabb,
                                        vb, ib, material, BufferReuse::kYes);
         }
+    }
+    if (success) {
+        // Mesh changes alter the cached Filament color/depth attachments that
+        // Gaussian compositing samples, so invalidate its per-view render data.
+        MarkGaussianSplatChanged();
     }
     return success;
 }
@@ -1101,9 +1122,11 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
     bool removed_gs = false;
+    bool scene_changed = false;
     auto geoms = GetGeometry(object_name, false);
     if (!geoms.empty()) {
         for (auto* g : geoms) {
+            scene_changed = true;
             if (g->gs_splat_count > 0) {
                 per_object_gs_attrs_.erase(g->name);
                 removed_gs = true;
@@ -1125,17 +1148,21 @@ void FilamentScene::RemoveGeometry(const std::string& object_name) {
         RebuildMergedGaussianData();
     }
 
-    if (removed_gs) {
+    if (scene_changed) {
+        // Removed mesh attachments can expose or uncover splats. Advance the
+        // shared revision so both Metal and Vulkan rerun GS compositing.
         MarkGaussianSplatChanged();
     }
+
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
-    bool gaussian_splat_changed = false;
+    bool scene_changed = false;
     auto geoms = GetGeometry(object_name);
     for (auto* g : geoms) {
         if (g->visible != show) {
             g->visible = show;
+            scene_changed = true;
             if (!g->filament_entity.isNull()) {
                 if (show) {
                     scene_->addEntity(g->filament_entity);
@@ -1147,7 +1174,6 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
             // place (no need to rebuild the full merged buffer — just flip
             // bits).
             if (g->gs_splat_count > 0 && merged_gs_attrs_) {
-                gaussian_splat_changed = true;
                 auto& mask = merged_gs_attrs_->visibility_mask;
                 const std::uint32_t end = g->gs_splat_start + g->gs_splat_count;
                 for (std::uint32_t k = g->gs_splat_start; k < end; ++k) {
@@ -1164,7 +1190,9 @@ void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
             }
         }
     }
-    if (gaussian_splat_changed) {
+    if (scene_changed) {
+        // Visibility changes affect the Filament attachments sampled by the
+        // composite stage, even when the toggled object is not a splat.
         MarkGaussianSplatChanged();
     }
 }

@@ -299,6 +299,19 @@ void FilamentRenderer::EndFrame() {
             for (FilamentView* view : rendered_views_) {
                 any_composite |=
                         gaussian_splat_renderer_->RenderCompositeStage(*view);
+                if (gaussian_splat_renderer_
+                            ->ConsumeFollowupSceneRenderRequest(*view)) {
+                    for (const auto& [handle, scene] : scenes_) {
+                        if (scene->SetRenderOnce(*view)) {
+                            // The first composite after target recreation can
+                            // be incomplete. Rerun both GS stages with the
+                            // cached scene render that the redraw will consume.
+                            gaussian_splat_renderer_->RequestRedrawForView(
+                                    *view);
+                            break;
+                        }
+                    }
+                }
             }
             if (any_composite && on_gaussian_composite_complete_) {
                 on_gaussian_composite_complete_();

@@ -43,18 +43,12 @@ set(FILAMENT_VER_HASH "8cee7aa7aee72d2a62b5a1b3871d9f6d9e276e982fc4917960ac1da5c
 
 # Locate byproducts
 set(lib_dir lib)
-if(APPLE)
-    set(FILAMENT_VER "v1.57.2")    # Metal shared texture support for 3DGS
-    set(FILAMENT_VER_HASH "58a009e5e33674ea1841b0ea3481d19b682814db67048f93cd80da3df020051a")
-    list(APPEND filament_LIBRARIES vkshaders)
-    if(APPLE_AARCH64)
-        set(lib_dir lib/arm64)
-    else()
-        set(lib_dir lib/x86_64)
-    endif()
+if(APPLE_AARCH64)
+    set(lib_dir lib/arm64)
 else()
-    list(APPEND filament_LIBRARIES shaders)
+    set(lib_dir lib/x86_64)
 endif()
+list(APPEND filament_LIBRARIES shaders)
 
 set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})

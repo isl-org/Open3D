@@ -309,6 +309,14 @@ public:
                                          height, out);
     }
 
+    bool ReadColorToRGBA16FCpu(
+            const GaussianSplatRenderer::OutputTargets& targets,
+            std::vector<std::uint16_t>& out) override {
+        if (!gpu_ || targets.gs_color_mtl_texture == 0) return false;
+        return gpu_->DownloadTextureRGBA16F(targets.gs_color_mtl_texture,
+                                            targets.width, targets.height, out);
+    }
+
 private:
     void DestroyViewState(GaussianSplatViewGpuResources& vs) {
         // Free all per-view GPU buffers and textures tracked by this backend.

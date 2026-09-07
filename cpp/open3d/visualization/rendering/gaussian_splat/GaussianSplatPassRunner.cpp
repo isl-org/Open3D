@@ -375,8 +375,8 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
 
     // Upload the depth flag when scene depth is present so the shader can
     // reject splats occluded by mesh geometry.
-    const std::uintptr_t scene_depth_tex = SharedSceneDepthTexture(targets);
-    const bool has_scene_depth = (scene_depth_tex != 0);
+        const std::uintptr_t scene_depth_tex = SharedSceneDepthTexture(targets);
+        const bool has_scene_depth = (scene_depth_tex != 0);
     if (has_scene_depth) {
         float flag = 1.0f;
         static constexpr std::size_t kDepthFlagOffset =
