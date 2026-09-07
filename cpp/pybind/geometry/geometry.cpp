@@ -46,27 +46,33 @@ void pybind_geometry_classes_declarations(py::module &m) {
 void pybind_geometry_classes_definitions(py::module &m) {
     // open3d.geometry functions
     m.def("get_rotation_matrix_from_xyz", &Geometry3D::GetRotationMatrixFromXYZ,
-          "Returns a rotation matrix from rotations around the X, Y, and Z axes "
+          "Returns a rotation matrix from rotations around the X, Y, and Z "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yzx", &Geometry3D::GetRotationMatrixFromYZX,
-          "Returns a rotation matrix from rotations around the Y, Z, and X axes "
+          "Returns a rotation matrix from rotations around the Y, Z, and X "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zxy", &Geometry3D::GetRotationMatrixFromZXY,
-          "Returns a rotation matrix from rotations around the Z, X, and Y axes "
+          "Returns a rotation matrix from rotations around the Z, X, and Y "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_xzy", &Geometry3D::GetRotationMatrixFromXZY,
-          "Returns a rotation matrix from rotations around the X, Z, and Y axes "
+          "Returns a rotation matrix from rotations around the X, Z, and Y "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zyx", &Geometry3D::GetRotationMatrixFromZYX,
-          "Returns a rotation matrix from rotations around the Z, Y, and X axes "
+          "Returns a rotation matrix from rotations around the Z, Y, and X "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yxz", &Geometry3D::GetRotationMatrixFromYXZ,
-          "Returns a rotation matrix from rotations around the Y, X, and Z axes "
+          "Returns a rotation matrix from rotations around the Y, X, and Z "
+          "axes "
           "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
