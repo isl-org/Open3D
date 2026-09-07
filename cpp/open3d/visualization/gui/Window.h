@@ -106,7 +106,7 @@ public:
 
     bool IsActiveWindow() const;
 
-    /// Sets \param w as widget with text focus.
+    /// Sets \p w as widget with text focus.
     void SetFocusWidget(Widget* w);
 
     void AddChild(std::shared_ptr<Widget> w);

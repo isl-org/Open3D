@@ -64,7 +64,7 @@ public:
     /// Closes all the windows, which exits as a result
     void Quit();
 
-    /// Runs \param f in a separate thread. Do NOT call UI functions in
+    /// Runs \p f in a separate thread. Do NOT call UI functions in
     /// \p f; if you have a long running function that needs to call UI
     /// functions (e.g. updating a progress bar), have your function call
     /// PostToMainThread() with code that will do the UI (note: your function

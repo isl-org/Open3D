@@ -107,7 +107,7 @@ option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF
 set(ENABLE_SANITIZER OFF CACHE STRING "Enable sanitizer.")
 set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS
                     "OFF" "address" "memory" "thread" "undefined")
-if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)

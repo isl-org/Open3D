@@ -227,6 +227,13 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         PATTERN "*.cuh"
 )
 
+# Ship the C++ agent skill so AI coding agents can discover the API offline.
+# Symlink or copy to your project's .github/skills/ to activate it.
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/docs/agent_skills/open3d-cpp"
+    DESTINATION "${Open3D_INSTALL_RESOURCE_DIR}/Open3D/agent_skills"
+    FILES_MATCHING PATTERN "*.md"
+)
+
 # Install the Open3DConfig.cmake and Open3DConfigVersion.cmake
 install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"

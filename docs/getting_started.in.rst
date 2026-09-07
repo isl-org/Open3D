@@ -219,11 +219,6 @@ available for the main supported platforms. Also, the latest development version
     only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
 
-.. warning:: In Linux, do not link code with different CXX11 ABIs, since this will
-    most likely cause linker errors or crashes. Most system libraries in recent
-    Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
-    while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.
-
 If you need a subset of features, or a custom build configuration, please refer
 to :ref:`compilation` and compile Open3D from source.
 

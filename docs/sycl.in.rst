@@ -16,14 +16,8 @@ Many Tensor API operations and Tensor Geometry operations are supported on SYCL 
 This includes custom kernels for:
 
 * **TriangleMesh**: normal normalization, triangle normal computation, vertex normal accumulation, and triangle area computation.
+* **Nearest Neighbor Search**: k nearest neighbors search, fixed radius search, hubrid search.
 * **VoxelBlockGrid**: block touch (point cloud / depth), voxel indexing, TSDF integration, range estimation, ray casting, point-cloud extraction, and marching-cubes mesh extraction (SYCL device hash lookup for ray cast).
-
-SYCL does **not** implement CUDA NPP/IPP image filters (``Image::Filter*``,
-``Resize``, ``PyrDown``, etc.). Use CPU preprocessing or APIs that avoid
-device-side filter/pyramid steps when running on ``SYCL:0``.
-
-Element-wise tensor kernels use direct ``sycl::queue::parallel_for`` (there is
-no separate ``ParallelForSYCL`` helper header).
 
 Tensor backend matrix (experimental)
 -----------------------------------
@@ -63,15 +57,16 @@ types.
    * - ``t::geometry::Image`` NPP-style filters
      - CPU / IPP
      - NPP
-     - **No** (use CPU or non-filter paths)
+     - Yes (custom SYCL kernels)
    * - ``t::geometry::PointCloud`` full API
      - Yes
      - Most
      - Partial (unproject, normals, NNS-based ops; some methods still CPU-only)
 
 For routing, algorithms, and backend-specific semantics of ``core::nns`` and
-``core::HashMap`` on CPU vs CUDA vs SYCL, see :doc:`nns_hashmap_cpu_cuda_sycl`
-and the tutorial page :ref:`core_nns_hashmap_backends`.
+``core::HashMap`` on CPU vs CUDA vs SYCL, see the `NNS and HashMap backends
+(CPU / CUDA / SYCL) <https://github.com/isl-org/Open3D/blob/main/cpp/open3d/core/nns_hashmap_cpu_cuda_sycl.md>`__
+design document.
 
 Known numerical differences vs. CPU/CUDA
 -----------------------------------------
@@ -123,20 +118,20 @@ raycasting on Intel GPUs, you will also need the
     :widths: auto
 
     * - Linux SYCL (Ubuntu 22.04+)
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-manylinux_2_31_x86_64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-manylinux_2_31_x86_64.whl>`__
-      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-manylinux_2_31_x86_64.whl>`__
-      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-manylinux_2_31_x86_64.whl>`__
-      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-manylinux_2_31_x86_64.whl>`__
-      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-linux-x86_64-0.19.0.tar.xz>`__
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp311-cp311-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp312-cp312-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp313-cp313-manylinux_2_35_x86_64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp314-cp314-manylinux_2_35_x86_64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-linux-x86_64-sycl-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
     * - Windows SYCL
-      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp310-cp310-win_amd64.whl>`__
-      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp311-cp311-win_amd64.whl>`__
-      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp312-cp312-win_amd64.whl>`__
-      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp313-cp313-win_amd64.whl>`__
-      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-0.19.0-cp314-cp314-win_amd64.whl>`__
-      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-devel-win-x86_64-0.19.0.tar.xz>`__
+      - `Python 3.10 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
+      - `Python 3.11 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp311-cp311-win_amd64.whl>`__
+      - `Python 3.12 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp312-cp312-win_amd64.whl>`__
+      - `Python 3.13 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp313-cp313-win_amd64.whl>`__
+      - `Python 3.14 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d_xpu-@OPEN3D_VERSION_FULL@-cp314-cp314-win_amd64.whl>`__
+      - `C++ x86_64 <https://github.com/isl-org/Open3D/releases/download/main-devel/open3d-devel-windows-amd64-sycl-@OPEN3D_VERSION_FULL@.zip>`__
 
 Usage
 ------

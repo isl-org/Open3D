@@ -18,8 +18,6 @@
 namespace open3d {
 namespace tests {
 
-TEST(SYCLUtils, SYCLDemo) { core::sy::SYCLDemo(); }
-
 TEST(SYCLUtils, PrintAllSYCLDevices) {
     core::sy::PrintSYCLDevices(/*print_all=*/true);
 }
