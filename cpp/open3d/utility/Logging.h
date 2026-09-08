@@ -21,7 +21,7 @@
 #include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
-#if FMT_VERSION >= 100000
+#if FMT_VERSION >= 100000 && !defined(__CUDACC__)
 #include <fmt/std.h>
 #endif
 
