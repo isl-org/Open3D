@@ -5,11 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#if !defined(OPEN3D_DISABLE_VTK)
 #include <vtkFlyingEdges3D.h>
 #include <vtkLinearExtrusionFilter.h>
 #include <vtkNew.h>
 #include <vtkTextSource.h>
 #include <vtkTriangleFilter.h>
+#endif
 
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -264,6 +266,17 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
                                       core::Dtype float_dtype,
                                       core::Dtype int_dtype,
                                       const core::Device &device) {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)text;
+    (void)depth;
+    (void)float_dtype;
+    (void)int_dtype;
+    (void)device;
+    utility::LogError(
+            "TriangleMesh::CreateText requires VTK, which is disabled in this "
+            "build (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
 
     if (float_dtype != core::Float32 && float_dtype != core::Float64) {
@@ -300,12 +313,22 @@ TriangleMesh TriangleMesh::CreateText(const std::string &text,
     tmesh.GetTriangleIndices() =
             tmesh.GetTriangleIndices().To(device, int_dtype);
     return tmesh;
+#endif
 }
 
 TriangleMesh TriangleMesh::CreateIsosurfaces(
         const core::Tensor &volume,
         const std::vector<double> contour_values,
         const core::Device &device) {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)volume;
+    (void)contour_values;
+    (void)device;
+    utility::LogError(
+            "TriangleMesh::CreateIsosurfaces requires VTK, which is disabled "
+            "in this build (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     core::AssertTensorShape(volume, {core::None, core::None, core::None});
     core::AssertTensorDtypes(volume, {core::Float32, core::Float64});
@@ -322,6 +345,7 @@ TriangleMesh TriangleMesh::CreateIsosurfaces(
     auto polydata = method->GetOutput();
     auto tmesh = CreateTriangleMeshFromVtkPolyData(polydata);
     return tmesh.To(device);
+#endif
 }
 
 }  // namespace geometry

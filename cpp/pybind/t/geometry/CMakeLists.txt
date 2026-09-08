@@ -5,8 +5,13 @@ target_sources(pybind PRIVATE
     lineset.cpp
     pointcloud.cpp
     boundingvolume.cpp
-    raycasting_scene.cpp
     tensormap.cpp
     trianglemesh.cpp
     voxel_block_grid.cpp
 )
+
+if(NOT OPEN3D_DISABLE_EMBREE)
+    target_sources(pybind PRIVATE
+        raycasting_scene.cpp
+    )
+endif()

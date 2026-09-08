@@ -15,6 +15,10 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
+pytestmark = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_EMBREE"],
+    reason="Embree is disabled in this Open3D build")
+
 
 # test intersection with a single triangle
 @pytest.mark.parametrize("device",

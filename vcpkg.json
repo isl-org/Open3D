@@ -9,9 +9,17 @@
   "dependencies": [
     {
       "name": "assimp",
-      "features": ["draco"]
+      "features": ["draco"],
+      "platform": "!windows | !arm64"
     },
-    "embree",
+    {
+      "name": "assimp",
+      "platform": "windows & arm64"
+    },
+    {
+      "name": "embree",
+      "platform": "!windows | !arm64"
+    },
     "eigen3",
     "fmt",
     "glew",
@@ -21,19 +29,24 @@
     "jsoncpp",
     "msgpack",
     "nanoflann",
-    "qhull",
     "tbb",
     "tinygltf",
     "tinyobjloader",
     {
       "name": "vtk",
-      "default-features": false
+      "default-features": false,
+      "platform": "!windows | !arm64"
     },
     "zeromq",
     "cppzmq",
     "openssl",
     "curl",
-    "zlib"
+    "zlib",
+    "zstd",
+    {
+      "name": "openblas",
+      "platform": "windows & arm64"
+    }
   ],
   "features": {
     "tests": {

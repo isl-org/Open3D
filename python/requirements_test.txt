@@ -1,7 +1,8 @@
 pytest==9.0.3
 pytest-randomly==3.8.0
-scipy==1.15.3; python_version < "3.14"
+scipy==1.15.3; python_version < "3.14" and not (sys_platform == "win32" and platform_machine == "ARM64")
+scipy>=1.16.2,<1.17; python_version < "3.14" and sys_platform == "win32" and platform_machine == "ARM64"
 scipy==1.17.0; python_version >= "3.14"
-tensorboard==2.19.0
+tensorboard==2.19.0; not (sys_platform == "win32" and platform_machine == "ARM64")
 oauthlib==3.2.2
 certifi

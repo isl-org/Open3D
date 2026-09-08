@@ -33,6 +33,14 @@ if(APPLE)
             "Minimum OS X deployment version" FORCE)
     endif()
 endif()
+# Detect Windows ARM64 target architecture.
+if(WIN32)
+    if((DEFINED CMAKE_GENERATOR_PLATFORM AND CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64") OR
+       (DEFINED CMAKE_VS_PLATFORM_NAME AND CMAKE_VS_PLATFORM_NAME STREQUAL "ARM64") OR
+       (CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$"))
+        set(WINDOWS_ARM64 TRUE)
+    endif()
+endif()
 
 # Detect a direct vcpkg toolchain for automatic dependency management. Custom
 # toolchains that chain-load vcpkg can opt in with -DOPEN3D_USE_VCPKG=ON.
@@ -73,7 +81,7 @@ else()
     option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"     ON )
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    ON )
 endif()
-if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
+if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64 AND NOT WINDOWS_ARM64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    OFF)
@@ -114,6 +122,14 @@ else()
 endif()
 option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
 
+# RPC interface (ZeroMQ-based).
+# On Windows ARM64 we disable it by default since the C++ binding header (zmq.hpp / cppzmq)
+# is not part of the base libzmq package and may not be available.
+option(BUILD_RPC_INTERFACE        "Build RPC interface (requires cppzmq)"    ON)
+if(WINDOWS_ARM64)
+    set(BUILD_RPC_INTERFACE OFF CACHE BOOL "Build RPC interface (requires cppzmq)" FORCE)
+endif()
+
 # When using vcpkg, prefer system dependencies (override per lib with
 # -DUSE_SYSTEM_<PKG>=OFF, e.g. if the vcpkg port version is unsuitable).
 # Cache defaults must be set before the USE_SYSTEM_* option() lines below.
@@ -128,7 +144,13 @@ if(OPEN3D_USE_VCPKG)
     set(USE_SYSTEM_MSGPACK ON CACHE BOOL "Use system pre-installed msgpack")
     set(USE_SYSTEM_NANOFLANN ON CACHE BOOL "Use system pre-installed nanoflann")
     set(USE_SYSTEM_PNG ON CACHE BOOL "Use system pre-installed png")
-    set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "Use system pre-installed qhullcpp")
+    # qhull: build the pinned v8.0.2 from source (3rdparty/qhull/qhull.cmake) on
+    # all platforms. The convex-hull / oriented-bounding-box unit tests assert
+    # exact qhull facet ordering, which differs across qhull builds/versions, so
+    # a vcpkg-provided qhull can break them. Keep USE_SYSTEM_QHULLCPP OFF.
+    if(NOT WINDOWS_ARM64)
+        set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "Use system pre-installed qhullcpp")
+    endif()
     set(USE_SYSTEM_TBB ON CACHE BOOL "Use system pre-installed TBB")
     set(USE_SYSTEM_TINYGLTF ON CACHE BOOL "Use system pre-installed tinygltf")
     set(USE_SYSTEM_TINYOBJLOADER ON CACHE BOOL "Use system pre-installed tinyobjloader")
@@ -139,11 +161,17 @@ if(OPEN3D_USE_VCPKG)
     set(USE_SYSTEM_EMBREE ON CACHE BOOL "Use system pre-installed Embree")
     set(USE_SYSTEM_GOOGLETEST ON CACHE BOOL "Use system pre-installed Googletest")
     set(USE_SYSTEM_ZSTD ON CACHE BOOL "Use system pre-installed zstd")
+    # On ARM64, MKL is unavailable (x86-only), so Open3D uses BLAS/LAPACK.
+    # Prefer the vcpkg-provided openblas rather than building it from source
+    # (which would require gfortran).
+    if(WINDOWS_ARM64)
+        set(USE_SYSTEM_BLAS ON CACHE BOOL "Use system pre-installed openblas")
+    endif()
     message(STATUS "Open3D: vcpkg mode - default USE_SYSTEM_* ON (override with -DUSE_SYSTEM_<PKG>=OFF)")
 endif()
 
 # 3rd-party build options
-if(LINUX_AARCH64 OR APPLE_AARCH64)
+if(LINUX_AARCH64 OR APPLE_AARCH64 OR WINDOWS_ARM64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
 else()
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           OFF)
@@ -609,6 +637,14 @@ if(WIN32)
     # Set oldest supported Windows version to Windows 10 (10.0, 0x0A00)
     # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
     add_compile_definitions(WINVER=0x0A00 _WIN32_WINNT=0x0A00)
+
+    # On this ARM64 VS-generator/SDK setup, _M_ARM64 does not reach the Windows
+    # SDK headers, so winnt.h raises "No Target Architecture" (C1189). Define the
+    # target-arch macros explicitly. (These are normally MSVC built-ins; keep
+    # this workaround until the toolchain sets them through to the SDK headers.)
+    if(WINDOWS_ARM64)
+        add_compile_definitions(_ARM64_=1 _M_ARM64=1)
+    endif()
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well

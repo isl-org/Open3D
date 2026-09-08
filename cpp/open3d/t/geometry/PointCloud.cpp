@@ -1754,16 +1754,36 @@ LineSet PointCloud::ExtrudeRotation(double angle,
                                     int resolution,
                                     double translation,
                                     bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)angle;
+    (void)axis;
+    (void)resolution;
+    (void)translation;
+    (void)capping;
+    utility::LogError(
+            "PointCloud::ExtrudeRotation requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return LineSet();
+#else
     using namespace vtkutils;
     return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation,
                                   capping);
+#endif
 }
 
 LineSet PointCloud::ExtrudeLinear(const core::Tensor& vector,
                                   double scale,
                                   bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)vector;
+    (void)scale;
+    (void)capping;
+    utility::LogError(
+            "PointCloud::ExtrudeLinear requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return LineSet();
+#else
     using namespace vtkutils;
     return ExtrudeLinearLineSet(*this, vector, scale, capping);
+#endif
 }
 
 PointCloud PointCloud::Crop(const AxisAlignedBoundingBox& aabb,

@@ -180,6 +180,14 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     )
+
+# Propagate toolchain/package hints to ExternalProject builds (e.g., Assimp finding zlib via vcpkg).
+if(CMAKE_PREFIX_PATH)
+    list(APPEND ExternalProject_CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH})
+endif()
+if(ZLIB_ROOT)
+    list(APPEND ExternalProject_CMAKE_ARGS -DZLIB_ROOT=${ZLIB_ROOT})
+endif()
 # Keep 3rd party symbols hidden from Open3D user code. Do not use if 3rd party
 # libraries throw exceptions that escape Open3D.
 set(ExternalProject_CMAKE_ARGS_hidden
@@ -1704,44 +1712,59 @@ else()
 endif()
 
 # VTK
-if(USE_SYSTEM_VTK)
-    open3d_find_package_3rdparty_library(3rdparty_vtk
-        PACKAGE VTK
-        TARGETS
-            VTK::FiltersGeneral
-            VTK::FiltersSources
-            VTK::FiltersModeling
-            VTK::FiltersCore
-            VTK::CommonExecutionModel
-            VTK::CommonDataModel
-            VTK::CommonTransforms
-            VTK::CommonMath
-            VTK::CommonMisc
-            VTK::CommonSystem
-            VTK::CommonCore
-            VTK::kissfft
-            VTK::pugixml
-            VTK::vtksys
-    )
-    if(NOT 3rdparty_vtk_FOUND)
-        set(USE_SYSTEM_VTK OFF)
-    endif()
+# Prebuilt VTK bundles downloaded by Open3D are x86_64-focused and require
+# network access. On Windows ARM64, disable VTK by default to unblock building.
+set(OPEN3D_DISABLE_VTK OFF)
+if(WINDOWS_ARM64)
+    set(OPEN3D_DISABLE_VTK ON)
 endif()
-if(NOT USE_SYSTEM_VTK)
-    include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
-    open3d_import_3rdparty_library(3rdparty_vtk
-        HIDDEN
-        INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
-        LIB_DIR      ${VTK_LIB_DIR}
-        LIBRARIES    ${VTK_LIBRARIES}
-        DEPENDS      ext_vtk
-    )
-    if(UNIX AND NOT APPLE)
-        target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
-    endif()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
+
+if(OPEN3D_DISABLE_VTK)
+    message(WARNING "VTK disabled on this platform (Windows ARM64). Some IO/visualization features will be unavailable.")
+    add_compile_definitions(OPEN3D_DISABLE_VTK=1)
+    add_library(3rdparty_vtk INTERFACE)
+    target_compile_definitions(3rdparty_vtk INTERFACE OPEN3D_DISABLE_VTK=1)
+    add_library(Open3D::3rdparty_vtk ALIAS 3rdparty_vtk)
 else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_vtk)
+    if(USE_SYSTEM_VTK)
+        open3d_find_package_3rdparty_library(3rdparty_vtk
+            PACKAGE VTK
+            TARGETS
+                VTK::FiltersGeneral
+                VTK::FiltersSources
+                VTK::FiltersModeling
+                VTK::FiltersCore
+                VTK::CommonExecutionModel
+                VTK::CommonDataModel
+                VTK::CommonTransforms
+                VTK::CommonMath
+                VTK::CommonMisc
+                VTK::CommonSystem
+                VTK::CommonCore
+                VTK::kissfft
+                VTK::pugixml
+                VTK::vtksys
+        )
+        if(NOT 3rdparty_vtk_FOUND)
+            set(USE_SYSTEM_VTK OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_VTK)
+        include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+        open3d_import_3rdparty_library(3rdparty_vtk
+            HIDDEN
+            INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+            LIB_DIR      ${VTK_LIB_DIR}
+            LIBRARIES    ${VTK_LIBRARIES}
+            DEPENDS      ext_vtk
+        )
+        if(UNIX AND NOT APPLE)
+            target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+        endif()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
+    else()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_vtk)
+    endif()
 endif()
 
 # UVAtlas
@@ -1937,18 +1960,43 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     if(USE_BLAS)
         if (USE_SYSTEM_BLAS)
             find_package(BLAS)
-            find_package(LAPACK)
-            find_package(LAPACKE)
-            if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-                message(STATUS "System BLAS/LAPACK/LAPACKE found.")
-                list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
-                    ${BLAS_LIBRARIES}
-                    ${LAPACK_LIBRARIES}
-                    ${LAPACKE_LIBRARIES}
-                )
+            if(WINDOWS_ARM64)
+                # On Windows ARM64, LAPACK/LAPACKE ports are not readily available in vcpkg
+                # (lapack-reference depends on vcpkg-gfortran which is unsupported on arm64-windows).
+                # Open3D primarily needs BLAS for some linear algebra routines; keep building with BLAS only.
+                if(BLAS_FOUND)
+                    message(STATUS "System BLAS found (LAPACK/LAPACKE disabled on Windows ARM64 build).")
+                    # vcpkg openblas installs cblas.h under include/openblas/.
+                    # Locate it in the active vcpkg installed tree rather than a
+                    # hardcoded prefix (VCPKG_ROOT layout differs per machine).
+                    find_path(OPEN3D_CBLAS_INCLUDE_DIR
+                        NAMES cblas.h
+                        PATH_SUFFIXES openblas
+                    )
+                    if(OPEN3D_CBLAS_INCLUDE_DIR)
+                        include_directories("${OPEN3D_CBLAS_INCLUDE_DIR}")
+                    endif()
+                    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
+                        ${BLAS_LIBRARIES}
+                    )
+                else()
+                    message(STATUS "System BLAS not found, setting USE_SYSTEM_BLAS=OFF.")
+                    set(USE_SYSTEM_BLAS OFF)
+                endif()
             else()
-                message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
-                set(USE_SYSTEM_BLAS OFF)
+                find_package(LAPACK)
+                find_package(LAPACKE)
+                if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+                    message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+                    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
+                        ${BLAS_LIBRARIES}
+                        ${LAPACK_LIBRARIES}
+                        ${LAPACKE_LIBRARIES}
+                    )
+                else()
+                    message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
+                    set(USE_SYSTEM_BLAS OFF)
+                endif()
             endif()
         endif()
 
@@ -2072,6 +2120,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     # used by utility::ProgressBar. Bundled TBB (mkl/tbb.cmake) is newer.
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
+            PUBLIC
             PACKAGE TBB
             VERSION 2021.4.0
             TARGETS TBB::tbb
@@ -2251,33 +2300,49 @@ if (BUILD_CUDA_MODULE)
 endif ()
 
 # embree
-if(BUILD_SYCL_MODULE AND USE_SYSTEM_EMBREE)
-    message(STATUS
-        "Open3D's SYCL module requires a SYCL-enabled Embree; using bundled Embree")
-    set(USE_SYSTEM_EMBREE OFF)
+# Embree is primarily maintained for x86/x64 and does not build reliably on
+# Windows ARM64. Disable it by default on Windows ARM64 to allow Open3D to build.
+set(OPEN3D_DISABLE_EMBREE OFF)
+if(WINDOWS_ARM64)
+    set(OPEN3D_DISABLE_EMBREE ON)
 endif()
-if(USE_SYSTEM_EMBREE)
-    open3d_find_package_3rdparty_library(3rdparty_embree
-        PACKAGE embree
-        TARGETS embree
-        VERSION 4.4.0
-    )
-    if(NOT 3rdparty_embree_FOUND)
+
+if(OPEN3D_DISABLE_EMBREE)
+    message(WARNING "Embree disabled on this platform (Windows ARM64). Raycasting acceleration will be unavailable.")
+    add_compile_definitions(OPEN3D_DISABLE_EMBREE=1)
+    add_library(3rdparty_embree INTERFACE)
+    target_compile_definitions(3rdparty_embree INTERFACE OPEN3D_DISABLE_EMBREE=1)
+    add_library(Open3D::3rdparty_embree ALIAS 3rdparty_embree)
+    # Do NOT append to Open3D_3RDPARTY_PRIVATE_TARGETS_*: keep it out of link lines.
+else()
+    if(BUILD_SYCL_MODULE AND USE_SYSTEM_EMBREE)
+        message(STATUS
+            "Open3D's SYCL module requires a SYCL-enabled Embree; using bundled Embree")
         set(USE_SYSTEM_EMBREE OFF)
     endif()
-endif()
-if(NOT USE_SYSTEM_EMBREE)
-    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-    open3d_import_3rdparty_library(3rdparty_embree
-        HIDDEN
-        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-        LIB_DIR      ${EMBREE_LIB_DIR}
-        LIBRARIES    ${EMBREE_LIBRARIES}
-        DEPENDS      ext_embree
-    )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
-else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_embree)
+    if(USE_SYSTEM_EMBREE)
+        open3d_find_package_3rdparty_library(3rdparty_embree
+            PACKAGE embree
+            TARGETS embree
+            VERSION 4.4.0
+        )
+        if(NOT 3rdparty_embree_FOUND)
+            set(USE_SYSTEM_EMBREE OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_EMBREE)
+        include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+        open3d_import_3rdparty_library(3rdparty_embree
+            HIDDEN
+            INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+            LIB_DIR      ${EMBREE_LIB_DIR}
+            LIBRARIES    ${EMBREE_LIBRARIES}
+            DEPENDS      ext_embree
+        )
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
+    else()
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_embree)
+    endif()
 endif()
 
 # WebRTC

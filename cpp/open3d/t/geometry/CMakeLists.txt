@@ -12,16 +12,29 @@ target_sources(tgeometry PRIVATE
     TriangleMesh.cpp
     TriangleMeshFactory.cpp
     VoxelBlockGrid.cpp
-    VtkUtils.cpp
 )
 
-if (BUILD_SYCL_MODULE)
-    open3d_sycl_target_sources(tgeometry PRIVATE
-        RaycastingScene.cpp
-    )
-else()
+if(NOT OPEN3D_DISABLE_VTK)
     target_sources(tgeometry PRIVATE
-        RaycastingScene.cpp
+        VtkUtils.cpp
+    )
+endif()
+
+if(NOT OPEN3D_DISABLE_EMBREE)
+    if (BUILD_SYCL_MODULE)
+        open3d_sycl_target_sources(tgeometry PRIVATE
+            RaycastingScene.cpp
+        )
+    else()
+        target_sources(tgeometry PRIVATE
+            RaycastingScene.cpp
+        )
+    endif()
+else()
+    # Embree is disabled (e.g. Windows ARM64): compile stub implementation
+    # so that symbols referenced by TriangleMesh.cpp are still available.
+    target_sources(tgeometry PRIVATE
+        RaycastingScene_stub.cpp
     )
 endif()
 
