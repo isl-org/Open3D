@@ -706,3 +706,216 @@ jobs:
           echo "Add --randomly-seed=SEED to the test command to reproduce test order."
           python -m pytest python/test/
           deactivate
+
+  # Native Windows on Arm (ARM64) build + test. Uses the
+  # arm64-windows vcpkg triplet with a reduced feature set: BLAS/OpenBLAS instead
+  # of MKL (x86-only), and ISPC/GUI/CUDA/SYCL/Kinect/librealsense/WebRTC/VTK/
+  # Embree/RPC disabled (see CMakeLists.txt WINDOWS_ARM64 and
+  # 3rdparty/find_dependencies.cmake).
+  build-arm64:
+    name: Build ARM64
+    permissions:
+      contents: read
+    runs-on: windows-11-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        CONFIG: [Release]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'arm64'
+
+      - name: Install Python build requirements
+        shell: pwsh
+        # requirements_build.txt provides pybind11-stubgen (typing stubs) and
+        # the packaging toolchain used by the pip-package target.
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -U pip
+          if ($LASTEXITCODE -ne 0) { throw "pip self-upgrade failed." }
+          python -m pip install -r python/requirements.txt `
+            -r python/requirements_build.txt
+          if ($LASTEXITCODE -ne 0) { throw "Requirements install failed." }
+
+      - name: Generate vcpkg baseline
+        shell: pwsh
+        # Open3D's tracked vcpkg.json has no builtin-baseline; modern vcpkg
+        # refuses manifest mode without one. Pin the default registry to the
+        # runner's bundled vcpkg checkout HEAD via vcpkg-configuration.json,
+        # leaving the committed vcpkg.json untouched.
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { throw "VCPKG_INSTALLATION_ROOT is not set." }
+          $baseline = (git -C "$vcpkgRoot" rev-parse HEAD).Trim()
+          if (-not $baseline) { throw "Could not read vcpkg baseline from $vcpkgRoot" }
+          Write-Host "vcpkg baseline = $baseline"
+          $config = @{
+            'default-registry' = @{
+              kind       = 'git'
+              repository = 'https://github.com/microsoft/vcpkg'
+              baseline   = $baseline
+            }
+          } | ConvertTo-Json -Depth 10
+          $config | Out-File -FilePath 'vcpkg-configuration.json' -Encoding ascii
+
+      - name: Detect Visual Studio generator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} `
+            'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) { throw "vswhere.exe not found at $vswhere" }
+
+          $version = & $vswhere -latest -products * -property installationVersion
+          if (-not $version) { throw "No Visual Studio installation found." }
+
+          $major = [int]($version.Split('.')[0])
+          switch ($major) {
+            17      { $generator = 'Visual Studio 17 2022' }
+            18      { $generator = 'Visual Studio 18 2026' }
+            default { throw "Unsupported Visual Studio major version: $major" }
+          }
+
+          Write-Host "Detected VS $version -> generator '$generator'"
+          "CMAKE_GENERATOR_NAME=$generator" |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Config
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path '${{ env.BUILD_DIR }}' -ItemType Directory -Force | Out-Null
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { throw "VCPKG_INSTALLATION_ROOT is not set." }
+          $toolchain = Join-Path $vcpkgRoot 'scripts\buildsystems\vcpkg.cmake'
+          cmake -S . -B '${{ env.BUILD_DIR }}' -G "$env:CMAKE_GENERATOR_NAME" -A ARM64 `
+            -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+            -DVCPKG_TARGET_TRIPLET=arm64-windows-static-md `
+            -DOPEN3D_USE_VCPKG=ON `
+            -DVCPKG_MANIFEST_FEATURES="tests;minizip" `
+            -DWITH_MINIZIP=ON `
+            -DBUILD_SHARED_LIBS=ON `
+            -DSTATIC_WINDOWS_RUNTIME=OFF `
+            -DBUILD_UNIT_TESTS=ON `
+            -DBUILD_PYTHON_MODULE=ON `
+            -DIGNORE_STUBGEN_ERRORS=ON `
+            -DBUILD_JUPYTER_EXTENSION=OFF `
+            -DBUILD_GUI=OFF `
+            -DBUILD_EXAMPLES=OFF `
+            -DBUILD_ISPC_MODULE=OFF `
+            -DBUILD_CUDA_MODULE=OFF `
+            -DBUILD_SYCL_MODULE=OFF `
+            -DBUILD_PYTORCH_OPS=OFF `
+            -DBUILD_AZURE_KINECT=OFF `
+            -DBUILD_LIBREALSENSE=OFF `
+            -DBUILD_WEBRTC=OFF `
+            -DPython3_EXECUTABLE=$((Get-Command python).Source) `
+            -DCMAKE_BUILD_TYPE=${{ matrix.CONFIG }}
+
+      - name: Build
+        working-directory: ${{ env.BUILD_DIR }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target tests
+
+      - name: Build Python wheel
+        working-directory: ${{ env.BUILD_DIR }}
+        shell: pwsh
+        # Built before the unit tests so a test failure does not block the wheel
+        # artifact that test-wheel-arm64 depends on.
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} --target pip-package
+          if ($LASTEXITCODE -ne 0) { throw "pip-package build failed." }
+          $whl = Get-ChildItem "lib/python_package/pip_package/open3d*.whl" |
+            Select-Object -First 1
+          if (-not $whl) { throw "Wheel not found after pip-package build." }
+          Write-Host "Built wheel: $($whl.Name)"
+
+      - name: Run C++ unit tests
+        working-directory: ${{ env.BUILD_DIR }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
+          & ".\bin\${{ matrix.CONFIG }}\tests.exe" --gtest_shuffle
+
+      - name: Upload ARM64 wheel
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: open3d-wheel-arm64-${{ matrix.CONFIG }}
+          path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/open3d*.whl
+          if-no-files-found: warn
+
+  test-wheel-arm64:
+    name: Test wheel ARM64
+    permissions:
+      contents: read
+    runs-on: windows-11-arm
+    needs: [build-arm64]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'arm64'
+
+      - name: Download ARM64 wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: open3d-wheel-arm64-Release
+          path: wheel
+
+      - name: Test Python package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m venv open3d_test_venv
+          if ($LASTEXITCODE -ne 0) { throw "venv creation failed." }
+
+          . .\open3d_test_venv\Scripts\Activate.ps1
+
+          python -m pip install -U pip==${{ env.PIP_VER }}
+          if ($LASTEXITCODE -ne 0) { deactivate; throw "pip pin failed." }
+
+          python -m pip install -U -r python/requirements_test.txt
+          if ($LASTEXITCODE -ne 0) { deactivate; throw "test requirements install failed." }
+
+          $whl = (Get-ChildItem wheel\open3d*.whl | Select-Object -First 1).FullName
+          if (-not $whl) { deactivate; throw "ARM64 Open3D wheel not found." }
+
+          Write-Host "Installing $whl"
+          python -m pip install $whl
+          if ($LASTEXITCODE -ne 0) { deactivate; throw "Wheel install failed." }
+
+          python -c "import open3d; print('Imported:', open3d.__version__)"
+          if ($LASTEXITCODE -ne 0) { deactivate; throw "import open3d failed." }
+
+          python -c "import open3d.core as o3c; print(o3c.Tensor.ones((2, 2)))"
+          $exitCode = $LASTEXITCODE
+          deactivate
+          if ($exitCode -ne 0) { throw "open3d.core smoke test failed." }
+
+      - name: Run Python unit tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\open3d_test_venv\Scripts\Activate.ps1
+          Write-Host "Add --randomly-seed=SEED to the test command to reproduce test order."
+          python -m pytest python/test/
+          $exitCode = $LASTEXITCODE
+          deactivate
+          if ($exitCode -ne 0) { throw "Python unit tests failed with exit code $exitCode." }
+
