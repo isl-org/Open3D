@@ -326,6 +326,12 @@ std::unique_ptr<GaussianSplatRenderer::Backend>
 CreateGaussianSplatVulkanBackend(
         FilamentResourceManager& /*resource_mgr*/,
         const GaussianSplatRenderer::RenderConfig& config) {
+#if !OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT
+    utility::LogWarning(
+            "Gaussian splats require Open3D's patched Filament library; "
+            "splats are disabled.");
+    return nullptr;
+#endif
     if (!GaussianSplatVulkanContext::GetInstance().IsValid()) {
         utility::LogDebug(
                 "GaussianSplatVulkan: Vulkan context not valid; Vulkan "

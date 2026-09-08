@@ -190,13 +190,11 @@ std::string FormatGrid(const std::vector<uint8_t>& values) {
 /// lets the mixed mesh test tolerate a small rasterization shift.
 void ExpectGridEq(const std::vector<uint8_t>& actual,
                   const std::vector<uint8_t>& expected,
-          const char* label,
-          int max_out_of_tolerance_pixels =
-              kMaxOutOfTolerancePixels) {
+                  const char* label,
+                  int max_out_of_tolerance_pixels = kMaxOutOfTolerancePixels) {
     ASSERT_EQ(actual.size(), expected.size());
     const core::Tensor actual_tensor(actual, {kH, kW}, core::Dtype::UInt8);
-    const core::Tensor expected_tensor(expected, {kH, kW},
-                                       core::Dtype::UInt8);
+    const core::Tensor expected_tensor(expected, {kH, kW}, core::Dtype::UInt8);
     const core::Tensor actual_i16 = actual_tensor.To(core::Dtype::Int16);
     const core::Tensor expected_i16 = expected_tensor.To(core::Dtype::Int16);
     const core::Tensor difference = (actual_i16 - expected_i16).Abs();
@@ -207,17 +205,17 @@ void ExpectGridEq(const std::vector<uint8_t>& actual,
 
     if (mismatch_count > max_out_of_tolerance_pixels) {
         const std::string output_prefix =
-            std::string("/tmp/gaussian_splat_") + label;
+                std::string("/tmp/gaussian_splat_") + label;
         EXPECT_TRUE(io::WriteImage(output_prefix + "_actual_8x8.png",
-                       MakeGrayImage(actual)));
+                                   MakeGrayImage(actual)));
         EXPECT_TRUE(io::WriteImage(output_prefix + "_expected_8x8.png",
-                       MakeGrayImage(expected)));
+                                   MakeGrayImage(expected)));
         ADD_FAILURE() << label << " differs from the golden reference: "
                       << mismatch_count << " pixels differ by more than one "
                       << "UNORM value (maximum difference " << max_difference
-                  << "). Comparison images: " << output_prefix
-                  << "_{actual,expected}_8x8.png.\nActual grid:"
-                  << FormatGrid(actual)
+                      << "). Comparison images: " << output_prefix
+                      << "_{actual,expected}_8x8.png.\nActual grid:"
+                      << FormatGrid(actual)
                       << "\nExpected grid:" << FormatGrid(expected);
     }
 }
@@ -264,13 +262,13 @@ void SetUpTestCamera(visualization::rendering::Open3DScene& scene) {
 /// the given golden grayscale references. `dump_prefix`, when non-null, writes
 /// the rendered color and depth-preview images to
 /// /tmp/<dump_prefix>_{color,depth}_8x8.png for manual review.
-void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
-                          visualization::rendering::Open3DScene& scene,
-                          const std::vector<uint8_t>& ref_color,
-                          const std::vector<uint8_t>& ref_depth,
-                          const char* dump_prefix = nullptr,
-                          int max_out_of_tolerance_pixels =
-                              kMaxOutOfTolerancePixels) {
+void RenderAndCheckGolden(
+        visualization::rendering::FilamentRenderer& renderer,
+        visualization::rendering::Open3DScene& scene,
+        const std::vector<uint8_t>& ref_color,
+        const std::vector<uint8_t>& ref_depth,
+        const char* dump_prefix = nullptr,
+        int max_out_of_tolerance_pixels = kMaxOutOfTolerancePixels) {
     auto& app = visualization::gui::Application::GetInstance();
 
     auto color_img = app.RenderToImage(renderer, scene.GetView(),
@@ -312,12 +310,6 @@ void RenderAndCheckGolden(visualization::rendering::FilamentRenderer& renderer,
 class GaussianSplatRenderTest : public testing::Test {
 protected:
     void SetUp() override {
-        const char* ci = std::getenv("CI");
-        // Very rough way to tell if a CI machine has a GPU
-        if (ci && !core::cuda::IsAvailable() &&
-            core::sy::GetDeviceCount() < 2) {
-            GTEST_SKIP() << "Gaussian splat rendering requires GPU in CI";
-        }
         if (!initialized_) {
             // Filament resources are at <build>/bin/resources/ relative
             // to the test executable.  Set the path explicitly so the
@@ -454,6 +446,17 @@ TEST_F(GaussianSplatRenderTest, RenderToImageSplatsAndMeshOcclusion) {
     scene->ShowGeometry("occluder_cube", true);
     RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
                          kRefMixedDepthGray, "mixed_shown",
+                         kMaxOcclusionOutOfTolerancePixels);
+
+    Eigen::Matrix4d moved_cube = Eigen::Matrix4d::Identity();
+    moved_cube(0, 3) = 10.0;
+    scene->SetGeometryTransform("occluder_cube", moved_cube);
+    RenderAndCheckGolden(*renderer, *scene, kRefColorGray, kRefDepthGray,
+                         "mixed_transformed");
+
+    scene->SetGeometryTransform("occluder_cube", Eigen::Matrix4d::Identity());
+    RenderAndCheckGolden(*renderer, *scene, kRefMixedColorGray,
+                         kRefMixedDepthGray, "mixed_transform_reset",
                          kMaxOcclusionOutOfTolerancePixels);
 
     scene->RemoveGeometry("occluder_cube");

@@ -190,6 +190,7 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 
 void FilamentRenderer::BeginFrame() {
     const bool run_gs_pipeline = gaussian_splat_renderer_ &&
+                                 gaussian_splat_renderer_->HasUsableBackend() &&
                                  ScenesHaveGaussianSplatGeometry(scenes_);
     rendered_views_.clear();
 
@@ -257,14 +258,22 @@ void FilamentRenderer::Draw() {
         // depth texture is fully produced before compute samples it.
 #if !defined(__APPLE__)
         if (gaussian_splat_renderer_ &&
+            gaussian_splat_renderer_->HasUsableBackend() &&
             ScenesHaveGaussianSplatGeometry(scenes_)) {
             // Wait for Filament's OpenGL scene draw to finish so the shared
             // depth texture is fully written before the composite pass reads
             // it.
             engine_.flushAndWait();
+            bool output_became_ready = false;
             for (FilamentView* view : rendered_views_) {
                 gaussian_splat_renderer_->RequestCompositeForView(*view);
                 gaussian_splat_renderer_->RenderCompositeStage(*view);
+                output_became_ready |=
+                        gaussian_splat_renderer_
+                                ->ConsumeOutputReadyRedrawRequest(*view);
+            }
+            if (output_became_ready && on_gaussian_composite_complete_) {
+                on_gaussian_composite_complete_();
             }
         }
 #endif
@@ -288,6 +297,7 @@ void FilamentRenderer::EndFrame() {
         renderer_->endFrame();
 #if defined(__APPLE__)
         if (gaussian_splat_renderer_ &&
+            gaussian_splat_renderer_->HasUsableBackend() &&
             ScenesHaveGaussianSplatGeometry(scenes_)) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
@@ -296,11 +306,15 @@ void FilamentRenderer::EndFrame() {
             // stalls the main thread behind expensive geometry compute
             // CBs that are ahead in the queue.
             bool any_composite = false;
+            bool output_became_ready = false;
             for (FilamentView* view : rendered_views_) {
                 any_composite |=
                         gaussian_splat_renderer_->RenderCompositeStage(*view);
-                if (gaussian_splat_renderer_
-                            ->ConsumeFollowupSceneRenderRequest(*view)) {
+                output_became_ready |=
+                        gaussian_splat_renderer_
+                                ->ConsumeOutputReadyRedrawRequest(*view);
+                if (gaussian_splat_renderer_->ConsumeFollowupSceneRenderRequest(
+                            *view)) {
                     for (const auto& [handle, scene] : scenes_) {
                         if (scene->SetRenderOnce(*view)) {
                             // The first composite after target recreation can
@@ -313,7 +327,8 @@ void FilamentRenderer::EndFrame() {
                     }
                 }
             }
-            if (any_composite && on_gaussian_composite_complete_) {
+            if ((any_composite || output_became_ready) &&
+                on_gaussian_composite_complete_) {
                 on_gaussian_composite_complete_();
             }
         }

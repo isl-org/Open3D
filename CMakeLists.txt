@@ -82,7 +82,7 @@ option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(WITH_IPP                "Use Intel Integrated Performance Primitives" ON )
 option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
-if(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS OR BUILD_SYCL_MODULE)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )

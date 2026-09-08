@@ -993,11 +993,14 @@ private:
                         vk::AccessFlagBits2::eShaderWrite |
                                 vk::AccessFlagBits2::eShaderRead,
                         vk::PipelineStageFlagBits2::eFragmentShader |
-                                vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                                vk::PipelineStageFlagBits2::
+                                        eEarlyFragmentTests |
                                 vk::PipelineStageFlagBits2::eLateFragmentTests,
                         vk::AccessFlagBits2::eShaderSampledRead |
-                                vk::AccessFlagBits2::eDepthStencilAttachmentRead |
-                                vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
+                                vk::AccessFlagBits2::
+                                        eDepthStencilAttachmentRead |
+                                vk::AccessFlagBits2::
+                                        eDepthStencilAttachmentWrite);
             }
         }
     }
@@ -1254,10 +1257,11 @@ private:
             VK_SUCCESS)
             return false;
 
-        // Record copy: transition image to TRANSFER_SRC, copy, transition to
-        // GENERAL (a valid layout for the next compute or transfer use).
+        // Preserve the caller's expected layout. Imported Filament color
+        // images return to SHADER_READ_ONLY_OPTIMAL after direct readback.
         BeginCmdBuf();
         auto& e = it->second;
+        const VkImageLayout original_layout = e.current_layout;
         const auto aspect = (e.format == VK_FORMAT_D32_SFLOAT)
                                     ? vk::ImageAspectFlagBits::eDepth
                                     : vk::ImageAspectFlagBits::eColor;
@@ -1271,8 +1275,8 @@ private:
                                vk::Buffer(staging), region);
         TransitionImageLayout(e.image, e.format,
                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                              VK_IMAGE_LAYOUT_GENERAL);
-        e.current_layout = VK_IMAGE_LAYOUT_GENERAL;
+                              original_layout);
+        e.current_layout = original_layout;
         SubmitAndWait();
 
         vmaInvalidateAllocation(vma_, alloc, 0, total);

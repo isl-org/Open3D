@@ -59,7 +59,7 @@ namespace rendering {
 /// filament::backend::VulkanPlatform::VulkanSharedContext, which is a nested
 /// class (not forward-declarable) whose header drags in BlueVK.  Filament
 /// receives it as an opaque `void*` through Engine::create(), so only the
-/// field layout matters.  Keep in sync with
+/// field layout matters.  When filament is updated, keep in sync with
 /// filament/backend/include/backend/platforms/VulkanPlatform.h.
 struct FilamentVulkanSharedContext {
     VkInstance instance = VK_NULL_HANDLE;
@@ -67,6 +67,9 @@ struct FilamentVulkanSharedContext {
     VkDevice logical_device = VK_NULL_HANDLE;
     std::uint32_t graphics_queue_family_index = 0xFFFFFFFFu;
     std::uint32_t graphics_queue_index = 0xFFFFFFFFu;
+    bool debug_utils_enabled = false;
+    bool debug_markers_supported = false;
+    bool multiview_supported = false;
 };
 
 /// Describes a single GPU image owned by Vulkan for sharing with Filament via

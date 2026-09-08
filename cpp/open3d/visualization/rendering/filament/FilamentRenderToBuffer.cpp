@@ -258,8 +258,10 @@ void FilamentRenderToBuffer::Render() {
     frame_done_ = false;
     scene_->HideRefractedMaterials();
 
-    const bool run_gs_pipeline =
-            gaussian_splat_renderer_ && scene_->HasGaussianSplatGeometry();
+    const bool run_gs_pipeline = gaussian_splat_renderer_ &&
+                                 gaussian_splat_renderer_->IsEnabled() &&
+                                 gaussian_splat_renderer_->HasUsableBackend() &&
+                                 scene_->HasGaussianSplatGeometry();
 
     if (run_gs_pipeline) {
         gaussian_splat_renderer_->RequestRedrawForView(*view_);

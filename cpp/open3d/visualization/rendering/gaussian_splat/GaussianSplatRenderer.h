@@ -118,6 +118,7 @@ public:
         bool has_valid_output = false;
         bool needs_geometry_render = true;
         bool needs_composite_render = true;
+        bool needs_output_ready_redraw = false;
         bool needs_followup_scene_render = false;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
@@ -133,6 +134,7 @@ public:
         virtual ~Backend() = default;
 
         virtual const char* GetName() const = 0;
+        virtual bool IsAvailable() const { return true; }
         virtual void BeginFrame(std::uint64_t frame_index) = 0;
         virtual void ForgetView(const FilamentView& view) = 0;
         virtual bool RenderGeometryStage(const FilamentView& view,
@@ -234,13 +236,19 @@ public:
     /// color target while the geometry pass inputs remain unchanged.
     void RequestCompositeForView(const FilamentView& view);
 
+    /// Returns and clears a request to redraw after a newly created output
+    /// target has received its first successful composite.
+    bool ConsumeOutputReadyRedrawRequest(const FilamentView& view);
+
     /// Returns and clears a one-shot cached scene render request created when
     /// a Metal output target is recreated.
     bool ConsumeFollowupSceneRenderRequest(const FilamentView& view);
 
     bool IsEnabled() const;
     void SetEnabled(bool enabled);
-    bool IsSupported() const;
+
+    /// Returns whether the selected backend can render Gaussian splats.
+    bool HasUsableBackend() const;
 
     bool HasOutput(const FilamentView& view) const;
     TextureHandle GetColorTexture(const FilamentView& view) const;

@@ -43,6 +43,8 @@ public:
 
     const char* GetName() const override { return name_; }
 
+    bool IsAvailable() const override { return false; }
+
     void BeginFrame(std::uint64_t) override {}
 
     void ForgetView(const FilamentView& view) override {
@@ -128,32 +130,6 @@ bool HasGsColorOutput(const GaussianSplatRenderer::OutputTargets& targets) {
 #endif
 }
 
-bool GaussianSplatBackendSupported(RenderingType backend) {
-    if (!EngineInstance::GetPlatform()) {
-        return false;
-    }
-
-    switch (backend) {
-        case RenderingType::kMetal:
-#if defined(__APPLE__)
-            return true;
-#else
-            return false;
-#endif
-        // Requires Filament's Vulkan backend for single-device image sharing.
-        case RenderingType::kOpenGL:
-            return false;
-        case RenderingType::kDefault:
-        case RenderingType::kVulkan:
-#if !defined(__APPLE__)
-            return GaussianSplatVulkanContext::GetInstance().IsValid();
-#else
-            return false;
-#endif
-    }
-    return false;
-}
-
 }  // namespace
 
 // ----- GaussianSplatRenderer -------------------------------------------------
@@ -218,7 +194,9 @@ bool ViewRenderDataEquals(const GaussianSplatRenderer::ViewRenderData& left,
 GaussianSplatRenderer::GaussianSplatRenderer(
         filament::Engine& engine, FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
-    enabled_ = GaussianSplatBackendSupported(EngineInstance::GetBackendType());
+    const auto backend = EngineInstance::GetBackendType();
+    enabled_ = backend == RenderingType::kMetal ||
+               backend == RenderingType::kVulkan;
     backend_ = CreateBackend(EngineInstance::GetBackendType(), resource_mgr_,
                              render_config_);
 }
@@ -326,6 +304,17 @@ void GaussianSplatRenderer::RequestCompositeForView(const FilamentView& view) {
     }
 }
 
+bool GaussianSplatRenderer::ConsumeOutputReadyRedrawRequest(
+        const FilamentView& view) {
+    auto it = outputs_.find(&view);
+    if (it == outputs_.end() || !it->second.needs_output_ready_redraw ||
+        !it->second.has_valid_output) {
+        return false;
+    }
+    it->second.needs_output_ready_redraw = false;
+    return true;
+}
+
 bool GaussianSplatRenderer::ConsumeFollowupSceneRenderRequest(
         const FilamentView& view) {
     auto it = outputs_.find(&view);
@@ -335,6 +324,10 @@ bool GaussianSplatRenderer::ConsumeFollowupSceneRenderRequest(
     }
     it->second.needs_followup_scene_render = false;
     return true;
+}
+
+bool GaussianSplatRenderer::HasUsableBackend() const {
+    return backend_ && backend_->IsAvailable();
 }
 
 void GaussianSplatRenderer::InvalidateOutputForView(FilamentView& view) {
@@ -370,13 +363,7 @@ void GaussianSplatRenderer::PruneOutputs(
 
 bool GaussianSplatRenderer::IsEnabled() const { return enabled_; }
 
-void GaussianSplatRenderer::SetEnabled(bool enabled) {
-    enabled_ = enabled && IsSupported();
-}
-
-bool GaussianSplatRenderer::IsSupported() const {
-    return GaussianSplatBackendSupported(EngineInstance::GetBackendType());
-}
+void GaussianSplatRenderer::SetEnabled(bool enabled) { enabled_ = enabled; }
 
 bool GaussianSplatRenderer::HasOutput(const FilamentView& view) const {
     auto found = outputs_.find(&view);
@@ -531,7 +518,8 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     targets.has_valid_output = false;
     targets.needs_geometry_render = true;
     targets.needs_composite_render = true;
-        targets.needs_followup_scene_render =
+    targets.needs_output_ready_redraw = true;
+    targets.needs_followup_scene_render =
             EngineInstance::GetBackendType() == RenderingType::kMetal;
     return targets;
 }
@@ -573,6 +561,7 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.has_valid_output = false;
     targets.needs_geometry_render = true;
     targets.needs_composite_render = true;
+    targets.needs_output_ready_redraw = false;
     targets.needs_followup_scene_render = false;
     targets.wants_depth_readback = false;
     targets.last_scene_change_id = 0;

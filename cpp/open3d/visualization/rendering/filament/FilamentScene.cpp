@@ -1153,7 +1153,6 @@ void FilamentScene::RemoveGeometry(const std::string& object_name) {
         // shared revision so both Metal and Vulkan rerun GS compositing.
         MarkGaussianSplatChanged();
     }
-
 }
 
 void FilamentScene::ShowGeometry(const std::string& object_name, bool show) {
@@ -1231,6 +1230,7 @@ FilamentScene::GetGeometryTransformInstance(RenderableGeometry* geom) {
 void FilamentScene::SetGeometryTransform(const std::string& object_name,
                                          const Transform& transform) {
     auto geoms = GetGeometry(object_name);
+    bool scene_changed = false;
     for (auto* g : geoms) {
         auto itransform = GetGeometryTransformInstance(g);
         if (itransform.isValid()) {
@@ -1239,7 +1239,11 @@ void FilamentScene::SetGeometryTransform(const std::string& object_name,
             transform_mgr.setTransform(
                     itransform,
                     converters::FilamentMatrixFromEigenMatrix(ematrix));
+            scene_changed = true;
         }
+    }
+    if (scene_changed) {
+        MarkGaussianSplatChanged();
     }
 }
 
@@ -1303,13 +1307,18 @@ void FilamentScene::GeometryShadows(const std::string& object_name,
 void FilamentScene::SetGeometryCulling(const std::string& object_name,
                                        bool enable) {
     auto geoms = GetGeometry(object_name);
+    bool scene_changed = false;
     for (auto* g : geoms) {
+        scene_changed = scene_changed || g->culling_enabled != enable;
         g->culling_enabled = enable;
         if (g->filament_entity.isNull()) continue;
         auto& renderable_mgr = engine_.getRenderableManager();
         filament::RenderableManager::Instance inst =
                 renderable_mgr.getInstance(g->filament_entity);
         renderable_mgr.setCulling(inst, enable);
+    }
+    if (scene_changed) {
+        MarkGaussianSplatChanged();
     }
 }
 

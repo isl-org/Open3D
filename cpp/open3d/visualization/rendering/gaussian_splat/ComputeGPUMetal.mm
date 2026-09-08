@@ -419,7 +419,7 @@ public:
         id<MTLTexture> src =
                 (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
         return DownloadTextureImpl(src, width, height, sizeof(float), 1, &out,
-                       nullptr);
+                                   nullptr);
     }
 
     bool DownloadTextureR16UI(std::uintptr_t tex,
@@ -429,8 +429,8 @@ public:
         if (tex == 0 || width == 0 || height == 0) return false;
         id<MTLTexture> src =
                 (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
-        return DownloadTextureImpl(src, width, height, sizeof(std::uint16_t),
-                       1, nullptr, &out);
+        return DownloadTextureImpl(src, width, height, sizeof(std::uint16_t), 1,
+                                   nullptr, &out);
     }
 
     bool DownloadTextureRGBA16F(std::uintptr_t tex,
@@ -441,7 +441,7 @@ public:
         id<MTLTexture> src =
                 (__bridge id<MTLTexture>)reinterpret_cast<void*>(tex);
         return DownloadTextureImpl(src, width, height,
-                       4 * sizeof(std::uint16_t), 4, nullptr, &out);
+                                   4 * sizeof(std::uint16_t), 4, nullptr, &out);
     }
 
     void BindImage(std::uint32_t binding,
@@ -566,7 +566,7 @@ private:
                              std::uint32_t width,
                              std::uint32_t height,
                              std::size_t bytes_per_pixel,
-                     std::size_t elements_per_pixel,
+                             std::size_t elements_per_pixel,
                              std::vector<float>* f32_out,
                              std::vector<std::uint16_t>* u16_out) {
         if (!src || !queue_) return false;
@@ -603,8 +603,7 @@ private:
             f32_out->resize(static_cast<std::size_t>(width) * height *
                             elements_per_pixel);
             for (std::uint32_t row = 0; row < height; ++row) {
-                std::memcpy(f32_out->data() +
-                                    row * width * elements_per_pixel,
+                std::memcpy(f32_out->data() + row * width * elements_per_pixel,
                             static_cast<const uint8_t*>(ptr) + row * row_bytes,
                             payload_row_bytes);
             }
@@ -612,8 +611,7 @@ private:
             u16_out->resize(static_cast<std::size_t>(width) * height *
                             elements_per_pixel);
             for (std::uint32_t row = 0; row < height; ++row) {
-                std::memcpy(u16_out->data() +
-                                    row * width * elements_per_pixel,
+                std::memcpy(u16_out->data() + row * width * elements_per_pixel,
                             static_cast<const uint8_t*>(ptr) + row * row_bytes,
                             payload_row_bytes);
             }
