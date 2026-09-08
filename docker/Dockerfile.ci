@@ -217,7 +217,7 @@ RUN \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=OFF \
-          -DBUILD_FILAMENT_FROM_SOURCE=ON \
+          -DBUILD_FILAMENT_FROM_SOURCE=$([ "$(uname -m)" = "aarch64" ] && echo ON || echo OFF) \
           -DCMAKE_INSTALL_PREFIX=~/open3d_install \
           .. \
  && export NPROC=$(($(nproc)+2)) \

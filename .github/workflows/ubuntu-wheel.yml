@@ -82,7 +82,7 @@ jobs:
         # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
         # This bare runner (unlike the docker_build.sh image) does not have
         # it installed by default.
-        run: sudo apt-get update && sudo apt-get install --yes libegl1
+        run: util/install_deps_ubuntu.sh assume-yes
       - name: Run C++ unit tests
         run: |
           source util/ci_utils.sh
@@ -258,7 +258,7 @@ jobs:
         # (see cpp/open3d/visualization/visualizer/EGLOffscreenContext.*).
         # This bare runner (unlike the docker_build.sh image) does not have
         # it installed by default.
-        run: sudo apt-get update && sudo apt-get install --yes libegl1
+        run: util/install_deps_ubuntu.sh assume-yes
       - name: Test Python package
         run: |
           python -V

@@ -766,6 +766,11 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
     if (const auto* pc =
                 dynamic_cast<const t::geometry::PointCloud*>(&geometry);
         pc && pc->IsGaussianSplat()) {
+#if !OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT && !defined(__APPLE__)
+        utility::LogError(
+                "Gaussian splat rendering requires Open3D's patched Filament "
+                "library on this platform.");
+#endif
         if (geometries_.count(object_name)) {
             RemoveGeometry(object_name);
         }

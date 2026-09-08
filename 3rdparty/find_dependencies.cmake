@@ -1427,11 +1427,11 @@ if(BUILD_GUI)
             message(STATUS "Building third-party library Filament from source")
             if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
                 CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
-                AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
+                AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17))
                 set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
                 set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
             else()
-                message(STATUS "Filament can only be built with Clang >= 7")
+                message(STATUS "Filament requires Clang >= 17 for C++20 ranges support")
                 # First, check default version, because the user may have configured
                 # a particular version as default for a reason.
                 find_program(CLANG_DEFAULT_CC NAMES clang)
@@ -1439,7 +1439,7 @@ if(BUILD_GUI)
                 if(CLANG_DEFAULT_CC AND CLANG_DEFAULT_CXX)
                     execute_process(COMMAND ${CLANG_DEFAULT_CXX} --version OUTPUT_VARIABLE clang_version)
                     if(clang_version MATCHES "clang version ([0-9]+)")
-                        if (CMAKE_MATCH_1 GREATER_EQUAL 7)
+                        if(CMAKE_MATCH_1 GREATER_EQUAL 17)
                             message(STATUS "Using ${CLANG_DEFAULT_CXX} to build Filament")
                             set(FILAMENT_C_COMPILER "${CLANG_DEFAULT_CC}")
                             set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CXX}")
@@ -1448,42 +1448,21 @@ if(BUILD_GUI)
                 endif()
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                    find_program(CLANG_VERSIONED_CC NAMES
-                                 clang-19
-                                 clang-18
-                                 clang-17
-                                 clang-16
-                                 clang-15
-                                 clang-14
-                                 clang-13
-                                 clang-12
-                                 clang-11
-                                 clang-10
-                                 clang-9
-                                 clang-8
-                                 clang-7
-                    )
-                    find_program(CLANG_VERSIONED_CXX NAMES
-                                 clang++-19
-                                 clang++-18
-                                 clang++-17
-                                 clang++-16
-                                 clang++-15
-                                 clang++-14
-                                 clang++-13
-                                 clang++-12
-                                 clang++-11
-                                 clang++-10
-                                 clang++-9
-                                 clang++-8
-                                 clang++-7
-                    )
+                    set(filament_clang_candidates
+                        clang-19 clang-18 clang-17)
+                    set(filament_clangxx_candidates
+                        clang++-19 clang++-18 clang++-17)
+                    find_program(CLANG_VERSIONED_CC NAMES ${filament_clang_candidates})
+                    find_program(CLANG_VERSIONED_CXX NAMES ${filament_clangxx_candidates})
                     if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                         set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                         set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
                         message(STATUS "Using ${CLANG_VERSIONED_CXX} to build Filament")
                     else()
-                        message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
+                        message(FATAL_ERROR
+                            "Need Clang >= 17 with matching libc++/libc++abi to compile "
+                            "Filament from source. It uses C++20 ranges algorithms "
+                            "unavailable in older libc++ releases.")
                     endif()
                 endif()
             endif()
@@ -1497,9 +1476,11 @@ if(BUILD_GUI)
                 # find_library. Therefore, when compiling Filament from source,
                 # we explicitly find the corresponding path based on the clang
                 # version.
-                execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-                if(clang_version MATCHES "clang version ([0-9]+)")
-                    set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+                if(NOT CLANG_LIBDIR)
+                    execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+                    if(clang_version MATCHES "clang version ([0-9]+)")
+                        set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+                    endif()
                 endif()
             endif()
             include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
@@ -1594,8 +1575,12 @@ if(BUILD_GUI)
             else()
                 message(FATAL_ERROR "Cannot find matching libc++ and libc++abi libraries with version >=7.")
             endif()
-            find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
-            find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+            unset(CPP_LIBRARY CACHE)
+            unset(CPPABI_LIBRARY CACHE)
+            find_library(CPP_LIBRARY c++ PATHS ${CLANG_LIBDIR}
+                         ${CLANG_LIBDIR}/x86_64-unknown-linux-gnu REQUIRED NO_DEFAULT_PATH)
+            find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR}
+                         ${CLANG_LIBDIR}/x86_64-unknown-linux-gnu REQUIRED NO_DEFAULT_PATH)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++

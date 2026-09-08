@@ -188,6 +188,9 @@ jobs:
           source util/ci_utils.sh
           install_docs_dependencies "${GITHUB_WORKSPACE}/open3d_ml"
 
+      - name: Install Open3D runtime dependencies
+        run: util/install_deps_ubuntu.sh assume-yes
+
       - name: Install Open3D wheel
         run: python -m pip install open3d*.whl
 

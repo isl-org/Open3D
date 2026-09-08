@@ -121,6 +121,10 @@ jobs:
           # Write install path to GITHUB_PATH to persist for future steps
           $glslangBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\tools\glslang"
           $glslangBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install Lavapipe
+        shell: pwsh
+        run: ./util/install_lavapipe.ps1
   
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -664,6 +668,10 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install Lavapipe
+        shell: pwsh
+        run: ./util/install_lavapipe.ps1
 
       - name: Checkout Open3D-ML
         uses: actions/checkout@v4

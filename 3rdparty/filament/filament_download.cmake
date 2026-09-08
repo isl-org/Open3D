@@ -1,6 +1,9 @@
 include(ExternalProject)
 
 set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils shaders)
+if(NOT DEFINED FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT)
+    set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT OFF)
+endif()
 
 if (FILAMENT_PRECOMPILED_ROOT)
     if (EXISTS "${FILAMENT_PRECOMPILED_ROOT}")
@@ -15,6 +18,7 @@ else()
     # Setup download links
     if(WIN32)
         set(FILAMENT_BASE_URL https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76)
+        set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT ON)
         if (STATIC_WINDOWS_RUNTIME)
             set(FILAMENT_RELEASE_TAG mt)
             set(FILAMENT_RELEASE_SHA256 955CD3634C670A30FC9FB46FF463BFFEC2D65765442EB9A7C1AFA8006C265BBD)
@@ -44,21 +48,18 @@ else()
     elseif(APPLE)
         set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.76.0/filament-v1.76.0-mac.tgz)
         set(FILAMENT_SHA256 6f067ac0931b305c32be108679cf5b0c59a3fb51753d0c64d60d290b4f28b2db)
-    else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
-        execute_process(COMMAND ldd --version OUTPUT_VARIABLE ldd_version)
-        string(REGEX MATCH "([0-9]+\.)+[0-9]+" glibc_version ${ldd_version})
-        if(${glibc_version} VERSION_LESS "2.33")
+    else()
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
             set(FILAMENT_URL
-                    https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.49.1-ubuntu20.04.tgz)
-            set(FILAMENT_SHA256 f4ba020f0ca63540e2f86b36d1728a1ea063ddd5eb55b0ba6fc621ee815a60a7)
-            message(STATUS "GLIBC version ${glibc_version} found: Using "
-                    "Open3D built Filament binary for Ubuntu 20.04.")
+                https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76/filament-v1.76.0-linux-22.04.tgz)
+            set(FILAMENT_SHA256 ad0c349bba319012785b85c1ef978c633600ef1da3c0ae97b064a828a243adbf)
+            set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT ON)
+            message(STATUS "Using Open3D patched Filament binary for Linux x86_64.")
         else()
             set(FILAMENT_URL
                     https://github.com/google/filament/releases/download/v1.76.0/filament-v1.76.0-linux.tgz)
             set(FILAMENT_SHA256 08f96fbce1432d7a5faf34b3e96a186639b89663f8a215e6d2c36ad6cb73fa4a)
-            message(STATUS "GLIBC version ${glibc_version} found: Using "
-                    "Google Filament binary.")
+            message(STATUS "Using upstream Filament binary for Linux ${CMAKE_SYSTEM_PROCESSOR}. Gaussian Splat rendering will not be available.")
         endif()
     endif()
 
