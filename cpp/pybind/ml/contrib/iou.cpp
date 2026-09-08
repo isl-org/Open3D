@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -23,13 +23,13 @@ py::array IouBevCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
-    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
     core::AssertTensorDtype(boxes_b_tensor, core::Float32);
-    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -47,13 +47,13 @@ py::array Iou3dCPU(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous();
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
-    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous();
     core::AssertTensorDtype(boxes_b_tensor, core::Float32);
-    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -73,13 +73,13 @@ py::array IouBevCUDA(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
-    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 5});
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 5});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
     core::AssertTensorDtype(boxes_b_tensor, core::Float32);
-    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 5});
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 5});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -97,13 +97,13 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
     core::Tensor boxes_a_tensor =
             core::PyArrayToTensor(boxes_a, true).Contiguous().To(cuda_device);
     core::AssertTensorDtype(boxes_a_tensor, core::Float32);
-    core::AssertTensorShape(boxes_a_tensor, {utility::nullopt, 7});
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 7});
     int64_t num_a = boxes_a_tensor.GetLength();
 
     core::Tensor boxes_b_tensor =
             core::PyArrayToTensor(boxes_b, true).Contiguous().To(cuda_device);
     core::AssertTensorDtype(boxes_b_tensor, core::Float32);
-    core::AssertTensorShape(boxes_b_tensor, {utility::nullopt, 7});
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 7});
     int64_t num_b = boxes_b_tensor.GetLength();
 
     core::Tensor iou_tensor = core::Tensor(
@@ -111,6 +111,56 @@ py::array Iou3dCUDA(py::array boxes_a, py::array boxes_b) {
             core::Float32, cuda_device);
 
     IoU3dCUDAKernel(boxes_a_tensor.GetDataPtr<float>(),
+                    boxes_b_tensor.GetDataPtr<float>(),
+                    iou_tensor.GetDataPtr<float>(), num_a, num_b);
+    return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
+}
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+py::array IouBevSYCL(py::array boxes_a, py::array boxes_b) {
+    core::Device sycl_device("SYCL:0");
+    core::Tensor boxes_a_tensor =
+            core::PyArrayToTensor(boxes_a, true).Contiguous().To(sycl_device);
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 5});
+    int64_t num_a = boxes_a_tensor.GetLength();
+
+    core::Tensor boxes_b_tensor =
+            core::PyArrayToTensor(boxes_b, true).Contiguous().To(sycl_device);
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 5});
+    int64_t num_b = boxes_b_tensor.GetLength();
+
+    core::Tensor iou_tensor = core::Tensor(
+            {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
+            core::Float32, sycl_device);
+
+    IoUBevSYCLKernel(sycl_device, boxes_a_tensor.GetDataPtr<float>(),
+                     boxes_b_tensor.GetDataPtr<float>(),
+                     iou_tensor.GetDataPtr<float>(), num_a, num_b);
+    return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
+}
+
+py::array Iou3dSYCL(py::array boxes_a, py::array boxes_b) {
+    core::Device sycl_device("SYCL:0");
+    core::Tensor boxes_a_tensor =
+            core::PyArrayToTensor(boxes_a, true).Contiguous().To(sycl_device);
+    core::AssertTensorDtype(boxes_a_tensor, core::Float32);
+    core::AssertTensorShape(boxes_a_tensor, {std::nullopt, 7});
+    int64_t num_a = boxes_a_tensor.GetLength();
+
+    core::Tensor boxes_b_tensor =
+            core::PyArrayToTensor(boxes_b, true).Contiguous().To(sycl_device);
+    core::AssertTensorDtype(boxes_b_tensor, core::Float32);
+    core::AssertTensorShape(boxes_b_tensor, {std::nullopt, 7});
+    int64_t num_b = boxes_b_tensor.GetLength();
+
+    core::Tensor iou_tensor = core::Tensor(
+            {boxes_a_tensor.GetLength(), boxes_b_tensor.GetLength()},
+            core::Float32, sycl_device);
+
+    IoU3dSYCLKernel(sycl_device, boxes_a_tensor.GetDataPtr<float>(),
                     boxes_b_tensor.GetDataPtr<float>(),
                     iou_tensor.GetDataPtr<float>(), num_a, num_b);
     return core::TensorToPyArray(iou_tensor.To(core::Device("CPU:0")));
@@ -126,6 +176,13 @@ void pybind_contrib_iou_definitions(py::module& m_contrib) {
     // data will be copy to and from the CUDA device.
     m_contrib.def("iou_bev_cuda", &IouBevCUDA, "boxes_a"_a, "boxes_b"_a);
     m_contrib.def("iou_3d_cuda", &Iou3dCUDA, "boxes_a"_a, "boxes_b"_a);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+    // These SYCL functions still use numpy arrays as input and output, i.e.
+    // data will be copied to and from the SYCL device.
+    m_contrib.def("iou_bev_sycl", &IouBevSYCL, "boxes_a"_a, "boxes_b"_a);
+    m_contrib.def("iou_3d_sycl", &Iou3dSYCL, "boxes_a"_a, "boxes_b"_a);
 #endif
 }
 

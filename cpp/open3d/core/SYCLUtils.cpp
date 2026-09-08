@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -30,57 +30,6 @@
 namespace open3d {
 namespace core {
 namespace sy {
-
-int SYCLDemo() {
-#ifdef BUILD_SYCL_MODULE
-    // Ref: https://intel.github.io/llvm-docs/GetStartedGuide.html
-    // Creating buffer of 4 ints to be used inside the kernel code.
-    sycl::buffer<int, 1> buffer(4);
-
-    // Creating SYCL queue.
-    sycl::queue q;
-
-    // Size of index space for kernel.
-    sycl::range<1> num_workloads{buffer.size()};
-
-    // Submitting command group(work) to q.
-    q.submit([&](sycl::handler &cgh) {
-        // Getting write only access to the buffer on a device.
-        auto accessor = buffer.get_access<sycl::access::mode::write>(cgh);
-        // Execute kernel.
-        cgh.parallel_for<class FillBuffer>(
-                num_workloads, [=](sycl::id<1> WIid) {
-                    // Fill buffer with indexes.
-                    accessor[WIid] = (int)WIid.get(0);
-                });
-    });
-
-    // Getting access to the buffer on the host.
-    // Implicit barrier waiting for q to complete the work.
-    const auto host_accessor = buffer.get_host_access();
-
-    // Check the results.
-    bool mismatch_found = false;
-    for (size_t i = 0; i < buffer.size(); ++i) {
-        if (host_accessor[i] != i) {
-            utility::LogInfo("Mismatch found at index {}: expected {}, got {}.",
-                             i, i, host_accessor[i]);
-            mismatch_found = true;
-        }
-    }
-
-    if (mismatch_found) {
-        utility::LogInfo("SYCLDemo failed!");
-        return -1;
-    } else {
-        utility::LogInfo("SYCLDemo passed!");
-        return 0;
-    }
-#else
-    utility::LogInfo("SYCLDemo is not compiled with BUILD_SYCL_MODULE=ON.");
-    return -1;
-#endif
-}
 
 #ifdef BUILD_SYCL_MODULE
 
@@ -212,18 +161,19 @@ bool IsDeviceAvailable(const Device &device) {
 #endif
 }
 
-std::string GetDeviceType(const Device &device) {
+SYCLDevice GetSYCLDeviceProperties(const Device &device) {
 #ifdef BUILD_SYCL_MODULE
-    if (IsDeviceAvailable(device)) {
-        return SYCLContext::GetInstance()
-                .GetDeviceProperties(device)
-                .device_type;
-    } else {
-        return "";
+    if (!IsDeviceAvailable(device)) {
+        return SYCLDevice{};
     }
+    return SYCLContext::GetInstance().GetDeviceProperties(device);
 #else
-    return "";
+    return SYCLDevice{};
 #endif
+}
+
+bool IsCPUDevice(const Device &device) {
+    return GetSYCLDeviceProperties(device).device_type == "cpu";
 }
 
 std::vector<Device> GetAvailableSYCLDevices() {

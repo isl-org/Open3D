@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //***************************************************************************************/
@@ -58,3 +58,57 @@ void three_interpolate_grad_launcher(int b,
                                      const int *idx,
                                      const float *weight,
                                      float *grad_points);
+
+void three_nn_launcher_cpu(int b,
+                           int n,
+                           int m,
+                           const float *unknown,
+                           const float *known,
+                           float *dist2,
+                           int *idx);
+
+void three_interpolate_launcher_cpu(int b,
+                                    int c,
+                                    int m,
+                                    int n,
+                                    const float *points,
+                                    const int *idx,
+                                    const float *weight,
+                                    float *out);
+
+void three_interpolate_grad_launcher_cpu(int b,
+                                         int c,
+                                         int n,
+                                         int m,
+                                         const float *grad_out,
+                                         const int *idx,
+                                         const float *weight,
+                                         float *grad_points);
+
+#ifdef BUILD_SYCL_MODULE
+void three_nn_launcher_sycl(int b,
+                            int n,
+                            int m,
+                            const float *unknown,
+                            const float *known,
+                            float *dist2,
+                            int *idx);
+
+void three_interpolate_launcher_sycl(int b,
+                                     int c,
+                                     int m,
+                                     int n,
+                                     const float *points,
+                                     const int *idx,
+                                     const float *weight,
+                                     float *out);
+
+void three_interpolate_grad_launcher_sycl(int b,
+                                          int c,
+                                          int n,
+                                          int m,
+                                          const float *grad_out,
+                                          const int *idx,
+                                          const float *weight,
+                                          float *grad_points);
+#endif

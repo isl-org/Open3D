@@ -1,0 +1,39 @@
+--- a/contrib/draco/cmake/draco_flags.cmake
++++ b/contrib/draco/cmake/draco_flags.cmake
+@@ -226,14 +226,14 @@ endmacro()
+ macro(draco_set_cxx_flags)
+   unset(cxx_flag_lists)
+ 
+-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
++  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU|IntelLLVM")
+     list(APPEND cxx_flag_lists draco_base_cxx_flags)
+   endif()
+ 
+   # Append clang flags after the base set to allow -Wno* overrides to take
+   # effect. Some of the base flags may enable a large set of warnings, e.g.,
+   # -Wall.
+-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
++  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|IntelLLVM")
+     list(APPEND cxx_flag_lists draco_clang_cxx_flags)
+   endif()
+ 
+--- a/contrib/draco/cmake/draco_build_definitions.cmake
++++ b/contrib/draco/cmake/draco_build_definitions.cmake
+@@ -96,7 +96,7 @@ macro(draco_set_build_definitions)
+     endif()
+ 
+     if(NOT DRACO_DEBUG_COMPILER_WARNINGS)
+-      if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
++      if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|IntelLLVM")
+         list(APPEND draco_clang_cxx_flags
+                     "-Wno-implicit-const-int-float-conversion")
+       else()
+@@ -113,7 +113,7 @@ macro(draco_set_build_definitions)
+ 
+   set_draco_target()
+ 
+-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
++  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|IntelLLVM")
+     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "6")
+       # Quiet warnings in copy-list-initialization where {} elision has always
+       # been allowed.

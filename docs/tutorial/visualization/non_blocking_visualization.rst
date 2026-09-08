@@ -3,6 +3,14 @@
 Non-blocking visualization
 -------------------------------------
 
+.. note::
+
+    This tutorial uses the legacy OpenGL ``Visualizer`` API. For new applications,
+    prefer the Filament-based visualization stack, which provides physically based
+    rendering, remote visualization, GUI controls, and 3D Gaussian splatting. See
+    :doc:`/tutorial/visualization/index` and
+    :doc:`/tutorial/visualization/gaussian_splatting`.
+
 ``draw_geometries()`` is a useful function to get a quick overview of static geometries. However, this function holds a process until a visualization window is closed. This is not optimal when geometry is updated and needs to be visualized without closing the window. This tutorial introduces an example to customize the rendering loop.
 
 Review draw_geometries

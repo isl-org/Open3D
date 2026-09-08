@@ -10,6 +10,7 @@ target_sources(tests PRIVATE
     LineSet.cpp
     Octree.cpp
     PointCloud.cpp
+    PointCloudSmoothing.cpp
     RGBDImage.cpp
     TetraMesh.cpp
     TriangleMesh.cpp

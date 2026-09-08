@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -18,6 +18,14 @@ torch::Tensor RaggedToDenseCPU(const torch::Tensor& values,
 #ifdef BUILD_CUDA_MODULE
 template <class T>
 torch::Tensor RaggedToDenseCUDA(const torch::Tensor& values,
+                                const torch::Tensor& row_splits,
+                                const int64_t out_col_size,
+                                const torch::Tensor& default_value);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class T>
+torch::Tensor RaggedToDenseSYCL(const torch::Tensor& values,
                                 const torch::Tensor& row_splits,
                                 const int64_t out_col_size,
                                 const torch::Tensor& default_value);

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ public:
 
     bool IsActiveWindow() const;
 
-    /// Sets \param w as widget with text focus.
+    /// Sets \p w as widget with text focus.
     void SetFocusWidget(Widget* w);
 
     void AddChild(std::shared_ptr<Widget> w);
@@ -139,6 +139,12 @@ public:
     void CloseDialog();
 
     void ShowMessageBox(const char* title, const char* message);
+
+    /// Copies text to the system clipboard.
+    void SetClipboardText(const std::string& text);
+
+    /// Gets text from the system clipboard.
+    std::string GetClipboardText() const;
 
     /// This is for internal use in rare circumstances when the destructor
     /// will not be called in a timely fashion.

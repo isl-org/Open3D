@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #include "open3d/Open3D.h"
@@ -23,7 +23,7 @@ void PrintHelp() {
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --depth_max [=3.0]");
-    utility::LogInfo("    --device [CPU:0]");
+        utility::LogInfo("    --device [CPU:0, CUDA:0, or SYCL:0]");
     utility::LogInfo("    --raycast");
     utility::LogInfo("    --mesh");
     utility::LogInfo("    --pointcloud");

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -18,6 +18,30 @@ namespace gui {
 
 void* GetNativeDrawable(GLFWwindow* glfw_window) {
     return glfwGetWin32Window(glfw_window);
+}
+
+void SetNativeWindowIcon(GLFWwindow* glfw_window) {
+    HWND window = glfwGetWin32Window(glfw_window);
+    if (!window) {
+        return;
+    }
+    HINSTANCE instance = GetModuleHandle(nullptr);
+    HICON small_icon = static_cast<HICON>(LoadImage(
+            instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXSMICON),
+            GetSystemMetrics(SM_CYSMICON), 0));
+    HICON large_icon = static_cast<HICON>(LoadImage(
+            instance, "IDI_ICON1", IMAGE_ICON, GetSystemMetrics(SM_CXICON),
+            GetSystemMetrics(SM_CYICON), 0));
+    if (small_icon && large_icon) {
+        SendMessage(window, WM_SETICON, ICON_SMALL,
+                    reinterpret_cast<LPARAM>(small_icon));
+        SendMessage(window, WM_SETICON, ICON_BIG,
+                    reinterpret_cast<LPARAM>(large_icon));
+        SetClassLongPtr(window, GCLP_HICON,
+                        reinterpret_cast<LONG_PTR>(large_icon));
+        SetClassLongPtr(window, GCLP_HICONSM,
+                        reinterpret_cast<LONG_PTR>(small_icon));
+    }
 }
 
 void PostNativeExposeEvent(GLFWwindow* glfw_window) {

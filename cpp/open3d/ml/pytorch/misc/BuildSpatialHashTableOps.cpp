@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -21,6 +21,16 @@ void BuildSpatialHashTableCPU(const torch::Tensor& points,
 #ifdef BUILD_CUDA_MODULE
 template <class T>
 void BuildSpatialHashTableCUDA(const torch::Tensor& points,
+                               double radius,
+                               const torch::Tensor& points_row_splits,
+                               const std::vector<uint32_t>& hash_table_splits,
+                               torch::Tensor& hash_table_index,
+                               torch::Tensor& hash_table_cell_splits);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class T>
+void BuildSpatialHashTableSYCL(const torch::Tensor& points,
                                double radius,
                                const torch::Tensor& points_row_splits,
                                const std::vector<uint32_t>& hash_table_splits,
@@ -96,6 +106,13 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> BuildSpatialHashTable(
 #else
         TORCH_CHECK(false,
                     "BuildSpatialHashTable was not compiled with CUDA support")
+#endif
+    } else if (points.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL(float, BuildSpatialHashTableSYCL)
+#else
+        TORCH_CHECK(false,
+                    "BuildSpatialHashTable was not compiled with SYCL support")
 #endif
     } else {
         CALL(float, BuildSpatialHashTableCPU)

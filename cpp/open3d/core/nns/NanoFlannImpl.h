@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #pragma once
@@ -235,9 +235,9 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                         radius = radius * radius;
                     }
 
-                    holder_->index_->radiusSearch(&queries[i * dimension],
-                                                  radius, search_result,
-                                                  params);
+                    static_cast<void>(holder_->index_->radiusSearch(
+                            &queries[i * dimension], radius, search_result,
+                            params));
 
                     int num_neighbors = 0;
                     for (const auto &idx_dist : search_result) {

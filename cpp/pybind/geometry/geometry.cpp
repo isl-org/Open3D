@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,16 +17,9 @@ namespace geometry {
 void pybind_geometry_classes_declarations(py::module &m) {
     py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
             geometry(m, "Geometry", "The base geometry class.");
-    py::enum_<Geometry::GeometryType> geometry_type(geometry, "Type",
-                                                    py::arithmetic());
-    // Trick to write docs without listing the members in the enum class again.
-    geometry_type.attr("__doc__") = docstring::static_property(
-            py::cpp_function([](py::handle arg) -> std::string {
-                return "Enum class for Geometry types.";
-            }),
-            py::none(), py::none(), "");
-
-    geometry_type.value("Unspecified", Geometry::GeometryType::Unspecified)
+    py::native_enum<Geometry::GeometryType>(geometry, "Type", "enum.Enum",
+                                            "Enum class for Geometry types.")
+            .value("Unspecified", Geometry::GeometryType::Unspecified)
             .value("PointCloud", Geometry::GeometryType::PointCloud)
             .value("VoxelGrid", Geometry::GeometryType::VoxelGrid)
             .value("LineSet", Geometry::GeometryType::LineSet)
@@ -36,7 +29,8 @@ void pybind_geometry_classes_declarations(py::module &m) {
             .value("Image", Geometry::GeometryType::Image)
             .value("RGBDImage", Geometry::GeometryType::RGBDImage)
             .value("TetraMesh", Geometry::GeometryType::TetraMesh)
-            .export_values();
+            .export_values()
+            .finalize();
     py::class_<Geometry3D, PyGeometry3D<Geometry3D>,
                std::shared_ptr<Geometry3D>, Geometry>
             geometry3d(m, "Geometry3D",
@@ -52,21 +46,44 @@ void pybind_geometry_classes_declarations(py::module &m) {
 void pybind_geometry_classes_definitions(py::module &m) {
     // open3d.geometry functions
     m.def("get_rotation_matrix_from_xyz", &Geometry3D::GetRotationMatrixFromXYZ,
+          "Returns a rotation matrix from rotations around the X, Y, and Z "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yzx", &Geometry3D::GetRotationMatrixFromYZX,
+          "Returns a rotation matrix from rotations around the Y, Z, and X "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zxy", &Geometry3D::GetRotationMatrixFromZXY,
+          "Returns a rotation matrix from rotations around the Z, X, and Y "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_xzy", &Geometry3D::GetRotationMatrixFromXZY,
+          "Returns a rotation matrix from rotations around the X, Z, and Y "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_zyx", &Geometry3D::GetRotationMatrixFromZYX,
+          "Returns a rotation matrix from rotations around the Z, Y, and X "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_yxz", &Geometry3D::GetRotationMatrixFromYXZ,
+          "Returns a rotation matrix from rotations around the Y, X, and Z "
+          "axes "
+          "in that order. The rotation is specified in radians.",
           "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
-          &Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromAxisAngle,
+          "Returns a rotation matrix from an axis-angle rotation. The input is "
+          "an axis-angle vector in radians.",
+          "rotation"_a);
     m.def("get_rotation_matrix_from_quaternion",
-          &Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
+          &Geometry3D::GetRotationMatrixFromQuaternion,
+          "Returns a rotation matrix from a quaternion in [w, x, y, z] order.",
+          "rotation"_a);
 
     // open3d.geometry.Geometry
     auto geometry = static_cast<py::class_<Geometry, PyGeometry<Geometry>,

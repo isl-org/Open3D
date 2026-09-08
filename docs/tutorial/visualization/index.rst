@@ -10,4 +10,6 @@ Visualization
     headless_rendering
     cpu_rendering
     web_visualizer
+    draw_plotly
     tensorboard_plugin
+    gaussian_splatting

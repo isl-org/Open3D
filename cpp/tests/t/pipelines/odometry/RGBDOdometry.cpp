@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -21,10 +21,11 @@
 namespace open3d {
 namespace tests {
 
-class OdometryPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Odometry,
-                         OdometryPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class OdometryPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Odometry,
+        OdometryPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(

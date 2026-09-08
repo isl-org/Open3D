@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Torch specific machine learning functions."""
@@ -12,15 +12,15 @@ import torch as _torch
 from open3d import _build_config
 
 if not _build_config["Pytorch_VERSION"]:
-    raise Exception('Open3D was not built with PyTorch support!')
+    raise ImportError('Open3D was not built with PyTorch support!')
 _o3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
 # Check match with PyTorch version, any patch level is OK
 if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:
     match_torch_ver = '.'.join(
         str(v) for v in _o3d_torch_version.release[:2] + ('*',))
-    raise Exception('Version mismatch: Open3D needs PyTorch version {}, but '
-                    'version {} is installed!'.format(match_torch_ver,
-                                                      _torch.__version__))
+    raise RuntimeError('Version mismatch: Open3D needs PyTorch version {}, but '
+                       'version {} is installed!'.format(
+                           match_torch_ver, _torch.__version__))
 
 # Precompiled wheels at
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
@@ -52,6 +52,18 @@ if (_build_config["BUILD_CUDA_MODULE"] and
 --------------------------------------------------------------------------------
 """)
 
+# Single open3d_torch_ops.so now serves all backends (CPU/CUDA/SYCL); warn
+# (don't fail, there's no other variant to fall back to) if the installed
+# PyTorch's CUDA runtime doesn't match what Open3D's ops were built against,
+# since loading may still succeed but behave incorrectly downstream.
+if (_build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available() and
+        _torch.version.cuda != _build_config["CUDA_VERSION"]):
+    print("Warning: Open3D was built with CUDA {} but PyTorch was built with "
+          "CUDA {}. The PyTorch ops may fail to load or behave incorrectly. "
+          "Consider installing PyTorch with CUDA {}.".format(
+              _build_config["CUDA_VERSION"], _torch.version.cuda,
+              _build_config["CUDA_VERSION"]))
+
 _lib_path = []
 # allow overriding the path to the op library with an env var.
 if 'OPEN3D_TORCH_OP_LIB' in _os.environ:
@@ -61,21 +73,33 @@ _this_dir = _os.path.dirname(__file__)
 _package_root = _os.path.join(_this_dir, '..', '..')
 _lib_ext = {'linux': '.so', 'darwin': '.dylib', 'win32': '.dll'}[_sys.platform]
 _lib_suffix = '_debug' if _build_config['CMAKE_BUILD_TYPE'] == 'Debug' else ''
-_lib_arch = ('cpu',)
-if _build_config["BUILD_CUDA_MODULE"] and _torch.cuda.is_available():
-    if _torch.version.cuda == _build_config["CUDA_VERSION"]:
-        _lib_arch = ('cuda', 'cpu')
-    else:
-        print("Warning: Open3D was built with CUDA {} but"
-              "PyTorch was built with CUDA {}. Falling back to CPU for now."
-              "Otherwise, install PyTorch with CUDA {}.".format(
-                  _build_config["CUDA_VERSION"], _torch.version.cuda,
-                  _build_config["CUDA_VERSION"]))
-_lib_path.extend([
-    _os.path.join(_package_root, la,
-                  'open3d_torch_ops' + _lib_suffix + _lib_ext)
-    for la in _lib_arch
-])
+_lib_name = 'open3d_torch_ops' + _lib_suffix + _lib_ext
+_lib_path.append(_os.path.join(_package_root, _lib_name))
+
+# On Windows add DLL search directories so Open3D.dll and SYCL runtime DLLs
+# are found when torch loads the ops. SYCL/oneAPI runtime DLLs come from
+# pip-installed torch+xpu packages (intel-sycl-rt, intel-opencl-rt,
+# onemkl-sycl-*, intel-openmp, ...), not from a system oneAPI install. These
+# are data-only wheels (no importable Python module) that pip installs under
+# "<sys.prefix>/Library/bin" on Windows (verified by inspecting the
+# intel-sycl-rt wheel: its DLLs are stored at
+# "intel_sycl_rt-<ver>.data/data/Library/bin/*.dll", which pip's "data"
+# install scheme maps to "<sys.prefix>/Library/bin").
+_dll_dirs = []
+if _sys.platform == 'win32':
+    _dll_dirs.append(_os.add_dll_directory(_os.path.abspath(_package_root)))
+    if _build_config.get('BUILD_SYCL_MODULE', False):
+        # torch/lib holds torch.dll, torch_xpu.dll and other bundled DLLs.
+        _torch_lib = _os.path.join(_os.path.dirname(_torch.__file__), 'lib')
+        if _os.path.isdir(_torch_lib):
+            _dll_dirs.append(_os.add_dll_directory(
+                _os.path.abspath(_torch_lib)))
+        # <sys.prefix>/Library/bin holds the Intel oneAPI/SYCL runtime DLLs
+        # (sycl9.dll, pi_*.dll, libmkl_sycl_*.dll, libiomp5md.dll, ...).
+        _sycl_rt_bin = _os.path.join(_sys.prefix, 'Library', 'bin')
+        if _os.path.isdir(_sycl_rt_bin):
+            _dll_dirs.append(
+                _os.add_dll_directory(_os.path.abspath(_sycl_rt_bin)))
 
 _load_except = None
 _loaded = False
@@ -92,6 +116,9 @@ for _lp in _lib_path:
                   'BUILD_PYTORCH_OPS was enabled.'.format(
                       _os.path.realpath(_lp)))
 
+for _dd in _dll_dirs:
+    _dd.close()
+
 if not _loaded:
     raise _load_except
 
@@ -99,16 +126,23 @@ from . import layers
 from . import ops
 from . import classes
 
-# put framework independent modules here for convenience
-from . import configs
-from . import datasets
-from . import vis
-
-# framework specific modules from open3d-ml
-from . import models
-from . import modules
-from . import pipelines
-from . import dataloaders
-
 # put contrib at the same level
 from open3d.ml import contrib
+
+# The framework independent modules (configs, datasets, vis) and the framework
+# specific modules from Open3D-ML pull in the Open3D-ML dependencies (the `ml`
+# extra), so they are imported on first use to keep the ops and layers usable
+# without them.
+_LAZY_SUBMODULES = ("configs", "datasets", "vis", "models", "modules",
+                    "pipelines", "dataloaders")
+
+
+def __getattr__(name):
+    if name in _LAZY_SUBMODULES:
+        import importlib
+        return importlib.import_module(f"{__name__}.{name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_SUBMODULES))

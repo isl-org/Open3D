@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -32,6 +32,7 @@ enum class TransformationEstimationType {
     PointToPlane = 2,
     ColoredICP = 3,
     GeneralizedICP = 4,
+    SymmetricICP = 5,
 };
 
 /// \class TransformationEstimation
@@ -138,8 +139,9 @@ public:
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
-    /// \brief Constructor that takes as input a RobustKernel \param kernel Any
-    /// of the implemented statistical robust kernel for outlier rejection.
+    /// \brief Constructor that takes as input a RobustKernel.
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
     explicit TransformationEstimationPointToPlane(
             std::shared_ptr<RobustKernel> kernel)
         : kernel_(std::move(kernel)) {}

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 #include "open3d/Open3D.h"
@@ -20,7 +20,7 @@ void PrintHelp() {
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --depth_diff [=0.07]");
     utility::LogInfo("    --method [=PointToPlane | Intensity | Hybrid]");
-    utility::LogInfo("    --device [CPU:0]");
+        utility::LogInfo("    --device [CPU:0, CUDA:0, or SYCL:0]");
     // clang-format on
     utility::LogInfo("");
 }

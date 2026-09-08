@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -16,7 +16,9 @@
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/GeneralizedICP.h"
+#include "open3d/pipelines/registration/NormalDistributionsTransform.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
+#include "open3d/pipelines/registration/SymmetricICP.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
@@ -105,6 +107,13 @@ void pybind_registration_declarations(py::module &m) {
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to plane "
                    "distance.");
+    py::class_<TransformationEstimationSymmetric,
+               PyTransformationEstimation<TransformationEstimationSymmetric>,
+               TransformationEstimation>
+            te_sym(m_registration, "TransformationEstimationSymmetric",
+                   "Class to estimate a source-to-target transformation with "
+                   "symmetric point-to-plane ICP. Both point clouds must "
+                   "have normals.");
     py::class_<
             TransformationEstimationForColoredICP,
             PyTransformationEstimation<TransformationEstimationForColoredICP>,
@@ -118,6 +127,9 @@ void pybind_registration_declarations(py::module &m) {
                TransformationEstimation>
             te_gicp(m_registration, "TransformationEstimationForGeneralizedICP",
                     "Class to estimate a transformation for Generalized ICP.");
+    py::class_<NormalDistributionsTransformOption> ndt_option(
+            m_registration, "NormalDistributionsTransformOption",
+            "Options for 3D Normal Distributions Transform registration.");
     py::class_<CorrespondenceChecker,
                PyCorrespondenceChecker<CorrespondenceChecker>>
             cc(m_registration, "CorrespondenceChecker",
@@ -151,6 +163,19 @@ void pybind_registration_declarations(py::module &m) {
                  "normals. It considers vertex normal affinity of any "
                  "correspondences. It computes dot product of two normal "
                  "vectors. It takes radian value for the threshold.");
+    py::class_<
+            CorrespondenceCheckerBasedOnSourceRotation,
+            PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+            CorrespondenceChecker>
+            cc_r(m_registration, "CorrespondenceCheckerBasedOnSourceRotation",
+                 "Class to limit the rotation of the source object.\n"
+                 "It checks if the transformation is rotated too much from its "
+                 "initial, unrotated state (identity matrix).\n"
+                 "Rotations are checked by comparing the components of the "
+                 "angle-axis representation (SO(3) log vector) of the "
+                 "estimated transformation to the given thresholds. It is "
+                 "assumed that the user is aware of the x, y, z axes of the "
+                 "source object when setting these tolerances.");
     py::class_<FastGlobalRegistrationOption> fgr_option(
             m_registration, "FastGlobalRegistrationOption",
             "Options for FastGlobalRegistration.");
@@ -307,6 +332,27 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                            &TransformationEstimationPointToPlane::kernel_,
                            "Robust Kernel used in the Optimization");
 
+    auto te_sym = static_cast<py::class_<
+            TransformationEstimationSymmetric,
+            PyTransformationEstimation<TransformationEstimationSymmetric>,
+            TransformationEstimation>>(
+            m_registration.attr("TransformationEstimationSymmetric"));
+    py::detail::bind_default_constructor<TransformationEstimationSymmetric>(
+            te_sym);
+    py::detail::bind_copy_functions<TransformationEstimationSymmetric>(te_sym);
+    te_sym.def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                   return new TransformationEstimationSymmetric(
+                           std::move(kernel));
+               }),
+               "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationSymmetric &te) {
+                     return std::string("TransformationEstimationSymmetric");
+                 })
+            .def_readwrite("kernel",
+                           &TransformationEstimationSymmetric::kernel_,
+                           "Robust Kernel used in the Optimization");
+
     // open3d.registration.TransformationEstimationForColoredICP :
     auto te_col = static_cast<py::class_<
             TransformationEstimationForColoredICP,
@@ -394,6 +440,78 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                            &TransformationEstimationForGeneralizedICP::kernel_,
                            "Robust Kernel used in the Optimization");
 
+    // open3d.registration.NormalDistributionsTransformOption:
+    auto ndt_option =
+            static_cast<py::class_<NormalDistributionsTransformOption>>(
+                    m_registration.attr("NormalDistributionsTransformOption"));
+    py::detail::bind_copy_functions<NormalDistributionsTransformOption>(
+            ndt_option);
+    ndt_option
+            .def(py::init<double, int, double, double, double, int, double,
+                          int>(),
+                 "voxel_size"_a = 1.0, "min_points_per_voxel"_a = 6,
+                 "covariance_regularization"_a = 1e-3,
+                 "transformation_epsilon"_a = 1e-6,
+                 "relative_objective"_a = 1e-6, "max_iteration"_a = 30,
+                 "outlier_threshold"_a = 9.0, "neighbor_search_type"_a = 1)
+            .def_readwrite("voxel_size",
+                           &NormalDistributionsTransformOption::voxel_size_,
+                           "Target voxel size used to build the Gaussian "
+                           "model.")
+            .def_readwrite(
+                    "min_points_per_voxel",
+                    &NormalDistributionsTransformOption::min_points_per_voxel_,
+                    "Minimum number of target points needed for a voxel "
+                    "Gaussian.")
+            .def_readwrite("covariance_regularization",
+                           &NormalDistributionsTransformOption::
+                                   covariance_regularization_,
+                           "Minimum eigenvalue ratio used to regularize voxel "
+                           "covariances.")
+            .def_readwrite(
+                    "transformation_epsilon",
+                    &NormalDistributionsTransformOption::
+                            transformation_epsilon_,
+                    "Stop optimization when the update vector norm is lower "
+                    "than this value.")
+            .def_readwrite(
+                    "relative_objective",
+                    &NormalDistributionsTransformOption::relative_objective_,
+                    "Stop optimization when the relative change in mean "
+                    "Mahalanobis objective is lower than this value.")
+            .def_readwrite("max_iteration",
+                           &NormalDistributionsTransformOption::max_iteration_,
+                           "Maximum number of Gauss-Newton iterations.")
+            .def_readwrite(
+                    "outlier_threshold",
+                    &NormalDistributionsTransformOption::outlier_threshold_,
+                    "Maximum squared Mahalanobis distance accepted for a "
+                    "point-to-voxel residual.")
+            .def_readwrite(
+                    "neighbor_search_type",
+                    &NormalDistributionsTransformOption::neighbor_search_type_,
+                    "0 uses the rounded center voxel; 1 also uses the six "
+                    "face-adjacent voxels.")
+            .def("__repr__",
+                 [](const NormalDistributionsTransformOption &option) {
+                     return fmt::format(
+                             "NormalDistributionsTransformOption("
+                             "voxel_size={}, "
+                             "min_points_per_voxel={}, "
+                             "covariance_regularization={}, "
+                             "transformation_epsilon={}, "
+                             "relative_objective={}, "
+                             "max_iteration={}, "
+                             "outlier_threshold={}, "
+                             "neighbor_search_type={})",
+                             option.voxel_size_, option.min_points_per_voxel_,
+                             option.covariance_regularization_,
+                             option.transformation_epsilon_,
+                             option.relative_objective_, option.max_iteration_,
+                             option.outlier_threshold_,
+                             option.neighbor_search_type_);
+                 });
+
     // open3d.registration.CorrespondenceChecker
     auto cc = static_cast<
             py::class_<CorrespondenceChecker,
@@ -415,7 +533,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
              {"target", "Target point cloud."},
              {"corres",
               "Correspondence set between source and target point cloud."},
-             {"transformation", "The estimated transformation (inplace)."}});
+             {"transformation", "The estimated transformation."}});
 
     // open3d.registration.CorrespondenceCheckerBasedOnEdgeLength:
     // CorrespondenceChecker
@@ -503,6 +621,39 @@ must hold true for all edges.)");
                            &CorrespondenceCheckerBasedOnNormal::
                                    normal_angle_threshold_,
                            "Radian value for angle threshold.");
+
+    // open3d.registration.CorrespondenceCheckerBasedOnSourceRotation:
+    // CorrespondenceChecker
+    auto cc_r = static_cast<py::class_<
+            CorrespondenceCheckerBasedOnSourceRotation,
+            PyCorrespondenceChecker<CorrespondenceCheckerBasedOnSourceRotation>,
+            CorrespondenceChecker>>(
+            m_registration.attr("CorrespondenceCheckerBasedOnSourceRotation"));
+    py::detail::bind_copy_functions<CorrespondenceCheckerBasedOnSourceRotation>(
+            cc_r);
+    cc_r.def(py::init([](const Eigen::Vector3d &rotation_threshold) {
+                 return new CorrespondenceCheckerBasedOnSourceRotation(
+                         rotation_threshold);
+             }),
+             "rotation_threshold"_a)
+            .def("__repr__",
+                 [](const CorrespondenceCheckerBasedOnSourceRotation &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnSourceRotation with "
+                             "rotation_threshold={:f}, {:f}, {:f} radians.",
+                             c.rotation_threshold_[0], c.rotation_threshold_[1],
+                             c.rotation_threshold_[2]);
+                 })
+            .def_readwrite(
+                    "rotation_threshold",
+                    &CorrespondenceCheckerBasedOnSourceRotation::
+                            rotation_threshold_,
+                    "Float64 numpy array of shape (3,) representing "
+                    "the maximum allowed thresholds [rx, ry, rz] "
+                    "in radians for the angle-axis representation components. "
+                    "It is assumed the user is aware of the x, y, z axes "
+                    "of the source object. A value < 0 means unconstrained.");
 
     // open3d.registration.FastGlobalRegistrationOption:
     auto fgr_option = static_cast<py::class_<FastGlobalRegistrationOption>>(
@@ -614,7 +765,8 @@ must hold true for all edges.)");
                      "clouds can be aligned. One of "
                      "(``CorrespondenceCheckerBasedOnEdgeLength``, "
                      "``CorrespondenceCheckerBasedOnDistance``, "
-                     "``CorrespondenceCheckerBasedOnNormal``)"},
+                     "``CorrespondenceCheckerBasedOnNormal``, "
+                     "``CorrespondenceCheckerBasedOnSourceRotation``)"},
                     {"confidence",
                      "Desired probability of success for RANSAC. Used for "
                      "estimating early termination by k = log(1 - "
@@ -627,6 +779,7 @@ must hold true for all edges.)");
                      "Estimation method. One of "
                      "(``TransformationEstimationPointToPoint``, "
                      "``TransformationEstimationPointToPlane``, "
+                     "``TransformationEstimationSymmetric``, "
                      "``TransformationEstimationForGeneralizedICP``, "
                      "``TransformationEstimationForColoredICP``)"},
                     {"init", "Initial transformation estimation"},
@@ -669,6 +822,21 @@ must hold true for all edges.)");
     docstring::FunctionDocInject(m_registration, "registration_icp",
                                  map_shared_argument_docstrings);
 
+    auto map_symmetric_icp_argument_docstrings = map_shared_argument_docstrings;
+    map_symmetric_icp_argument_docstrings["estimation_method"] =
+            "Only ``TransformationEstimationSymmetric`` is supported.";
+    m_registration.def(
+            "registration_symmetric_icp", &RegistrationSymmetricICP,
+            py::call_guard<py::gil_scoped_release>(),
+            "Register source to target with symmetric point-to-plane ICP. "
+            "Both point clouds must have normals.",
+            "source"_a, "target"_a, "max_correspondence_distance"_a,
+            "init"_a = Eigen::Matrix4d::Identity(),
+            "estimation_method"_a = TransformationEstimationSymmetric(),
+            "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m_registration, "registration_symmetric_icp",
+                                 map_symmetric_icp_argument_docstrings);
+
     m_registration.def("registration_colored_icp", &RegistrationColoredICP,
                        py::call_guard<py::gil_scoped_release>(),
                        "Function for Colored ICP registration", "source"_a,
@@ -691,6 +859,19 @@ must hold true for all edges.)");
                        "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m_registration, "registration_generalized_icp",
                                  map_shared_argument_docstrings);
+
+    m_registration.def("registration_ndt", &RegistrationNDT,
+                       py::call_guard<py::gil_scoped_release>(),
+                       "Function for 3D Normal Distributions Transform "
+                       "registration",
+                       "source"_a, "target"_a,
+                       "option"_a = NormalDistributionsTransformOption(),
+                       "init"_a = Eigen::Matrix4d::Identity());
+    auto ndt_argument_docstrings = map_shared_argument_docstrings;
+    ndt_argument_docstrings["option"] =
+            "Normal Distributions Transform registration option.";
+    docstring::FunctionDocInject(m_registration, "registration_ndt",
+                                 ndt_argument_docstrings);
 
     m_registration.def(
             "registration_ransac_based_on_correspondence",

@@ -21,17 +21,21 @@ deps=(
     libxcb-shm0
     libglu1-mesa-dev
     python3-dev
+    libssl-dev
     # filament linking
     libc++-dev
     libc++abi-dev
     libsdl2-dev
     libxi-dev
+    # Compute shaders
+    glslang-tools
     # ML
     libtbb-dev
-    # Headless rendering
-    libosmesa6-dev
+    # Headless / offscreen GPU rendering (EGL)
+    libegl1-mesa-dev
     # RealSense
     libudev-dev
+    libusb-1.0-0-dev
     autoconf
     libtool
     # cpp/apps/Open3DViewer/postinstall-linux.sh
@@ -61,6 +65,11 @@ if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
     deps=("${deps[@]/clang/clang-11}")
     deps=("${deps[@]/libc++-dev/libc++-11-dev}")
     deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
+fi
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
+    deps=("${deps[@]/clang/clang-14}")
+    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
 fi
 
 # Special case for ARM64

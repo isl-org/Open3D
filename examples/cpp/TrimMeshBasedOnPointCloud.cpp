@@ -1,9 +1,11 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+
+#include <tbb/parallel_for.h>
 
 #include "open3d/Open3D.h"
 
@@ -64,18 +66,22 @@ int main(int argc, char* argv[]) {
     kdtree.SetGeometry(*pcd);
     std::vector<bool> remove_vertex_mask(mesh->vertices_.size(), false);
     utility::ProgressBar progress_bar(mesh->vertices_.size(),
-                                             "Prune vertices: ");
-#pragma omp parallel for schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < (int)mesh->vertices_.size(); i++) {
-        std::vector<int> indices(1);
-        std::vector<double> dists(1);
-        int k = kdtree.SearchKNN(mesh->vertices_[i], 1, indices, dists);
-        if (k == 0 || dists[0] > distance * distance) {
-            remove_vertex_mask[i] = true;
-        }
-#pragma omp critical
-        { ++progress_bar; }
-    }
+                                         "Prune vertices: ");
+    tbb::parallel_for(
+            tbb::blocked_range<std::size_t>(0, mesh->vertices_.size(),
+                                            utility::DefaultGrainSizeTBB()),
+            [&](const tbb::blocked_range<std::size_t>& range) {
+                for (std::size_t i = range.begin(); i < range.end(); ++i) {
+                    std::vector<int> indices(1);
+                    std::vector<double> dists(1);
+                    int k = kdtree.SearchKNN(mesh->vertices_[i], 1, indices,
+                                             dists);
+                    if (k == 0 || dists[0] > distance * distance) {
+                        remove_vertex_mask[i] = true;
+                    }
+                    ++progress_bar;
+                }
+            });
 
     std::vector<int> index_old_to_new(mesh->vertices_.size());
     bool has_vert_normal = mesh->HasVertexNormals();

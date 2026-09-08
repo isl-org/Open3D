@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -123,24 +123,25 @@ void pybind_trianglemesh_definitions(py::module &m) {
                            "FilterScope.All"))
             .def("filter_smooth_laplacian",
                  &TriangleMesh::FilterSmoothLaplacian,
-                 "Function to smooth triangle mesh using Laplacian. :math:`v_o "
-                 "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
-                 ":math:`v_i` being the input value, :math:`v_o` the output "
-                 "value, :math:`N` is the  set of adjacent neighbours, "
-                 ":math:`w_n` is the weighting of the neighbour based on the "
-                 "inverse distance (closer neighbours have higher weight), and "
-                 "lambda_filter is the smoothing parameter.",
+                 R"doc(
+Laplacian smoothing on triangle adjacency with inverse-distance weights.
+
+Each iteration: ``v <- v + lambda * (sum(w_n v_n)/sum(w_n) - v)`` with
+``w_n = 1 / (||v - v_n|| + 1e-12)``. Related to Vollmer et al., *Improved
+Laplacian Smoothing of Noisy Surface Meshes*, 1999; Open3D uses inverse
+Euclidean weights and can smooth positions, normals, and/or colors
+(``filter_scope``).
+)doc",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  py::arg_v("filter_scope", MeshBase::FilterScope::All,
                            "FilterScope.All"))
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
-                 "Function to smooth triangle mesh using method of Taubin, "
-                 "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
-                 "Applies in each iteration two times filter_smooth_laplacian, "
-                 "first with filter parameter lambda_filter and second with "
-                 "filter "
-                 "parameter mu as smoothing parameter. This method avoids "
-                 "shrinkage of the triangle mesh.",
+                 R"doc(
+Taubin smoothing: two Laplacian passes per iteration (``lambda_filter`` then ``mu``).
+
+Uses the same inverse-distance Laplacian as :func:`filter_smooth_laplacian`.
+Related to Taubin, *Curve and Surface Smoothing Without Shrinkage*, 1995.
+)doc",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "mu"_a = -0.53,
                  py::arg_v("filter_scope", MeshBase::FilterScope::All,
@@ -221,12 +222,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                  "Function to crop input TriangleMesh into output TriangleMesh",
                  "bounding_box"_a)
             .def("get_surface_area",
-                 (double (TriangleMesh::*)() const) &
+                 (double(TriangleMesh::*)() const) &
                          TriangleMesh::GetSurfaceArea,
                  "Function that computes the surface area of the mesh, i.e. "
                  "the sum of the individual triangle surfaces.")
             .def("get_volume",
-                 (double (TriangleMesh::*)() const) & TriangleMesh::GetVolume,
+                 (double(TriangleMesh::*)() const) & TriangleMesh::GetVolume,
                  "Function that computes the volume of the mesh, under the "
                  "condition that it is watertight and orientable.")
             .def("sample_points_uniformly",
@@ -350,13 +351,21 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "This function uses the original implementation by "
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
-                        "linear_fit"_a = false, "n_threads"_a = -1)
+                        "linear_fit"_a = false, "n_threads"_a = -1,
+                        "full_depth"_a = 5, "samples_per_node"_a = 1.5f,
+                        "point_weight"_a = 2.0f)
             .def_static(
                     "create_from_oriented_bounding_box",
                     &TriangleMesh::CreateFromOrientedBoundingBox,
                     "Factory function to create a solid oriented bounding box.",
                     "obox"_a, "scale"_a = Eigen::Vector3d::Ones(),
                     "create_uv_map"_a = false)
+            .def_static("create_from_oriented_bounding_ellipsoid",
+                        &TriangleMesh::CreateFromOrientedBoundingEllipsoid,
+                        "Factory function to create a solid oriented bounding "
+                        "ellipsoid.",
+                        "obel"_a, "scale"_a = Eigen::Vector3d::Ones(),
+                        "resolution"_a = 20, "create_uv_map"_a = false)
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "
@@ -391,6 +400,12 @@ void pybind_trianglemesh_definitions(py::module &m) {
                         "(0, 0, 0).",
                         "radius"_a = 1.0, "resolution"_a = 20,
                         "create_uv_map"_a = false)
+            .def_static(
+                    "create_ellipsoid", &TriangleMesh::CreateEllipsoid,
+                    "Factory function to create an ellipsoid mesh centered at "
+                    "(0, 0, 0).",
+                    "radius_x"_a = 1.0, "radius_y"_a = 1.0, "radius_z"_a = 1.0,
+                    "resolution"_a = 20, "create_uv_map"_a = false)
             .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
                         "Factory function to create a cylinder mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
@@ -723,6 +738,18 @@ void pybind_trianglemesh_definitions(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_sphere",
             {{"radius", "The radius of the sphere."},
+             {"resolution",
+              "The resolution of the sphere. The longitues will be split into "
+              "``resolution`` segments (i.e. there are ``resolution + 1`` "
+              "latitude lines including the north and south pole). The "
+              "latitudes will be split into ```2 * resolution`` segments (i.e. "
+              "there are ``2 * resolution`` longitude lines.)"},
+             {"create_uv_map", "Add default uv map to the mesh."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_ellipsoid",
+            {{"radius_x", "The first radius of the ellipsoid."},
+             {"radius_y", "The second radius of the ellipsoid."},
+             {"radius_z", "The third radius of the ellipsoid."},
              {"resolution",
               "The resolution of the sphere. The longitues will be split into "
               "``resolution`` segments (i.e. there are ``resolution + 1`` "

@@ -1,0 +1,11 @@
+--- a/code/AssetLib/USD/USDLoaderImplTinyusdz.cpp
++++ b/code/AssetLib/USD/USDLoaderImplTinyusdz.cpp
+@@ -569,7 +569,7 @@
+ 
+         aiString materialName;
+         materialName.Set(material.name);
+-        mat->AddProperty(materialName, AI_MATKEY_NAME);
++        mat->AddProperty(&materialName, AI_MATKEY_NAME);
+ 
+         mat->AddProperty(
+                 reinterpret_cast<const aiColor3D *>(material.surfaceShader.diffuseColor.value.data()),

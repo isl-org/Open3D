@@ -20,6 +20,7 @@ function(open3d_show_and_abort_on_warning target)
         /wd4267        # conversion from size_t to smaller type (FixedRadiusSearchCUDA, tests)
         /wd4305        # conversion to smaller type in initialization or constructor argument (examples, tests)
         /wd4819        # suppress vs2019+ compiler build error C2220 (Windows)
+        /wd4996        # torch_ops with CUDA. Deprecated type will be removed in future versions
     )
     set(DISABLE_GNU_CLANG_INTEL_WARNINGS
         -Wno-unused-parameter               # (many places in Open3D code)

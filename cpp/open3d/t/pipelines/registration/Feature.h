@@ -1,14 +1,15 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <optional>
+
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace t {
@@ -36,9 +37,9 @@ namespace registration {
 /// shape {N, 33}, data type and device same as input.
 core::Tensor ComputeFPFHFeature(
         const geometry::PointCloud &input,
-        const utility::optional<int> max_nn = 100,
-        const utility::optional<double> radius = utility::nullopt,
-        const utility::optional<core::Tensor> &indices = utility::nullopt);
+        const std::optional<int> max_nn = 100,
+        const std::optional<double> radius = std::nullopt,
+        const std::optional<core::Tensor> &indices = std::nullopt);
 
 /// \brief Function to find correspondences via 1-nearest neighbor feature
 /// matching. Target is used to construct a nearest neighbor search

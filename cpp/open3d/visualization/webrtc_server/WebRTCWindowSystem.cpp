@@ -1,19 +1,19 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"
 
-#include <p2p/base/basic_packet_socket_factory.h>
-#include <p2p/base/stun_server.h>
-#include <p2p/base/turn_server.h>
+#include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
 #include <rtc_base/thread.h>
 
+#include <atomic>
 #include <chrono>
+#include <optional>
 #include <sstream>
 #include <thread>
 #include <unordered_map>
@@ -46,9 +46,15 @@ static const std::list<std::string> s_open3d_ice_servers{
 };
 
 // clang-format off
-/// Get custom STUN server address from WEBRTC_STUN_SERVER environment variable.
-/// If there are more than one server, separate them with ";".
-/// Example usage:
+/// Get the STUN/TURN server configuration from WEBRTC_STUN_SERVER.
+/// The return value distinguishes the following configurations:
+/// - Unset: return nullopt and use the default STUN/TURN servers.
+/// - Empty: return an empty string and use host-only ICE with loopback candidates.
+///   This is intended only for a browser and server running on the same machine.
+/// - Nonempty: return the configured servers and replace the default servers.
+///   Separate multiple servers with ";".
+///
+/// Example custom TURN server setup:
 /// 1. Set WEBRTC_STUN_SERVER to:
 ///    - UDP only
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478"
@@ -56,16 +62,15 @@ static const std::list<std::string> s_open3d_ice_servers{
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
 ///    - UDP and TCP
 ///      WEBRTC_STUN_SERVER="turn:user:password@$(curl -s ifconfig.me):3478;turn:user:password@$(curl -s ifconfig.me):3478?transport=tcp"
-/// 2. Start your TURN server binding to a local IP address and port
-/// 3. Set router configurations to forward your local IP address and port to
-///    the public IP address and port.
+/// 2. Start your TURN server binding to a local IP address and port.
+/// 3. Configure the router to forward the local IP address and port to the
+///    public IP address and port.
 // clang-format on
-static std::string GetCustomSTUNServer() {
+static std::optional<std::string> GetCustomSTUNServer() {
     if (const char *env_p = std::getenv("WEBRTC_STUN_SERVER")) {
         return std::string(env_p);
-    } else {
-        return "";
     }
+    return std::nullopt;
 }
 
 static std::string GetEnvWebRTCIP() {
@@ -103,6 +108,8 @@ struct WebRTCWindowSystem::Impl {
 
     std::thread webrtc_thread_;
     bool sever_started_ = false;
+    // Set while the WebRTC std::thread is inside Run(); used for shutdown.
+    std::atomic<webrtc::Thread *> webrtc_message_thread_{nullptr};
 
     std::unordered_map<std::string, std::function<std::string(std::string)>>
             data_channel_message_callbacks_;
@@ -197,8 +204,14 @@ WebRTCWindowSystem::WebRTCWindowSystem()
 }
 
 WebRTCWindowSystem::~WebRTCWindowSystem() {
+    if (impl_->sever_started_ && impl_->webrtc_thread_.joinable()) {
+        webrtc::Thread *message_thread = impl_->webrtc_message_thread_.load();
+        if (message_thread) {
+            message_thread->Quit();
+        }
+        impl_->webrtc_thread_.join();
+    }
     impl_->peer_connection_manager_ = nullptr;
-    rtc::Thread::Current()->Quit();
 }
 
 WebRTCWindowSystem::OSWindow WebRTCWindowSystem::CreateOSWindow(
@@ -262,28 +275,42 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                     gui::Application::GetInstance().GetResourcePath());
             impl_->web_root_ = resource_path + "/html";
 
-            // Logging settings.
-            // src/rtc_base/logging.h: LS_VERBOSE, LS_ERROR
-            rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)rtc::LS_ERROR);
+            // Logging settings (M149: rtc_base/logging.h).
+            webrtc::LoggingConfig log_config;
+            log_config.set_debug_severity(webrtc::LS_ERROR);
+            log_config.set_log_thread(true);
+            log_config.set_log_timestamp(true);
+            webrtc::InitializeLogging(std::move(log_config));
 
-            rtc::LogMessage::LogTimestamps();
-            rtc::LogMessage::LogThreads();
+            // Associate this std::thread with WebRTC's message loop (required
+            // before Thread::Current()->Run() and PeerConnectionFactory).
+            webrtc::ThreadManager::Instance()->WrapCurrentThread();
+            struct WebRtcThreadScope {
+                ~WebRtcThreadScope() {
+                    webrtc::ThreadManager::Instance()->UnwrapCurrentThread();
+                }
+            } webrtc_thread_scope;
+            webrtc::Thread *thread = webrtc::Thread::Current();
+            impl_->webrtc_message_thread_.store(thread);
 
-            // PeerConnectionManager manages all WebRTC connections.
-            rtc::Thread *thread = rtc::Thread::Current();
-            rtc::InitializeSSL();
+            webrtc::InitializeSSL();
             Json::Value config;
             std::list<std::string> ice_servers;
-            ice_servers.insert(ice_servers.end(), s_public_ice_servers.begin(),
-                               s_public_ice_servers.end());
-            if (!GetCustomSTUNServer().empty()) {
+            const std::optional<std::string> custom_stun_server =
+                    GetCustomSTUNServer();
+            if (!custom_stun_server.has_value()) {
+                ice_servers.insert(ice_servers.end(),
+                                   s_public_ice_servers.begin(),
+                                   s_public_ice_servers.end());
+                ice_servers.insert(ice_servers.end(),
+                                   s_open3d_ice_servers.begin(),
+                                   s_open3d_ice_servers.end());
+            } else if (!custom_stun_server->empty()) {
                 std::vector<std::string> custom_servers =
-                        utility::SplitString(GetCustomSTUNServer(), ";");
+                        utility::SplitString(*custom_stun_server, ";");
                 ice_servers.insert(ice_servers.end(), custom_servers.begin(),
                                    custom_servers.end());
             }
-            ice_servers.insert(ice_servers.end(), s_open3d_ice_servers.begin(),
-                               s_open3d_ice_servers.end());
             utility::LogInfo("ICE servers: {}", ice_servers);
 
             impl_->peer_connection_manager_ =
@@ -345,7 +372,8 @@ void WebRTCWindowSystem::StartWebRTCServer() {
                 utility::LogInfo("WebRTC Jupyter handshake mode enabled.");
                 thread->Run();
             }
-            rtc::CleanupSSL();
+            impl_->webrtc_message_thread_.store(nullptr);
+            webrtc::CleanupSSL();
         };
         impl_->webrtc_thread_ = std::thread(start_webrtc_thread);
         impl_->sever_started_ = true;
@@ -364,8 +392,8 @@ std::string WebRTCWindowSystem::OnDataChannelMessage(
         if (impl_->data_channel_message_callbacks_.count(class_name) != 0) {
             reply = impl_->data_channel_message_callbacks_.at(class_name)(
                     message);
-            const auto os_window = GetOSWindowByUID(window_uid);
-            if (os_window) PostRedrawEvent(os_window);
+            // Custom callbacks that mutate GUI state (e.g. add/remove geometry)
+            // must call window->PostRedraw() or post_redraw() themselves.
             return reply;
         } else {
             reply = fmt::format(
@@ -405,7 +433,7 @@ void WebRTCWindowSystem::OnFrame(const std::string &window_uid,
 void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     utility::LogInfo("Sending init frames to {}.", window_uid);
     static const int s_max_initial_frames = 5;
-    static const int s_sleep_between_frames_ms = 100;
+    static const int s_sleep_between_frames_ms = 50;
     const auto os_window = GetOSWindowByUID(window_uid);
     if (!os_window) return;
     for (int i = 0; os_window != nullptr && i < s_max_initial_frames; ++i) {

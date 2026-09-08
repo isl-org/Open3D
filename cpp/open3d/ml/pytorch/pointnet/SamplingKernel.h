@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //***************************************************************************************/
@@ -35,3 +35,12 @@
 
 void furthest_point_sampling_launcher(
         int b, int n, int m, const float *dataset, float *temp, int *idxs);
+
+void furthest_point_sampling_launcher_cpu(
+        int b, int n, int m, const float *dataset, float *temp, int *idxs);
+
+#ifdef BUILD_SYCL_MODULE
+#include <sycl/sycl.hpp>
+void furthest_point_sampling_launcher_sycl(
+        int b, int n, int m, const float *dataset, float *temp, int *idxs);
+#endif

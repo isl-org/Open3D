@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -19,6 +19,15 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
 #ifdef BUILD_CUDA_MODULE
 template <class TIndex, class TAttr>
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCUDA(
+        int64_t num_points,
+        const torch::Tensor& inp_neighbors_index,
+        const torch::Tensor& inp_neighbors_row_splits,
+        const torch::Tensor& inp_neighbors_attributes);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+template <class TIndex, class TAttr>
+std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListSYCL(
         int64_t num_points,
         const torch::Tensor& inp_neighbors_index,
         const torch::Tensor& inp_neighbors_row_splits,

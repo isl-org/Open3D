@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -123,6 +123,13 @@ public:
         auto stream = context->eigen_gpu_device().stream();
 
         cudaError_t err;
+        err = cudaMemsetAsync(grad_points, 0, b * c * m * sizeof(float),
+                              stream);
+        if (cudaSuccess != err) {
+            fprintf(stderr, "CUDA memset failed : %s\n",
+                    cudaGetErrorString(err));
+            exit(-1);
+        }
 
         dim3 blocks(DIVUP(n, THREADS_PER_BLOCK), c,
                     b);  // blockIdx.x(col), blockIdx.y(row)

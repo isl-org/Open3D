@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -90,6 +90,11 @@ std::runtime_error ZMQReceiver::GetLastError() {
     std::runtime_error result = mainloop_exception_;
     mainloop_exception_ = std::runtime_error("");
     return result;
+}
+
+std::string ZMQReceiver::GetLastEndpoint() const {
+    if (!socket_) return "";
+    return socket_->get(zmq::sockopt::last_endpoint);
 }
 
 void ZMQReceiver::Mainloop() {

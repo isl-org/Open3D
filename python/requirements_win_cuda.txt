@@ -1,0 +1,8 @@
+# NVIDIA CUDA runtime redistributable pip packages, required at import
+# time on Windows CUDA wheels (open3d-cuda). Version numbers must match CUDA
+# toolkit versions and nvidia/cuda docker image versions used to build Open3D.
+nvidia-cuda-runtime-cu12==12.6.77
+nvidia-cublas-cu12==12.6.4.1
+nvidia-cusolver-cu12==11.6.4.69
+nvidia-cusparse-cu12==12.5.4.2
+nvidia-npp-cu12==12.4.1.87

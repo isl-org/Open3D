@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import os
@@ -16,7 +16,8 @@ try:
 except (ImportError, ModuleNotFoundError):
     pytest.importorskip("torch")
 pytest.importorskip("tensorboard")
-vis = pytest.importorskip("open3d.ml.vis")
+# Without the `ml` extra (pip install open3d[ml]) Open3D-ML raises ImportError.
+vis = pytest.importorskip("open3d.ml.vis", exc_type=ImportError)
 try:
     BoundingBox3D = vis.BoundingBox3D
 except AttributeError:
@@ -205,7 +206,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/Open3D')
+        os.path.join(logdir, 'plugins', 'Open3D')
     ]
     filenames_ref = geometry_data['filenames']
 
@@ -222,6 +223,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
+    summary._async_data_writer.close()
     shutil.rmtree(logdir)
 
 
@@ -303,7 +305,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     dirpath_ref = [
         logdir,
         os.path.join(logdir, 'plugins'),
-        os.path.join(logdir, 'plugins/Open3D')
+        os.path.join(logdir, 'plugins', 'Open3D')
     ]
     filenames_ref = geometry_data['filenames']
     dirpath, filenames = [], []
@@ -320,6 +322,8 @@ def test_pytorch_summary(geometry_data, tmp_path):
     # in the same Python process, since it's usually buffered by GFile / Python
     # / OS and written to disk in increments of the filesystem blocksize.
     # Complete write is guaranteed after Python has exited.
+    writer.close()
+    summary._async_data_writer.close()
     shutil.rmtree(logdir)
 
 
@@ -446,8 +450,9 @@ def test_plugin_data_reader(geometry_data, logdir):
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
                 o3d.core.int32)
-            assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
-                   ).all()
+            # Not identical on macOS ARM64
+            assert bbox_ls_out.point.positions.allclose(
+                bbox_ls_ref.point.positions, rtol=0, atol=1e-6)
             assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()
             assert "colors" not in bbox_ls_out.line
             label_conf_ref = tuple((bb.label_class, bb.confidence)

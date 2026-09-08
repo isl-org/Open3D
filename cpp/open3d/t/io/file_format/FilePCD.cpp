@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 #include "open3d/core/Dtype.h"
@@ -734,10 +735,12 @@ static bool GenerateHeader(const t::geometry::PointCloud &pointcloud,
         header.pointsize += 3 * field_normal_x.size;
     }
     if (pointcloud.HasPointColors()) {
+        // uint32 packed BGR (TYPE U): same bytes as PCL float packing, but
+        // avoids denormal float ASCII round-trips under Intel FTZ/DAZ.
         PCLPointField field_colors;
         field_colors.name = "rgb";
         field_colors.count = 1;
-        field_colors.type = 'F';
+        field_colors.type = 'U';
         field_colors.size = 4;
         header.fields.push_back(field_colors);
 
@@ -901,11 +904,11 @@ void ColorToUint8<std::uint32_t>(const std::uint32_t *input_color,
     output_color[3] = 0;
 }
 
-static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
+static core::Tensor PackColorsToUint32(const core::Tensor &colors_contiguous) {
     core::Tensor packed_color =
             core::Tensor::Empty({colors_contiguous.GetLength(), 1},
-                                core::Float32, core::Device("CPU:0"));
-    auto packed_color_ptr = packed_color.GetDataPtr<float>();
+                                core::UInt32, core::Device("CPU:0"));
+    auto packed_color_ptr = packed_color.GetDataPtr<std::uint32_t>();
 
     DISPATCH_DTYPE_TO_TEMPLATE(colors_contiguous.GetDtype(), [&]() {
         auto colors_ptr = colors_contiguous.GetDataPtr<scalar_t>();
@@ -914,9 +917,8 @@ static core::Tensor PackColorsToFloat(const core::Tensor &colors_contiguous) {
                               std::uint8_t rgba[4] = {0};
                               ColorToUint8<scalar_t>(
                                       colors_ptr + 3 * workload_idx, rgba);
-                              float val = 0;
-                              std::memcpy(&val, rgba, 4 * sizeof(std::uint8_t));
-                              packed_color_ptr[workload_idx] = val;
+                              std::memcpy(packed_color_ptr + workload_idx, rgba,
+                                          4 * sizeof(std::uint8_t));
                           });
     });
 
@@ -1010,8 +1012,8 @@ static bool WritePCDData(FILE *file,
     }
 
     if (pointcloud.HasPointColors()) {
-        t_map["colors"] = PackColorsToFloat(t_map["colors"]);
-        attribute_ptrs.emplace_back(core::Float32, t_map["colors"].GetDataPtr(),
+        t_map["colors"] = PackColorsToUint32(t_map["colors"]);
+        attribute_ptrs.emplace_back(core::UInt32, t_map["colors"].GetDataPtr(),
                                     1);
     }
 
@@ -1050,31 +1052,43 @@ static bool WritePCDData(FILE *file,
             }
         }
     } else if (header.datatype == PCDDataType::BINARY) {
-        std::vector<char> buffer((header.pointsize * header.points));
-        std::uint32_t buffer_index = 0;
-        for (std::int64_t i = 0; i < num_points; ++i) {
-            for (auto &it : attribute_ptrs) {
-                DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
-                    const scalar_t *data_ptr =
-                            static_cast<const scalar_t *>(it.data_ptr_);
+        constexpr std::size_t kMaxChunkSizeInBytes = 32 * 1024 * 1024;
+        const std::int64_t points_per_chunk = std::max<std::int64_t>(
+                1, kMaxChunkSizeInBytes / header.pointsize);
+        std::vector<char> buffer(static_cast<std::size_t>(
+                std::min(num_points, points_per_chunk) * header.pointsize));
 
-                    for (int idx_offset = it.group_size_ * i;
-                         idx_offset < it.group_size_ * (i + 1); ++idx_offset) {
-                        std::memcpy(buffer.data() + buffer_index,
-                                    reinterpret_cast<const char *>(
-                                            &data_ptr[idx_offset]),
-                                    sizeof(scalar_t));
-                        buffer_index += sizeof(scalar_t);
-                    }
-                });
+        for (std::int64_t chunk_start = 0; chunk_start < num_points;
+             chunk_start += points_per_chunk) {
+            const std::int64_t chunk_end =
+                    std::min(num_points, chunk_start + points_per_chunk);
+            std::size_t buffer_index = 0;
+            for (std::int64_t i = chunk_start; i < chunk_end; ++i) {
+                for (auto &it : attribute_ptrs) {
+                    DISPATCH_DTYPE_TO_TEMPLATE(it.dtype_, [&]() {
+                        const scalar_t *data_ptr =
+                                static_cast<const scalar_t *>(it.data_ptr_);
+
+                        for (int idx_offset = it.group_size_ * i;
+                             idx_offset < it.group_size_ * (i + 1);
+                             ++idx_offset) {
+                            std::memcpy(buffer.data() + buffer_index,
+                                        reinterpret_cast<const char *>(
+                                                &data_ptr[idx_offset]),
+                                        sizeof(scalar_t));
+                            buffer_index += sizeof(scalar_t);
+                        }
+                    });
+                }
             }
 
-            if (i % 1000 == 0) {
-                reporter.Update(i);
+            if (fwrite(buffer.data(), sizeof(char), buffer_index, file) !=
+                buffer_index) {
+                utility::LogWarning("[WritePCDData] Failed to write data.");
+                return false;
             }
+            reporter.Update(chunk_end);
         }
-
-        fwrite(buffer.data(), sizeof(char), buffer.size(), file);
     } else if (header.datatype == PCDDataType::BINARY_COMPRESSED) {
         // BINARY_COMPRESSED data contains attributes in column layout
         // for better compression.

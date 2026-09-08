@@ -48,9 +48,12 @@ if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
     # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
 elseif (APPLE)
+    # Symbol names in Apple's -exported_symbols_list must carry the leading
+    # underscore that the C ABI prepends to all extern "C" symbols on macOS.
+    # ld-prime (Xcode 16+) is strict about this; older ld-classic was lenient.
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
-open3d_core_cuda_device_count
+_open3d_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
@@ -72,9 +75,9 @@ endif()
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
-# `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
+# `build/lib/${CMAKE_BUILD_TYPE}/Python`
 set(PYTHON_COMPILED_MODULE_DIR
-    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
+    "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python")
 
 if (UNIX AND NOT APPLE)
     # Use RPATH instead of RUNPATH in pybind so that needed libc++.so can find child dependant libc++abi.so in RPATH
@@ -94,39 +97,27 @@ if (BUILD_SHARED_LIBS)
     else()
         set(_libopen3d_soname "libOpen3D.so.${OPEN3D_ABI_VERSION}")
     endif()
+    # Use Open3D::Open3D so this works for both in-tree and IMPORTED targets.
     add_custom_command(TARGET pybind POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
+            $<TARGET_FILE:Open3D::Open3D> $<TARGET_FILE_DIR:pybind>/${_libopen3d_soname}
     )
 endif()
-# Include additional libraries that may be absent from the user system
-# eg: libc++.so, libc++abi.so (needed by filament) for Linux.
-# libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
-set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
-if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+# Include additional libraries that may be absent from the user system (TBB).
+# Linux GUI wheels bundle LLVM libc++/libc++abi via ldd in
+# package_linux_wheel_runtime.sh (see make_python_package.cmake).
+# Prefer TBB::tbb; fall back to Open3D::tbb from an installed devel package.
+if (TARGET TBB::tbb)
+    set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:TBB::tbb>)
+elseif (TARGET Open3D::tbb)
+    set(PYTHON_EXTRA_LIBRARIES $<TARGET_FILE:Open3D::tbb>)
+else()
+    message(FATAL_ERROR "TBB target required to package Python wheel extras")
 endif()
-if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
-# Package libomp v11.1.0, if it is not installed. Later version cause crash on
-# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
-# handled.
-# https://github.com/microsoft/LightGBM/issues/4229
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
-    execute_process(COMMAND brew list --versions libomp
-        COMMAND cut "-d\ " -f2
-        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
-        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
-    endif()
-    file(GENERATE OUTPUT update_pybind_libomp.sh
-        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
-grep libomp | tr -d '[:space:]')
-install_name_tool -change $libomp_library @rpath/$(basename $libomp_library) \
-"$<TARGET_FILE:pybind>"]=])
-    add_custom_command(TARGET pybind POST_BUILD
-        COMMAND bash update_pybind_libomp.sh
-        COMMENT "Updating pybind to use packaged libomp")
-endif()
+# Note: Open3D no longer links libomp. TBB (packaged above via
+# PYTHON_EXTRA_LIBRARIES) is the only threading runtime shipped in the wheel,
+# which avoids the multiple-OpenMP-runtime crashes seen when another Python
+# package (e.g. PyTorch) loads its own libomp.
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
@@ -165,8 +156,9 @@ endif()
 # add additional optional compiled modules
 if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
+    set(DEPENDENCIES_DIR "$<TARGET_FILE_DIR:TBB::tbb>")
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow" --dependencies_dir "${DEPENDENCIES_DIR}" --open3d_lib_dir "$<TARGET_FILE_DIR:Open3D::Open3D>"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -181,20 +173,13 @@ if (BUILD_PYTORCH_OPS)
 endif()
 
 if (BUNDLE_OPEN3D_ML)
-    find_path(
-        OPEN3D_ML_ROOT
-        NAMES set_open3d_ml_root.sh
-        HINTS $ENV{OPEN3D_ML_ROOT}
-        DOC "Path to the Open3D-ML repo. This should be set if BUNDLE_OPEN3D_ML is enabled. Alternatively set an env var with the same name to populate this var."
-        REQUIRED
-        NO_DEFAULT_PATH
-    )
-
+    # OPEN3D_ML_ROOT is located in the top level CMakeLists.txt, which also
+    # decides whether Open3D-ML can be bundled.
     ExternalProject_Add(
         open3d_ml
         PREFIX "${CMAKE_BINARY_DIR}/open3d_ml"
         GIT_REPOSITORY "${OPEN3D_ML_ROOT}"
-        GIT_TAG origin/main
+        GIT_TAG "${OPEN3D_ML_VERSION}"
         GIT_SHALLOW
         BUILD_IN_SOURCE ON
         # do not configure
@@ -222,6 +207,8 @@ add_custom_target(python-package
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
+            -DWITH_STUBGEN=${WITH_STUBGEN}
+            -DIGNORE_STUBGEN_ERRORS=${IGNORE_STUBGEN_ERRORS}
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
@@ -240,6 +227,7 @@ add_custom_target(python-package
             -DPROJECT_DESCRIPTION=${PROJECT_DESCRIPTION}
             -DPROJECT_VERSION_THREE_NUMBER=${PROJECT_VERSION_THREE_NUMBER}
             -DPYPI_PACKAGE_NAME=${PYPI_PACKAGE_NAME}
+            -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
     VERBATIM
     DEPENDS ${GENERATED_OUTPUTS}

@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -33,30 +33,8 @@ CPP_FORMAT_DIRS = [
     "docs/_static",
 ]
 
-# Yapf requires python 3.6+
-if sys.version_info < (3, 6):
-    raise RuntimeError("Requires Python 3.6+, currently using Python "
-                       f"{sys.version_info.major}.{sys.version_info.minor}.")
-
-# Check and import yapf
-# > not found: throw exception
-# > version mismatch: throw exception
-try:
-    import yapf
-except ImportError:
-    raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.30.0`.")
-if yapf.__version__ != "0.30.0":
-    raise RuntimeError(
-        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
-
-# Check and import nbformat
-# > not found: throw exception
-try:
-    import nbformat
-except ImportError:
-    raise ImportError(
-        "nbformat not found. Install with `pip install nbformat`.")
+import yapf
+import nbformat
 
 
 class CppFormatter:
@@ -64,7 +42,7 @@ class CppFormatter:
     standard_header = """// ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 """
@@ -146,7 +124,7 @@ class PythonFormatter:
     standard_header = """# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """
@@ -314,10 +292,9 @@ def _glob_files(directories, extensions):
 
 def _find_clang_format():
     """
-    Returns (bin_path, version) to clang-format version 10, throws exception
+    Returns (bin_path, version) to clang-format, throws exception
     otherwise.
     """
-    required_clang_format_major = 10
 
     def parse_version(bin_path):
         """
@@ -328,44 +305,42 @@ def _find_clang_format():
         match = re.match("^.*clang-format version ([0-9.]*).*$", version_str)
         return match.group(1) if match else None
 
-    def parse_version_major(bin_path):
-        """
-        Get clang-format major version. Returns None if parsing fails.
-        """
-        version = parse_version(bin_path)
-        return int(version.split(".")[0]) if version else None
-
-    def find_bin_by_name(bin_name):
-        """
-        Returns bin path if found. Otherwise, returns None.
-        """
-        bin_path = shutil.which(bin_name)
-        if bin_path is None:
-            return None
-        else:
-            major = parse_version_major(bin_path)
-            return bin_path if major == required_clang_format_major else None
-
-    bin_path = find_bin_by_name("clang-format")
-    if bin_path is not None:
-        bin_version = parse_version(bin_path)
-        return bin_path, bin_version
-
-    bin_path = find_bin_by_name(f"clang-format-{required_clang_format_major}")
+    bin_path = shutil.which("clang-format")
     if bin_path is not None:
         bin_version = parse_version(bin_path)
         return bin_path, bin_version
 
     raise RuntimeError(
-        f"clang-format version {required_clang_format_major} not found. "
-        "See https://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
-        "for help on clang-format installation.")
+        "clang-format version not found. Please install with "
+        "'pip install -c python/requirements_style.txt clang-format'")
 
 
 def _filter_files(files, ignored_patterns):
     return [
         file for file in files if not any(
             [ignored_pattern in file for ignored_pattern in ignored_patterns])
+    ]
+
+
+def _filter_changed_files(files):
+    """Keep files changed in Git, including untracked files."""
+    open3d_root_dir = Path(__file__).resolve().parent.parent
+    changed_files = subprocess.check_output(
+        ["git", "diff", "--name-only", "HEAD"],
+        cwd=open3d_root_dir,
+        text=True,
+    ).splitlines()
+    untracked_files = subprocess.check_output(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=open3d_root_dir,
+        text=True,
+    ).splitlines()
+    changed_paths = {
+        str((open3d_root_dir / file_path).resolve())
+        for file_path in changed_files + untracked_files
+    }
+    return [
+        file for file in files if str(Path(file).resolve()) in changed_paths
     ]
 
 
@@ -392,27 +367,41 @@ def main():
         default=False,
         help="If true, prints file names while formatting.",
     )
+    parser.add_argument(
+        "--changed-only",
+        dest="changed_only",
+        action="store_true",
+        default=False,
+        help="Only process files changed in Git.",
+    )
     args = parser.parse_args()
 
     # Check formatting libs
     clang_format_bin, clang_format_version = _find_clang_format()
-    print(f"Using clang-format {clang_format_bin} ({clang_format_bin})")
+    print(f"Using clang-format {clang_format_version} ({clang_format_bin})")
     print(f"Using yapf {yapf.__version__} ({yapf.__file__})")
     print(f"Using nbformat {nbformat.__version__} ({nbformat.__file__})")
     pwd = Path(__file__).resolve().parent
     python_style_config = str(pwd.parent / ".style.yapf")
 
     cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
-    cpp_files = _glob_files(CPP_FORMAT_DIRS,
-                            ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])
+    cpp_files = _glob_files(
+        CPP_FORMAT_DIRS,
+        ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in", "mm", "comp"])
     cpp_files = _filter_files(cpp_files, cpp_ignored_files)
+    python_files = _glob_files(PYTHON_FORMAT_DIRS, ["py"])
+    jupyter_files = _glob_files(JUPYTER_FORMAT_DIRS, ["ipynb"])
+
+    if args.changed_only:
+        cpp_files = _filter_changed_files(cpp_files)
+        python_files = _filter_changed_files(python_files)
+        jupyter_files = _filter_changed_files(jupyter_files)
 
     # Check or apply style
     cpp_formatter = CppFormatter(cpp_files, clang_format_bin=clang_format_bin)
-    python_formatter = PythonFormatter(_glob_files(PYTHON_FORMAT_DIRS, ["py"]),
+    python_formatter = PythonFormatter(python_files,
                                        style_config=python_style_config)
-    jupyter_formatter = JupyterFormatter(_glob_files(JUPYTER_FORMAT_DIRS,
-                                                     ["ipynb"]),
+    jupyter_formatter = JupyterFormatter(jupyter_files,
                                          style_config=python_style_config)
 
     changed_files = []

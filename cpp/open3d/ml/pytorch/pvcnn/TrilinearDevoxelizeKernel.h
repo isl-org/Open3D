@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -83,3 +83,27 @@ void TrilinearDevoxelizeGrad(int b,
                              const float *wgts,
                              const float *grad_y,
                              float *grad_x);
+
+#ifdef BUILD_SYCL_MODULE
+void TrilinearDevoxelizeSYCLLauncher(int b,
+                                     int c,
+                                     int n,
+                                     int r,
+                                     int r2,
+                                     int r3,
+                                     bool is_training,
+                                     const float *coords,
+                                     const float *feat,
+                                     int *inds,
+                                     float *wgts,
+                                     float *outs);
+
+void TrilinearDevoxelizeGradSYCLLauncher(int b,
+                                         int c,
+                                         int n,
+                                         int r3,
+                                         const int *inds,
+                                         const float *wgts,
+                                         const float *grad_y,
+                                         float *grad_x);
+#endif

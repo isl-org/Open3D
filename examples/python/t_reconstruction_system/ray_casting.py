@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -55,11 +55,11 @@ if __name__ == '__main__':
         config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
             config.path_dataset)
 
-    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
+    device = o3d.core.Device(config.device)
+    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz).to(device)
     depth_file_names = load_depth_file_names(config)
     intrinsic = load_intrinsic(config)
     extrinsics = load_extrinsics(config.path_trajectory, config)
-    device = o3d.core.Device(config.device)
 
     for i, extrinsic in tqdm(enumerate(extrinsics)):
         depth = o3d.t.io.read_image(depth_file_names[i]).to(device)

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -17,8 +17,6 @@
 
 namespace open3d {
 namespace tests {
-
-TEST(SYCLUtils, SYCLDemo) { core::sy::SYCLDemo(); }
 
 TEST(SYCLUtils, PrintAllSYCLDevices) {
     core::sy::PrintSYCLDevices(/*print_all=*/true);

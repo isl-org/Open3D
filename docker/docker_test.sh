@@ -16,48 +16,46 @@ __usage_docker_test="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
     openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
     openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
-    openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
+    openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
+    openblas-amd64-py314-dev    : OpenBLAS AMD64 3.14 wheel, developer mode
     openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
     openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
     openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
+    openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
+    openblas-amd64-py314        : OpenBLAS AMD64 3.14 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py311-dev    : OpenBLAS ARM64 3.11 wheel, developer mode
     openblas-arm64-py312-dev    : OpenBLAS ARM64 3.12 wheel, developer mode
-    openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
+    openblas-arm64-py313-dev    : OpenBLAS ARM64 3.13 wheel, developer mode
+    openblas-arm64-py314-dev    : OpenBLAS ARM64 3.14 wheel, developer mode
     openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
     openblas-arm64-py311        : OpenBLAS ARM64 3.11 wheel, release mode
     openblas-arm64-py312        : OpenBLAS ARM64 3.12 wheel, release mode
+    openblas-arm64-py313        : OpenBLAS ARM64 3.13 wheel, release mode
+    openblas-arm64-py314        : OpenBLAS ARM64 3.14 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
     cpu-static-release          : Ubuntu CPU static, release mode
-    cpu-shared                  : Ubuntu CPU shared
-    cpu-shared-release          : Ubuntu CPU shared, release mode
     cpu-shared-ml               : Ubuntu CPU shared with ML
     cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
 
     # Sycl CPU CI (Dockerfile.ci)
-    sycl-shared                : SYCL (oneAPI) with shared lib
-    sycl-static                : SYCL (oneAPI) with static lib
+    sycl-shared [phase]        : SYCL (oneAPI) with shared lib. Optional 2nd
+                                 arg: cpp, python, lib, or all (default).
+    sycl-static [phase]        : SYCL (oneAPI) with static lib. See above.
+
+    CPU and OpenBLAS docker tags accept the same optional phase argument.
 
     # ML CIs (Dockerfile.ci)
-    2-focal                   : CUDA CI, 2-focal, developer mode
-    3-ml-shared-focal-release : CUDA CI, 3-ml-shared-focal, release mode
-    3-ml-shared-focal         : CUDA CI, 3-ml-shared-focal, developer mode
-    4-shared-focal            : CUDA CI, 4-shared-focal, developer mode
-    4-shared-focal-release    : CUDA CI, 4-shared-focal, release mode
-    5-ml-jammy                : CUDA CI, 5-ml-jammy, developer mode
+    2-noble                   : CUDA CI, 2-noble, developer mode
+    3-ml-shared-noble-release : CUDA CI, 3-ml-shared-noble (cxx11_abi), release mode
+    3-ml-shared-noble         : CUDA CI, 3-ml-shared-noble (cxx11_abi), developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -73,7 +71,6 @@ ci_print_env() {
     echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
     echo "[ci_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
     echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[ci_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
@@ -103,53 +100,94 @@ restart_docker_daemon_if_on_gcloud() {
     fi
 }
 
-cpp_python_linking_uninstall_test() {
+docker_run_setup() {
+    # Sets shared variables used by cpp_test(), python_test(),
+    # linking_test() and uninstall_test():
+    # - docker_run : "docker run" command prefix with config-dependent flags
+    # - pytest_args: pytest arguments, e.g. to skip ML ops tests
     # Expects the following environment variables to be set:
-    # - DOCKER_TAG
-    # - BUILD_SHARED_LIBS
     # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
-    # - BUILD_SYCL_MODULE
     # - NPROC (optional)
-    echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cpp_python_linking_uninstall_test()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
-    echo "[cpp_python_linking_uninstall_test()] NPROC=${NPROC:=$(nproc)}"
+    echo "[docker_run_setup()] NPROC=${NPROC:=$(nproc)}"
 
-    # Config-dependent argument: gpu_run_args
     docker_run="docker run --cpus ${NPROC}"
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
         docker_run="${docker_run} --gpus all"
     fi
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        docker_run="${docker_run} --device=/dev/dri"
+        # Only request the DRI render node if present. GCE VMs used for
+        # Intel GPU CI have one, but GitHub-hosted runners are CPU-only and
+        # have no /dev/dri; the SYCL runtime falls back to the CPU device
+        # automatically in that case (see PrintSYCLDevices() in
+        # cpp/open3d/core/SYCLUtils.cpp).
+        if [ -e /dev/dri ]; then
+            docker_run="${docker_run} --device=/dev/dri"
+        fi
+        if [ -n "${CI:-}" ]; then
+            docker_run="${docker_run} --env CI=${CI}"
+        fi
     fi
 
-    # Config-dependent argument: pytest_args
     if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
         pytest_args="--ignore python/test/ml_ops/"
     else
         pytest_args=""
     fi
+}
+
+cpp_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[cpp_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
     restart_docker_daemon_if_on_gcloud
 
-    # C++ test
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c " \
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
         cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && ./bin/tests --gtest_shuffle \
     "
     restart_docker_daemon_if_on_gcloud
+}
 
-    # Python test
+python_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[python_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
+    restart_docker_daemon_if_on_gcloud
+
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \
         python  -W default -m pytest python/test ${pytest_args} -s"
     restart_docker_daemon_if_on_gcloud
+}
+
+linking_test() {
+    # Command-line tools test and C++ linking (cmake/pkg-config) test.
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_SHARED_LIBS
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[linking_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
 
     # Command-line tools test
     echo "testing Open3D command-line tools"
@@ -199,15 +237,61 @@ cpp_python_linking_uninstall_test() {
         "
     fi
     restart_docker_daemon_if_on_gcloud
+}
 
-    # Uninstall
+uninstall_test() {
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_CUDA_MODULE
+    # - BUILD_SYCL_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - NPROC (optional)
+    echo "[uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
+    docker_run_setup
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         cd build \
      && make uninstall \
     "
 }
 
-if [[ "$#" -ne 1 ]]; then
+lib_test() {
+    # C++ unit tests plus command-line / C++ linking and uninstall checks.
+    cpp_test
+    linking_test
+    uninstall_test
+}
+
+cpp_python_linking_uninstall_test() {
+    # Runs the full test suite: C++ unit tests, Python unit tests,
+    # command-line tools + C++ linking tests, and the uninstall test.
+    # Expects the following environment variables to be set:
+    # - DOCKER_TAG
+    # - BUILD_SHARED_LIBS
+    # - BUILD_CUDA_MODULE
+    # - BUILD_PYTORCH_OPS
+    # - BUILD_TENSORFLOW_OPS
+    # - BUILD_SYCL_MODULE
+    # - NPROC (optional)
+    lib_test
+    python_test
+}
+
+run_docker_test_phases() {
+    local phase="${1:-all}"
+    case "${phase}" in
+        cpp) cpp_test ;;
+        python) python_test ;;
+        lib) lib_test ;;
+        all) cpp_python_linking_uninstall_test ;;
+        *)
+            echo "Error: invalid test phase: ${phase}." >&2
+            print_usage_and_exit_docker_test
+            ;;
+    esac
+}
+
+if [[ "$#" -lt 1 ]]; then
     echo "Error: invalid number of arguments." >&2
     print_usage_and_exit_docker_test
 fi
@@ -215,185 +299,159 @@ echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/docker/docker_build.sh"
 case "$1" in
 # OpenBLAS AMD64
-openblas-amd64-py38-dev)
-    openblas_export_env amd64 py38 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-openblas-amd64-py39-dev)
-    openblas_export_env amd64 py39 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
 openblas-amd64-py310-dev)
     openblas_export_env amd64 py310 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py311-dev)
     openblas_export_env amd64 py311 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py312-dev)
     openblas_export_env amd64 py312 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-openblas-amd64-py38)
-    openblas_export_env amd64 py38
+openblas-amd64-py313-dev)
+    openblas_export_env amd64 py313 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-openblas-amd64-py39)
-    openblas_export_env amd64 py39
+openblas-amd64-py314-dev)
+    openblas_export_env amd64 py314 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py310)
     openblas_export_env amd64 py310
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py311)
     openblas_export_env amd64 py311
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-amd64-py312)
     openblas_export_env amd64 py312
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
+    ;;
+openblas-amd64-py313)
+    openblas_export_env amd64 py313
+    openblas_print_env
+    run_docker_test_phases "${2:-all}"
+    ;;
+openblas-amd64-py314)
+    openblas_export_env amd64 py314
+    openblas_print_env
+    run_docker_test_phases "${2:-all}"
     ;;
 
 # OpenBLAS ARM64
-openblas-arm64-py38-dev)
-    openblas_export_env arm64 py38 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-openblas-arm64-py39-dev)
-    openblas_export_env arm64 py39 dev
-    openblas_print_env
-    cpp_python_linking_uninstall_test
-    ;;
 openblas-arm64-py310-dev)
     openblas_export_env arm64 py310 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py311-dev)
     openblas_export_env arm64 py311 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py312-dev)
     openblas_export_env arm64 py312 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-openblas-arm64-py38)
-    openblas_export_env arm64 py38
+openblas-arm64-py313-dev)
+    openblas_export_env arm64 py313 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-openblas-arm64-py39)
-    openblas_export_env arm64 py39
+openblas-arm64-py314-dev)
+    openblas_export_env arm64 py314 dev
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py310)
     openblas_export_env arm64 py310
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py311)
     openblas_export_env arm64 py311
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 openblas-arm64-py312)
     openblas_export_env arm64 py312
     openblas_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
+    ;;
+openblas-arm64-py313)
+    openblas_export_env arm64 py313
+    openblas_print_env
+    run_docker_test_phases "${2:-all}"
+    ;;
+openblas-arm64-py314)
+    openblas_export_env arm64 py314
+    openblas_print_env
+    run_docker_test_phases "${2:-all}"
     ;;
 
 # CPU CI
 cpu-static)
     cpu-static_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-static-release)
     cpu-static-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared)
-    cpu-shared_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-cpu-shared-release)
-    cpu-shared-release_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-shared-ml)
     cpu-shared-ml_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 cpu-shared-ml-release)
     cpu-shared-ml-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 
-# SYCL CI
+# SYCL CI — optional 2nd arg: cpp, python, lib, or all (see run_docker_test_phases).
 sycl-shared)
     sycl-shared_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 sycl-static)
     sycl-static_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
 
-# ML CIs
-2-focal)
-    2-focal_export_env
+    # ML CIs
+2-noble)
+    2-noble_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-3-ml-shared-focal)
-    3-ml-shared-focal_export_env
+3-ml-shared-noble-release)
+    3-ml-shared-noble-release_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-3-ml-shared-focal-release)
-    3-ml-shared-focal-release_export_env
+3-ml-shared-noble)
+    3-ml-shared-noble_export_env
     ci_print_env
-    cpp_python_linking_uninstall_test
+    run_docker_test_phases "${2:-all}"
     ;;
-4-shared-focal)
-    4-shared-focal_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-4-shared-focal-release)
-    4-shared-focal-release_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-5-ml-jammy)
-    5-ml-jammy_export_env
-    ci_print_env
-    cpp_python_linking_uninstall_test
-    ;;
-
 *)
     echo "Error: invalid argument: ${1}." >&2
     print_usage_and_exit_docker_test

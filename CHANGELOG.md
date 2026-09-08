@@ -1,4 +1,25 @@
 ## Main
+-   Reduce the installed size of the Open3D wheel: Open3D-ML Python dependencies are now an optional extra (`pip install open3d[ml]`, ~335 MB smaller for core-only installs) and `open3d.ml` submodules are imported lazily. `BUNDLE_OPEN3D_ML` now defaults to ON when ML ops are built and `OPEN3D_ML_ROOT` is set, and Windows wheels bundle Open3D-ML too (PR #7540).
+-   Add symmetric ICP registration to the legacy and Tensor pipelines (PR #7276).
+-   Replace OpenMP with oneAPI TBB for all CPU parallelism; Open3D no longer depends on OpenMP. This removes the `libomp` / `libgomp` runtime dependency and the thread oversubscription and crashes caused by loading multiple OpenMP runtimes in one process (e.g. alongside PyTorch in Python). The `WITH_OPENMP` CMake option is removed, oneTBB >= 2021.4.0 is required, and `OMP_NUM_THREADS` is replaced by `open3d.utility.set_max_threads()` (C++: `utility::SetMaxThreads()` or a `tbb::task_arena`). `utility::OMPProgressBar` is removed in favor of the thread-safe `utility::ProgressBar`; `utility::GetThreadNum()` and `utility::InParallel()` are removed (PR #6626) (issues #6196, #6544, #6750)
+-   Add point cloud smoothing algorithms: Moving Least Squares (MLS), Laplacian, Taubin, and bilateral smoothing. These methods provide flexible noise reduction for point clouds with different preservation characteristics (PR #7419).
+-   Add vcpkg support for easier dependency management (PR #7386)
+-   Exposed advanced parameters (`full_depth`, `samples_per_node`, `point_weight`) for Poisson surface reconstruction in `TriangleMesh.create_from_point_cloud_poisson` (PR #7430) (issue #7248)
+-   Add SYCL tensor backends for HashMap, nearest-neighbor search (KNN, fixed-radius, hybrid), geometry transforms, and registration / odometry / feature pipelines (parity with CUDA paths where applicable).
+-   Fix Gaussian Splat rendering on Vulkan by disabling view MSAA before binding a render target with sampleable depth (issue #7495).
+-   Add SYCL ML ops: continuous convolution and sparse convolution (forward/transpose/backprop-filter, sycl-tla GEMM-accelerated), voxelize, voxel pooling, invert neighbors list, reduce-subarrays-sum, and ragged-to-dense, plus contrib NMS, RoI pool, ball query, IoU (BEV + 3D), trilinear devoxelize, and three-interpolate, all exposed via the PyTorch XPU op library.
+-   Hybrid nearest-neighbor search on SYCL now supports the L1 and Linf metrics (previously L2-only), matching fixed-radius search and CUDA.
+-   Convolution ops' `allow_tf32` acceleration on SYCL requires channel counts and leading dimensions to be divisible by 4; falls back to IEEE float32 with a one-time warning otherwise. See `docs/sycl.rst`.
+-   Document a RoI-pool point-selection divergence between the SYCL and CPU/CUDA backends when more than `sampled_pts_num` points fall inside a box (both are valid samples; downstream counts and `pooled_empty_flag` remain identical). See `docs/sycl.rst`.
+-   Add compressed SPZ file I/O for tensor-based Gaussian splats, with zstd dependency integration, round-trip tests, and notebook samples.
+-   Fix system zstd propagation to the nested SPZ build so its headers and library are installed correctly.
+-   Add Windows shared-library CUDA and SYCL Python wheels (`open3d-cuda`, `open3d-xpu`) built against the installed devel package; ship NVIDIA CUDA 12.6 runtime pip dependencies (`python/requirements_win_cuda.txt`) since CUDA is linked dynamically on Windows
+-   Fix WebRTC prebuilt packaging and CI workflow across Linux, macOS arm64, and Windows runtime variants (PR #7515)
+-   Add `CorrespondenceCheckerBasedOnSourceRotation` to constrain global orientation priors in RANSAC registration (PR #7461)
+-   Use glfwGetMonitorWorkarea for accurate screen size in GetScreenSize, remove unusable_height estimation hack, and subtract window-decoration extents before clamping auto-sized windows (PR #7469)
+-   Upgrade stdgpu third-party library to commit d7c07d0.
+-   Fix performance for non-contiguous NumPy array conversion in pybind vector converters. This change removes restrictive `py::array::c_style` flags and adds a runtime contiguity check, improving Pandas-to-Open3D conversion speed by up to ~50×. (issue #5250)(PR #7343).
+-   Corrected documentation for Link Open3D in C++ projects (broken links).
 -   Fix DLLs not being found in Python-package. Also prevent PATH from being searched for DLLs, except CUDA (PR #7108)
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
@@ -38,6 +59,7 @@
 -   Fix macOS arm64 builds, add CI runner for macOS arm64 (PR #6695)
 -   Fix KDTreeFlann possibly using a dangling pointer instead of internal storage and simplified its members (PR #6734)
 -   Fix RANSAC early stop if no inliers in a specific iteration (PR #6789)
+-   Add 3D Normal Distributions Transform registration with C++ and Python APIs (PR #7517).
 -   Fix segmentation fault (infinite recursion) of DetectPlanarPatches if multiple points have same coordinates (PR #6794)
 -   `TriangleMesh`'s `+=` operator appends UVs regardless of the presence of existing features (PR #6728)
 -   Fix build with fmt v10.2.0 (#6783)
@@ -60,6 +82,22 @@
 -   Fix CMake configuration summary incorrectly reporting `no` for system BLAS. (PR #7230)
 -   Add error handling for insufficient correspondences in AdvancedMatching (PR #7234)
 -   Exposed `get_plotly_fig` and modified `draw_plotly` to return the `Figure` it creates. (PR #7258)
+-   Fix build with librealsense v2.44.0 and upcoming VS 2022 17.13 (PR #7074)
+-   Fix `deprecated-declarations` warnings when compiling code with C++20 standard (PR #7303)
+-   Fix thread safety of UniformTSDFVolume::ExtractVoxelGrid (PR #7315)
+-   Fix advanced indexing bug with sliced boolean masks on CUDA devices (PR #7340)
+-   Fix logic for adding -allow-unsupported-compiler to nvcc (PR #7337)
+-   Fix linker error "library limit of 65535 objects exceeded" with Ninja generator on MSVC (PR #7335)
+-   Add assertion guard for invalid indexing operations (PR #7360)
+-   Implement CUDA multipass for KNN > `GPU_MAX_SELECTION_K` (PR #7381)
+-   Download tarballs instead of Git repos for "3rdparty/uvatlas" (PR #7371)
+-   macOS x86_64 not longer supported, only macOS arm64 is supported.
+-   Python 3.13+3.14 support
+-   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
+-   Sync the bundled CUTLASS license with v4.2.1 (PR #7542).
+-   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
+-   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
+-   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
 
 ## 0.13
 

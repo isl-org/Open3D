@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -70,6 +70,18 @@ torch::Tensor RaggedToDense(torch::Tensor values,
         CALL(double, RaggedToDenseCUDA)
 #else
         TORCH_CHECK(false, "RaggedToDense was not compiled with CUDA support")
+#endif
+    } else if (values.is_xpu()) {
+#ifdef BUILD_SYCL_MODULE
+        CALL(uint8_t, RaggedToDenseSYCL)
+        CALL(int8_t, RaggedToDenseSYCL)
+        CALL(int16_t, RaggedToDenseSYCL)
+        CALL(int32_t, RaggedToDenseSYCL)
+        CALL(int64_t, RaggedToDenseSYCL)
+        CALL(float, RaggedToDenseSYCL)
+        CALL(double, RaggedToDenseSYCL)
+#else
+        TORCH_CHECK(false, "RaggedToDense was not compiled with SYCL support")
 #endif
     } else {
         CALL(uint8_t, RaggedToDenseCPU)

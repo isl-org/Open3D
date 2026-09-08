@@ -19,6 +19,11 @@ target_sources(utility PRIVATE
     Timer.cpp
 )
 
+target_compile_definitions(utility PRIVATE
+    _FILE_OFFSET_BITS=64
+    _LARGEFILE_SOURCE=1
+)
+
 if (BUILD_ISPC_MODULE)
     target_sources(utility PRIVATE
         ISAInfo.ispc

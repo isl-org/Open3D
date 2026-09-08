@@ -3,12 +3,25 @@ add_library(ml_contrib OBJECT)
 target_sources(ml_contrib PRIVATE
     Cloud.cpp
     GridSubsampling.cpp
-    IoU.cpp
 )
 
 if(BUILD_CUDA_MODULE)
     target_sources(ml_contrib PRIVATE
         IoU.cu
+    )
+endif()
+
+if(BUILD_SYCL_MODULE)
+    # IoU.cpp only defines CPU kernels; IoUSYCL.cpp holds SYCL device code.
+    open3d_sycl_target_sources(ml_contrib PRIVATE
+        IoUSYCL.cpp
+    )
+    target_sources(ml_contrib PRIVATE
+        IoU.cpp
+    )
+else()
+    target_sources(ml_contrib PRIVATE
+        IoU.cpp
     )
 endif()
 

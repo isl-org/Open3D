@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 // @author Ignacio Vizzo     [ivizzo@uni-bonn.de]
@@ -81,7 +81,9 @@ private:
 /// \param max_distance Maximum correspondence points-pair distance.
 /// \param init Initial transformation estimation.
 /// Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.],
-/// [0., 0., 0., 1.]]). \param criteria  Convergence criteria. \param
+/// [0., 0., 0., 1.]]).
+/// \param estimation Estimation method for transformation.
+/// \param criteria Convergence criteria.
 RegistrationResult RegistrationGeneralizedICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,

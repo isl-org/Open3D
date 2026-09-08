@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -11,11 +11,12 @@ import open3d as o3d
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 from open3d_test import list_devices
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_bev_iou(device):
     # (x_center, z_center, x_size, z_size, y_rotate)
     boxes_0 = np.array(
@@ -44,15 +45,18 @@ def test_bev_iou(device):
     elif device.get_type() == o3d.core.Device.DeviceType.CUDA:
         from open3d.ml.contrib import iou_bev_cuda
         iou_bev = iou_bev_cuda
+    elif device.get_type() == o3d.core.Device.DeviceType.SYCL:
+        from open3d.ml.contrib import iou_bev_sycl
+        iou_bev = iou_bev_sycl
     else:
-        raise ("Unsupported device.")
+        raise RuntimeError(f"Unsupported device {device}.")
 
     result = iou_bev(boxes_0, boxes_1)
     np.testing.assert_allclose(result, ref, rtol=1e-5, atol=1e-8)
     assert result.dtype == ref.dtype
 
 
-@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("device", list_devices(enable_sycl=True))
 def test_3d_iou(device):
     # yapf: disable
     # (x_center, y_max, z_center, x_size, y_size, z_size, y_rotate)
@@ -85,8 +89,11 @@ def test_3d_iou(device):
     elif device.get_type() == o3d.core.Device.DeviceType.CUDA:
         from open3d.ml.contrib import iou_3d_cuda
         iou_3d = iou_3d_cuda
+    elif device.get_type() == o3d.core.Device.DeviceType.SYCL:
+        from open3d.ml.contrib import iou_3d_sycl
+        iou_3d = iou_3d_sycl
     else:
-        raise ("Unsupported device.")
+        raise RuntimeError(f"Unsupported device {device}.")
 
     result = iou_3d(boxes_0, boxes_1)
     np.testing.assert_allclose(result, ref, rtol=1e-5, atol=1e-8)

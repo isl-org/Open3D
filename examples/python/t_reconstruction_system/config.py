@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ class ConfigParser(configargparse.ArgParser):
 
         # Resolve conflicts
         if config.engine == 'legacy':
-            if config.device.lower().startswith('cuda'):
+            if config.device.lower().startswith(('cuda', 'sycl')):
                 print('Legacy engine only supports CPU.', 'Fallback to CPU.')
                 config.device = 'CPU:0'
 
@@ -153,11 +153,12 @@ class ConfigParser(configargparse.ArgParser):
                       'Disabled.')
                 config.multiprocessing = False
 
-            if (config.device.lower().startswith('cuda') and
-                (not o3d.core.cuda.is_available())):
-                print(
-                    'Open3d not built with cuda support or no cuda device available. ',
-                    'Fallback to CPU.')
+            device_type = config.device.lower().split(':', 1)[0]
+            if device_type == 'cuda' and not o3d.core.cuda.is_available():
+                print('Open3d CUDA support is unavailable. Fallback to CPU.')
+                config.device = 'CPU:0'
+            elif device_type == 'sycl' and not o3d.core.sycl.is_available():
+                print('Open3d SYCL support is unavailable. Fallback to CPU.')
                 config.device = 'CPU:0'
 
         return config

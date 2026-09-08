@@ -1,13 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/pipelines/registration/Feature.h"
 
-#include "open3d/core/ParallelFor.h"
+#include <tbb/parallel_for.h>
+
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/Feature.h"
@@ -19,11 +20,10 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-core::Tensor ComputeFPFHFeature(
-        const geometry::PointCloud &input,
-        const utility::optional<int> max_nn,
-        const utility::optional<double> radius,
-        const utility::optional<core::Tensor> &indices) {
+core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
+                                const std::optional<int> max_nn,
+                                const std::optional<double> radius,
+                                const std::optional<core::Tensor> &indices) {
     core::AssertTensorDtypes(input.GetPointPositions(),
                              {core::Float64, core::Float32});
     if (max_nn.has_value() && max_nn.value() <= 3) {
@@ -285,20 +285,18 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
     std::array<core::Tensor, 2> features{source_features, target_features};
     std::vector<core::Tensor> corres(num_searches);
 
-    const int kMaxThreads = utility::EstimateMaxThreads();
-    const int kOuterThreads = std::min(kMaxThreads, num_searches);
-    (void)kOuterThreads;  // Avoids compiler warning if OpenMP is disabled
-
     // corres[0]: corres_ij, corres[1]: corres_ji
-#pragma omp parallel for num_threads(kOuterThreads)
-    for (int i = 0; i < num_searches; ++i) {
-        core::nns::NearestNeighborSearch nns(features[1 - i],
-                                             core::Dtype::Int64);
-        nns.KnnIndex();
-        auto result = nns.KnnSearch(features[i], 1);
+    tbb::parallel_for(tbb::blocked_range<int>(0, num_searches, 1),
+                      [&](const tbb::blocked_range<int> &range) {
+                          for (int i = range.begin(); i < range.end(); ++i) {
+                              core::nns::NearestNeighborSearch nns(
+                                      features[1 - i], core::Dtype::Int64);
+                              nns.KnnIndex();
+                              auto result = nns.KnnSearch(features[i], 1);
 
-        corres[i] = result.first.View({-1});
-    }
+                              corres[i] = result.first.View({-1});
+                          }
+                      });
 
     auto corres_ij = corres[0];
     core::Tensor arange_source =

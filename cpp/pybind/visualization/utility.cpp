@@ -1,9 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+
+#include <filesystem>
+namespace fs = std::filesystem;
+#include <pybind11/stl/filesystem.h>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -114,11 +118,10 @@ void pybind_visualization_utility_definitions(py::module &m) {
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
                int top, bool point_show_normal, bool mesh_show_wireframe,
-               bool mesh_show_back_face,
-               utility::optional<Eigen::Vector3d> lookat,
-               utility::optional<Eigen::Vector3d> up,
-               utility::optional<Eigen::Vector3d> front,
-               utility::optional<double> zoom) {
+               bool mesh_show_back_face, std::optional<Eigen::Vector3d> lookat,
+               std::optional<Eigen::Vector3d> up,
+               std::optional<Eigen::Vector3d> front,
+               std::optional<double> zoom) {
                 std::string current_dir =
                         utility::filesystem::GetWorkingDirectory();
                 DrawGeometries(geometry_ptrs, window_name, width, height, left,
@@ -144,20 +147,31 @@ void pybind_visualization_utility_definitions(py::module &m) {
             [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                        &geometry_ptrs,
                const std::string &window_name, int width, int height, int left,
-               int top, const fs::path &json_filename) {
+               int top, py::object json_filename) {
+                // Use py::object instead of fs::path so pybind11 renders the
+                // default value in the docstring signature for stub generation.
                 std::string current_dir =
                         utility::filesystem::GetWorkingDirectory();
+                std::string json_str;
+                if (!json_filename.is_none()) {
+                    // Accept str or os.PathLike (pathlib.Path, etc.)
+                    if (py::isinstance<py::str>(json_filename)) {
+                        json_str = json_filename.cast<std::string>();
+                    } else {
+                        json_str = json_filename.attr("__fspath__")()
+                                           .cast<std::string>();
+                    }
+                }
                 DrawGeometriesWithCustomAnimation(geometry_ptrs, window_name,
                                                   width, height, left, top,
-                                                  json_filename.string());
+                                                  json_str);
                 utility::filesystem::ChangeWorkingDirectory(current_dir);
             },
             "Function to draw a list of geometry::Geometry objects with a GUI "
-            "that "
-            "supports animation",
+            "that supports animation",
             "geometry_list"_a, "window_name"_a = "Open3D", "width"_a = 1920,
             "height"_a = 1080, "left"_a = 50, "top"_a = 50,
-            "optional_view_trajectory_json_file"_a = "");
+            "optional_view_trajectory_json_file"_a = py::none());
     docstring::FunctionDocInject(m, "draw_geometries_with_custom_animation",
                                  map_shared_argument_docstrings);
 

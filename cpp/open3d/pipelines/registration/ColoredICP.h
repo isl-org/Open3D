@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ class RegistrationResult;
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
 public:
-    ~TransformationEstimationForColoredICP() override{};
+    ~TransformationEstimationForColoredICP() override {};
 
     TransformationEstimationType GetTransformationEstimationType()
             const override {

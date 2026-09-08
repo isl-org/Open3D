@@ -1,6 +1,7 @@
 target_sources(benchmarks PRIVATE
     BinaryEW.cpp
     HashMap.cpp
+    NearestNeighborSearch.cpp
     Linalg.cpp
     MemoryManager.cpp
     ParallelFor.cpp

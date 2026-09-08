@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 import copy
@@ -180,8 +180,11 @@ if __name__ == "__main__":
         print(f'  where EXAMPLE are from {examples}')
         selected = ('property_reference', 'with_material')
 
-    for eg in selected:
-        locals()[eg]()
+    try:
+        for eg in selected:
+            locals()[eg]()
+    finally:
+        summary._async_data_writer.close()
 
     print(f"Run 'tensorboard --logdir {BASE_LOGDIR}' to visualize the 3D "
           "summary.")

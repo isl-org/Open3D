@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -29,22 +29,21 @@ public:
     TransformIndexer(const core::Tensor& intrinsics,
                      const core::Tensor& extrinsics,
                      float scale = 1.0f) {
-        core::AssertTensorShape(intrinsics, {3, 3});
-        core::AssertTensorDtype(intrinsics, core::Float64);
-        core::AssertTensorDevice(intrinsics, core::Device("CPU:0"));
-        if (!intrinsics.IsContiguous()) {
-            utility::LogError("Intrinsics is not contiguous");
-        }
+        // Move to CPU for host-side data extraction (the extracted float
+        // values are used in OPEN3D_HOST_DEVICE methods).
+        core::Tensor intrinsics_cpu =
+                intrinsics.To(core::Device("CPU:0")).Contiguous();
+        core::Tensor extrinsics_cpu =
+                extrinsics.To(core::Device("CPU:0")).Contiguous();
 
-        core::AssertTensorShape(extrinsics, {4, 4});
-        core::AssertTensorDtype(extrinsics, core::Float64);
-        core::AssertTensorDevice(extrinsics, core::Device("CPU:0"));
-        if (!extrinsics.IsContiguous()) {
-            utility::LogError("Extrinsics is not contiguous");
-        }
+        core::AssertTensorShape(intrinsics_cpu, {3, 3});
+        core::AssertTensorDtype(intrinsics_cpu, core::Float64);
 
-        const double* intrinsic_ptr = intrinsics.GetDataPtr<double>();
-        const double* extrinsic_ptr = extrinsics.GetDataPtr<double>();
+        core::AssertTensorShape(extrinsics_cpu, {4, 4});
+        core::AssertTensorDtype(extrinsics_cpu, core::Float64);
+
+        const double* intrinsic_ptr = intrinsics_cpu.GetDataPtr<double>();
+        const double* extrinsic_ptr = extrinsics_cpu.GetDataPtr<double>();
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 4; ++j) {
                 extrinsic_[i][j] = extrinsic_ptr[i * 4 + j];

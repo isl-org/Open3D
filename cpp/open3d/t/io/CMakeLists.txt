@@ -14,6 +14,7 @@ target_sources(tio PRIVATE
     file_format/FilePCD.cpp
     file_format/FilePLY.cpp
     file_format/FileSPLAT.cpp
+    file_format/FileSPZ.cpp
     file_format/FilePNG.cpp
     file_format/FilePTS.cpp
     file_format/FileTXT.cpp
@@ -35,4 +36,5 @@ endif()
 open3d_show_and_abort_on_warning(tio)
 open3d_set_global_properties(tio)
 open3d_set_open3d_lib_properties(tio)
+target_link_libraries(tio PRIVATE Open3D::3rdparty_spz)
 open3d_link_3rdparty_libraries(tio)

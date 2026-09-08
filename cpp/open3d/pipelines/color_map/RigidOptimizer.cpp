@@ -1,13 +1,16 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/pipelines/color_map/RigidOptimizer.h"
 
+#include <tbb/parallel_for.h>
+
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "open3d/io/ImageIO.h"
@@ -16,7 +19,6 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Optional.h"
 #include "open3d/utility/Parallel.h"
 
 namespace open3d {
@@ -136,77 +138,77 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
 
     utility::LogDebug("[ColorMapOptimization] Rigid Optimization");
     std::vector<double> proxy_intensity;
-    int total_num_ = 0;
+    std::atomic<int> total_num_ = 0;
     int n_camera = int(opt_camera_trajectory.parameters_.size());
-    SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+    SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                opt_camera_trajectory,
                                visibility_vertex_to_image, proxy_intensity,
                                option.image_boundary_margin_);
     for (int itr = 0; itr < option.maximum_iteration_; itr++) {
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
-        double residual = 0.0;
+        std::atomic<double> residual = 0.0;
         total_num_ = 0;
-#pragma omp parallel for schedule(static) \
-        num_threads(utility::EstimateMaxThreads())
-        for (int c = 0; c < n_camera; c++) {
-            Eigen::Matrix4d pose;
-            pose = opt_camera_trajectory.parameters_[c].extrinsic_;
+        tbb::parallel_for(
+                tbb::blocked_range<int>(0, n_camera, 1),
+                [&](const tbb::blocked_range<int>& range) {
+                    for (int c = range.begin(); c < range.end(); ++c) {
+                        Eigen::Matrix4d pose;
+                        pose = opt_camera_trajectory.parameters_[c].extrinsic_;
 
-            auto intrinsic = opt_camera_trajectory.parameters_[c]
-                                     .intrinsic_.intrinsic_matrix_;
-            auto extrinsic = opt_camera_trajectory.parameters_[c].extrinsic_;
-            Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
-            intr.block<3, 3>(0, 0) = intrinsic;
-            intr(3, 3) = 1.0;
+                        auto intrinsic = opt_camera_trajectory.parameters_[c]
+                                                 .intrinsic_.intrinsic_matrix_;
+                        auto extrinsic =
+                                opt_camera_trajectory.parameters_[c].extrinsic_;
+                        Eigen::Matrix4d intr = Eigen::Matrix4d::Zero();
+                        intr.block<3, 3>(0, 0) = intrinsic;
+                        intr(3, 3) = 1.0;
 
-            auto f_lambda = [&](int i, Eigen::Vector6d& J_r, double& r,
-                                double& w) {
-                w = 1.0;  // Dummy.
-                ComputeJacobianAndResidualRigid(
-                        i, J_r, r, w, opt_mesh, proxy_intensity, images_gray[c],
-                        images_dx[c], images_dy[c], intr, extrinsic,
-                        visibility_image_to_vertex[c],
-                        option.image_boundary_margin_);
-            };
-            Eigen::Matrix6d JTJ;
-            Eigen::Vector6d JTr;
-            double r2;
-            std::tie(JTJ, JTr, r2) =
-                    utility::ComputeJTJandJTr<Eigen::Matrix6d, Eigen::Vector6d>(
-                            f_lambda, int(visibility_image_to_vertex[c].size()),
-                            false);
+                        auto f_lambda = [&](int i, Eigen::Vector6d& J_r,
+                                            double& r, double& w) {
+                            w = 1.0;  // Dummy.
+                            ComputeJacobianAndResidualRigid(
+                                    i, J_r, r, w, opt_mesh, proxy_intensity,
+                                    images_gray[c], images_dx[c], images_dy[c],
+                                    intr, extrinsic,
+                                    visibility_image_to_vertex[c],
+                                    option.image_boundary_margin_);
+                        };
+                        Eigen::Matrix6d JTJ;
+                        Eigen::Vector6d JTr;
+                        double r2;
+                        std::tie(JTJ, JTr, r2) = utility::ComputeJTJandJTr<
+                                Eigen::Matrix6d, Eigen::Vector6d>(
+                                f_lambda,
+                                int(visibility_image_to_vertex[c].size()),
+                                false);
 
-            bool is_success;
-            Eigen::Matrix4d delta;
-            std::tie(is_success, delta) =
-                    utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ,
-                                                                         JTr);
-            pose = delta * pose;
-            opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-#pragma omp critical(RunRigidOptimizer)
-            {
-                residual += r2;
-                total_num_ += int(visibility_image_to_vertex[c].size());
-            }
-        }
+                        Eigen::Matrix4d delta;
+                        std::tie(std::ignore, delta) = utility::
+                                SolveJacobianSystemAndObtainExtrinsicMatrix(
+                                        JTJ, JTr);
+                        pose = delta * pose;
+                        opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
+                        utility::AtomicAdd(residual, r2);
+                        total_num_ += int(visibility_image_to_vertex[c].size());
+                    }
+                });
         if (total_num_ > 0) {
             utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})",
-                              residual, residual / total_num_);
+                              residual.load(), residual / total_num_);
         } else {
-            utility::LogDebug("Residual error : {:.6f}", residual);
+            utility::LogDebug("Residual error : {:.6f}", residual.load());
         }
-        SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
+        SetProxyIntensityForVertex(opt_mesh, images_gray, std::nullopt,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,
                                    option.image_boundary_margin_);
 
         if (!option.debug_output_dir_.empty()) {
             // Save opt_mesh.
-            SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
-                                    opt_camera_trajectory,
-                                    visibility_vertex_to_image,
-                                    option.image_boundary_margin_,
-                                    option.invisible_vertex_color_knn_);
+            SetGeometryColorAverage(
+                    opt_mesh, images_color, std::nullopt, opt_camera_trajectory,
+                    visibility_vertex_to_image, option.image_boundary_margin_,
+                    option.invisible_vertex_color_knn_);
             std::string file_name = fmt::format(
                     "{}/iter_{}.ply",
                     option.debug_output_dir_ + "/rigid/opt_mesh", itr);
@@ -222,7 +224,7 @@ RunRigidOptimizer(const geometry::TriangleMesh& mesh,
     }
 
     utility::LogDebug("[ColorMapOptimization] Set Mesh Color");
-    SetGeometryColorAverage(opt_mesh, images_color, utility::nullopt,
+    SetGeometryColorAverage(opt_mesh, images_color, std::nullopt,
                             opt_camera_trajectory, visibility_vertex_to_image,
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);

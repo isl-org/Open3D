@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ void AddMMSYCL(void* A_data,
                Dtype dtype,
                const Device& device) {
     using namespace oneapi::mkl;
-    sycl::queue queue = sy::SYCLContext::GetInstance().GetDefaultQueue(device);
+    sycl::queue queue = sy::GetQueue(device);
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         blas::column_major::gemm(queue, gemmTrA ? transpose::T : transpose::N,
                                  gemmTrB ? transpose::T : transpose::N, m, n, k,

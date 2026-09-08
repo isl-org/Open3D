@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Utility functions for the Open3D TensorBoard plugin."""
@@ -19,7 +19,6 @@ from tensorboard.backend.event_processing.plugin_asset_util import PluginDirecto
 from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 
 import open3d as o3d
-from open3d.visualization import rendering
 # TODO(@ssheorey) Colormap and LabelLUT are duplicated from Open3D-ML. Remove
 # duplicates when 3DML is available on Windows.
 from .colormap import Colormap
@@ -440,8 +439,8 @@ class RenderUpdate:
     DICT_COLORMAPS = {
         name: {
             # float -> uint8, and RGB -> RGBA
-            point.value: _float_to_u8(point.color) + (255,)
-            for point in cmap.points
+            point.value:
+                _float_to_u8(point.color) + (255,) for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
     LABELLUT_COLORS = tuple(
@@ -613,6 +612,8 @@ class RenderUpdate:
                 updated.
             inference_data_proto : BoundingBox labels and confidences.
         """
+        from open3d.visualization import rendering
+
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return

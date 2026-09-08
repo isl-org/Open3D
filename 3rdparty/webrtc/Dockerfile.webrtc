@@ -13,7 +13,7 @@
 #   - docker run --rm --entrypoint cat open3d-webrtc:abi1 \
 #       webrtc_60e6748_cxx-abi-1.tar.gz > webrtc_60e6748_cxx-abi-1.tar.gz
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG SUDO=command
 COPY 3rdparty/webrtc 3rdparty/webrtc

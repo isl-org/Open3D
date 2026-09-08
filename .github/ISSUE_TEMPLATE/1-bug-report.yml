@@ -118,7 +118,7 @@ body:
     value: >
       - Operating system: Ubuntu 20.04 / macOS 10.15 / Windows 10 64-bit
 
-      - Python version: Python 3.8 / output from `import sys; print(sys.version)`
+      - Python version: Python 3.14 / output from `import sys; print(sys.version)`
 
       - Open3D version: output from python: `print(open3d.__version__)`
 

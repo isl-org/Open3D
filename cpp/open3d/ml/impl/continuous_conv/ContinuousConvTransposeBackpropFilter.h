@@ -1,15 +1,14 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #pragma once
 
+#include <tbb/mutex.h>
 #include <tbb/parallel_for.h>
-
-#include <mutex>
 
 #include "open3d/ml/impl/continuous_conv/CoordinateTransformation.h"
 
@@ -62,7 +61,10 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
 
     memset(filter_backprop, 0,
            sizeof(TOut) * spatial_filter_size * in_channels * out_channels);
-    std::mutex filter_backprop_mutex;
+    tbb::mutex filter_backprop_mutex;
+
+    typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
+    typedef Eigen::Array<TReal, VECSIZE, 3> Matrix3C;
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_out, 32),
@@ -75,13 +77,12 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                 Eigen::Matrix<TFeat, Eigen::Dynamic, Eigen::Dynamic> C(
                         out_channels, range_length);
 
-                typedef Eigen::Array<TFeat, VECSIZE, Eigen::Dynamic> Matrix;
                 Matrix infeat(VECSIZE, in_channels);
 
                 Eigen::Array<TReal, 3, 1> offsets_(offsets[0], offsets[1],
                                                    offsets[2]);
 
-                Eigen::Array<TReal, VECSIZE, 3> inv_extents;
+                Matrix3C inv_extents;
                 if (INDIVIDUAL_EXTENT == false) {
                     if (ISOTROPIC_EXTENT) {
                         inv_extents = 1 / extents[0];
@@ -207,7 +208,7 @@ void _CConvTransposeBackpropFilterCPU(TOut* filter_backprop,
                 A = (C * B.transpose()).template cast<TOut>();
 
                 {
-                    std::lock_guard<std::mutex> lock(filter_backprop_mutex);
+                    tbb::mutex::scoped_lock lock(filter_backprop_mutex);
                     int linear_i = 0;
                     for (int j = 0; j < spatial_filter_size * in_channels; ++j)
                         for (int i = 0; i < out_channels; ++i, ++linear_i) {

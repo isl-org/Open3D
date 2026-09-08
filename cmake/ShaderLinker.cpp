@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     fprintf(file_out, "// ----------------------------------------------------------------------------\n");
     fprintf(file_out, "// The MIT License (MIT)\n");
     fprintf(file_out, "//\n");
-    fprintf(file_out, "// Copyright (c) 2018-2024 www.open3d.org\n");
+    fprintf(file_out, "// Copyright (c) 2018-2026 www.open3d.org\n");
     fprintf(file_out, "//\n");
     fprintf(file_out, "// Permission is hereby granted, free of charge, to any person obtaining a copy\n");
     fprintf(file_out, "// of this software and associated documentation files (the \"Software\"), to deal\n");

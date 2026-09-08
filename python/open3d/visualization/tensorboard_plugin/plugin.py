@@ -1,12 +1,11 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Open3D visualization plugin for TensorBoard."""
 import os
-import sys
 import threading
 import json
 
@@ -14,9 +13,6 @@ from tensorboard.plugins import base_plugin
 import werkzeug
 from werkzeug import wrappers
 
-if sys.platform == 'darwin':
-    raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
-# TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
 from open3d.visualization import webrtc_server

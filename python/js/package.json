@@ -31,9 +31,13 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "@jupyterlab/builder": "^3.0.0",
+    "@jupyterlab/builder": "^4.0.0",
     "webpack": "^5",
-    "rimraf": "^2.6.1"
+    "rimraf": "^4.0.0"
+  },
+  "resolutions": {
+    "glob": "7.2.3",
+    "abab": "^2.0.6"
   },
   "dependencies": {
     "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",

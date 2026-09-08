@@ -178,6 +178,13 @@ A 3D Mobius knot mesh in PLY format.
 TriangleModel with PBR texture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Open3D can read multi-material models (glTF, FBX, OBJ, STL, OFF, and experimental
+USD import) with :func:`open3d.io.read_triangle_model`. USD support is import-only
+and experimental: mesh geometry and PBR materials (textures and factors) are
+loaded; USD export and full scene features (animation, lights, cameras) are not
+supported. See ``examples/python/io/model_io.py`` for a USDZ sample downloaded
+from Apple's AR Quick Look gallery.
+
 MonkeyModel
 -----------
 

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -143,8 +143,10 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
                     *float_depth, intrinsic, extrinsic, stride,
                     project_valid_depth_only);
         } else if (depth.bytes_per_channel_ == 4) {
+            auto float_depth =
+                    depth.ConvertDepthToFloatImage(depth_scale, depth_trunc);
             return CreatePointCloudFromFloatDepthImage(
-                    depth, intrinsic, extrinsic, stride,
+                    *float_depth, intrinsic, extrinsic, stride,
                     project_valid_depth_only);
         }
     }

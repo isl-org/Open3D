@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -278,7 +278,6 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetBoxPoints) {
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
     core::Device device = GetParam();
-    if (device.IsSYCL()) GTEST_SKIP() << "Not Implemented!";
 
     core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);

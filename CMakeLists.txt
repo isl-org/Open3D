@@ -1,9 +1,12 @@
+# Open3D CMake build system
+# - Must FATAL_ERROR on incompatible build options. No attempts to auto-fix /
+# guess user intent.
 cmake_minimum_required(VERSION 3.24)
-# If you're using Ubuntu 20.04, we suggest you install the latest CMake from the
+# If you're using Ubuntu 22.04, please install the latest CMake from the
 # official repository https://apt.kitware.com/.
 # CMake 3.24+ is required for CUDA native arch selection
 # CMake 3.22+ is required by Assimp v5.4.2
-# CMake 3.20+ is required to detect IntelLLVM compiler for SYCL
+# CMake 3.24+ is required to detect IntelLLVM compiler for SYCL
 
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
@@ -31,20 +34,43 @@ if(APPLE)
     endif()
 endif()
 
+# Detect a direct vcpkg toolchain for automatic dependency management. Custom
+# toolchains that chain-load vcpkg can opt in with -DOPEN3D_USE_VCPKG=ON.
+set(_open3d_use_vcpkg_default OFF)
+if(DEFINED CMAKE_TOOLCHAIN_FILE)
+    cmake_path(GET CMAKE_TOOLCHAIN_FILE FILENAME _open3d_toolchain_filename)
+    if(_open3d_toolchain_filename STREQUAL "vcpkg.cmake")
+        set(_open3d_use_vcpkg_default ON)
+    endif()
+    unset(_open3d_toolchain_filename)
+endif()
+option(OPEN3D_USE_VCPKG
+    "Prefer vcpkg/system dependencies (auto-detected for a direct vcpkg toolchain)"
+    ${_open3d_use_vcpkg_default})
+unset(_open3d_use_vcpkg_default)
+if(OPEN3D_USE_VCPKG)
+    message(STATUS "Open3D: vcpkg mode enabled - preferring system dependencies")
+endif()
+
 include(CMakeDependentOption)
 
 # Open3D build options
-option(BUILD_SHARED_LIBS          "Build shared libraries"                   OFF)
+option(BUILD_SHARED_LIBS          "Build shared libraries"                   ON )
 option(BUILD_EXAMPLES             "Build Open3D examples programs"           ON )
 option(BUILD_UNIT_TESTS           "Build Open3D unit tests"                  OFF)
 option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF)
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
+option(WITH_STUBGEN               "Use pybind11-stubgen to generate stubs"   ON )
+option(IGNORE_STUBGEN_ERRORS      "Ignore all errors during stub generation" OFF )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
-option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"         ON )
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-if (WIN32)   # Causes CUDA runtime error on Windows (See issue #6555)
+if (WIN32)  
+# NVIDIA does not ship static cuBlas/cuSolver libraries for Windows. 
+    option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"     OFF )
+# Causes CUDA runtime error on Windows (See issue #6555)
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    OFF)
 else()
+    option(BUILD_WITH_CUDA_STATIC     "Build with static CUDA libraries"     ON )
     option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"    ON )
 endif()
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
@@ -54,33 +80,67 @@ else()
 endif()
 option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
-option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPP                "Use Intel Integrated Performance Primitives" ON )
-option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-if(BUILD_SHARED_LIBS)
+option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SHARED_LIBS OR WIN32 AND BUILD_SYCL_MODULE)
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
-option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
 if(BUILD_SYCL_MODULE)
-    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING 
+    set(OPEN3D_SYCL_TARGETS "spir64" CACHE STRING
     "SYCL targets: spir64 for JIT, or another for AOT compilation. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
-    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING 
+    set(OPEN3D_SYCL_TARGET_BACKEND_OPTIONS "" CACHE STRING
     "SYCL target backend options, e.g. to compile for a specific device. See https://github.com/intel/llvm/blob/sycl/sycl/doc/UsersManual.md."
 )
     set(BUILD_ISPC_MODULE OFF CACHE BOOL "Build the ISPC module" FORCE)
     set(BUILD_CUDA_MODULE OFF CACHE BOOL "Build the CUDA module" FORCE)
+    # icx -fsycl rejects the static MSVC runtime (/MT, /MTd). 
+    if(WIN32 AND STATIC_WINDOWS_RUNTIME)
+        message(FATAL_ERROR
+            "IntelLLVM does not support STATIC_WINDOWS_RUNTIME=ON with -fsycl.")
+    endif()
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
-if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
+set(ENABLE_SANITIZER OFF CACHE STRING "Enable sanitizer.")
+set_property(CACHE ENABLE_SANITIZER PROPERTY STRINGS
+                    "OFF" "address" "memory" "thread" "undefined")
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
 endif()
 option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
+
+# When using vcpkg, prefer system dependencies (override per lib with
+# -DUSE_SYSTEM_<PKG>=OFF, e.g. if the vcpkg port version is unsuitable).
+# Cache defaults must be set before the USE_SYSTEM_* option() lines below.
+if(OPEN3D_USE_VCPKG)
+    set(USE_SYSTEM_ASSIMP ON CACHE BOOL "Use system pre-installed assimp")
+    set(USE_SYSTEM_EIGEN3 ON CACHE BOOL "Use system pre-installed eigen3")
+    set(USE_SYSTEM_FMT ON CACHE BOOL "Use system pre-installed fmt")
+    set(USE_SYSTEM_GLEW ON CACHE BOOL "Use system pre-installed glew")
+    set(USE_SYSTEM_GLFW ON CACHE BOOL "Use system pre-installed glfw")
+    set(USE_SYSTEM_JPEG ON CACHE BOOL "Use system pre-installed jpeg")
+    set(USE_SYSTEM_JSONCPP ON CACHE BOOL "Use system pre-installed jsoncpp")
+    set(USE_SYSTEM_MSGPACK ON CACHE BOOL "Use system pre-installed msgpack")
+    set(USE_SYSTEM_NANOFLANN ON CACHE BOOL "Use system pre-installed nanoflann")
+    set(USE_SYSTEM_PNG ON CACHE BOOL "Use system pre-installed png")
+    set(USE_SYSTEM_QHULLCPP ON CACHE BOOL "Use system pre-installed qhullcpp")
+    set(USE_SYSTEM_TBB ON CACHE BOOL "Use system pre-installed TBB")
+    set(USE_SYSTEM_TINYGLTF ON CACHE BOOL "Use system pre-installed tinygltf")
+    set(USE_SYSTEM_TINYOBJLOADER ON CACHE BOOL "Use system pre-installed tinyobjloader")
+    set(USE_SYSTEM_VTK ON CACHE BOOL "Use system pre-installed VTK")
+    set(USE_SYSTEM_ZEROMQ ON CACHE BOOL "Use system pre-installed ZeroMQ")
+    set(USE_SYSTEM_OPENSSL ON CACHE BOOL "Use system pre-installed OpenSSL")
+    set(USE_SYSTEM_CURL ON CACHE BOOL "Use system pre-installed curl")
+    set(USE_SYSTEM_EMBREE ON CACHE BOOL "Use system pre-installed Embree")
+    set(USE_SYSTEM_GOOGLETEST ON CACHE BOOL "Use system pre-installed Googletest")
+    set(USE_SYSTEM_ZSTD ON CACHE BOOL "Use system pre-installed zstd")
+    message(STATUS "Open3D: vcpkg mode - default USE_SYSTEM_* ON (override with -DUSE_SYSTEM_<PKG>=OFF)")
+endif()
 
 # 3rd-party build options
 if(LINUX_AARCH64 OR APPLE_AARCH64)
@@ -94,7 +154,12 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
-option(USE_SYSTEM_CURL            "Use system pre-installed curl"            OFF)
+if (APPLE)
+    option(USE_SYSTEM_CURL            "Use system pre-installed curl"         ON)
+else()
+    option(USE_SYSTEM_CURL            "Use system pre-installed curl"        OFF)
+endif()
+option(USE_SYSTEM_CURL_STATIC     "Define CURL_STATICLIB for a static system curl" OFF)
 option(USE_SYSTEM_CUTLASS         "Use system pre-installed cutlass"         OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_EMBREE          "Use system pre-installed Embree"          OFF)
@@ -119,11 +184,12 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
+option(USE_SYSTEM_ZSTD            "Use system pre-installed zstd"            OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
-else()
-    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
-endif()
+ else()
+     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
+ endif()
 if(LINUX_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
@@ -141,7 +207,28 @@ option(BUILD_AZURE_KINECT         "Build support for Azure Kinect sensor"    OFF
 # ML library options
 option(BUILD_TENSORFLOW_OPS       "Build ops for TensorFlow"                 OFF)
 option(BUILD_PYTORCH_OPS          "Build ops for PyTorch"                    OFF)
-option(BUNDLE_OPEN3D_ML           "Includes the Open3D-ML repo in the wheel" OFF)
+if(BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
+    find_path(
+        OPEN3D_ML_ROOT
+        NAMES set_open3d_ml_root.sh
+        HINTS $ENV{OPEN3D_ML_ROOT}
+        DOC "Path to the Open3D-ML repo, bundled in the wheel when ML ops are built. May also be set as an env var."
+        NO_DEFAULT_PATH
+    )
+endif()
+if(OPEN3D_ML_ROOT AND (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
+    set(BUNDLE_OPEN3D_ML_DEFAULT ON)
+else()
+    set(BUNDLE_OPEN3D_ML_DEFAULT OFF)
+endif()
+option(BUNDLE_OPEN3D_ML "Includes the Open3D-ML repo in the wheel. Defaults to ON when ML ops are built and OPEN3D_ML_ROOT is set." ${BUNDLE_OPEN3D_ML_DEFAULT})
+
+# Build Python bindings (and optional ML ops) against an installed Open3D
+# devel package via find_package(Open3D). Skips compiling the C++ core and
+# heavy 3rdparty ExternalProjects. Default OFF keeps the full in-tree build.
+option(OPEN3D_USE_INSTALLED_LIBRARY
+    "Build Python module (and optional ML ops) against find_package(Open3D); skip building the C++ core"
+    OFF)
 
 # Release build options
 option(DEVELOPER_BUILD      "Add +commit_hash to the project version number" ON )
@@ -211,21 +298,18 @@ endif()
 if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT USE_BLAS)
     message(FATAL_ERROR "ARM CPU detected, you must set USE_BLAS=ON.")
 endif()
-if (APPLE AND ENABLE_HEADLESS_RENDERING)
-    message(WARNING "Headless rendering is not supported on Mac OS")
-    set(ENABLE_HEADLESS_RENDERING OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND BUILD_GUI)
-    message(WARNING "Headless rendering disables the Open3D GUI")
-    set(BUILD_GUI OFF)
-endif()
-if(ENABLE_HEADLESS_RENDERING AND (USE_SYSTEM_GLEW OR USE_SYSTEM_GLFW))
-    message(WARNING "Headless rendering requires customized GLEW and GLFW builds")
-    set(USE_SYSTEM_GLEW OFF)
-    set(USE_SYSTEM_GLFW OFF)
+if(APPLE)
+    find_program(XCRUN_EXECUTABLE xcrun)
+    if(NOT XCRUN_EXECUTABLE)
+        message(WARNING "xcrun was not found. Metal shader compilation for "
+        "Gaussian splatting will require Xcode command line tools.")
+    endif()
 endif()
 if(BUNDLE_OPEN3D_ML AND NOT (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS))
     message(SEND_ERROR "3DML depends on TensorFlow or PyTorch Ops. Enable them with -DBUILD_TENSORFLOW_OPS=ON or -DBUILD_PYTORCH_OPS=ON")
+endif()
+if(BUNDLE_OPEN3D_ML AND NOT OPEN3D_ML_ROOT)
+    message(SEND_ERROR "BUNDLE_OPEN3D_ML=ON requires OPEN3D_ML_ROOT to point to the Open3D-ML repo. Set -DOPEN3D_ML_ROOT=<path> or the env var with the same name.")
 endif()
 if(BUILD_WEBRTC AND LINUX_AARCH64)
     message(FATAL_ERROR "BUILD_WEBRTC=ON is not yet supported on ARM Linux")
@@ -240,6 +324,20 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
+if (WIN32 AND BUILD_CUDA_MODULE AND BUILD_WITH_CUDA_STATIC)
+    message(FATAL_ERROR "BUILD_WITH_CUDA_STATIC=ON is not supported on Windows. CUDA must be dynamically linked.")
+endif()
+
+if(OPEN3D_USE_INSTALLED_LIBRARY AND NOT BUILD_PYTHON_MODULE)
+    message(FATAL_ERROR "OPEN3D_USE_INSTALLED_LIBRARY=ON requires BUILD_PYTHON_MODULE=ON")
+endif()
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    # Installed mode only builds pybind (+ optional ML ops). Disable targets
+    # that require compiling the in-tree C++ core.
+    set(BUILD_EXAMPLES OFF CACHE BOOL "Build Open3D examples programs" FORCE)
+    set(BUILD_UNIT_TESTS OFF CACHE BOOL "Build Open3D unit tests" FORCE)
+    set(BUILD_BENCHMARKS OFF CACHE BOOL "Build the micro benchmarks" FORCE)
+endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
@@ -250,8 +348,12 @@ foreach(ver ${OPEN3D_VERSION_READ})
 endforeach()
 set(OPEN3D_VERSION_DEVHASH "")
 if(DEVELOPER_BUILD)
-    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV)
+    if(OPEN3D_GIT_HASH)
+        set(GIT_REV "${OPEN3D_GIT_HASH}")
+    else()
+        execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
+            OUTPUT_VARIABLE GIT_REV)
+    endif()
     if (GIT_REV)
         set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
     endif()
@@ -261,10 +363,26 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_MINOR}"
     ".${OPEN3D_VERSION_PATCH}"
 )
-set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}" CACHE
-    STRING "Open3D full version.")
+if(DEVELOPER_BUILD)
+    set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+else()
+    set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}")
+endif()
+set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION_FULL}" CACHE STRING
+    "Open3D full version." FORCE)
+set(OPEN3D_PACKAGE_VERSION "${OPEN3D_VERSION_FULL}")
 set(OPEN3D_ABI_VERSION "${OPEN3D_VERSION_MAJOR}.${OPEN3D_VERSION_MINOR}" CACHE
     STRING "Open3D ABI version / SOVERSION (for releases only).")
+
+# Tag or branch to check out from the Open3D-ML repo when bundling.
+# Defaults to main. Set to a version tag (e.g. v0.19.0) or branch for
+# reproducible builds. Open3D-ML uses matching version tags (v0.18.0,
+# v0.19.0, etc.) corresponding to Open3D releases.
+if(NOT DEFINED OPEN3D_ML_VERSION)
+    set(OPEN3D_ML_VERSION "main" CACHE STRING
+        "Git tag or branch to check out from the Open3D-ML repo when BUNDLE_OPEN3D_ML=ON.")
+endif()
+
 # Set additional info
 set(PROJECT_EMAIL       "open3d@intel.com")
 set(PROJECT_DOCS        "https://www.open3d.org/docs")
@@ -286,8 +404,8 @@ if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
                         "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
                         "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
 endif()
-if (BUILD_SYCL_MODULE AND (NOT UNIX OR APPLE))
-    message(FATAL_ERROR "Open3D SYCL support is only available on Linux")
+if (BUILD_SYCL_MODULE AND APPLE)
+    message(FATAL_ERROR "Open3D SYCL support is not available on Apple")
 endif()
 if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
@@ -391,13 +509,21 @@ cmake_language(EVAL CODE "cmake_language(DEFER CALL open3d_patch_findthreads_mod
 
 # Build CUDA module by default if CUDA is available
 if(BUILD_CUDA_MODULE)
-    # Suppress nvcc unsupported compiler error for MSVC 2022 with CUDA 11.7 to 12.4
-    # https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12
-    if (MSVC AND MSVC_VERSION VERSION_LESS_EQUAL "1949")
-        # Set this before any CUDA checks
-        set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler" CACHE STRING "Additional flags for nvcc" FORCE)
-        message(WARNING "Using --allow-unsupported-compiler flag for nvcc with MSVC 2022. "
-        "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+    if(MSVC)
+        # Handle/suppress nvcc unsupported compiler error for MSVC>=1940 with CUDA 11.7 to 12.4:
+        # (https://forums.developer.nvidia.com/t/problems-with-latest-vs2022-update/294150/12)
+        # Find CUDAToolkit first to get CUDAToolkit_VERSION:
+        find_package(CUDAToolkit REQUIRED)
+        if (CUDAToolkit_VERSION VERSION_LESS "12.5" AND MSVC_VERSION GREATER_EQUAL 1940)
+            # Set required nvcc flags before enable_language(CUDA).
+            # Note: CMake >=3.29.4 might be needed for CMAKE_CUDA_FLAGS to be passed correctly to
+            # CMake's try_compile environment.
+            set(CMAKE_CUDA_FLAGS
+                  "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
+                  CACHE STRING "Flags for NVCC" FORCE)
+            message(WARNING "Using --allow-unsupported-compiler flag and -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH for nvcc<=12.4 with MSVC>=1940. "
+            "Set $Env:NVCC_PREPEND_FLAGS='--allow-unsupported-compiler' if nvcc still fails.")
+        endif()
     endif()
     if (CMAKE_CUDA_ARCHITECTURES)
         message(STATUS "Building with user-provided CUDA architectures: ${CMAKE_CUDA_ARCHITECTURES}")
@@ -412,7 +538,12 @@ if(BUILD_CUDA_MODULE)
             # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
             # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
             find_package(CUDAToolkit REQUIRED)
-            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
+            if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.6")
+                # CUDA 12.6+ release wheels: SASS for Ampere..Hopper, compute_75 PTX
+                # so Turing (T4, RTX 20xx) still runs via JIT without shipping its
+                # SASS, and compute_90 PTX for forward compatibility.
+                set(CMAKE_CUDA_ARCHITECTURES 75-virtual 80-real 86-real 89-real 90)
+            elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.8")
                 set(CMAKE_CUDA_ARCHITECTURES 75-real 80-real 86-real 89-real 90)    # Turing, Ampere, Ada Lovelace, Hopper
             elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
                 set(CMAKE_CUDA_ARCHITECTURES 70-real 75-real 80-real 86)            # Volta, Turing, Ampere
@@ -475,13 +606,16 @@ endif()
 
 # OS specific settings
 if(WIN32)
+    # Set oldest supported Windows version to Windows 10 (10.0, 0x0A00)
+    # https://learn.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    add_compile_definitions(WINVER=0x0A00 _WIN32_WINNT=0x0A00)
     # Windows defaults to hidden symbol visibility, override that
     # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
         # MSVC standards-compliant mode: Error in PoissonRecon 3rd party header
-        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)   
+        # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:"/permissive-">)
         # Make sure we don't hit the 65535 object member limit with MSVC
         #
         # /bigobj allows object files with more than 65535 members
@@ -490,6 +624,10 @@ if(WIN32)
         #
         # See: https://github.com/tensorflow/tensorflow/pull/10962
         add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/bigobj;/Ob2>")
+        # MSBuild adds /Zc:inline by default, but it needs to be added explicitly for other generators (e.g. Ninja),
+        # for Open3D to compile (the linker fails otherwise with a "fatal error LNK1189: library limit of 65535
+        # objects exceeded"). /Zc:inline will remove unreferenced data and functions from object files.
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/Zc:inline>)
     endif()
     if (STATIC_WINDOWS_RUNTIME)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -531,20 +669,35 @@ include(Open3DSYCLTargetSources)
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
 # Open3D_3RDPARTY_*_TARGETS variables we use in open3d_link_3rdparty_libraries
+if(OPEN3D_USE_INSTALLED_LIBRARY)
+    # Prefer an explicit Open3D_ROOT / Open3D_DIR from the caller (CI extracts
+    # open3d-devel-*.tar.xz and points CMAKE_PREFIX_PATH / Open3D_ROOT at it).
+    find_package(Open3D CONFIG REQUIRED)
+    message(STATUS "OPEN3D_USE_INSTALLED_LIBRARY=ON: using ${Open3D_CONFIG}")
+    get_target_property(_open3d_imported_type Open3D::Open3D TYPE)
+    if(NOT _open3d_imported_type STREQUAL "SHARED_LIBRARY")
+        message(FATAL_ERROR
+            "OPEN3D_USE_INSTALLED_LIBRARY requires a shared libOpen3D "
+            "(BUILD_SHARED_LIBS=ON when the devel package was built).")
+    endif()
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
+endif()
 include(3rdparty/find_dependencies.cmake)
 
-# Open3D library
+# Open3D library (or pybind-only when OPEN3D_USE_INSTALLED_LIBRARY=ON)
 add_subdirectory(cpp)
 
-# Examples
-add_subdirectory(examples)
+if(NOT OPEN3D_USE_INSTALLED_LIBRARY)
+    # Examples
+    add_subdirectory(examples)
 
-# Documentation
-add_subdirectory(docs)
+    # Documentation
+    add_subdirectory(docs)
 
-# Install CMake configuration files
-install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
-export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
+    # Install CMake configuration files
+    install(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
+    export(EXPORT ${PROJECT_NAME}Targets NAMESPACE ${PROJECT_NAME}::)
+endif()
 
 if (Python3_EXECUTABLE)
     # `make check-style` checks style for c++/cuda/python/ipynb files
@@ -562,7 +715,9 @@ if (Python3_EXECUTABLE)
     )
 endif()
 
-include(Open3DPackaging)
+if(NOT OPEN3D_USE_INSTALLED_LIBRARY)
+    include(Open3DPackaging)
+endif()
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -79,6 +79,28 @@ void ColorizeDepthCPU(const core::Tensor &src,
                       float min_value,
                       float max_value);
 
+#ifdef BUILD_SYCL_MODULE
+void FilterBilateralSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         int kernel_size,
+                         float value_sigma,
+                         float dist_sigma);
+
+void FilterSobelSYCL(const core::Tensor &src,
+                     core::Tensor &dst_dx,
+                     core::Tensor &dst_dy,
+                     int kernel_size);
+
+void FilterGaussianSYCL(const core::Tensor &src,
+                        core::Tensor &dst,
+                        int kernel_size,
+                        float sigma);
+
+void ResizeNearestSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float sampling_rate);
+#endif
+
 #ifdef BUILD_CUDA_MODULE
 void ToCUDA(const core::Tensor &src,
             core::Tensor &dst,
@@ -111,7 +133,40 @@ void ColorizeDepthCUDA(const core::Tensor &src,
                        float scale,
                        float min_value,
                        float max_value);
+#endif
 
+#ifdef BUILD_SYCL_MODULE
+void ToSYCL(const core::Tensor &src,
+            core::Tensor &dst,
+            double scale,
+            double offset);
+
+void ClipTransformSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float scale,
+                       float min_value,
+                       float max_value,
+                       float clip_fill = 0.0f);
+
+void PyrDownDepthSYCL(const core::Tensor &src,
+                      core::Tensor &dst,
+                      float diff_threshold,
+                      float invalid_fill);
+
+void CreateVertexMapSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         const core::Tensor &intrinsics,
+                         float invalid_fill);
+
+void CreateNormalMapSYCL(const core::Tensor &src,
+                         core::Tensor &dst,
+                         float invalid_fill);
+
+void ColorizeDepthSYCL(const core::Tensor &src,
+                       core::Tensor &dst,
+                       float scale,
+                       float min_value,
+                       float max_value);
 #endif
 }  // namespace image
 }  // namespace kernel

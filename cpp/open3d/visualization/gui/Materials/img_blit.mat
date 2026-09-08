@@ -20,10 +20,13 @@ fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
         vec2 uv = getUV0();
-        uv.y = 1.0 - uv.y;
         /* OpenGL spec 8.4.4.4 says that texture().a is 1.0 if there
            is no alpha channel, so this shader can handle both RGB and RGBA
            images */
         material.baseColor = getColor() * texture(materialParams_image, uv);
+        // Filament's transparent blend uses One, 1-SrcAlpha (premultiplied).
+        // Premultiply RGB by alpha to match all other transparent materials
+        // (ui_blit.mat, defaultUnlitTransparency.mat, infiniteGroundPlane.mat…).
+        material.baseColor.rgb *= material.baseColor.a;
     }
 }

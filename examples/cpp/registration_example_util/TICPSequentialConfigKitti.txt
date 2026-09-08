@@ -8,8 +8,8 @@
 # 2. If you are downloading it anywhere else, change the `dataset_path` accordingly.
 # 3. Go to build/bin/examples directory.
 # 4. Run the following command:
-# ./TICPSequential CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfigKitti.txt
-# Change CPU:0 to CUDA:0 for running it on primary GPU.
+# ./TICPSequential CPU:0 ../../../examples/cpp/registration_example_util/TICPSequentialConfigKitti.txt
+# Change CPU:0 to CUDA:0 or SYCL:0 for running it on an accelerator.
 
 # option to turn ON / OFF visualization:
 visualization = ON

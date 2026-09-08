@@ -1,9 +1,12 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
+
+#include <memory>
+#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
@@ -20,6 +23,60 @@
 namespace open3d {
 namespace core {
 namespace nns {
+
+// CUDA kernel to mark selected points for masking in the next pass.
+// Stores 1 for selected indices, 0 otherwise.
+template <typename TIndex>
+__global__ void MarkSelectedIndices(
+        uint8_t* mask,                   // Shape: (num_queries, num_points)
+        const TIndex* selected_indices,  // Shape: (num_queries_i, chunk_k)
+        int num_queries_i,               // Number of queries in this batch
+        int num_points,                  // Total number of points
+        int chunk_k,                     // Number of neighbors selected
+        int query_offset) {              // Starting query index
+    int query_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (query_idx >= num_queries_i) return;
+
+    int global_query_idx = query_offset + query_idx;
+    const TIndex* selected_row = selected_indices + query_idx * chunk_k;
+    uint8_t* mask_row = mask + global_query_idx * num_points;
+
+    for (int k = 0; k < chunk_k; ++k) {
+        TIndex idx = selected_row[k];
+        if (idx >= 0 && idx < num_points) {
+            mask_row[idx] = 1;
+        }
+    }
+}
+
+// CUDA kernel to apply mask by setting distances to infinity for masked
+// points.
+template <typename T>
+__global__ void ApplyMaskToDistances(
+        T* distances,         // Shape: (num_queries_tile, distance_row_stride)
+        const uint8_t* mask,  // Shape: (num_queries, num_points)
+        int num_queries_tile,
+        int64_t distance_row_stride,  // Stride between rows
+        int num_points_tile,  // Actual number of valid points in this tile
+        int query_offset,     // Starting query index in the mask
+        int point_offset,     // Starting point index in the mask
+        int num_points) {     // Total number of points
+    int query_local = blockIdx.y;
+    int point_local = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (query_local >= num_queries_tile || point_local >= num_points_tile)
+        return;
+
+    int query_global = query_offset + query_local;
+    int point_global = point_offset + point_local;
+
+    if (point_global >= num_points) return;
+
+    if (mask[query_global * num_points + point_global]) {
+        distances[query_local * distance_row_stride + point_local] =
+                static_cast<T>(std::numeric_limits<float>::max());
+    }
+}
 
 #define CALL_KNN_BRUTE_FORCE(NDIM)                                  \
     impl::KnnQuery<T, TIndex, NDIM>(                                \
@@ -46,6 +103,7 @@ void KnnSearchCUDABruteForce(const Tensor& points,
 
         output_allocator.AllocIndices(&indices_ptr, 0);
         output_allocator.AllocDistances(&distances_ptr, 0);
+        return;
     }
 
     knn = num_points > knn ? knn : num_points;
@@ -56,8 +114,9 @@ void KnnSearchCUDABruteForce(const Tensor& points,
     TIndex* indices_ptr;
     T* distances_ptr;
     const size_t num_indices = knn * num_queries;
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_ptr, num_indices);
+
+    output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
+    output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
 
     // Call kernel function.
     switch (points.GetShape(1)) {
@@ -93,52 +152,40 @@ void KnnSearchCUDABruteForce(const Tensor& points,
     }
 };
 
+/// Single-pass KNN search (when k <= GPU_MAX_SELECTION_K).
+///
+/// \param ready_event  If non-null, every ephemeral per-tile stream created
+///   below waits (device-side, non-blocking) on this event before doing any
+///   work, so it never reads `points`/`queries`/etc. before prior work queued
+///   on the externally-supplied stream (e.g. PyTorch's current stream) has
+///   finished writing them.
+/// \param done_events  If non-null, an event is recorded on each ephemeral
+///   per-tile stream (right before it is destroyed) and appended here, so the
+///   caller can make the externally-supplied stream wait on them -- again
+///   without a host-side stall -- before consuming the outputs.
 template <class T, class TIndex, class OUTPUT_ALLOCATOR>
-void KnnSearchCUDAOptimized(const Tensor& points,
-                            const Tensor& queries,
-                            int knn,
-                            OUTPUT_ALLOCATOR& output_allocator,
-                            Tensor& query_neighbors_row_splits) {
-    CUDAScopedDevice scoped_device(points.GetDevice());
+void KnnSearchCUDASinglePass(const Tensor& points,
+                             const Tensor& queries,
+                             int knn,
+                             int tile_rows,
+                             int tile_cols,
+                             OUTPUT_ALLOCATOR& output_allocator,
+                             const Tensor& point_norms,
+                             const Tensor& query_norms,
+                             cudaEvent_t ready_event,
+                             std::vector<cudaEvent_t>* done_events) {
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
-    int dim = points.GetShape(1);
     Device device = points.GetDevice();
     Dtype dtype = points.GetDtype();
     Dtype index_dtype = Dtype::FromType<TIndex>();
-
-    // Return if input points are empty.
-    if (num_points == 0 || num_queries == 0) {
-        query_neighbors_row_splits.Fill(0);
-        TIndex* indices_ptr;
-        T* distances_ptr;
-
-        output_allocator.AllocIndices(&indices_ptr, 0);
-        output_allocator.AllocDistances(&distances_ptr, 0);
-    }
-
-    knn = num_points > knn ? knn : num_points;
-
-    // Allocate output tensors.
-    query_neighbors_row_splits.AsRvalue() =
-            Tensor::Arange(0, num_queries * knn, knn);
-    TIndex* indices_ptr;
-    T* distances_ptr;
-    const size_t num_indices = knn * num_queries;
-
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_ptr, num_indices);
-
-    // Calculate norms, |p|^2, |q|^2.
-    Tensor point_norms = points.Mul(points).Sum({1});
-    Tensor query_norms = queries.Mul(queries).Sum({1});
-
-    // Divide queries and points into chunks (rows and cols).
-    int tile_rows = 0;
-    int tile_cols = 0;
-    chooseTileSize(num_queries, num_points, dim, sizeof(T), tile_rows,
-                   tile_cols);
     int num_cols = utility::DivUp(num_points, tile_cols);
+
+    // Get pointers from allocator for use in runBlockSelectPair
+    TIndex* indices_ptr = static_cast<TIndex*>(
+            output_allocator.NeighborsIndex_().GetDataPtr());
+    T* distances_ptr =
+            static_cast<T*>(output_allocator.NeighborsDistance_().GetDataPtr());
 
     // Allocate temporary memory space.
     Tensor temp_distances =
@@ -159,6 +206,10 @@ void KnnSearchCUDAOptimized(const Tensor& points,
         {
             CUDAScopedStream scoped_stream(CUDAScopedStream::CreateNewStream);
             cudaStream_t cur_stream = cuda::GetStream();
+            if (ready_event) {
+                OPEN3D_CUDA_CHECK(
+                        cudaStreamWaitEvent(cur_stream, ready_event, 0));
+            }
             for (int j = 0; j < num_points; j += tile_cols) {
                 int num_points_j = std::min(tile_cols, num_points - j);
                 int col_j = j / tile_cols;
@@ -211,7 +262,355 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                         knn, buf_distances_row_view.GetShape(1),
                         buf_distances_row_view.GetShape(0));
             }
+            if (done_events) {
+                cudaEvent_t done_event;
+                OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(
+                        &done_event, cudaEventDisableTiming));
+                OPEN3D_CUDA_CHECK(cudaEventRecord(done_event, cur_stream));
+                done_events->push_back(done_event);
+            }
         }
+    }
+}
+
+// Multi-pass KNN search (when knn > GPU_MAX_SELECTION_K).
+// Processes neighbors in chunks, using a bitmask to avoid selecting
+// already-found neighbors in subsequent passes.
+//
+// \param ready_event, done_events  See KnnSearchCUDASinglePass.
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
+void KnnSearchCUDAMultiPass(const Tensor& points,
+                            const Tensor& queries,
+                            int knn,
+                            int tile_rows,
+                            int tile_cols,
+                            OUTPUT_ALLOCATOR& output_allocator,
+                            const Tensor& point_norms,
+                            const Tensor& query_norms,
+                            cudaEvent_t ready_event,
+                            std::vector<cudaEvent_t>* done_events) {
+    int num_points = points.GetShape(0);
+    int num_queries = queries.GetShape(0);
+    Device device = points.GetDevice();
+    Dtype dtype = points.GetDtype();
+    Dtype index_dtype = Dtype::FromType<TIndex>();
+    int num_cols = utility::DivUp(num_points, tile_cols);
+
+    // Allocate mask to track already-selected points across passes
+    Tensor mask =
+            Tensor::Zeros({num_queries, num_points}, Dtype::UInt8, device);
+
+    // Re-record ready_event once more here, after `mask` is zero-initialized
+    // above (also on the ambient stream): KnnSearchCUDAOptimized already
+    // re-recorded it right after point_norms/query_norms, but that happened
+    // before this function allocated and zeroed `mask`, which the per-tile
+    // kernels below (ApplyMaskToDistances / MarkSelectedIndices) also read
+    // and write. Without this, the ephemeral per-tile streams could start
+    // touching `mask` before its zero-init has actually landed.
+    if (ready_event) {
+        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, cuda::GetStream()));
+    }
+
+    int chunk_k = std::min(knn, GPU_MAX_SELECTION_K);
+    Tensor temp_distances =
+            Tensor::Empty({tile_rows, tile_cols}, dtype, device);
+
+    // Allocate buffers for multi-tile case (single-tile uses intermediate
+    // buffers per-iteration)
+    Tensor buf_distances, buf_indices;
+    if (num_cols > 1) {
+        buf_distances =
+                Tensor::Empty({tile_rows, num_cols * chunk_k}, dtype, device);
+        buf_indices = Tensor::Empty({tile_rows, num_cols * chunk_k},
+                                    index_dtype, device);
+    }
+
+    // Multi-pass loop: process chunk_k neighbors at a time
+    int total_found = 0;
+    while (total_found < knn) {
+        int remaining_k = knn - total_found;
+        chunk_k = std::min(remaining_k, GPU_MAX_SELECTION_K);
+
+        // Resize buffers if chunk_k changed (only in last iteration)
+        if (num_cols > 1 && chunk_k != buf_distances.GetShape(1) / num_cols) {
+            buf_distances = Tensor::Empty({tile_rows, num_cols * chunk_k},
+                                          dtype, device);
+            buf_indices = Tensor::Empty({tile_rows, num_cols * chunk_k},
+                                        index_dtype, device);
+        }
+
+        // Iterate row-wise over queries
+        for (int i = 0; i < num_queries; i += tile_rows) {
+            int num_queries_i = std::min(tile_rows, num_queries - i);
+            Tensor queries_i = queries.Slice(0, i, i + num_queries_i);
+            Tensor query_norms_i = query_norms.Slice(0, i, i + num_queries_i);
+
+            // Intermediate buffers for single-tile multi-pass case
+            Tensor chunk_out_distances, chunk_out_indices;
+            Tensor buf_distances_row_view, buf_indices_row_view;
+
+            if (tile_cols == num_points) {
+                // Single-tile: allocate intermediate buffers
+                chunk_out_distances =
+                        Tensor::Empty({num_queries_i, chunk_k}, dtype, device);
+                chunk_out_indices = Tensor::Empty({num_queries_i, chunk_k},
+                                                  index_dtype, device);
+            } else {
+                // Multi-tile: use row views of buffer
+                buf_distances_row_view =
+                        buf_distances.Slice(0, 0, num_queries_i);
+                buf_indices_row_view = buf_indices.Slice(0, 0, num_queries_i);
+            }
+
+            {
+                CUDAScopedStream scoped_stream(
+                        CUDAScopedStream::CreateNewStream);
+                cudaStream_t cur_stream = cuda::GetStream();
+                if (ready_event) {
+                    OPEN3D_CUDA_CHECK(
+                            cudaStreamWaitEvent(cur_stream, ready_event, 0));
+                }
+
+                for (int j = 0; j < num_points; j += tile_cols) {
+                    int num_points_j = std::min(tile_cols, num_points - j);
+                    int col_j = j / tile_cols;
+                    Tensor points_j = points.Slice(0, j, j + num_points_j);
+                    Tensor point_norms_j =
+                            point_norms.Slice(0, j, j + num_points_j);
+                    Tensor temp_distances_view =
+                            temp_distances.Slice(0, 0, num_queries_i)
+                                    .Slice(1, 0, num_points_j);
+
+                    // Calculate -2*p*q
+                    AddMM(queries_i, points_j.T(), temp_distances_view, -2.0,
+                          0.0);
+
+                    // Apply mask: set already-selected distances to infinity
+                    if (total_found > 0) {
+                        int64_t distance_row_stride =
+                                temp_distances_view.GetStride(0);
+                        int block_size = 256;
+                        dim3 block(block_size);
+                        dim3 grid(utility::DivUp(num_points_j, block_size),
+                                  num_queries_i);
+                        ApplyMaskToDistances<T><<<grid, block, 0, cur_stream>>>(
+                                temp_distances_view.GetDataPtr<T>(),
+                                mask.GetDataPtr<uint8_t>(), num_queries_i,
+                                distance_row_stride, num_points_j, i, j,
+                                num_points);
+                    }
+
+                    // Top-k selection
+                    if (tile_cols == num_points) {
+                        // Single-tile case: output to intermediate buffers
+                        runL2SelectMin<T, TIndex>(
+                                cur_stream, temp_distances_view, point_norms_j,
+                                chunk_out_distances, chunk_out_indices, chunk_k,
+                                1, tile_cols);
+                        chunk_out_distances.Add_(
+                                query_norms_i.View({num_queries_i, 1}));
+                    } else {
+                        // Multi-tile case: output to buffer
+                        Tensor buf_distances_col_view =
+                                buf_distances_row_view.Slice(
+                                        1, chunk_k * col_j,
+                                        (col_j + 1) * chunk_k);
+                        Tensor buf_indices_col_view =
+                                buf_indices_row_view.Slice(
+                                        1, chunk_k * col_j,
+                                        (col_j + 1) * chunk_k);
+                        runL2SelectMin<T, TIndex>(
+                                cur_stream, temp_distances_view, point_norms_j,
+                                buf_distances_col_view, buf_indices_col_view,
+                                chunk_k, num_cols, tile_cols);
+                        buf_distances_col_view.Add_(
+                                query_norms_i.View({num_queries_i, 1}));
+                    }
+                }
+
+                // Write results and update mask
+                if (tile_cols != num_points) {
+                    // Multi-tile case
+                    runIncrementIndex<TIndex>(cur_stream, buf_indices_row_view,
+                                              chunk_k, tile_cols);
+
+                    Tensor chunk_out_dist_multi = Tensor::Empty(
+                            {num_queries_i, chunk_k}, dtype, device);
+                    Tensor chunk_out_idx_multi = Tensor::Empty(
+                            {num_queries_i, chunk_k}, index_dtype, device);
+
+                    runBlockSelectPair(
+                            cur_stream, buf_distances_row_view.GetDataPtr<T>(),
+                            buf_indices_row_view.GetDataPtr<TIndex>(),
+                            chunk_out_dist_multi.GetDataPtr<T>(),
+                            chunk_out_idx_multi.GetDataPtr<TIndex>(), false,
+                            chunk_k, buf_distances_row_view.GetShape(1),
+                            num_queries_i);
+
+                    // Copy to final output
+                    TIndex* indices_ptr =
+                            static_cast<TIndex*>(
+                                    output_allocator.NeighborsIndex_()
+                                            .GetDataPtr()) +
+                            (i * knn + total_found);
+                    T* distances_ptr =
+                            static_cast<T*>(
+                                    output_allocator.NeighborsDistance_()
+                                            .GetDataPtr()) +
+                            (i * knn + total_found);
+
+                    for (int q = 0; q < num_queries_i; ++q) {
+                        MemoryManager::Memcpy(
+                                distances_ptr + q * knn, device,
+                                chunk_out_dist_multi.GetDataPtr<T>() +
+                                        q * chunk_k,
+                                device, sizeof(T) * chunk_k);
+                        MemoryManager::Memcpy(
+                                indices_ptr + q * knn, device,
+                                chunk_out_idx_multi.GetDataPtr<TIndex>() +
+                                        q * chunk_k,
+                                device, sizeof(TIndex) * chunk_k);
+                    }
+
+                    // Update mask for next pass
+                    {
+                        int block_size = 256;
+                        dim3 block(block_size);
+                        dim3 grid(utility::DivUp(num_queries_i, block_size));
+                        MarkSelectedIndices<TIndex>
+                                <<<grid, block, 0, cur_stream>>>(
+                                        mask.GetDataPtr<uint8_t>(),
+                                        chunk_out_idx_multi
+                                                .GetDataPtr<TIndex>(),
+                                        num_queries_i, num_points, chunk_k, i);
+                    }
+
+                } else {
+                    // Single-tile case: copy from intermediate buffers to
+                    // non-contiguous output slice
+                    Tensor out_indices_full =
+                            output_allocator.NeighborsIndex_().View(
+                                    {num_queries, knn});
+                    Tensor out_distances_full =
+                            output_allocator.NeighborsDistance_().View(
+                                    {num_queries, knn});
+
+                    for (int q = 0; q < num_queries_i; ++q) {
+                        int global_query_idx = i + q;
+
+                        Tensor src_dist = chunk_out_distances.Slice(0, q, q + 1)
+                                                  .Flatten();
+                        Tensor src_idx =
+                                chunk_out_indices.Slice(0, q, q + 1).Flatten();
+
+                        Tensor dst_dist = out_distances_full
+                                                  .Slice(0, global_query_idx,
+                                                         global_query_idx + 1)
+                                                  .Slice(1, total_found,
+                                                         total_found + chunk_k)
+                                                  .Flatten();
+                        dst_dist.AsRvalue() = src_dist;
+
+                        Tensor dst_idx = out_indices_full
+                                                 .Slice(0, global_query_idx,
+                                                        global_query_idx + 1)
+                                                 .Slice(1, total_found,
+                                                        total_found + chunk_k)
+                                                 .Flatten();
+                        dst_idx.AsRvalue() = src_idx;
+                    }
+
+                    // Update mask for next pass
+                    {
+                        int block_size = 256;
+                        dim3 block(block_size);
+                        dim3 grid(utility::DivUp(num_queries_i, block_size));
+                        MarkSelectedIndices<TIndex>
+                                <<<grid, block, 0, cur_stream>>>(
+                                        mask.GetDataPtr<uint8_t>(),
+                                        chunk_out_indices.GetDataPtr<TIndex>(),
+                                        num_queries_i, num_points, chunk_k, i);
+                    }
+                }
+                if (done_events) {
+                    cudaEvent_t done_event;
+                    OPEN3D_CUDA_CHECK(cudaEventCreateWithFlags(
+                            &done_event, cudaEventDisableTiming));
+                    OPEN3D_CUDA_CHECK(cudaEventRecord(done_event, cur_stream));
+                    done_events->push_back(done_event);
+                }
+            }
+        }
+
+        total_found += chunk_k;
+    }
+}
+
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
+void KnnSearchCUDAOptimized(const Tensor& points,
+                            const Tensor& queries,
+                            int knn,
+                            OUTPUT_ALLOCATOR& output_allocator,
+                            Tensor& query_neighbors_row_splits,
+                            cudaEvent_t ready_event,
+                            std::vector<cudaEvent_t>* done_events) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
+    int num_points = points.GetShape(0);
+    int num_queries = queries.GetShape(0);
+    int dim = points.GetShape(1);
+
+    // Return if input points are empty.
+    if (num_points == 0 || num_queries == 0) {
+        query_neighbors_row_splits.Fill(0);
+        TIndex* indices_ptr;
+        T* distances_ptr;
+
+        output_allocator.AllocIndices(&indices_ptr, 0);
+        output_allocator.AllocDistances(&distances_ptr, 0);
+        return;
+    }
+
+    knn = num_points > knn ? knn : num_points;
+
+    // Allocate output tensors.
+    query_neighbors_row_splits.AsRvalue() =
+            Tensor::Arange(0, num_queries * knn, knn);
+    TIndex* indices_ptr;
+    T* distances_ptr;
+    const size_t num_indices = knn * num_queries;
+
+    output_allocator.AllocIndices(&indices_ptr, num_indices, -1);
+    output_allocator.AllocDistances(&distances_ptr, num_indices, 0);
+
+    // Calculate norms, |p|^2, |q|^2.
+    Tensor point_norms = points.Mul(points).Sum({1});
+    Tensor query_norms = queries.Mul(queries).Sum({1});
+
+    // (Re-)record ready_event now, on the current (ambient == user_stream,
+    // when bridging) stream, so that a wait on it also covers point_norms /
+    // query_norms above -- they are computed on the ambient stream and were
+    // not yet enqueued when ready_event may have last been recorded (see the
+    // comment in KnnSearchCUDA). KnnSearchCUDAMultiPass re-records it once
+    // more below, after `mask` is computed, for the same reason.
+    if (ready_event) {
+        OPEN3D_CUDA_CHECK(cudaEventRecord(ready_event, cuda::GetStream()));
+    }
+
+    // Divide queries and points into chunks (rows and cols).
+    int tile_rows = 0;
+    int tile_cols = 0;
+    chooseTileSize(num_queries, num_points, dim, sizeof(T), tile_rows,
+                   tile_cols);
+
+    // Dispatch to appropriate algorithm based on knn
+    if (knn <= GPU_MAX_SELECTION_K) {
+        KnnSearchCUDASinglePass<T, TIndex>(
+                points, queries, knn, tile_rows, tile_cols, output_allocator,
+                point_norms, query_norms, ready_event, done_events);
+    } else {
+        KnnSearchCUDAMultiPass<T, TIndex>(
+                points, queries, knn, tile_rows, tile_cols, output_allocator,
+                point_norms, query_norms, ready_event, done_events);
     }
 }
 
@@ -223,8 +622,41 @@ void KnnSearchCUDA(const Tensor& points,
                    int knn,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
-                   Tensor& neighbors_distance) {
+                   Tensor& neighbors_distance,
+                   cudaStream_t user_stream) {
     CUDAScopedDevice scoped_device(points.GetDevice());
+
+    // Event-based, non-blocking bridge to an externally supplied stream
+    // (e.g. PyTorch's current CUDA stream, passed in by the PyTorch op
+    // wrapper): installing it as the ambient stream below makes
+    // KnnSearchCUDABruteForce and all non-tiled work here run directly on
+    // `user_stream` (already correctly queue-ordered, no sync needed). Only
+    // the ephemeral per-tile streams created inside
+    // KnnSearchCUDASinglePass/MultiPass (for pipelining) run on genuinely
+    // different hardware streams and need explicit, device-side-only
+    // (no host stall) event synchronization: `ready_event` lets them wait
+    // for prior work on `user_stream` to finish writing the inputs, and the
+    // collected `done_events` let `user_stream` wait for them to finish
+    // writing the outputs before any subsequent work on `user_stream` (e.g.
+    // the caller reading the result) proceeds.
+    // `ready_event` is only created here; it is (re-)recorded per batch,
+    // immediately before each ephemeral-stream tile loop that actually waits
+    // on it (see KnnSearchCUDAOptimized / KnnSearchCUDAMultiPass below) --
+    // not here. Recording it this early, before point_norms/query_norms (and,
+    // for the multi-pass path, `mask`) are even enqueued on `user_stream`,
+    // would let the per-tile streams start reading those buffers before
+    // `user_stream` has actually finished writing them: a CUDA event captures
+    // the *position* in the stream's queue at record time, so a wait on an
+    // event recorded before that work was enqueued does not cover it.
+    cudaEvent_t ready_event = nullptr;
+    std::vector<cudaEvent_t> done_events;
+    std::unique_ptr<CUDAScopedStream> outer_stream_scope;
+    if (user_stream) {
+        OPEN3D_CUDA_CHECK(
+                cudaEventCreateWithFlags(&ready_event, cudaEventDisableTiming));
+        outer_stream_scope = std::make_unique<CUDAScopedStream>(user_stream);
+    }
+
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();
@@ -247,35 +679,61 @@ void KnnSearchCUDA(const Tensor& points,
         Tensor neighbors_row_splits_i = neighbors_row_splits.Slice(
                 0, queries_row_splits[i].Item<int64_t>(),
                 queries_row_splits[i + 1].Item<int64_t>());
-        int64_t* neighbors_row_splits_i_ptr =
-                neighbors_row_splits_i.GetDataPtr<int64_t>();
 
         if (brute_force) {
             KnnSearchCUDABruteForce<T, TIndex>(points_i, queries_i, knn,
                                                batch_output_allocators[i],
                                                neighbors_row_splits_i);
         } else {
-            KnnSearchCUDAOptimized<T, TIndex>(points_i, queries_i, knn,
-                                              batch_output_allocators[i],
-                                              neighbors_row_splits_i);
+            KnnSearchCUDAOptimized<T, TIndex>(
+                    points_i, queries_i, knn, batch_output_allocators[i],
+                    neighbors_row_splits_i, ready_event,
+                    user_stream ? &done_events : nullptr);
         }
 
+        // neighbors_row_splits_i may be device-only memory (not
+        // host-dereferenceable), so the offset add and read-back below go
+        // through Tensor ops (device-safe) rather than raw pointer access.
         if (i > 0) {
-            for (int j = 0; j <= num_queries_i; ++j) {
-                neighbors_row_splits_i_ptr[j] += last_neighbors_count;
-            }
+            neighbors_row_splits_i.Add_(Scalar(last_neighbors_count));
         }
-        last_neighbors_count = neighbors_row_splits_i_ptr[num_queries_i];
+        last_neighbors_count +=
+                batch_output_allocators[i].NeighborsIndex().GetShape(0);
     }
+    neighbors_row_splits[-1].Fill(last_neighbors_count);
+
+    // Bridge the ephemeral per-tile streams' completion back to
+    // `user_stream`, device-side only (no host stall), then release the
+    // events -- safe even though the streams that recorded them may already
+    // be destroyed, since CUDA keeps an event's underlying resources alive
+    // until any waits on it are satisfied.
+    auto join_events_to_user_stream = [&]() {
+        if (!user_stream) return;
+        for (cudaEvent_t e : done_events) {
+            OPEN3D_CUDA_CHECK(cudaStreamWaitEvent(user_stream, e, 0));
+            OPEN3D_CUDA_CHECK(cudaEventDestroy(e));
+        }
+        OPEN3D_CUDA_CHECK(cudaEventDestroy(ready_event));
+    };
 
     if (batch_size == 1) {
+        const int64_t neighbors_per_query = std::min<int64_t>(knn, num_points);
         neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
-                {num_queries, -1});
+                {num_queries, neighbors_per_query});
         neighbors_distance =
                 batch_output_allocators[0].NeighborsDistance().View(
-                        {num_queries, -1});
+                        {num_queries, neighbors_per_query});
+        join_events_to_user_stream();
         return;
     }
+
+    // Join the per-tile events to `user_stream` *before* the Memcpy calls
+    // below, since those Memcpy calls run asynchronously on the ambient
+    // stream (== user_stream when bridging) and read from
+    // batch_output_allocators' memory, which may have been written by the
+    // ephemeral per-tile streams above -- without this wait, the combine
+    // step could race with still in-flight tile work.
+    join_events_to_user_stream();
 
     // combine results
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
@@ -291,10 +749,8 @@ void KnnSearchCUDA(const Tensor& points,
     last_neighbors_count = 0;
     for (int i = 0; i < batch_size; ++i) {
         auto& a = batch_output_allocators[i];
-        int64_t offset = points_row_splits[i].Item<int64_t>();
         int64_t num_neighbors_i = a.NeighborsIndex().GetShape(0);
         if (num_neighbors_i) {
-            Tensor NeighborIndexAccumulated = a.NeighborsIndex().Add(offset);
             MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
                                   device, a.IndicesPtr(), device,
                                   sizeof(TIndex) * num_neighbors_i);
@@ -313,7 +769,7 @@ void KnnSearchCUDA(const Tensor& points,
             const Tensor& points, const Tensor& points_row_splits,            \
             const Tensor& queries, const Tensor& queries_row_splits, int knn, \
             Tensor& neighbors_index, Tensor& neighbors_row_splits,            \
-            Tensor& neighbors_distance);
+            Tensor& neighbors_distance, cudaStream_t user_stream);
 
 INSTANTIATE(float, int32_t)
 INSTANTIATE(float, int64_t)

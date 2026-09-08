@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 """Summary writer for the TensorBoard Open3D plugin"""
@@ -66,7 +66,8 @@ class _AsyncDataWriter:
     def __init__(self,
                  max_queue=10,
                  flush_secs=120,
-                 filename_extension='.msgpack'):
+                 filename_extension='.msgpack',
+                 idle_secs=0.25):
         """
         Args:
             max_queue (int): enqueue will block if more than ``max_queue``
@@ -75,9 +76,12 @@ class _AsyncDataWriter:
                 with this interval. Note that the data may still be in an OS
                 buffer and not on disk.
             filename_extension (str): Extension for binary file.
+            idle_secs (Number): Stop the writer after this idle interval. A new
+                writer is started by the next enqueue.
         """
         self._max_queue = max_queue
         self._flush_secs = flush_secs
+        self._idle_secs = idle_secs
         self._next_flush_time = time.time() + self._flush_secs
         self._filename_extension = filename_extension
         self._write_queue = queue.Queue(maxsize=self._max_queue)
@@ -85,15 +89,34 @@ class _AsyncDataWriter:
         self._file_next_write_pos = dict()
         # protects _file_handles and _file_next_write_pos
         self._file_lock = threading.Lock()
+        # serializes enqueue, worker startup, and close
+        self._lifecycle_lock = threading.Lock()
+        self._lifecycle_changed = threading.Condition(self._lifecycle_lock)
+        self._writer_running = False
+        self._closing = False
         self._writer_thread = threading.Thread()
 
     def _writer(self):
         """Writer thread main function."""
         while True:
             try:
-                tagfilepath, data = self._write_queue.get(timeout=0.25)
-            except queue.Empty:  # exit if nothing to do.
-                break
+                item = self._write_queue.get(timeout=self._idle_secs)
+            except queue.Empty:
+                with self._lifecycle_changed:
+                    try:
+                        item = self._write_queue.get_nowait()
+                    except queue.Empty:
+                        self._writer_running = False
+                        self._lifecycle_changed.notify_all()
+                        return
+            if item is None:
+                # FIFO sentinel means all queued writes are complete.
+                self._write_queue.task_done()
+                with self._lifecycle_changed:
+                    self._writer_running = False
+                    self._lifecycle_changed.notify_all()
+                return
+            tagfilepath, data = item
             _log.debug(
                 f"Writing {len(data)}b data at "
                 f"{tagfilepath}+{self._file_handles[tagfilepath].tell()}")
@@ -128,31 +151,63 @@ class _AsyncDataWriter:
             Tuple of filename and location (in bytes) where the data will be
             written.
         """
-        with self._file_lock:
-            if tagfilepath not in self._file_handles:
-                # summary.writer.EventFileWriter name format
-                fullfilepath = "{}.{}.{}.{}{}".format(tagfilepath,
-                                                      int(time.time()),
-                                                      socket.gethostname(),
-                                                      os.getpid(),
-                                                      self._filename_extension)
-                _makedirs(os.path.dirname(fullfilepath))
-                self._file_handles[tagfilepath] = _fileopen(fullfilepath, 'wb')
-                _log.debug(f"msgpack file {fullfilepath} opened for writing.")
-                this_write_loc = 0
-                self._file_next_write_pos[tagfilepath] = len(data)
-            else:
-                this_write_loc = self._file_next_write_pos[tagfilepath]
-                self._file_next_write_pos[tagfilepath] += len(data)
-                fullfilepath = self._file_handles[tagfilepath].name
-        # Blocks till queue has available slot.
-        self._write_queue.put((tagfilepath, data), block=True)
-        if not self._writer_thread.is_alive():
-            self._writer_thread = threading.Thread(target=self._writer,
-                                                   name="Open3DDataWriter")
-            self._writer_thread.start()
+        with self._lifecycle_changed:
+            while self._closing:
+                self._lifecycle_changed.wait()
+            # Keep lifecycle changes ordered while allowing the worker to drain.
+            with self._file_lock:
+                if tagfilepath not in self._file_handles:
+                    # summary.writer.EventFileWriter name format
+                    fullfilepath = "{}.{}.{}.{}{}".format(
+                        tagfilepath, int(time.time()), socket.gethostname(),
+                        os.getpid(), self._filename_extension)
+                    _makedirs(os.path.dirname(fullfilepath))
+                    self._file_handles[tagfilepath] = _fileopen(
+                        fullfilepath, 'wb')
+                    _log.debug(
+                        f"msgpack file {fullfilepath} opened for writing.")
+                    this_write_loc = 0
+                    self._file_next_write_pos[tagfilepath] = len(data)
+                else:
+                    this_write_loc = self._file_next_write_pos[tagfilepath]
+                    self._file_next_write_pos[tagfilepath] += len(data)
+                    fullfilepath = self._file_handles[tagfilepath].name
+            # Blocks till queue has available slot.
+            self._write_queue.put((tagfilepath, data), block=True)
+            if not self._writer_running:
+                self._writer_thread = threading.Thread(target=self._writer,
+                                                       name="Open3DDataWriter",
+                                                       daemon=False)
+                self._writer_running = True
+                self._writer_thread.start()
 
         return os.path.basename(fullfilepath), this_write_loc
+
+    def close(self):
+        """Wait for pending writes and close all open files."""
+        with self._lifecycle_changed:
+            while self._closing:
+                self._lifecycle_changed.wait()
+            self._closing = True
+            writer_thread = self._writer_thread
+            if self._writer_running:
+                # The sentinel drains queued writes before join and close.
+                self._write_queue.put(None, block=True)
+            else:
+                writer_thread = None
+
+        try:
+            if writer_thread is not None:
+                writer_thread.join()
+            with self._file_lock:
+                for handle in self._file_handles.values():
+                    handle.close()
+                self._file_handles.clear()
+                self._file_next_write_pos.clear()
+        finally:
+            with self._lifecycle_changed:
+                self._closing = False
+                self._lifecycle_changed.notify_all()
 
 
 # Single global writer per process
@@ -503,8 +558,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 },
                 faces=faces[bidx] if len(faces) > 0 else faces,
                 face_attributes={
-                    prop: tensor[bidx]
-                    for prop, tensor in triangle_data.items()
+                    prop: tensor[bidx] for prop, tensor in triangle_data.items()
                 },
                 lines=lines[bidx] if len(lines) > 0 else lines,
                 line_attributes={

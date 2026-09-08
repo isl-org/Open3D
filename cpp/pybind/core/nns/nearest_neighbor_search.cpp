@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -27,6 +27,10 @@ This class holds multiple index types to accelerate various nearest neighbor
 search operations for a dataset of points with shape {n,d} with `n` as the number
 of points and `d` as the dimension of the points. The class supports knn search,
 fixed-radius search, multi-radius search, and hybrid search.
+
+For CPU vs CUDA vs SYCL routing and algorithm differences, see the Open3D
+documentation page *NNS and HashMap backends (CPU / CUDA / SYCL)*
+(``docs/nns_hashmap_cpu_cuda_sycl.md``).
 
 Example:
     The following example demonstrates how to perform knn search using the class::
@@ -70,7 +74,7 @@ Returns:
 
     nns.def(
             "fixed_radius_index",
-            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+            [](NearestNeighborSearch &self, std::optional<double> radius) {
                 if (!radius.has_value()) {
                     return self.FixedRadiusIndex();
                 } else {
@@ -84,7 +88,7 @@ This function needs to be called once before performing search operations.
 
 Args:
     radius (float, optional): Radius value for fixed-radius search. Required
-        for GPU fixed radius index.
+        for CUDA and SYCL fixed radius indices.
 
 Returns:
     True on success.
@@ -101,7 +105,7 @@ Returns:
 
     nns.def(
             "hybrid_index",
-            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+            [](NearestNeighborSearch &self, std::optional<double> radius) {
                 if (!radius.has_value()) {
                     return self.HybridIndex();
                 } else {
@@ -115,7 +119,7 @@ This function needs to be called once before performing search operations.
 
 Args:
     radius (float, optional): Radius value for hybrid search. Required
-        for GPU hybrid index.
+        for CUDA and SYCL hybrid indices.
 
 Returns:
     True on success.
@@ -130,7 +134,8 @@ Note:
     To use knn_search initialize the index using knn_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. CPU,
+        CUDA, and SYCL devices are supported.
     knn (int): Number of neighbors to search per query point.
 
 Example:
@@ -162,7 +167,7 @@ Returns:
     nns.def(
             "fixed_radius_search",
             [](NearestNeighborSearch &self, Tensor query_points, double radius,
-               utility::optional<bool> sort) {
+               std::optional<bool> sort) {
                 if (!sort.has_value()) {
                     return self.FixedRadiusSearch(query_points, radius, true);
                 } else {
@@ -179,6 +184,7 @@ Note:
 
 Args:
         query_points (open3d.core.Tensor): Query points with shape {n, d}.
+            CPU, CUDA, and SYCL devices are supported.
         radius (float): Radius value for fixed-radius search. Note that this
             parameter can differ from the radius used to initialize the index
             for convenience, which may cause the index to be rebuilt for GPU 
@@ -234,7 +240,8 @@ Note:
     To use multi_radius_search initialize the index using multi_radius_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. Only
+        CPU tensors are supported.
     radii (open3d.core.Tensor): Radii of query points. Each query point has one radius.
 
 Returns:
@@ -292,7 +299,8 @@ Note:
     To use hybrid_search initialize the index using hybrid_index before calling this function.
 
 Args:
-    query_points (open3d.core.Tensor): Query points with shape {n, d}.
+    query_points (open3d.core.Tensor): Query points with shape {n, d}. CPU,
+        CUDA, and SYCL devices are supported.
     radius (float): Radius value for hybrid search.
     max_knn (int): Maximum number of neighbor to search per query.
 

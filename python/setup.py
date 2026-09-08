@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
@@ -98,21 +98,19 @@ cmdclass["install"] = install
 with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines() if line]
 
+extras_require = {}
 # Read requirements for ML.
 if "@BUNDLE_OPEN3D_ML@" == "ON":
-    with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
-        install_requires += [line.strip() for line in f.readlines() if line]
+    with open("requirements_ml.txt", "r") as f:
+        extras_require["ml"] = [line.strip() for line in f.readlines() if line]
 
 entry_points = {
-    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
+    "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",],
+    "tensorboard_plugins": [
+        "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
+        ".plugin:Open3DPlugin",
+    ],
 }
-if sys.platform != "darwin":  # Remove check when off main thread GUI works
-    entry_points.update({
-        "tensorboard_plugins": [
-            "Open3D = @PYPI_PACKAGE_NAME@.visualization.tensorboard_plugin"
-            ".plugin:Open3DPlugin",
-        ]
-    })
 classifiers = [
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     "Development Status :: 3 - Alpha",
@@ -131,11 +129,11 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Education",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Multimedia :: Graphics :: 3D Rendering",
@@ -151,9 +149,13 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# open3d-cpu wheel for Linux x86_64
+# open3d-cpu wheel for Linux x86_64; open3d-cuda wheel for Windows (CUDA is
+# dynamically linked on Windows, requiring the nvidia-*-cu12 runtime pip
+# packages, so it is named/distributed separately from the CPU wheel).
 if "@BUILD_CUDA_MODULE@" == "ON":
     classifiers.append("Environment :: GPU :: NVIDIA CUDA")
+    if sys.platform == "win32":
+        name += "-cuda"
 elif (sys.platform.startswith("linux") and
       platform.machine() in ("i386", "x86_64", "AMD64") and
       "@BUILD_SYCL_MODULE@" == "OFF"):
@@ -169,9 +171,10 @@ elif "@BUILD_SYCL_MODULE@" == "ON":
 setup_args = dict(
     name=name,
     version="@PROJECT_VERSION@",
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extras_require,
     packages=find_packages(),
     entry_points=entry_points,
     zip_safe=False,
@@ -187,11 +190,12 @@ setup_args = dict(
     classifiers=classifiers,
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
+    license_files=["LICENSE.txt"],
     description="@PROJECT_DESCRIPTION@",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     obsoletes_dist=["open3d_python"],
-    provides_dist=["open3d", "open3d_cpu", "open3d_xpu"],  # For open3d-cpu
+    provides_dist=["open3d", "open3d_cpu", "open3d_cuda", "open3d_xpu"],
 )
 
 setup(**setup_args)

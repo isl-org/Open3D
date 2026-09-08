@@ -1,23 +1,29 @@
 # ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
-# Copyright (c) 2018-2024 www.open3d.org
+# Copyright (c) 2018-2026 www.open3d.org
 # SPDX-License-Identifier: MIT
 # ----------------------------------------------------------------------------
 
 import os
+import socket
 import open3d as o3d
 import numpy as np
 import pytest
 
-if os.name == 'nt':
-    address = 'tcp://127.0.0.1:51455'
-else:
-    address = 'ipc:///tmp/open3d_ipc'
+
+def _get_test_address():
+    if os.name != 'nt':
+        return 'ipc:///tmp/open3d_ipc'
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test_socket:
+        test_socket.bind(('127.0.0.1', 0))
+        return f'tcp://127.0.0.1:{test_socket.getsockname()[1]}'
 
 
 def test_external_visualizer():
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    address = _get_test_address()
 
     # create dummy receiver which will receive all data
     receiver = o3d.io.rpc._DummyReceiver(address=address)

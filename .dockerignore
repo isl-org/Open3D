@@ -8,3 +8,14 @@ docs/_out
 .python-version
 cmake-build-*
 .git
+
+# CI runner artifacts (wheel job downloads the lib image next to the checkout).
+# Not used by Dockerfile COPY; including them blew the build context to ~20GB.
+open3d-lib-sycl-shared.tar.zst
+open3d-lib-*.tar.zst
+open3d-lib-*.tar.gz
+open3d-devel-*.tar.xz
+open3d-devel-*.tar.gz
+open3d-ci-*.tar.xz
+open3d-ci-*.tar.gz
+open3d*.whl

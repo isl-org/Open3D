@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -36,6 +36,7 @@ static const std::unordered_map<
                 {"pcd", ReadPointCloudFromPCD},
                 {"ply", ReadPointCloudFromPLY},
                 {"splat", ReadPointCloudFromSPLAT},
+                {"spz", ReadPointCloudFromSPZ},
                 {"pts", ReadPointCloudFromPTS},
         };
 
@@ -54,6 +55,7 @@ static const std::unordered_map<
                 {"pcd", WritePointCloudToPCD},
                 {"ply", WritePointCloudToPLY},
                 {"splat", WritePointCloudToSPLAT},
+                {"spz", WritePointCloudToSPZ},
                 {"pts", WritePointCloudToPTS},
         };
 

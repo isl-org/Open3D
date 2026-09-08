@@ -17,22 +17,14 @@ file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
-# Folder structure is base_dir/{cpu|cuda}/{pybind*.so|open3d_{torch|tf}_ops.so},
-# so copy base_dir directly to ${PYTHON_PACKAGE_DST_DIR}/open3d
+# pybind, libOpen3D, and ML ops (open3d_{torch,tf}_ops) copy flat into open3d/.
 foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
-    get_filename_component(COMPILED_MODULE_NAME ${COMPILED_MODULE_PATH} NAME)
-    get_filename_component(COMPILED_MODULE_ARCH_DIR ${COMPILED_MODULE_PATH} DIRECTORY)
-    get_filename_component(COMPILED_MODULE_BASE_DIR ${COMPILED_MODULE_ARCH_DIR} DIRECTORY)
-    foreach(ARCH cpu cuda)
-        if(IS_DIRECTORY "${COMPILED_MODULE_BASE_DIR}/${ARCH}")
-            file(INSTALL "${COMPILED_MODULE_BASE_DIR}/${ARCH}/" DESTINATION
-                "${PYTHON_PACKAGE_DST_DIR}/open3d/${ARCH}"
-                FILES_MATCHING PATTERN "${COMPILED_MODULE_NAME}")
-        endif()
-    endforeach()
+    file(COPY ${COMPILED_MODULE_PATH}
+         DESTINATION ${PYTHON_PACKAGE_DST_DIR}/open3d/
+         FOLLOW_SYMLINK_CHAIN)
 endforeach()
-# Include additional libraries that may be absent from the user system
-# eg: libc++.so and libc++abi.so (needed by filament)
+# Include additional libraries that may be absent from the user system (e.g. TBB).
+# Linux LLVM libc++ for Filament is bundled separately via ldd; see below.
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
@@ -45,7 +37,33 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
+# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd.
+# Shared builds ship libOpen3D; static builds link Filament into the pybind
+# extension instead, so fall back to that as the ELF to probe.
+if(BUILD_GUI AND UNIX AND NOT APPLE)
+    file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+        "${PYTHON_PACKAGE_DST_DIR}/open3d/libOpen3D.so.*")
+    if(NOT _libopen3d_probe)
+        file(GLOB _libopen3d_probe LIST_DIRECTORIES false
+            "${PYTHON_PACKAGE_DST_DIR}/open3d/pybind*.so")
+    endif()
+    if(_libopen3d_probe)
+        list(GET _libopen3d_probe 0 _libopen3d_probe)
+        execute_process(
+            COMMAND bash "${CMAKE_CURRENT_LIST_DIR}/package_linux_wheel_runtime.sh"
+                "${PYTHON_PACKAGE_DST_DIR}/open3d" "${_libopen3d_probe}"
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    else()
+        message(WARNING "No ELF found in the Python package to probe for libc++")
+    endif()
+endif()
+
 # 3) Configured files and supporting files
+if(BUNDLE_OPEN3D_ML AND OPEN3D_ML_ROOT AND EXISTS "${OPEN3D_ML_ROOT}/requirements.txt")
+    configure_file("${OPEN3D_ML_ROOT}/requirements.txt"
+                   "${PYTHON_PACKAGE_DST_DIR}/requirements_ml.txt" COPYONLY)
+endif()
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
@@ -122,6 +140,10 @@ if (BUILD_SYCL_MODULE)
     list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_sycl.txt)
 endif()
 
+if (BUILD_CUDA_MODULE AND WIN32)
+    list(APPEND requirement_files ${PYTHON_PACKAGE_SRC_DIR}/requirements_win_cuda.txt)
+endif()
+
 # These will be installed when the user does `pip install open3d`.
  execute_process(COMMAND ${CMAKE_COMMAND} -E cat ${requirement_files}
         OUTPUT_FILE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt
@@ -139,3 +161,36 @@ file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+
+# Ship the Python agent skill so AI coding agents can discover the API offline.
+# Located via `open3d agent_skill --path`; see python/tools/cli.py.
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/agent_skills/")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../docs/agent_skills/open3d-python"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/agent_skills"
+     FILES_MATCHING PATTERN "*.md")
+
+# Generate typing stub files (.pyi) and py.typed marker file.
+if(WITH_STUBGEN)
+    if(NOT Python3_EXECUTABLE)
+        message(FATAL_ERROR "Python3_EXECUTABLE is required when WITH_STUBGEN is ON")
+    endif()
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        list(APPEND PYBIND11_STUBGEN_FLAGS "--exit-code")
+    endif()
+    set(PYBIND11_STUBGEN_FATAL_FLAGS "")
+    if(NOT IGNORE_STUBGEN_ERRORS)
+        set(PYBIND11_STUBGEN_FATAL_FLAGS COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    # The caller must install the package runtime requirements before building.
+    # stubgen imports open3d from PYTHON_PACKAGE_DST_DIR using that environment.
+    message(STATUS "Generating typing stubs...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env
+                "PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}"
+                ${Python3_EXECUTABLE} -m pybind11_stubgen open3d -o "${PYTHON_PACKAGE_DST_DIR}"
+                ${PYBIND11_STUBGEN_FLAGS}
+        COMMAND_ECHO STDOUT
+        ${PYBIND11_STUBGEN_FATAL_FLAGS}
+    )
+    file(WRITE "${PYTHON_PACKAGE_DST_DIR}/open3d/py.typed" "")
+endif()

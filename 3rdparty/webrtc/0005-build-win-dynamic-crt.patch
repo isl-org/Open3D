@@ -1,0 +1,35 @@
+Subject: [PATCH] build: allow dynamic CRT for non-component desktop Windows
+
+Open3D ships a static libwebrtc but needs to support both the static
+(/MT[d]) and dynamic (/MD[d]) MSVC runtimes. Upstream ties the CRT choice
+to is_component_build, which would force a component (shared) build to get
+/MD. Add an rtc_win_dynamic_crt gn arg so a non-component static build can
+still select the dynamic CRT, matching Open3D STATIC_WINDOWS_RUNTIME=OFF.
+
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -513,6 +513,13 @@ if (build_with_chromium && current_cpu == target_cpu && host_os == "win") {
+ # Configures how the runtime library (CRT) is going to be used.
+ # See https://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx for a reference of
+ # what each value does.
++declare_args() {
++  # Open3D: use the dynamic CRT (/MD[d]) for non-component desktop Windows
++  # builds so we can ship a static libwebrtc that links against the dynamic
++  # MSVC runtime (matches Open3D STATIC_WINDOWS_RUNTIME=OFF).
++  rtc_win_dynamic_crt = false
++}
++
+ config("default_crt") {
+   if (is_component_build) {
+     # Component mode: dynamic CRT. Since the library is shared, it requires
+@@ -525,6 +532,9 @@ config("default_crt") {
+       # contains a details explanation of what is happening with the Windows
+       # CRT in Visual Studio releases related to Windows store applications.
+       configs = [ ":dynamic_crt" ]
++    } else if (rtc_win_dynamic_crt) {
++      # Open3D: static library with the dynamic CRT (/MD[d]).
++      configs = [ ":dynamic_crt" ]
+     } else {
+       # Desktop Windows: static CRT.
+       configs = [ ":static_crt" ]

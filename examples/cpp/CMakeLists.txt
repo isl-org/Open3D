@@ -37,16 +37,12 @@ open3d_add_example(Flann)
 open3d_add_example(Image)
 open3d_add_example(IntegrateRGBD)
 open3d_add_example(ISSKeypoints)
-open3d_add_example(PlanarPatchDetection   ${OPENMP_TARGET})
+open3d_add_example(PlanarPatchDetection)
 open3d_add_example(LineSet)
 open3d_add_example(Log)
 open3d_add_example(Octree)
 open3d_add_example(OdometryRGBD)
-if (TARGET Open3D::3rdparty_openmp)
-    open3d_add_example(OpenMP                    Open3D::3rdparty_openmp)
-else()
-    open3d_add_example(OpenMP)
-endif()
+open3d_add_example(Parallelism)
 open3d_add_example(PCDFileFormat)
 open3d_add_example(PointCloud)
 open3d_add_example(PoseGraph)
@@ -62,19 +58,11 @@ open3d_add_example(SLACIntegrate)
 open3d_add_example(TIntegrateRGBD)
 open3d_add_example(TOdometryRGBD)
 open3d_add_example(TriangleMesh)
-if (TARGET Open3D::3rdparty_openmp)
-    open3d_add_example(TrimMeshBasedOnPointCloud Open3D::3rdparty_openmp)
-else ()
-    open3d_add_example(TrimMeshBasedOnPointCloud)
-endif()
+open3d_add_example(TrimMeshBasedOnPointCloud Open3D::3rdparty_tbb)
 open3d_add_example(ViewDistances)
 open3d_add_example(ViewPCDMatch)
 open3d_add_example(Visualizer)
 open3d_add_example(Voxelization)
-if(BUILD_SYCL_MODULE)
-    open3d_add_example(SYCLDemo)
-endif()
-
 if (BUILD_GUI)
     open3d_add_example(Draw)
     open3d_add_example(GaussianSplat)
@@ -91,14 +79,19 @@ endif()
 
 if(BUILD_WEBRTC)
     open3d_add_example(DrawWebRTC)
+    # Static MKL + monolithic libwebrtc.a need a late --start-group pass on Linux.
+    if(UNIX AND NOT APPLE AND NOT USE_BLAS)
+        target_link_libraries(DrawWebRTC PRIVATE
+            "-Wl,--start-group"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_intel_ilp64${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_tbb_thread${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "${CMAKE_BINARY_DIR}/mkl_install/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mkl_core${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            "-Wl,--end-group")
+    endif()
 endif()
 
 if (BUILD_LIBREALSENSE)
-    if (TARGET Open3D::3rdparty_openmp)
-        open3d_add_example(RealSenseBagReader    Open3D::3rdparty_librealsense Open3D::3rdparty_jsoncpp Open3D::3rdparty_openmp)
-    else()
-        open3d_add_example(RealSenseBagReader    Open3D::3rdparty_librealsense Open3D::3rdparty_jsoncpp)
-    endif()
+    open3d_add_example(RealSenseBagReader    Open3D::3rdparty_librealsense Open3D::3rdparty_jsoncpp Open3D::3rdparty_tbb)
     open3d_add_example(RealSenseRecorder     Open3D::3rdparty_librealsense)
 endif()
 
@@ -115,7 +108,7 @@ ProcessorCount(NPROC)
 add_custom_target(build-examples-iteratively
     COMMAND ${CMAKE_COMMAND}
     -DEXAMPLE_TARGETS="${EXAMPLE_TARGETS}"
-    -DCMAKE_BINARY_DIR="${CMAKE_BINARY_DIR}"
+    -DEXAMPLE_TOP_BUILD_DIR="${CMAKE_BINARY_DIR}"
     -DEXAMPLE_BIN_DIR="${EXAMPLE_BIN_DIR}"
     -DCMAKE_BUILD_TYPE="$<CONFIG>"
     -DNPROC="${NPROC}"

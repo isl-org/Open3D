@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
@@ -15,6 +15,10 @@
 #include "open3d/visualization/visualizer/ViewParameters.h"
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
+
+#if defined(__linux__)
+#include "open3d/visualization/visualizer/EGLOffscreenContext.h"
+#endif
 
 #if defined(BUILD_GUI)
 namespace bluegl {
@@ -71,7 +75,7 @@ bool Visualizer::InitOpenGL() {
 }
 
 void Visualizer::Render(bool render_screen) {
-    glfwMakeContextCurrent(window_);
+    MakeContextCurrent();
 
     view_control_ptr_->SetViewMatrices();
 
@@ -124,7 +128,17 @@ void Visualizer::Render(bool render_screen) {
         renderer_ptr->Render(*opt, *view_control_ptr_);
     }
 
-    glfwSwapBuffers(window_);
+    if (headless_) {
+#if defined(__linux__)
+        // Swap to front buffer so glReadBuffer(GL_FRONT) sees the
+        // just-rendered content (e.g. CaptureScreenFloatBuffer).
+        if (egl_context_) {
+            egl_context_->SwapBuffers();
+        }
+#endif
+    } else {
+        glfwSwapBuffers(window_);
+    }
 }
 
 void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
@@ -147,10 +161,20 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
 }
 
 void Visualizer::CopyViewStatusToClipboard() {
+    if (!window_) {  // no clipboard access headless
+        utility::LogWarning(
+                "Clipboard is not available in headless rendering mode.");
+        return;
+    }
     glfwSetClipboardString(window_, GetViewStatus().c_str());
 }
 
 void Visualizer::CopyViewStatusFromClipboard() {
+    if (!window_) {  // no clipboard access headless
+        utility::LogWarning(
+                "Clipboard is not available in headless rendering mode.");
+        return;
+    }
     const char *clipboard_string_buffer = glfwGetClipboardString(window_);
     if (clipboard_string_buffer != nullptr) {
         std::string clipboard_string(clipboard_string_buffer);
@@ -192,7 +216,7 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
         Render(true);
         is_redraw_required_ = false;
     } else {
-        glfwMakeContextCurrent(window_);
+        MakeContextCurrent();
     }
     glFinish();
     glReadPixels(0, 0, view_control_ptr_->GetWindowWidth(),

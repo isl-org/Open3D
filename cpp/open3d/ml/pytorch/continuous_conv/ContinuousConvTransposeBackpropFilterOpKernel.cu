@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// Copyright (c) 2018-2024 www.open3d.org
+// Copyright (c) 2018-2026 www.open3d.org
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
@@ -34,7 +34,9 @@ void ContinuousConvTransposeBackpropFilterCUDA(
         const bool normalize,
         const InterpolationMode interpolation,
         const int64_t max_temp_mem_MB,
+        const bool allow_tf32,
         torch::Tensor& filter_backprop) {
+    WarnIfTF32NotSupported(allow_tf32);
     const bool individual_extents = extents.size(0) > 1;
     const bool isotropic_extents = extents.size(1) == 1;
     std::vector<int> filter_dims;
@@ -116,6 +118,7 @@ void ContinuousConvTransposeBackpropFilterCUDA(
             const bool align_corners,                                          \
             const CoordinateMapping coordinate_mapping, const bool normalize,  \
             const InterpolationMode interpolation,                             \
-            const int64_t max_temp_mem_MB, torch::Tensor& filter_backprop);
+            const int64_t max_temp_mem_MB, const bool allow_tf32,              \
+            torch::Tensor& filter_backprop);
 
 INSTANTIATE(float, float, float, int32_t)
