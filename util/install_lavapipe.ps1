@@ -19,3 +19,15 @@ if (-not (Test-Path $icd)) {
 
 (Join-Path $root "bin") | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 "VK_DRIVER_FILES=$icd" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+# Lavapipe only ships the ICD (vulkan_lvp.dll); it does not provide the Vulkan
+# loader that applications dynamically link against (BlueVK / vulkan.hpp call
+# LoadLibraryA("vulkan-1.dll") on Windows). Install the loader via vcpkg, which
+# is preinstalled on GitHub-hosted windows-2022 runners.
+vcpkg install --classic vulkan-loader:x64-windows
+$loaderBinPath = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\bin"
+$loaderDll = Join-Path $loaderBinPath "vulkan-1.dll"
+if (-not (Test-Path $loaderDll)) {
+    throw "Vulkan loader not found: $loaderDll"
+}
+$loaderBinPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append

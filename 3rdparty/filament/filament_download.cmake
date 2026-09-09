@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils shaders)
+set(filament_LIBRARIES filameshio filament filaflat filabridge geometry backend bluegl bluevk ibl image ktxreader meshoptimizer smol-v utils shaders zstd)
 if(NOT DEFINED FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT)
     set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT OFF)
 endif()

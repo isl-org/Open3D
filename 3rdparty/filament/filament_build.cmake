@@ -36,6 +36,7 @@ set(filament_LIBRARIES
         meshoptimizer
         smol-v
         utils
+        zstd
 )
 
 set(FILAMENT_VER "v1.76.0")
