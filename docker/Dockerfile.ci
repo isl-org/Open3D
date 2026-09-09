@@ -217,7 +217,6 @@ RUN \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=OFF \
-          -DBUILD_FILAMENT_FROM_SOURCE=$([ "$(uname -m)" = "aarch64" ] && echo ON || echo OFF) \
           -DCMAKE_INSTALL_PREFIX=~/open3d_install \
           .. \
  && export NPROC=$(($(nproc)+2)) \
@@ -239,7 +238,6 @@ RUN ccache -s \
         rm -f /open3d*.whl; \
         mv /root/Open3D/build/lib/python_package/pip_package/open3d*.whl /; \
     fi \
- && tar -czf /filament-binaries.tar.gz -C /root/Open3D/build filament-binaries \
  && ls -alh /
 
 RUN echo "Docker build done."

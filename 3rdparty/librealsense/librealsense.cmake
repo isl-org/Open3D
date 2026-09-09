@@ -100,6 +100,8 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
         ${LIBREALSENSE_EXTRA_CMAKE_ARGS}
         ${ExternalProject_CMAKE_ARGS_hidden}
+            # Avoid the shared Release default when the parent Ninja build is Debug.
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
     BUILD_BYPRODUCTS

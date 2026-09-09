@@ -181,13 +181,7 @@ openblas_build() {
     if [ "$BUILD_PYTHON_MODULE" != "OFF" ]; then
         docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
             bash -c "cp /*.whl /opt/mount \
-                && cp /filament-binaries.tar.gz /opt/mount \
-                && chown $(id -u):$(id -g) /opt/mount/*.whl \
-                && chown $(id -u):$(id -g) /opt/mount/filament-binaries.tar.gz"
-    else
-        docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-            bash -c "cp /filament-binaries.tar.gz /opt/mount \
-                && chown $(id -u):$(id -g) /opt/mount/filament-binaries.tar.gz"
+                && chown $(id -u):$(id -g) /opt/mount/*.whl"
     fi
 }
 
@@ -344,14 +338,12 @@ ci_build() {
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "find / -maxdepth 1 -name 'open3d*' -exec cp -t /opt/mount {} + \
-               && cp /filament-binaries.tar.gz /opt/mount/filament-binaries.tar.gz \
                && ccache -s \
                && CCACHE_DIR=\$(ccache -p | awk '/cache_dir/ {print \$4}') \
                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                && find /opt/mount -maxdepth 1 -name 'open3d*' \
-                -exec chown $(id -u):$(id -g) {} + \
-            && chown $(id -u):$(id -g) /opt/mount/filament-binaries.tar.gz"
+                -exec chown $(id -u):$(id -g) {} +"
 }
 
 2-noble_export_env() {

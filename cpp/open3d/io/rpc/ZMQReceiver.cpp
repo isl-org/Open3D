@@ -209,6 +209,8 @@ void ZMQReceiver::Mainloop() {
             }
         } catch (const zmq::error_t& err) {
             LogInfo("ZMQReceiver::Mainloop: {}", err.what());
+        } catch (const std::exception& err) {
+            LogInfo("ZMQReceiver::Mainloop: {}", err.what());
         }
     }
     socket_->close();

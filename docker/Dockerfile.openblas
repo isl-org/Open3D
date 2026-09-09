@@ -121,11 +121,9 @@ RUN mkdir -p build \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     -DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH} \
     -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
-    -DBUILD_FILAMENT_FROM_SOURCE=$([ "$(uname -m)" = "aarch64" ] && echo ON || echo OFF) \
     .. \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
  && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
- && make install -j$NPROC \
- && tar -czf /filament-binaries.tar.gz -C /root/Open3D/build filament-binaries
+ && make install -j$NPROC
 RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi

@@ -58,8 +58,9 @@ if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
     $SUDO apt-get update
     $SUDO apt-get install ${APT_CONFIRM} ca-certificates gnupg wget
     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key |
-        $SUDO tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc >/dev/null
-    echo "deb https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" |
+        gpg --dearmor |
+        $SUDO tee /usr/share/keyrings/apt.llvm.org.gpg >/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" |
         $SUDO tee /etc/apt/sources.list.d/llvm-17.list >/dev/null
     deps=("${deps[@]/clang/clang-17}")
     deps=("${deps[@]/libc++-dev/libc++-17-dev}")
