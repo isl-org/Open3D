@@ -51,7 +51,7 @@ else()
     else()
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
             set(FILAMENT_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76/filament-v1.76.0-linux-22.04.tgz)
+                https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76/filament-v1.76.0-linux-22.04-x86_64.tgz)
             set(FILAMENT_SHA256 ad0c349bba319012785b85c1ef978c633600ef1da3c0ae97b064a828a243adbf)
             set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT ON)
             message(STATUS "Using Open3D patched Filament binary for Linux x86_64.")

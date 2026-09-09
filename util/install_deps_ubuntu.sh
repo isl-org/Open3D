@@ -55,6 +55,7 @@ fi
 source /etc/os-release
 if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
     # Ubuntu 22.04 does not provide the required LLVM 17 packages.
+    $SUDO rm -f /etc/apt/sources.list.d/llvm-17.list
     $SUDO apt-get update
     $SUDO apt-get install ${APT_CONFIRM} ca-certificates gnupg wget
     wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key |
