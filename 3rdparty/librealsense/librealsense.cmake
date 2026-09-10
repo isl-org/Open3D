@@ -70,6 +70,13 @@ else()
     list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${LIBREALSENSE_CMAKE_CXX_FLAGS}")
 endif()
 
+set(LIBREALSENSE_BUILD_TYPE_ARG "")
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND
+   CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Ninja is single-config; match the Debug library postfix expected below.
+    set(LIBREALSENSE_BUILD_TYPE_ARG "-DCMAKE_BUILD_TYPE=Debug")
+endif()
+
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
@@ -100,6 +107,7 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
         ${LIBREALSENSE_EXTRA_CMAKE_ARGS}
         ${ExternalProject_CMAKE_ARGS_hidden}
+        ${LIBREALSENSE_BUILD_TYPE_ARG}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
     BUILD_BYPRODUCTS

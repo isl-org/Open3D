@@ -42,6 +42,9 @@ std::shared_ptr<messages::Status> UnpackStatusFromReply(
             status_obj_handle.get().convert(status);
             ok = true;
         }
+    } catch (const msgpack::type_error& e) {
+        LogDebug("Failed to parse message: {}", e.what());
+        offset = msg.size();
     } catch (std::exception& e) {
         LogDebug("Failed to parse message: {}", e.what());
         offset = msg.size();

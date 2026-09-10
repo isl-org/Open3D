@@ -122,8 +122,8 @@ endif()
 # Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux.
 if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE)
     if(NOT CPP_LIBRARY OR NOT CPPABI_LIBRARY)
-        message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
-        foreach(llvm_ver RANGE 7 19)
+        message(STATUS "Searching /usr/lib/llvm-[17..20]/lib/ for libc++ and libc++abi")
+        foreach(llvm_ver RANGE 17 20)
             set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
             find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
@@ -136,9 +136,9 @@ if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE)
         endforeach()
     endif()
     if(NOT CPP_LIBRARY OR NOT CPPABI_LIBRARY)
-        message(WARNING
-            "libc++/libc++abi not found; GUI wheels may fail to load Filament "
-            "symbols from the installed libOpen3D.")
+        message(FATAL_ERROR
+            "libc++/libc++abi >= 17 not found; required for Filament-linked "
+            "libOpen3D GUI wheels.")
     endif()
 endif()
 

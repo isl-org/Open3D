@@ -310,6 +310,17 @@ void RenderAndCheckGolden(
 class GaussianSplatRenderTest : public testing::Test {
 protected:
     void SetUp() override {
+#if defined(__APPLE__)
+        // GitHub-hosted macOS runners virtualize the GPU (Metal reports
+        // "Apple Paravirtual device" / MTLGPUFamilyApple5), which lacks
+        // capabilities this pipeline relies on and crashes with a Filament
+        // precondition panic. Real Apple Silicon hardware passes; skip only
+        // in CI until a Metal capability check is implemented.
+        if (std::getenv("CI") != nullptr) {
+            GTEST_SKIP() << "Gaussian splat Metal rendering is not "
+                            "supported on virtualized macOS CI runners.";
+        }
+#endif
         if (!initialized_) {
             // Filament resources are at <build>/bin/resources/ relative
             // to the test executable.  Set the path explicitly so the

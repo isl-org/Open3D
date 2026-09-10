@@ -33,6 +33,7 @@ deps=(
     libtbb-dev
     # Headless / offscreen GPU rendering (EGL)
     libegl1-mesa-dev
+    mesa-vulkan-drivers
     # RealSense
     libudev-dev
     libusb-1.0-0-dev
@@ -40,39 +41,31 @@ deps=(
     libtool
 )
 
-if [[ "$FILAMENT_DEPS" ]]; then     # Filament build-from-source
-    deps+=(clang
-        ninja-build
-    )
-fi
-
-eval $(
-    source /etc/lsb-release;
-    echo DISTRIB_ID="$DISTRIB_ID";
-    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
-)
-# To avoid dependence on libunwind, we don't want to use clang / libc++ versions later than 11.
-# Ubuntu 20.04's has versions 8, 10 or 12 while Ubuntu 22.04 has versions 11 and later.
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "20.04" ]; then
-    deps=("${deps[@]/clang/clang-10}")
-    deps=("${deps[@]/libc++-dev/libc++-10-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-10-dev}")
-fi
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "22.04" ]; then
-    deps=("${deps[@]/clang/clang-11}")
-    deps=("${deps[@]/libc++-dev/libc++-11-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-11-dev}")
-fi
-if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "24.04" ]; then
-    deps=("${deps[@]/clang/clang-14}")
-    deps=("${deps[@]/libc++-dev/libc++-14-dev}")
-    deps=("${deps[@]/libc++abi-dev/libc++abi-14-dev}")
+if [[ "$FILAMENT_DEPS" ]]; then
+    # Filament v1.76 source builds require Clang 17 for C++20 ranges.
+    deps+=(clang ninja-build)
 fi
 
 # Special case for ARM64
 if [ "$(uname -m)" == "aarch64" ]; then
     # For compiling LAPACK in OpenBLAS
     deps+=("gfortran")
+fi
+
+source /etc/os-release
+if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
+    # Ubuntu 22.04 does not provide the required LLVM 17 packages.
+    $SUDO rm -f /etc/apt/sources.list.d/llvm-17.list
+    $SUDO apt-get update
+    $SUDO apt-get install ${APT_CONFIRM} ca-certificates gnupg wget
+    wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key |
+        gpg --dearmor |
+        $SUDO tee /usr/share/keyrings/apt.llvm.org.gpg >/dev/null
+    echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" |
+        $SUDO tee /etc/apt/sources.list.d/llvm-17.list >/dev/null
+    deps=("${deps[@]/clang/clang-17}")
+    deps=("${deps[@]/libc++-dev/libc++-17-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-17-dev}")
 fi
 
 echo "apt-get install ${deps[*]}"

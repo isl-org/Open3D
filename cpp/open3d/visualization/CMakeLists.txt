@@ -5,15 +5,17 @@ set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden
 # filament uses C++20 designated initializers
 set_property(TARGET visualization_impl visualization PROPERTY CXX_STANDARD 20)
 
-# Only Open3D-managed Filament builds are known to include the Vulkan external
-# image import patch used by Gaussian splatting.
-if(USE_SYSTEM_FILAMENT OR FILAMENT_PRECOMPILED_ROOT)
-    target_compile_definitions(visualization_impl PRIVATE
-        OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=0)
+# Open3D source builds and selected prebuilt archives include the Vulkan
+# external-image-import patch required by Gaussian splatting.
+if(BUILD_FILAMENT_FROM_SOURCE OR FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT)
+    set(OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT 1)
 else()
-    target_compile_definitions(visualization_impl PRIVATE
-        OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=1)
+    set(OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT 0)
 endif()
+target_compile_definitions(visualization_impl PRIVATE
+    OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=${OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT})
+target_compile_definitions(visualization PRIVATE
+    OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=${OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT})
 
 target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp

@@ -36,6 +36,7 @@ set(filament_LIBRARIES
         meshoptimizer
         smol-v
         utils
+        zstd
 )
 
 set(FILAMENT_VER "v1.76.0")
@@ -57,7 +58,7 @@ list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 set(filament_cxx_flags "${CMAKE_CXX_FLAGS}")
 if(NOT MSVC)
     set(filament_cxx_flags "${filament_cxx_flags} -Wno-deprecated"
-        "-Wno-pass-failed=transform-warning" "-Wno-error=nonnull")
+        "-Wno-error=nonnull")
 endif()
 if(NOT WIN32)
     # Issue Open3D#1909, filament#2146
@@ -117,6 +118,8 @@ ExternalProject_Add(
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
+        -DCMAKE_CXX_STANDARD=20
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON
         -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
         -DFILAMENT_ENABLE_JAVA=OFF
         -DFILAMENT_BUILD_TESTING=OFF
