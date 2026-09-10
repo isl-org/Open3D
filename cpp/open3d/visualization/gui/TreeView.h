@@ -134,6 +134,9 @@ public:
     void SetOnSelectionChanged(
             std::function<void(ItemId)> on_selection_changed);
 
+    void Expand(ItemId);
+    void Collapse(ItemId);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
