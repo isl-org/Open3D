@@ -77,6 +77,25 @@ Here is the corresponding Python code:
 
     bag_reader.close()
 
+Depth post-processing filters from ``librealsense`` can be enabled while
+opening a bag file. Filters are applied in list order before the depth frame is
+aligned to the color frame. Supported filters are ``decimation``,
+``spatial``, ``temporal``, and ``hole_filling``.
+
+.. code-block:: python
+
+    import open3d as o3d
+    bag_reader = o3d.t.io.RSBagReader()
+    decimation = o3d.t.io.RSBagReader.PostProcessingFilter(
+        "decimation", {"filter_magnitude": 2}
+    )
+    bag_reader.open(
+        bag_filename,
+        [decimation],
+    )
+    im_rgbd = bag_reader.next_frame()
+    bag_reader.close()
+
 Examples
 ^^^^^^^^
 
