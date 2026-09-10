@@ -12,7 +12,6 @@
 #include "tests/Tests.h"
 
 using namespace open3d::geometry;
-using namespace ::testing;
 
 using Eigen::Matrix3d;
 using Eigen::Matrix4d;
@@ -157,7 +156,7 @@ TEST(OrientedBoundingEllipsoid, TransformUniformScale) {
     ExpectEQ(ellipsoid.center_,
              Vector3d((transformation * Vector3d(1, 2, 3).homogeneous())
                               .hnormalized()));
-    ExpectEQ(ellipsoid.R_, Matrix3d(TestRotation()));
+    ExpectEQ(ellipsoid.R_, TestRotation());
     ExpectEQ(ellipsoid.radii_, Vector3d{2, 4, 6});
 }
 

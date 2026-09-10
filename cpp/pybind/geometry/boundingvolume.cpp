@@ -108,6 +108,14 @@ Example::
 )doc")
             .def("volume", &OrientedBoundingEllipsoid::Volume,
                  "Returns the volume of the bounding ellipsoid.")
+            .def("transform", &OrientedBoundingEllipsoid::Transform,
+                 "Applies a similarity transform to the ellipsoid. Shear "
+                 "and non-uniform scale raise, since they turn the ellipsoid "
+                 "into a general quadric that a center, a rotation matrix and "
+                 "three radii cannot describe. Mirroring raises because it "
+                 "would leave the rotation matrix improper, and a projective "
+                 "transformation raises because it is not affine.",
+                 "transformation"_a)
             .def_readwrite("center", &OrientedBoundingEllipsoid::center_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("R", &OrientedBoundingEllipsoid::R_,
@@ -117,6 +125,11 @@ Example::
             .def_readwrite("color", &OrientedBoundingEllipsoid::color_,
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingEllipsoid", "volume");
+    docstring::ClassMethodDocInject(
+            m, "OrientedBoundingEllipsoid", "transform",
+            {{"transformation",
+              "4x4 matrix made of a rotation, a uniform scale and a "
+              "translation."}});
 
     auto oriented_bounding_box = static_cast<
             py::class_<OrientedBoundingBox, PyGeometry3D<OrientedBoundingBox>,
@@ -208,6 +221,14 @@ Returns:
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,
                  "Returns the eight points that define the bounding box.")
+            .def("transform", &OrientedBoundingBox::Transform,
+                 "Applies a similarity transform to the bounding box. Shear "
+                 "and non-uniform scale raise, since they turn the box into a "
+                 "parallelepiped that a center, a rotation matrix and an "
+                 "extent cannot describe. Mirroring raises because it would "
+                 "leave the rotation matrix improper, and a projective "
+                 "transformation raises because it is not affine.",
+                 "transformation"_a)
             .def_readwrite("center", &OrientedBoundingBox::center_,
                            "``float64`` array of shape ``(3, )``")
             .def_readwrite("R", &OrientedBoundingBox::R_,
@@ -218,6 +239,11 @@ Returns:
                            "``float64`` array of shape ``(3, )``");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "volume");
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox", "get_box_points");
+    docstring::ClassMethodDocInject(
+            m, "OrientedBoundingBox", "transform",
+            {{"transformation",
+              "4x4 matrix made of a rotation, a uniform scale and a "
+              "translation."}});
     docstring::ClassMethodDocInject(m, "OrientedBoundingBox",
                                     "get_point_indices_within_bounding_box",
                                     {{"points", "A list of points."}});

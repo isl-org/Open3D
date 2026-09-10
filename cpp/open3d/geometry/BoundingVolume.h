@@ -66,9 +66,11 @@ public:
     /// \brief Applies a similarity transform to the ellipsoid.
     ///
     /// \param transformation 4x4 matrix made of a rotation, a uniform scale
-    /// and a translation. Shear, non-uniform scale, mirroring and projective
-    /// parts throw, because the result of those is no longer an ellipsoid
-    /// described by a center, a rotation matrix and three radii.
+    /// and a translation. Shear and non-uniform scale throw, because they turn
+    /// the ellipsoid into a general quadric that a center, a rotation matrix
+    /// and three radii cannot describe. Mirroring throws because it would
+    /// leave the rotation matrix improper, and a projective transformation
+    /// throws because it is not affine.
     virtual OrientedBoundingEllipsoid& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingEllipsoid& Translate(
@@ -189,9 +191,11 @@ public:
     /// \brief Applies a similarity transform to the bounding box.
     ///
     /// \param transformation 4x4 matrix made of a rotation, a uniform scale
-    /// and a translation. Shear, non-uniform scale, mirroring and projective
-    /// parts throw, because the result of those is a parallelepiped rather
-    /// than a box described by a center, a rotation matrix and an extent.
+    /// and a translation. Shear and non-uniform scale throw, because they turn
+    /// the box into a parallelepiped that a center, a rotation matrix and an
+    /// extent cannot describe. Mirroring throws because it would leave the
+    /// rotation matrix improper, and a projective transformation throws
+    /// because it is not affine.
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
