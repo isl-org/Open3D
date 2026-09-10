@@ -25,6 +25,12 @@ struct MaterialRecord {
     // Rendering attributes
     bool has_alpha = false;
 
+    // If true, cull back faces (single-sided); if false (default), draw both
+    // faces. Inverse of the legacy Visualizer's mesh_show_back_face. Honored
+    // only by the surface shaders defaultLit, defaultLitTransparency,
+    // defaultUnlit, normals, unlitGradient, unlitSolidColor.
+    bool backface_culling = false;
+
     // PBR Material properties and maps
     Eigen::Vector4f base_color = Eigen::Vector4f(1.f, 1.f, 1.f, 1.f);
     float base_metallic = 0.f;

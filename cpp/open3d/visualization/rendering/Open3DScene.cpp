@@ -363,6 +363,18 @@ void Open3DScene::ModifyGeometryMaterial(const std::string& name,
     }
 }
 
+void Open3DScene::SetGeometryBackfaceCulling(const std::string& name,
+                                             bool enable) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        scene->SetGeometryBackfaceCulling(name, enable);
+        if (!g->second.fast_name.empty()) {
+            scene->SetGeometryBackfaceCulling(g->second.fast_name, enable);
+        }
+    }
+}
+
 void Open3DScene::ShowGeometry(const std::string& name, bool show) {
     auto it = geometries_.find(name);
     if (it != geometries_.end()) {

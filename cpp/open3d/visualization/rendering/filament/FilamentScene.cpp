@@ -1300,6 +1300,21 @@ void FilamentScene::SetGeometryCulling(const std::string& object_name,
     }
 }
 
+void FilamentScene::SetGeometryBackfaceCulling(const std::string& object_name,
+                                               bool enable) {
+    bool changed = false;
+    auto geoms = GetGeometry(object_name);
+    for (auto* g : geoms) {
+        g->mat.properties.backface_culling = enable;
+        if (g->filament_entity.isNull()) continue;
+        UpdateBackfaceCulling(g->mat);
+        changed = true;
+    }
+    if (changed) {
+        MarkGeometryChanged();
+    }
+}
+
 void FilamentScene::SetGeometryPriority(const std::string& object_name,
                                         uint8_t priority) {
     bool changed = false;
@@ -1315,6 +1330,30 @@ void FilamentScene::SetGeometryPriority(const std::string& object_name,
     }
     if (changed) {
         MarkGeometryChanged();
+    }
+}
+
+void FilamentScene::UpdateBackfaceCulling(GeometryMaterialInstance& geom_mi) {
+    // Back-face culling maps to the rasterizer culling mode. Restrict it to the
+    // surface/mesh shaders where it is meaningful (ignore points, lines, depth,
+    // background, etc.).
+    static const std::unordered_set<std::string> kCullableShaders = {
+            "defaultLit", "defaultLitTransparency", "defaultUnlit",
+            "normals",    "unlitGradient",          "unlitSolidColor"};
+    if (kCullableShaders.count(geom_mi.properties.shader) == 0) {
+        return;
+    }
+    auto w_mi = resource_mgr_.GetMaterialInstance(geom_mi.mat_instance);
+    if (auto mi = w_mi.lock()) {
+        // backface_culling == true  -> BACK: cull back faces.
+        // backface_culling == false -> NONE: draw both faces. Back-face
+        //                              lighting stays correct because these
+        //                              materials keep back-face normal flipping
+        //                              on by default.
+        mi->setCullingMode(
+                geom_mi.properties.backface_culling
+                        ? filament::MaterialInstance::CullingMode::BACK
+                        : filament::MaterialInstance::CullingMode::NONE);
     }
 }
 
@@ -1640,6 +1679,8 @@ void FilamentScene::UpdateMaterialProperties(RenderableGeometry& geom) {
     } else {
         utility::LogWarning("'{}' is not a valid shader", props.shader);
     }
+
+    UpdateBackfaceCulling(geom.mat);
 }
 
 void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
@@ -1697,6 +1738,7 @@ void FilamentScene::OverrideMaterialInternal(RenderableGeometry* geom,
         } else {
             UpdateDepthShader(geom->mat);
         }
+        UpdateBackfaceCulling(geom->mat);
     } else {
         UpdateMaterialProperties(*geom);
     }
