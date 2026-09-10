@@ -63,6 +63,12 @@ public:
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
 
+    /// \brief Applies a similarity transform to the ellipsoid.
+    ///
+    /// \param transformation 4x4 matrix made of a rotation, a uniform scale
+    /// and a translation. Shear, non-uniform scale, mirroring and projective
+    /// parts throw, because the result of those is no longer an ellipsoid
+    /// described by a center, a rotation matrix and three radii.
     virtual OrientedBoundingEllipsoid& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingEllipsoid& Translate(
@@ -180,6 +186,12 @@ public:
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
 
+    /// \brief Applies a similarity transform to the bounding box.
+    ///
+    /// \param transformation 4x4 matrix made of a rotation, a uniform scale
+    /// and a translation. Shear, non-uniform scale, mirroring and projective
+    /// parts throw, because the result of those is a parallelepiped rather
+    /// than a box described by a center, a rotation matrix and an extent.
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,

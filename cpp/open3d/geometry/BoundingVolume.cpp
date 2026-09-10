@@ -7,8 +7,10 @@
 #include "open3d/geometry/BoundingVolume.h"
 
 #include <Eigen/Eigenvalues>
+#include <cmath>
 #include <iostream>
 #include <numeric>
+#include <tuple>
 
 #include "open3d/core/EigenConverter.h"
 #include "open3d/geometry/PointCloud.h"
@@ -20,6 +22,53 @@
 
 namespace open3d {
 namespace geometry {
+
+namespace {
+
+/// Splits an affine similarity transform into its rotation, uniform scale and
+/// translation parts. A box or an ellipsoid stays a box or an ellipsoid only
+/// under a similarity transform: shear, non-uniform scale or a projective part
+/// turns it into a parallelepiped or a general quadric, which the center,
+/// rotation and extent parametrization cannot express.
+std::tuple<Eigen::Matrix3d, double, Eigen::Vector3d>
+DecomposeSimilarityTransform(const Eigen::Matrix4d& transformation,
+                             const char* geometry_name) {
+    // Loose enough for a rotation accumulated in single precision.
+    constexpr double tolerance = 1e-5;
+
+    if (!transformation.row(3).isApprox(Eigen::RowVector4d(0.0, 0.0, 0.0, 1.0),
+                                        tolerance)) {
+        utility::LogError(
+                "A projective transform of a {} is not supported, its last "
+                "row is [{}, {}, {}, {}].",
+                geometry_name, transformation(3, 0), transformation(3, 1),
+                transformation(3, 2), transformation(3, 3));
+    }
+
+    const Eigen::Matrix3d linear = transformation.topLeftCorner<3, 3>();
+    const double determinant = linear.determinant();
+    if (determinant <= 0.0) {
+        utility::LogError(
+                "A transform of a {} with determinant {} is not supported, it "
+                "mirrors or collapses the geometry.",
+                geometry_name, determinant);
+    }
+
+    const double scale = std::cbrt(determinant);
+    const Eigen::Matrix3d rotation = linear / scale;
+    if (!(rotation * rotation.transpose())
+                 .isApprox(Eigen::Matrix3d::Identity(), tolerance)) {
+        utility::LogError(
+                "A general transform of a {} is not supported, only a "
+                "rotation, a uniform scale and a translation. Call Translate, "
+                "Scale and Rotate for anything else.",
+                geometry_name);
+    }
+
+    return {rotation, scale, transformation.topRightCorner<3, 1>()};
+}
+
+}  // namespace
 
 OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Clear() {
     center_.setZero();
@@ -60,11 +109,13 @@ OrientedBoundingBox OrientedBoundingEllipsoid::GetMinimalOrientedBoundingBox(
 
 OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Transform(
         const Eigen::Matrix4d& transformation) {
-    utility::LogError(
-            "A general transform of an OrientedBoundingEllipsoid is not "
-            "implemented. "
-            "Call Translate, Scale, and Rotate.");
-    return *this;
+    const auto [rotation, scale, translation] = DecomposeSimilarityTransform(
+            transformation, "OrientedBoundingEllipsoid");
+    // Rotating and scaling about the origin moves the center along with the
+    // rest of the geometry, so the three parts compose into the transform.
+    Rotate(rotation, Eigen::Vector3d::Zero());
+    Scale(scale, Eigen::Vector3d::Zero());
+    return Translate(translation);
 }
 
 OrientedBoundingEllipsoid& OrientedBoundingEllipsoid::Translate(
@@ -153,10 +204,13 @@ OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(
 
 OrientedBoundingBox& OrientedBoundingBox::Transform(
         const Eigen::Matrix4d& transformation) {
-    utility::LogError(
-            "A general transform of an OrientedBoundingBox is not implemented. "
-            "Call Translate, Scale, and Rotate.");
-    return *this;
+    const auto [rotation, scale, translation] =
+            DecomposeSimilarityTransform(transformation, "OrientedBoundingBox");
+    // Rotating and scaling about the origin moves the center along with the
+    // rest of the geometry, so the three parts compose into the transform.
+    Rotate(rotation, Eigen::Vector3d::Zero());
+    Scale(scale, Eigen::Vector3d::Zero());
+    return Translate(translation);
 }
 
 OrientedBoundingBox& OrientedBoundingBox::Translate(
