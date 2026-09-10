@@ -1,6 +1,7 @@
 target_sources(tests PRIVATE
     AccumulatedPoint.cpp
     AxisAlignedBoundingBox.cpp
+    BoundingVolume.cpp
     EstimateNormals.cpp
     HalfEdgeTriangleMesh.cpp
     Image.cpp
