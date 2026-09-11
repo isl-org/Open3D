@@ -28,14 +28,19 @@ else()
             set(FILAMENT_RELEASE_TAG md)
             set(FILAMENT_RELEASE_SHA256 C7514C39237AD441C93119B4FB211F584C56EED124B2BECCBB399B1B7823E3C1)
             set(FILAMENT_DEBUG_TAG mdd)
-            set(FILAMENT_DEBUG_SHA256 C018D06E50BDA8587934D39FDEDF3308812803D40B9D63ED00C262D71338B9D8)
+            set(FILAMENT_DEBUG_SHA256 3B5924992A936F800E453DFAD8C5D68FBF2F6B003429246B6B58077E5865DD66)
         endif()
         set(FILAMENT_RELEASE_URL
             ${FILAMENT_BASE_URL}/filament-v1.76.0-windows-msvc-x64-Release_${FILAMENT_RELEASE_TAG}.zip)
-        set(FILAMENT_DEBUG_URL
-            ${FILAMENT_BASE_URL}/filament-v1.76.0-windows-msvc-x64-RelWithDebInfo_${FILAMENT_RELEASE_TAG}.zip)
+        if(STATIC_WINDOWS_RUNTIME)
+            set(FILAMENT_DEBUG_URL
+                ${FILAMENT_BASE_URL}/filament-v1.76.0-windows-msvc-x64-RelWithDebInfo_${FILAMENT_RELEASE_TAG}.zip)
+        else()
+            set(FILAMENT_DEBUG_URL
+                ${FILAMENT_BASE_URL}/filament-v1.76.0-windows-msvc-x64-Debug_${FILAMENT_RELEASE_TAG}.zip)
+        endif()
         if(NOT FILAMENT_MULTI_CONFIG)
-            if(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+            if(CMAKE_BUILD_TYPE STREQUAL Debug)
                 set(FILAMENT_URL ${FILAMENT_DEBUG_URL})
                 set(FILAMENT_SHA256 ${FILAMENT_DEBUG_SHA256})
                 string(APPEND lib_dir "/x86_64/${FILAMENT_DEBUG_TAG}")

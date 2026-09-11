@@ -159,7 +159,14 @@ function(open3d_build_3rdparty_library name)
 endfunction()
 
 # CMake arguments for configuring ExternalProjects. Use the second _hidden
-# version by default.
+# version by default. Single-config Windows Ninja builds need Debug artifacts
+# when the parent is Debug; multi-config generators select their config later.
+set(OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE Release)
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND
+   CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE Debug)
+endif()
+
 set(ExternalProject_CMAKE_ARGS
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5      # for VTK 9.1
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -173,9 +180,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
     -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
-    # Always build 3rd party code in Release mode. Ignored by multi-config
-    # generators (XCode, MSVC). MSVC needs matching config anyway.
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=${OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE}
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
