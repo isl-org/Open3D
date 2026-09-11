@@ -246,8 +246,8 @@ class ReconstructionWindow:
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
         pcd_placeholder.point.colors = o3c.Tensor(
             np.zeros((max_points, 3), dtype=np.float32))
-        self.widget3d.scene.scene.add_geometry(
-            'points', pcd_placeholder, self.point_material)
+        self.widget3d.scene.scene.add_geometry('points', pcd_placeholder,
+                                               self.point_material)
 
         set_enabled(self.fixed_prop_grid, False)
         set_enabled(self.adjustable_prop_grid, True)
@@ -273,24 +273,18 @@ class ReconstructionWindow:
 
         return True
 
-    @staticmethod
-    def _flip_image(image):
-        return o3d.geometry.Image(np.flipud(np.asarray(image)).copy())
-
     def init_render(self, depth_ref, color_ref):
         self.input_depth_image.update_image(
-            self._flip_image(depth_ref.colorize_depth(
-                float(self.scale_slider.int_value), config.depth_min,
-                self.max_slider.double_value).to_legacy()))
-        self.input_color_image.update_image(
-            self._flip_image(color_ref.to_legacy()))
+            depth_ref.colorize_depth(float(self.scale_slider.int_value),
+                                     config.depth_min,
+                                     self.max_slider.double_value).to_legacy())
+        self.input_color_image.update_image(color_ref.to_legacy())
 
         self.raycast_depth_image.update_image(
-            self._flip_image(depth_ref.colorize_depth(
-                float(self.scale_slider.int_value), config.depth_min,
-                self.max_slider.double_value).to_legacy()))
-        self.raycast_color_image.update_image(
-            self._flip_image(color_ref.to_legacy()))
+            depth_ref.colorize_depth(float(self.scale_slider.int_value),
+                                     config.depth_min,
+                                     self.max_slider.double_value).to_legacy())
+        self.raycast_color_image.update_image(color_ref.to_legacy())
         self.window.set_needs_layout()
 
         bbox = o3d.geometry.AxisAlignedBoundingBox([-5, -5, -5], [5, 5, 5])
@@ -314,16 +308,16 @@ class ReconstructionWindow:
             if pcd is not None and pcd.point.positions.shape[0] > 0:
                 if os.name == 'nt':
                     self.widget3d.scene.remove_geometry('points')
-                    self.widget3d.scene.add_geometry(
-                        'points', pcd, self.point_material)
+                    self.widget3d.scene.add_geometry('points', pcd,
+                                                     self.point_material)
                 else:
                     self.widget3d.scene.scene.update_geometry(
                         'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
                         rendering.Scene.UPDATE_COLORS_FLAG)
 
         self.widget3d.scene.remove_geometry("frustum")
-        self.widget3d.scene.add_geometry(
-            "frustum", frustum, self.frustum_material)
+        self.widget3d.scene.add_geometry("frustum", frustum,
+                                         self.frustum_material)
 
     # Major loop
     def update_main(self):
@@ -334,9 +328,9 @@ class ReconstructionWindow:
         device = o3d.core.Device(config.device)
 
         # Keep model creation and processing on the same worker thread.
-        self.model = o3d.t.pipelines.slam.Model(
-            self.config.voxel_size, 16, self.config.block_count,
-            o3c.Tensor(np.eye(4)), device)
+        self.model = o3d.t.pipelines.slam.Model(self.config.voxel_size, 16,
+                                                self.config.block_count,
+                                                o3c.Tensor(np.eye(4)), device)
         self.is_started = True
 
         T_frame_to_model = o3c.Tensor(np.identity(4))
@@ -433,19 +427,16 @@ class ReconstructionWindow:
                 0 if pcd is None else pcd.point.positions.shape[0],
                 self.est_point_count_slider.int_value)
 
-            input_depth = self._flip_image(
-                input_frame.get_data_as_image('depth').colorize_depth(
+            input_depth = input_frame.get_data_as_image('depth').colorize_depth(
+                float(self.scale_slider.int_value), config.depth_min,
+                self.max_slider.double_value).to_legacy()
+            input_color = input_frame.get_data_as_image('color').to_legacy()
+            raycast_depth = raycast_frame.get_data_as_image(
+                'depth').colorize_depth(
                     float(self.scale_slider.int_value), config.depth_min,
-                    self.max_slider.double_value).to_legacy())
-            input_color = self._flip_image(
-                input_frame.get_data_as_image('color').to_legacy())
-            raycast_depth = self._flip_image(
-                raycast_frame.get_data_as_image('depth').colorize_depth(
-                    float(self.scale_slider.int_value), config.depth_min,
-                    self.max_slider.double_value).to_legacy())
-            raycast_color = self._flip_image(
-                raycast_frame.get_data_as_image('color').to(
-                    o3c.uint8, False, 255.0).to_legacy())
+                    self.max_slider.double_value).to_legacy()
+            raycast_color = raycast_frame.get_data_as_image('color').to(
+                o3c.uint8, False, 255.0).to_legacy()
 
             gui.Application.instance.post_to_main_thread(
                 self.window, lambda input_depth=input_depth, input_color=input_color, \
