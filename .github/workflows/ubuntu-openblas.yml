@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        openblas_config:
+          - openblas-amd64-py312-dev
+          - openblas-amd64-ilp64-py312-dev
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -29,13 +33,13 @@ jobs:
           maximize_ubuntu_github_actions_build_space
 
       - name: Docker build
-        run: docker/docker_build.sh openblas-amd64-py312-dev
+        run: docker/docker_build.sh ${{ matrix.openblas_config }}
 
       - name: Docker test (C++ and integration)
-        run: docker/docker_test.sh openblas-amd64-py312-dev lib
+        run: docker/docker_test.sh ${{ matrix.openblas_config }} lib
 
       - name: Docker test (Python)
-        run: docker/docker_test.sh openblas-amd64-py312-dev python
+        run: docker/docker_test.sh ${{ matrix.openblas_config }} python
 
   build-lib-arm64:
     name: Build Lib ARM64
