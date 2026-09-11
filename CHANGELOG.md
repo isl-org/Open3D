@@ -95,6 +95,7 @@
 -   macOS x86_64 not longer supported, only macOS arm64 is supported.
 -   Python 3.13+3.14 support
 -   Fix color artifacts in PointCloud projection due to CUDA race condition [(PR #7424)](https://github.com/isl-org/Open3D/pull/7424)
+-   Sync the bundled CUTLASS license with v4.2.1 (PR #7542).
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)

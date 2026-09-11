@@ -450,7 +450,7 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
         if (this.webRtcClientList.size === 1) {
             // Initial Run Tag reload only needed for first window
             videoElt.addEventListener(
-                    'RemoteDataChannelOpen', this.reloadRunTags);
+                    'LocalDataChannelOpen', this.reloadRunTags);
         } else {  // Initialize state from first webrtcWindow
             // deep copy: All objects and sub-objects need to be copied with JS
             // spread syntax.
@@ -462,7 +462,7 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
                 this.windowState.get(windowUId).run = run;
             }
             videoElt.addEventListener(
-                    'RemoteDataChannelOpen',
+                    'LocalDataChannelOpen',
                     this.requestGeometryUpdate.bind(this, windowUId));
         }
         videoElt.settingsOpen = false;
@@ -1046,7 +1046,7 @@ Click to change">
      * Send a data channel message to the server to reload runs and tags from
      * the event file. Automatically run on loading.
      * @callback
-     * @listens document#click, WebRtcStreamer#RemoteDataChannelOpen
+    * @listens document#click, WebRtcStreamer#LocalDataChannelOpen
      */
     reloadRunTags = () => {
         if (this.webRtcClientList.size > 0) {
@@ -1060,7 +1060,7 @@ Click to change">
                 class_name: 'tensorboard/' + windowUId + '/get_run_tags'
             };
             console.info('Sending getRunTagsMessage: ', getRunTagsMessage);
-            client.dataChannel.send(JSON.stringify(getRunTagsMessage));
+            client.sendJsonData(getRunTagsMessage);
         } else {
             console.warn('No webRtcStreamer object initialized!');
         }
@@ -1071,7 +1071,7 @@ Click to change">
      * geometry display.
      * @callback
      * @param {String} windowUId
-     * @listens WebRtcStreamer#RemoteDataChannelOpen
+    * @listens WebRtcStreamer#LocalDataChannelOpen
      */
     requestGeometryUpdate = (windowUId) => {
         this.messageId += 1;

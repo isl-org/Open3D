@@ -168,7 +168,7 @@ let WebRtcStreamer = (function() {
     // Default function to send JSON data over data channel. Override to
     // implement features such as synchronized updates over multiple windows.
     WebRtcStreamer.prototype.sendJsonData = function(jsonData) {
-        if (typeof this.dataChannel != 'undefined') {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
             this.dataChannel.send(JSON.stringify(jsonData));
         }
     };

@@ -40,8 +40,9 @@ jobs:
         CONFIG: [ON, OFF]
     env:
       BUILD_SHARED_LIBS: ${{ matrix.CONFIG }}
-      BUILD_TENSORFLOW_OPS: 'ON'
+      BUILD_TENSORFLOW_OPS: 'ON'  # OK with dummy python 3.12
       BUILD_PYTORCH_OPS: 'ON'
+      BUILD_PYTHON_MODULE: 'OFF'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -71,21 +72,27 @@ jobs:
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
 
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
-      - name: Config and build
+      - name: Config, build, and test
+        id: build
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
-          export BUILD_PYTHON_MODULE=OFF
-          ./util/run_ci.sh
+          # Run the full build+test suite; capture the exit code without
+          # failing the workflow immediately so that subsequent packaging,
+          # viewer, and upload steps always execute.
+          ./util/run_ci.sh && echo 'SUCCESS' > /tmp/run_ci_status.txt \
+            || echo 'FAILURE' > /tmp/run_ci_status.txt
+
+      - name: Prepare artifacts
+        if: ${{ !cancelled() }}
+        run: |
           DEVEL_PKG_NAME="$(basename build/package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
-          
-          # Compress build directory for reuse (exclude some large potentially unnecessary files if needed)
-          # We need 'build' directory.
+          # Compress build directory for reuse.
           tar -caf build.tar.xz build
 
       - name: Upload build artifact
-        if: ${{ matrix.CONFIG == 'OFF' }}
+        if: ${{ matrix.CONFIG == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
           name: open3d-build-${{ matrix.os }}
@@ -139,6 +146,14 @@ jobs:
             .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
           else
             .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          fi
+
+      - name: Surface test failures
+        if: ${{ !cancelled() }}
+        run: |
+          if [[ -f /tmp/run_ci_status.txt && "$(cat /tmp/run_ci_status.txt)" == 'FAILURE' ]]; then
+            echo '::error::run_ci.sh tests failed'
+            exit 1
           fi
 
   build-wheel:
@@ -220,9 +235,10 @@ jobs:
           echo "Using cmake: $(which cmake)"
           cmake --version
           source util/ci_utils.sh
-          install_python_dependencies
+          install_python_dependencies with-jupyter
 
-          brew install ccache glslang spirv-cross gcc
+          brew install ccache glslang spirv-cross gcc node
+          npm install -g yarn
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           # Fix gfortran not found issue
           ln -s $(brew --prefix gcc)/bin/gfortran-* /usr/local/bin/gfortran
@@ -232,7 +248,7 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_package
+          build_pip_package build_jupyter
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV

@@ -26,7 +26,6 @@ Open3D: A Modern Library for 3D Data Processing
     docker
     arm
     sycl
-    nns_hashmap_cpu_cuda_sycl
     open3d_ml
     poux_book
 
@@ -60,6 +59,13 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Agent Skills
+
+    agent_skills/open3d-python/SKILL
+    agent_skills/open3d-cpp/SKILL
 
 .. toctree::
     :maxdepth: 2
