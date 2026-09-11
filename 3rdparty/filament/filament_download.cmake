@@ -48,25 +48,38 @@ else()
     elseif(APPLE)
         set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.76.0/filament-v1.76.0-mac.tgz)
         set(FILAMENT_SHA256 6f067ac0931b305c32be108679cf5b0c59a3fb51753d0c64d60d290b4f28b2db)
+        if(APPLE_AARCH64)
+            string(APPEND lib_dir "/arm64")
+        else()
+            string(APPEND lib_dir "/x86_64")
+        endif()
     else()
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
             set(FILAMENT_URL
                 https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76/filament-v1.76.0-linux-22.04-x86_64.tgz)
-            set(FILAMENT_SHA256 ad0c349bba319012785b85c1ef978c633600ef1da3c0ae97b064a828a243adbf)
+            set(FILAMENT_SHA256 05bd7bcd620016b37fe2487a5e4e60a72ed43c66e3090a5770c36680881f28d9)
             set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT ON)
+            set(FILAMENT_USE_STATIC_LIBCXX_STDABI ON)
             message(STATUS "Using Open3D patched Filament binary for Linux x86_64.")
+            string(APPEND lib_dir "/x86_64")
         elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|ARM64)$")
             set(FILAMENT_URL
                 https://github.com/isl-org/open3d_downloads/releases/download/filament-v1.76/filament-v1.76.0-linux-22.04-aarch64.tgz)
-            set(FILAMENT_SHA256 92300a75e7c751dffc72631be34fcf1a86e5ca98561860048d7d35c7d1284746)
+            set(FILAMENT_SHA256 8b37a6bd942eb3cae9a39c7431181cae34ba1929189f9a3b0c93e07044c3139a)
             set(FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT ON)
+            set(FILAMENT_USE_STATIC_LIBCXX_STDABI ON)
             message(STATUS "Using Open3D patched Filament binary for Linux aarch64.")
+            string(APPEND lib_dir "/aarch64")
         else()
             set(FILAMENT_URL
                     https://github.com/google/filament/releases/download/v1.76.0/filament-v1.76.0-linux.tgz)
             set(FILAMENT_SHA256 08f96fbce1432d7a5faf34b3e96a186639b89663f8a215e6d2c36ad6cb73fa4a)
             message(STATUS "Using upstream Filament binary for Linux ${CMAKE_SYSTEM_PROCESSOR}. Gaussian Splat rendering will not be available.")
         endif()
+    endif()
+
+    if(FILAMENT_USE_STATIC_LIBCXX_STDABI)
+        list(APPEND filament_LIBRARIES c++stdabi)
     endif()
 
     if(WIN32 AND FILAMENT_MULTI_CONFIG)
@@ -84,7 +97,7 @@ else()
                 "-DCACHE_DIR=${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
                 "-DDEST=${FILAMENT_ROOT}"
                 "-DSTAMP=${FILAMENT_STAMP}"
-                -P "${CMAKE_CURRENT_LIST_DIR}/filament_fetch_variant.cmake"
+                -P "${Open3D_SOURCE_DIR}/cmake/fetch_variant.cmake"
             BYPRODUCTS ${FILAMENT_BYPRODUCTS}
             COMMENT "Downloading prebuilt Filament ($<CONFIG>)"
             VERBATIM

@@ -113,7 +113,7 @@ ExternalProject_Add(
     URL_HASH SHA256=${FILAMENT_VER_HASH}
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     # 0001: Implements VulkanDriver::importTextureR for zero-copy 3DGS texture sharing.
-    PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_3RDPARTY_DIR}/librealsense/apply_patch.cmake
+    PATCH_COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${Open3D_3RDPARTY_DIR}/filament/patches/0001-importTextureR.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_SOURCE_DIR}/cmake/apply_patch.cmake
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}

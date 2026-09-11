@@ -1522,7 +1522,7 @@ if(BUILD_GUI)
         )
         set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
-        if(UNIX AND NOT APPLE)
+        if(UNIX AND NOT APPLE AND NOT FILAMENT_USE_STATIC_LIBCXX_STDABI)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.

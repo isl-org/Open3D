@@ -146,7 +146,8 @@ open3d_show_and_abort_on_warning(Open3D)
 open3d_set_global_properties(Open3D)
 open3d_set_open3d_lib_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
-if (NOT BUILD_FILAMENT_FROM_SOURCE AND UNIX AND NOT APPLE AND CPP_LIBRARY AND CPPABI_LIBRARY)
+if (NOT BUILD_FILAMENT_FROM_SOURCE AND UNIX AND NOT APPLE AND
+    NOT FILAMENT_USE_STATIC_LIBCXX_STDABI AND CPP_LIBRARY AND CPPABI_LIBRARY)
     target_link_libraries(Open3D INTERFACE ${CPP_LIBRARY} ${CPPABI_LIBRARY})
 endif()
 
