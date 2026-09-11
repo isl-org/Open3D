@@ -19,6 +19,9 @@ if (-not (Test-Path $icd)) {
 
 (Join-Path $root "bin") | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 "VK_DRIVER_FILES=$icd" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+# Older Vulkan loaders, including the vcpkg build used by Windows CI, only
+# respect the legacy ICD variable and otherwise search the registry.
+"VK_ICD_FILENAMES=$icd" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
 # Lavapipe only ships the ICD (vulkan_lvp.dll); it does not provide the Vulkan
 # loader that applications dynamically link against (BlueVK / vulkan.hpp call
