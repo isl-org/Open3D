@@ -16,6 +16,10 @@ ARG BUILD_PYTHON_MODULE=ON
 # BUILD_SHARED_LIBS=ON (ARM64 has no WebRTC, so shared+static curl/BoringSSL
 # currently leaves OpenSSL unresolved in libOpen3D.so).
 ARG BUILD_SHARED_LIBS=OFF
+ARG USE_SYSTEM_BLAS
+ARG BLA_SIZEOF_INTEGER
+ARG OPENBLAS_PACKAGE
+ARG LAPACKE_ABI_PACKAGE
 RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
  && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
@@ -57,6 +61,22 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
  && rm -rf /var/lib/apt/lists/*
+
+RUN if [ "${USE_SYSTEM_BLAS}" = "ON" ] ; then \
+        if [ -z "${OPENBLAS_PACKAGE}" ] ; then \
+            echo "OPENBLAS_PACKAGE is required for system BLAS" ; \
+            exit 1 ; \
+        fi ; \
+        if [ "${BLA_SIZEOF_INTEGER}" = "8" -a -z "${LAPACKE_ABI_PACKAGE}" ] ; then \
+            echo "LAPACKE_ABI_PACKAGE is required for ILP64 BLAS/LAPACKE" ; \
+            exit 1 ; \
+        fi ; \
+        apt-get update && apt-get install -y \
+            ${OPENBLAS_PACKAGE} \
+            liblapacke-dev \
+            ${LAPACKE_ABI_PACKAGE} \
+        && rm -rf /var/lib/apt/lists/* ; \
+    fi
 
 # pyenv
 # The pyenv python paths are used during docker run, in this way docker run
@@ -122,6 +142,10 @@ RUN rm -f /*.whl build/lib/python_package/pip_package/*.whl \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     -DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH} \
     -DBUILD_PYTHON_MODULE=${BUILD_PYTHON_MODULE} \
+    -DUSE_BLAS=ON \
+    -DUSE_SYSTEM_BLAS=${USE_SYSTEM_BLAS} \
+    -DBLA_VENDOR=OpenBLAS \
+    -DBLA_SIZEOF_INTEGER=${BLA_SIZEOF_INTEGER} \
     .. \
  && export NPROC=$(($(nproc)+2)) \
  && make -j$NPROC \
