@@ -280,8 +280,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target Open3DViewer
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
-            --target install
+          cmake --install . --config ${{ matrix.CONFIG }} --component Unspecified
           $version = (Select-String -Path "${{ env.BUILD_DIR }}/CMakeCache.txt" `
             -Pattern "OPEN3D_VERSION_FULL").Line.Split('=')[1]
           $viewerZip = "${{ env.BUILD_DIR }}/open3d-$version-app-windows-amd64.zip"

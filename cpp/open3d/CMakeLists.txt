@@ -208,7 +208,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(Open3DConfig.cmake.in
                               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
                               INSTALL_DESTINATION ${Open3D_INSTALL_CMAKE_DIR}
-                              PATH_VARS Open3D_INSTALL_INCLUDE_DIR
+                              PATH_VARS Open3D_INSTALL_INCLUDE_DIR Open3D_INSTALL_RESOURCE_DIR
                               NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 
@@ -229,6 +229,13 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.cuh"
+)
+
+# Ship the C++ agent skill with the C++ devel package only.
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/docs/agent_skills/open3d-cpp"
+    DESTINATION "${Open3D_INSTALL_RESOURCE_DIR}/Open3D/agent_skills"
+    COMPONENT dev
+    FILES_MATCHING PATTERN "*.md"
 )
 
 # Install the Open3DConfig.cmake and Open3DConfigVersion.cmake

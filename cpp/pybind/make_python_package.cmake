@@ -150,6 +150,11 @@ endif()
     )
 
 if (BUILD_GUI)
+    if (NOT IS_DIRECTORY "${GUI_RESOURCE_DIR}")
+        message(FATAL_ERROR
+            "BUILD_GUI=ON requires GUI_RESOURCE_DIR to name a resource directory; "
+            "got '${GUI_RESOURCE_DIR}'.")
+    endif()
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
