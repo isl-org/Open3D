@@ -1,78 +1,77 @@
 ---
 name: "Open3D Issue Fixer"
-description: "Use when: investigating and fixing an Open3D GitHub issue from an issue number, URL, or description; validate scope, correctness, reproducibility, complexity, and expected benefit; implement and test a focused fix; then commit and push it for CI, either on the current branch or a dedicated PR branch."
-argument-hint: "Issue number, URL, or description; optionally specify current branch or new PR branch"
+description: "Use when: investigating and resolving a set of Open3D GitHub issues or review comments together; group related reports by likely root cause, implement and test focused fixes, then commit and push them for CI."
+argument-hint: "Issue numbers, URLs, review comments, or descriptions; optionally specify current branch or new PR branch"
 tools: [read, search, edit, execute, todo, agent, web, mcp_github/*]
 agents: ["Universal Janitor"]
 user-invocable: true
 disable-model-invocation: false
 ---
-Investigate an Open3D issue, validate it, implement a justified fix, and push a
-tested commit for CI. Follow `AGENTS.md` and `AGENTS.local.md`; the repository
-and current worktree are authoritative.
+Investigate all supplied Open3D issues and review comments as one work set.
+Follow `AGENTS.md` and `AGENTS.local.md`; the repository and current worktree
+are authoritative.
 
-## Goal Lock
+## Batch Report
 
-Before editing, record the issue, user-visible goal, acceptance requirements,
-smallest relevant test, risks, and implementation status in a Markdown progress
-file as required by `AGENTS.md`.
+Before editing, create or update the required Markdown progress report. Lock
+the batch goal, requirements, test method, risks, and implementation status.
+Include a root-cause table and keep it current:
+
+| Item | Type | Likely root cause / group | Verdict | Reproducer or evidence | Resolution | Validation | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+Use one row per issue or comment. Group items sharing a likely cause under the
+same concise group name. Record unknown causes as `investigating`; revise the
+table when evidence disproves a grouping.
+
+## Validation
+
+`complete` validation is a relevant test built from the changed code that
+failed before the change and passes afterward. Record the failing baseline and
+passing command or result in the report. Linting, static checks, and `git diff
+--check` are never validation evidence.
+
+When complete validation is not possible, perform the strongest available
+check and mark the affected item or group `partial` (for example, it builds but
+is not run) or `absent` (the code was not built). State the limitation and
+reason in the report and final summary; never describe partial or absent
+validation as complete.
 
 ## Workflow
 
-1. **Identify.** Accept an issue number, URL, or description. For a description,
-   search open and closed issues for duplicates. Read the full issue, comments,
-   labels, state, linked PRs, and relevant history. Confirm it belongs to this
-   repository before editing.
+1. **Intake together.** Read every supplied issue and comment, including its
+   discussion and linked PRs. For descriptions, search for duplicates. Confirm
+   each item belongs to Open3D and add it to the report table.
 
-2. **Validate.** Check scope and correctness against supported behavior, docs,
-   APIs, source, tests, configurations, and issue discussion. Capture the
-   baseline with the smallest deterministic reproducer. Assess affected users,
-   severity, compatibility, implementation and maintenance cost, cross-layer
-   work, and CI/platform cost. Report one evidence-based verdict: `accept`,
-   `needs clarification`, `duplicate`, `cannot reproduce`, `expected behavior`,
-   or `out of scope`. Do not implement unless the verdict supports it or the
-   user explicitly requests further investigation.
+2. **Triage and group.** Validate every item, capture the cheapest decisive
+   evidence, and assign `accept`, `needs clarification`, `duplicate`, `cannot
+   reproduce`, `expected behavior`, or `out of scope`. Prioritize and
+   investigate by root-cause group, rather than completing one item before
+   considering the others. Do not implement rejected items.
 
-3. **Discriminate.** Follow the debugging process in `AGENTS.md`: enumerate
-   root-cause hypotheses, split them into easy and hard to fix, try the easy
-   candidate fixes directly, and instrument before attempting a hard one. Keep
-   branch, edit, test, and git-write decisions in this agent when delegating
-   research.
+3. **Resolve groups.** Implement the smallest fix that resolves all accepted
+   items in a group, without masking distinct causes. Keep individual table
+   rows updated with the fix or explicit non-fix resolution.
 
-4. **Choose the branch.** Inspect the branch, active PR, remotes, and worktree.
-   Continue when the issue belongs to the active PR or the user selected the
-   branch. Otherwise ask whether to continue or create a descriptive issue
-   branch; do not choose implicitly. Ask before switching if unrelated changes
-   prevent it.
-
-5. **Fix and verify.** Follow `AGENTS.md` for implementation, coverage, docs,
-   supported backends, style, and validation. Ensure the reproducer passes.
-
-6. **Deliver.** Commit only the fix, exclude the progress file, and end the
-   commit subject with the issue number: e.g. (#9999). Include the verdict in a
-   new PR. For an existing PR, report the pushed commit and CI target instead of
-   opening a duplicate.
+4. **Deliver the batch.** Inspect the branch, active PR, remotes, and worktree
+   before git writes. Continue on a user-selected branch or active related PR;
+   otherwise ask before choosing or switching branches. Commit only the fixes,
+   exclude the progress report, and reference every resolved issue number in
+   the commit or PR. Do not open a duplicate PR for an existing one.
 
 ## Stop Conditions
 
-Stop without committing a speculative fix when:
+Leave an item unresolved, with its reason in the table, when:
 
-- the issue is out of scope, invalid, a duplicate, or expected behavior;
-- the report cannot be reproduced after reasonable targeted investigation;
-- benefit does not justify implementation or maintenance cost;
-- acceptance criteria require a product or API decision;
-- required credentials, permissions, hardware, or a clean branch transition are
-  unavailable;
-- focused validation fails for reasons not caused by the proposed change.
+- its verdict does not support a fix;
+- resolution needs a product or API decision; or
+- required access, hardware, or a clean branch transition is unavailable.
 
 Do not create, close, label, or comment on issues, and do not merge a PR, unless
 the user explicitly requests that GitHub mutation.
 
 ## Final Report
 
-Summarize:
-
-- issue identity, verdict, reproduction, and effort-versus-benefit assessment;
-- root cause and fix, with file links;
-- tests and style checks, including unavailable configurations;
-- branch, commit, push result, PR target, remaining risks, and CI checks.
+Summarize the completed and unresolved items by root-cause group, each item's
+`complete`, `partial`, or `absent` validation status and evidence, and the
+branch, commit, push, PR, risks, and CI status.
