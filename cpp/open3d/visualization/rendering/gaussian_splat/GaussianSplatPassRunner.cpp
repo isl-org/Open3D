@@ -11,7 +11,6 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
-#include <string>
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
@@ -39,6 +38,13 @@ constexpr std::size_t kIndirectStride = 3u * sizeof(std::uint32_t);
 // calls in gaussian_compute_dispatch_args.comp.
 constexpr std::uint32_t kSlotRadixHist0 = 0u;     // passes 0-3 → slots 0-3
 constexpr std::uint32_t kSlotRadixScatter0 = 4u;  // passes 0-3 → slots 4-7
+
+constexpr std::array<const char*, 4> kRadixHistogramLabels = {
+        "gs_radix_histogram_pass_0", "gs_radix_histogram_pass_1",
+        "gs_radix_histogram_pass_2", "gs_radix_histogram_pass_3"};
+constexpr std::array<const char*, 4> kRadixScatterLabels = {
+        "gs_radix_scatter_pass_0", "gs_radix_scatter_pass_1",
+        "gs_radix_scatter_pass_2", "gs_radix_scatter_pass_3"};
 
 // Compute the byte offset of a dispatch_args slot for DispatchIndirect().
 inline std::size_t IndirectByteOffset(std::uint32_t slot) {
@@ -122,10 +128,8 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
         ctx.ClearBufferUInt32Zero(vs.histogram_buf);
         ctx.FullBarrier();
 
-        const std::string histogram_label =
-                "gs_radix_histogram_pass_" + std::to_string(pass);
         GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
-                       histogram_label.c_str())
+                       kRadixHistogramLabels[pass])
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])
@@ -134,10 +138,8 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
                                   IndirectByteOffset(kSlotRadixHist0 + pass));
         ctx.FullBarrier();
 
-        const std::string scatter_label =
-                "gs_radix_scatter_pass_" + std::to_string(pass);
         GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
-                       scatter_label.c_str())
+                       kRadixScatterLabels[pass])
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])
@@ -156,6 +158,43 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
 }
 
 }  // namespace
+
+void DestroyGaussianSplatViewGpuResources(
+        GaussianSplatGpuContext& ctx,
+        GaussianSplatViewGpuResources& resources) {
+    auto destroy_buffer = [&ctx](std::uintptr_t& buffer) {
+        if (buffer != 0) {
+            ctx.DestroyBuffer(buffer);
+            buffer = 0;
+        }
+    };
+    destroy_buffer(resources.view_params_buf);
+    destroy_buffer(resources.positions_buf);
+    destroy_buffer(resources.scales_buf);
+    destroy_buffer(resources.rotations_buf);
+    destroy_buffer(resources.dc_opacity_buf);
+    destroy_buffer(resources.sh_buf);
+    destroy_buffer(resources.projected_composite_buf);
+    destroy_buffer(resources.tile_counts_buf);
+    destroy_buffer(resources.counters_buf);
+    destroy_buffer(resources.dispatch_args_buf);
+    destroy_buffer(resources.sort_keys_buf[0]);
+    destroy_buffer(resources.sort_keys_buf[1]);
+    destroy_buffer(resources.sort_values_buf[0]);
+    destroy_buffer(resources.sort_values_buf[1]);
+    destroy_buffer(resources.histogram_buf);
+    destroy_buffer(resources.radix_params_buf);
+    destroy_buffer(resources.mask_buf);
+
+    if (resources.composite_depth_tex != 0) {
+        ctx.DestroyTexture(resources.composite_depth_tex);
+        resources.composite_depth_tex = 0;
+    }
+    if (resources.merged_depth_u16_tex != 0) {
+        ctx.DestroyTexture(resources.merged_depth_u16_tex);
+        resources.merged_depth_u16_tex = 0;
+    }
+}
 
 bool RunGaussianGeometryPasses(
         GaussianSplatGpuContext& ctx,

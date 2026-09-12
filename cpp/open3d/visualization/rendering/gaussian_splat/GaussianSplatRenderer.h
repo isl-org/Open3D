@@ -125,17 +125,15 @@ public:
         /// texture; cleared after each frame.
         bool wants_depth_readback = false;
         std::uint64_t last_scene_change_id = 0;
-        std::uint64_t last_updated_frame = 0;
     };
 
-    /// GPU backend for geometry + composite compute (OpenGL or Metal).
+    /// GPU backend for geometry and composite compute.
     class Backend {
     public:
         virtual ~Backend() = default;
 
         virtual const char* GetName() const = 0;
         virtual bool IsAvailable() const { return true; }
-        virtual void BeginFrame(std::uint64_t frame_index) = 0;
         virtual void ForgetView(const FilamentView& view) = 0;
         virtual bool RenderGeometryStage(const FilamentView& view,
                                          const FilamentScene& scene,
@@ -145,12 +143,9 @@ public:
                                           const ViewRenderData& render_data,
                                           OutputTargets& targets) = 0;
 
-        /// Create platform-specific output textures (zero-copy path).
-        /// On OpenGL: creates shared GL textures and imports them into
-        /// Filament. On Metal: creates MTLTextures and imports them into
-        /// Filament. Returns true if zero-copy setup succeeded; false falls
-        /// through to the Filament-owned texture fallback in
-        /// PrepareOutputTargets.
+        /// Create platform-specific output textures (zero-copy path). Returns
+        /// true if setup succeeded; false falls through to Filament-owned
+        /// textures in PrepareOutputTargets.
         virtual bool PrepareOutputTextures(
                 FilamentView& view,
                 FilamentResourceManager& resource_mgr,
@@ -208,8 +203,6 @@ public:
     GaussianSplatRenderer(filament::Engine& engine,
                           FilamentResourceManager& resource_mgr);
     ~GaussianSplatRenderer();
-
-    void BeginFrame();
 
     void RenderGeometryStage(FilamentView& view, const FilamentScene& scene);
     /// Returns true if the composite pass ran and the backend reported success.
@@ -304,7 +297,6 @@ private:
     RenderConfig render_config_;
     std::unique_ptr<Backend> backend_;
     bool enabled_ = false;
-    std::uint64_t frame_index_ = 0;
 };
 
 }  // namespace rendering

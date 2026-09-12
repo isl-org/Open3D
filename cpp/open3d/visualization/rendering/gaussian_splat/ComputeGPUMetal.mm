@@ -467,8 +467,6 @@ public:
         SetSamplerBinding(unit, sampler_);
     }
 
-    void FinishGpuWork() override {}  // EndCompositePass() already waits.
-
     bool WasLastSubmitSuccessful() const override {
         return last_submit_succeeded_;
     }
@@ -528,8 +526,7 @@ public:
             id<MTLCommandBuffer> cb = comp_cb_;
             comp_cb_ = nil;
             [cb commit];
-            // Block the CPU until the GPU composite finishes — matches the
-            // OpenGL path which calls glFinish() before EndCompositePass().
+            // Readback and presentation consume the completed composite.
             [cb waitUntilCompleted];
             const bool success = [cb status] != MTLCommandBufferStatusError;
             last_submit_succeeded_ = success;

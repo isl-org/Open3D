@@ -395,7 +395,7 @@ public:
             utility::LogWarning(
                     "GaussianSplatVulkan: BindImage(binding={}) skipped — "
                     "handle resolves to a depth image which cannot be a "
-                    "STORAGE_IMAGE. Check handle/GL-name mapping.",
+                    "STORAGE_IMAGE. Check the supplied texture handle.",
                     binding);
             return;
         }
@@ -543,11 +543,6 @@ public:
     }
 
     void WaitForGeometryPass() override { WaitForPendingSubmit(); }
-
-    void FinishGpuWork() override {
-        if (!cmd_active_) return;
-        SubmitAndWait();
-    }
 
     void PushDebugGroup(const char* label) override {
         if (!cmd_active_) return;

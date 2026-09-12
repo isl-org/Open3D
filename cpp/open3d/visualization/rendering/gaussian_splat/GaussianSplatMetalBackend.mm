@@ -144,19 +144,10 @@ bool PrepareAppleOutputTextures(FilamentView& view,
         return false;
     }
 
-    if (targets.depth) {
-        // Filament renders the mesh into its own color buffer while the GS
-        // composite writes a separate transparent overlay.
-        targets.render_target =
-                resource_mgr.CreateRenderTarget(view_color, targets.depth);
-    } else {
-        // No shared depth: create a Filament-owned depth attachment so
-        // Filament renders normally (depth stays private to Filament).
-        auto owned_depth = resource_mgr.CreateDepthAttachmentTexture(w, h);
-        targets.depth = owned_depth;
-        targets.render_target =
-                resource_mgr.CreateRenderTarget(view_color, targets.depth);
-    }
+    // Filament renders the mesh into its own color buffer while the GS
+    // composite writes a separate transparent overlay.
+    targets.render_target =
+            resource_mgr.CreateRenderTarget(view_color, targets.depth);
     view.SetRenderTarget(targets.render_target);
 
     auto* native = view.GetNativeView();
@@ -205,13 +196,11 @@ public:
 
     const char* GetName() const override { return "Metal"; }
 
-    void BeginFrame(std::uint64_t) override {}
-
     void ForgetView(const FilamentView& view) override {
         // Release per-view GPU resources when the view is removed.
         auto it = view_states_.find(&view);
         if (it != view_states_.end()) {
-            DestroyViewState(it->second);
+            DestroyGaussianSplatViewGpuResources(*gpu_, it->second);
             view_states_.erase(it);
         }
     }
@@ -318,47 +307,9 @@ public:
     }
 
 private:
-    void DestroyViewState(GaussianSplatViewGpuResources& vs) {
-        // Free all per-view GPU buffers and textures tracked by this backend.
-        if (!gpu_) {
-            return;
-        }
-        auto destroy_buf = [&](std::uintptr_t& b) {
-            if (b != 0) {
-                gpu_->DestroyBuffer(b);
-                b = 0;
-            }
-        };
-        destroy_buf(vs.view_params_buf);
-        destroy_buf(vs.positions_buf);
-        destroy_buf(vs.scales_buf);
-        destroy_buf(vs.rotations_buf);
-        destroy_buf(vs.dc_opacity_buf);
-        destroy_buf(vs.sh_buf);
-        destroy_buf(vs.projected_composite_buf);
-        destroy_buf(vs.tile_counts_buf);  // steal_counter
-        destroy_buf(vs.counters_buf);
-        destroy_buf(vs.dispatch_args_buf);
-        destroy_buf(vs.sort_keys_buf[0]);
-        destroy_buf(vs.sort_keys_buf[1]);
-        destroy_buf(vs.sort_values_buf[0]);
-        destroy_buf(vs.sort_values_buf[1]);
-        destroy_buf(vs.histogram_buf);
-        destroy_buf(vs.radix_params_buf);
-        destroy_buf(vs.mask_buf);
-        if (vs.composite_depth_tex != 0) {
-            gpu_->DestroyTexture(vs.composite_depth_tex);
-            vs.composite_depth_tex = 0;
-        }
-        if (vs.merged_depth_u16_tex != 0) {
-            gpu_->DestroyTexture(vs.merged_depth_u16_tex);
-            vs.merged_depth_u16_tex = 0;
-        }
-    }
-
     void Cleanup() {
         for (auto& pair : view_states_) {
-            DestroyViewState(pair.second);
+            DestroyGaussianSplatViewGpuResources(*gpu_, pair.second);
         }
         view_states_.clear();
         gpu_.reset();

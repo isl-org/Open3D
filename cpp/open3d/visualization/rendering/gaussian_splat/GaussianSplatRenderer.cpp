@@ -45,8 +45,6 @@ public:
 
     bool IsAvailable() const override { return false; }
 
-    void BeginFrame(std::uint64_t) override {}
-
     void ForgetView(const FilamentView& view) override {
         logged_views_.erase(&view);
     }
@@ -208,15 +206,6 @@ GaussianSplatRenderer::~GaussianSplatRenderer() {
     }
 }
 
-void GaussianSplatRenderer::BeginFrame() {
-    // Advance the frame counter and notify the backend so it can reset
-    // per-frame GPU state (e.g. Metal command buffer recycling).
-    ++frame_index_;
-    if (backend_) {
-        backend_->BeginFrame(frame_index_);
-    }
-}
-
 void GaussianSplatRenderer::RenderGeometryStage(FilamentView& view,
                                                 const FilamentScene& scene) {
     // Skip when disabled or when the scene has no splat geometry.
@@ -284,7 +273,6 @@ bool GaussianSplatRenderer::RenderCompositeStage(FilamentView& view) {
 
     targets.has_valid_output = rendered;
     targets.needs_composite_render = false;
-    targets.last_updated_frame = frame_index_;
     return rendered;
 }
 
@@ -489,9 +477,7 @@ GaussianSplatRenderer::PrepareOutputTargets(FilamentView& view) {
     view.SetRenderTarget({});
     ResetOutputTargets(targets);
 
-    // Attempt zero-copy setup via the backend (GL texture sharing on
-    // OpenGL, Metal texture import on Apple). Falls back to Filament-owned
-    // textures if the backend returns false.
+    // Fall back to Filament-owned textures if platform texture sharing fails.
     const bool zero_copy =
             backend_ && backend_->PrepareOutputTextures(view, resource_mgr_,
                                                         width, height, targets);
@@ -565,7 +551,6 @@ void GaussianSplatRenderer::ResetOutputTargets(OutputTargets& targets) {
     targets.needs_followup_scene_render = false;
     targets.wants_depth_readback = false;
     targets.last_scene_change_id = 0;
-    targets.last_updated_frame = 0;
 }
 
 GaussianSplatRenderer::ViewRenderData
