@@ -1864,6 +1864,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     # the oneMKL pip packages do not ship.
     set(MKL_STATIC_LIBS mkl_intel_ilp64 mkl_tbb_thread mkl_core)
     set(MKL_SHARED_LIBRARIES)
+    if(WIN32)
+        # oneMKL's Release TBB threading archive uses /MD. Select its Debug
+        # variant for /MDd builds to avoid CRT mismatches and its object count
+        # contributing to the MSVC linker limit.
+        set(MKL_STATIC_LIBS
+            mkl_intel_ilp64
+            $<IF:$<CONFIG:Debug>,mkl_tbb_threadd,mkl_tbb_thread>
+            mkl_core)
+    endif()
     if(BUILD_SYCL_MODULE)
         if(WIN32)
             # oneAPI >= 2026.0 dropped the umbrella mkl_sycl(d).lib import
