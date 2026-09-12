@@ -91,6 +91,9 @@ else()
         set(FILAMENT_BYPRODUCTS ${filament_LIBRARIES})
         list(TRANSFORM FILAMENT_BYPRODUCTS PREPEND "${FILAMENT_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}")
         list(TRANSFORM FILAMENT_BYPRODUCTS APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+        list(APPEND FILAMENT_BYPRODUCTS
+            "$<$<CONFIG:Debug>:${FILAMENT_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}matdbg${CMAKE_STATIC_LIBRARY_SUFFIX}>"
+            "$<$<CONFIG:Debug>:${FILAMENT_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}filamat${CMAKE_STATIC_LIBRARY_SUFFIX}>")
         add_custom_command(
             OUTPUT "${FILAMENT_STAMP}"
             COMMAND ${CMAKE_COMMAND}
@@ -109,6 +112,11 @@ else()
         set(lib_byproducts ${filament_LIBRARIES})
         list(TRANSFORM lib_byproducts PREPEND <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
         list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+        if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL Debug)
+            list(APPEND lib_byproducts
+                <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}matdbg${CMAKE_STATIC_LIBRARY_SUFFIX}
+                <SOURCE_DIR>/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}filamat${CMAKE_STATIC_LIBRARY_SUFFIX})
+        endif()
         ExternalProject_Add(
                 ext_filament
                 PREFIX filament

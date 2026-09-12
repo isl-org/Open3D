@@ -119,8 +119,21 @@ if(NOT TARGET TBB::tbb)
         "exports Open3D::tbb / find_dependency(TBB).")
 endif()
 
-# Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux.
-if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE)
+# Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux
+# unless the installed Filament target already exports the static GNU-ABI runtime.
+set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI OFF)
+if(TARGET Open3D::3rdparty_filament)
+    get_property(_filament_link_libraries TARGET Open3D::3rdparty_filament
+        PROPERTY INTERFACE_LINK_LIBRARIES)
+    foreach(_filament_link_library IN LISTS _filament_link_libraries)
+        if(_filament_link_library MATCHES "c\\+\\+stdabi")
+            set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI ON)
+            break()
+        endif()
+    endforeach()
+endif()
+if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE AND
+   NOT OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI)
     if(NOT CPP_LIBRARY OR NOT CPPABI_LIBRARY)
         message(STATUS "Searching /usr/lib/llvm-[17..20]/lib/ for libc++ and libc++abi")
         foreach(llvm_ver RANGE 17 20)
