@@ -70,6 +70,13 @@ else()
     list(APPEND LIBREALSENSE_EXTRA_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${LIBREALSENSE_CMAKE_CXX_FLAGS}")
 endif()
 
+set(LIBREALSENSE_BUILD_TYPE_ARG "")
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND
+   CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Ninja is single-config; match the Debug library postfix expected below.
+    set(LIBREALSENSE_BUILD_TYPE_ARG "-DCMAKE_BUILD_TYPE=Debug")
+endif()
+
 ExternalProject_Add(
     ext_librealsense
     PREFIX librealsense
@@ -79,9 +86,9 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/librealsense"
     UPDATE_COMMAND ""
     # Patch for CRT mismatch in CUDA code (Windows)
-    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-cudacrt.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_SOURCE_DIR}/cmake/apply_patch.cmake
     # Patch to include the <chrono> header for the system_clock type
-    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/apply_patch.cmake
+    COMMAND ${CMAKE_COMMAND} -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/fix-include-chrono.patch -DSOURCE_DIR=<SOURCE_DIR> -P ${Open3D_SOURCE_DIR}/cmake/apply_patch.cmake
     CMAKE_ARGS
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -100,6 +107,7 @@ ExternalProject_Add(
         $<$<PLATFORM_ID:Windows>:-DBUILD_WITH_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}>
         ${LIBREALSENSE_EXTRA_CMAKE_ARGS}
         ${ExternalProject_CMAKE_ARGS_hidden}
+        ${LIBREALSENSE_BUILD_TYPE_ARG}
     CMAKE_CACHE_ARGS    # Lists must be passed via CMAKE_CACHE_ARGS
         -DCMAKE_CUDA_ARCHITECTURES:STRING=${CMAKE_CUDA_ARCHITECTURES}
     BUILD_BYPRODUCTS

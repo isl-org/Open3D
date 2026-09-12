@@ -1,7 +1,7 @@
 .. _headless_rendering:
 
-Headless rendering
-------------------
+Headless rendering (Legacy OpenGL)
+----------------------------------
 
 .. note::
 

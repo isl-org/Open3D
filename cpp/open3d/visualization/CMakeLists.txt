@@ -5,6 +5,18 @@ set_target_properties(visualization_impl PROPERTIES CXX_VISIBILITY_PRESET hidden
 # filament uses C++20 designated initializers
 set_property(TARGET visualization_impl visualization PROPERTY CXX_STANDARD 20)
 
+# Open3D source builds and selected prebuilt archives include the Vulkan
+# external-image-import patch required by Gaussian splatting.
+if(BUILD_FILAMENT_FROM_SOURCE OR FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT)
+    set(OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT 1)
+else()
+    set(OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT 0)
+endif()
+target_compile_definitions(visualization_impl PRIVATE
+    OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=${OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT})
+target_compile_definitions(visualization PRIVATE
+    OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT=${OPEN3D_FILAMENT_VULKAN_EXTERNAL_IMAGE_IMPORT})
+
 target_sources(visualization_impl PRIVATE
     shader/GeometryRenderer.cpp
     shader/ImageMaskShader.cpp
@@ -110,10 +122,8 @@ if (BUILD_GUI)
     else()
         target_sources(visualization_impl PRIVATE
             rendering/gaussian_splat/ComputeGPUVulkan.cpp
-            rendering/GpuAdapterSelection.cpp
-            rendering/gaussian_splat/GaussianSplatOpenGLContext.cpp
+            rendering/gaussian_splat/GaussianSplatVulkanContext.cpp
             rendering/gaussian_splat/GaussianSplatVulkanBackend.cpp
-            rendering/gaussian_splat/GaussianSplatVulkanInteropContext.cpp
         )
         # visualization_impl is an OBJECT library; add_dependencies ensures
         # correct build order with ext_vkmemalloc/ext_vmahpp across all

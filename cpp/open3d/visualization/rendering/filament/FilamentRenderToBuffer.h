@@ -67,6 +67,10 @@ private:
     std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
+#if defined(__APPLE__)
+    std::uint8_t* rgba_readback_buffer_ = nullptr;
+    std::size_t rgba_readback_buffer_size_ = 0;
+#endif
     bool depth_image_ = false;
 
     BufferReadyCallback callback_;
@@ -75,6 +79,9 @@ private:
 
     static void ReadPixelsCallback(void* buffer, size_t size, void* user);
     void CopySettings(const View* view);
+    /// Invoke the pending callback with the filled buffer and mark the frame
+    /// complete. Pass \p ok false to deliver an empty buffer on failure.
+    void DeliverFrame(bool ok = true);
 };
 
 }  // namespace rendering

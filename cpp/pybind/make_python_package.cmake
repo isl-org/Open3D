@@ -24,7 +24,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
          FOLLOW_SYMLINK_CHAIN)
 endforeach()
 # Include additional libraries that may be absent from the user system (e.g. TBB).
-# Linux LLVM libc++ for Filament is bundled separately via ldd; see below.
+# Linux LLVM libc++ for legacy Filament is bundled separately via ldd; see below.
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
@@ -37,10 +37,13 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
-# Linux GUI: bundle LLVM libc++/libc++abi (and libunwind if linked) via ldd.
+# Linux GUI wheels using legacy Filament bundle LLVM libc++/libc++abi (and
+# libunwind if linked) via ldd. Patched Filament exports its C++ runtime as a
+# static GNU-ABI archive, so no shared LLVM runtime belongs in that wheel.
 # Shared builds ship libOpen3D; static builds link Filament into the pybind
 # extension instead, so fall back to that as the ELF to probe.
-if(BUILD_GUI AND UNIX AND NOT APPLE)
+if(BUILD_GUI AND UNIX AND NOT APPLE AND
+    NOT PYTHON_PACKAGE_USES_STATIC_LIBCXX_STDABI)
     file(GLOB _libopen3d_probe LIST_DIRECTORIES false
         "${PYTHON_PACKAGE_DST_DIR}/open3d/libOpen3D.so.*")
     if(NOT _libopen3d_probe)
@@ -150,6 +153,11 @@ endif()
     )
 
 if (BUILD_GUI)
+    if (NOT IS_DIRECTORY "${GUI_RESOURCE_DIR}")
+        message(FATAL_ERROR
+            "BUILD_GUI=ON requires GUI_RESOURCE_DIR to name a resource directory; "
+            "got '${GUI_RESOURCE_DIR}'.")
+    endif()
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")

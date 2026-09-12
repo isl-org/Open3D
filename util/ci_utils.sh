@@ -225,14 +225,6 @@ build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    AARCH="$(uname -m)"
-    if [[ "$AARCH" == "aarch64" ]]; then
-        echo "Building for aarch64 architecture"
-        BUILD_FILAMENT_FROM_SOURCE=ON
-    else
-        echo "Building for x86_64 architecture"
-        BUILD_FILAMENT_FROM_SOURCE=OFF
-    fi
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
@@ -273,7 +265,6 @@ build_pip_package() {
         "-DBUILD_LIBREALSENSE=ON"
         "-DBUILD_TENSORFLOW_OPS=$BUILD_TENSORFLOW_OPS"
         "-DBUILD_PYTORCH_OPS=$BUILD_PYTORCH_OPS"
-        "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DBUILD_WEBRTC=$BUILD_WEBRTC"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
@@ -509,12 +500,6 @@ build_pip_package_from_installed() {
         exit 1
     fi
 
-    AARCH="$(uname -m)"
-    if [[ "$AARCH" == "aarch64" ]]; then
-        BUILD_FILAMENT_FROM_SOURCE=ON
-    else
-        BUILD_FILAMENT_FROM_SOURCE=OFF
-    fi
     set +u
     if [[ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]] &&
         [[ "$BUILD_TENSORFLOW_OPS" == "ON" || "$BUILD_PYTORCH_OPS" == "ON" ]]; then
@@ -553,6 +538,9 @@ build_pip_package_from_installed() {
 
     local commonOptions=(
         "-DOPEN3D_USE_INSTALLED_LIBRARY=ON"
+        # CI's paired devel packages use Filament's prebuilt static GNU-ABI
+        # runtime. Do not look for shared system libc++ in wheel images.
+        "-DOPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI=ON"
         "-DDEVELOPER_BUILD=${DEVELOPER_BUILD}"
         "-DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH:-}"
         "-DBUILD_SHARED_LIBS=ON"

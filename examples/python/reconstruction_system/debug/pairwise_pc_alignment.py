@@ -9,6 +9,7 @@
 
 import argparse
 import json
+import os
 import sys
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

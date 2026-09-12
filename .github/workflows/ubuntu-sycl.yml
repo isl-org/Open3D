@@ -179,6 +179,8 @@ jobs:
           compgen -G "open3d*${PYTHON_ABI}-${PYTHON_ABI}-*.whl" > /dev/null
 
       - name: Docker test (Python)
+        id: python_test
+        continue-on-error: true
         run: docker/docker_test.sh sycl-shared python
 
       - name: Generate artifact attestation
@@ -201,4 +203,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           .github/workflows/update_release.sh open3d*.whl
+      - name: Fail job if Python tests failed
+        if: ${{ always() && steps.python_test.outcome == 'failure' }}
+        run: |
+          echo "Python tests failed; the wheel was uploaded before failing the job."
+          exit 1
 

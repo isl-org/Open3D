@@ -190,6 +190,11 @@ void ZMQReceiver::Mainloop() {
                     status.str += std::string(" with ") + err.what();
                     replies.push_back(CreateStatusMessage(status));
                     break;
+                } catch (...) {
+                    LogInfo("ZMQReceiver::Mainloop: failed to unpack message");
+                    replies.push_back(CreateStatusMessage(
+                            messages::Status::ErrorUnpackingFailed()));
+                    break;
                 }
             }
             if (replies.size() == 1) {
@@ -208,6 +213,8 @@ void ZMQReceiver::Mainloop() {
                 socket_->send(reply, zmq::send_flags::none);
             }
         } catch (const zmq::error_t& err) {
+            LogInfo("ZMQReceiver::Mainloop: {}", err.what());
+        } catch (const std::exception& err) {
             LogInfo("ZMQReceiver::Mainloop: {}", err.what());
         }
     }

@@ -65,10 +65,10 @@ void EmptyBox() {
                 data::KnotMesh knot_data;
                 io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->ComputeVertexNormals();
-                AddDrawWindow({mesh}, "Open3D pcd", 640, 480);
+                AddDrawWindow({mesh}, "Open3D pcd", 1024, 768);
             };
 
-    AddDrawWindow({big_bbox}, "Open3D EmptyBox", 800, 480,
+    AddDrawWindow({big_bbox}, "Open3D EmptyBox", 1024, 768,
                   {{"Load example mesh", new_window_action}});
 }
 
@@ -104,7 +104,7 @@ void BoxWithObjects() {
     AddDrawWindow(
             {sphere_unlit, sphere_colored_unlit, sphere_lit, sphere_colored_lit,
              big_bbox, sphere_bbox, lines, lines_colored},
-            "Open3D BoxWithObjects", 640, 480);
+            "Open3D BoxWithObjects", 1024, 768);
 }
 
 int main(int argc, char **argv) {

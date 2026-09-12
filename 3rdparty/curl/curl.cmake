@@ -18,6 +18,13 @@ else()
     set(curl_cmake_extra_args -DUSE_NGHTTP2=OFF)
 endif()
 
+set(CURL_BUILD_TYPE_ARG "")
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND
+   CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Ninja is single-config; match the Debug library postfix expected below.
+    set(CURL_BUILD_TYPE_ARG "-DCMAKE_BUILD_TYPE=Debug")
+endif()
+
 ExternalProject_Add(
     ext_curl
     PREFIX curl
@@ -47,6 +54,7 @@ ExternalProject_Add(
         -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
+        ${CURL_BUILD_TYPE_ARG}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}-d${CMAKE_STATIC_LIBRARY_SUFFIX}

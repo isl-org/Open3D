@@ -104,7 +104,7 @@ if (BUILD_SHARED_LIBS)
     )
 endif()
 # Include additional libraries that may be absent from the user system (TBB).
-# Linux GUI wheels bundle LLVM libc++/libc++abi via ldd in
+# Linux GUI wheels with legacy Filament bundle LLVM libc++/libc++abi via ldd in
 # package_linux_wheel_runtime.sh (see make_python_package.cmake).
 # Prefer TBB::tbb; fall back to Open3D::tbb from an installed devel package.
 if (TARGET TBB::tbb)
@@ -128,6 +128,12 @@ endif()
 set(PYTHON_PACKAGE_SRC_DIR "${PROJECT_SOURCE_DIR}/python")
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")
 message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
+
+set(PYTHON_PACKAGE_USES_STATIC_LIBCXX_STDABI OFF)
+if(FILAMENT_USE_STATIC_LIBCXX_STDABI OR
+   OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI)
+    set(PYTHON_PACKAGE_USES_STATIC_LIBCXX_STDABI ON)
+endif()
 
 
 # add the open3d python module first
@@ -217,6 +223,7 @@ add_custom_target(python-package
             -DBUILD_GUI=${BUILD_GUI}
             -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
             -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}
+            -DPYTHON_PACKAGE_USES_STATIC_LIBCXX_STDABI=${PYTHON_PACKAGE_USES_STATIC_LIBCXX_STDABI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}

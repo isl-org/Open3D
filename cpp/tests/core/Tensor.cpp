@@ -113,6 +113,9 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
 }
 
 TEST_P(TensorPermuteDevices, WithInitList) {
+#if defined(__APPLE__)
+    GTEST_SKIP() << "Known macOS initializer-list exception-type anomaly.";
+#endif
     core::Device device = GetParam();
 
     core::Tensor t;

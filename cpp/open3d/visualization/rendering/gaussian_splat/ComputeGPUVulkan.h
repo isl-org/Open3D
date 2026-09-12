@@ -13,9 +13,9 @@
 //     loaded from SPIR-V assets at resources/gaussian_splat/.
 //   - Uses VK_KHR_push_descriptor for efficient per-dispatch binding (no
 //     descriptor pool allocation per frame).
-//   - Uses VMA for general buffer/image allocation.  Shared cross-API images
-//     (color, depth) are registered via RegisterSharedImageInVulkanContext()
-//     rather than allocated here; VulkanInteropContext owns those.
+//   - Uses VMA for internal buffer/image allocation.  Images shared with
+//     Filament (color, depth) are owned by GaussianSplatVulkanContext and
+//     registered here via RegisterVkImageInComputeContext().
 //   - Synchronisation: each EndXxxPass() submits and waits (fence-based) so
 //     the rest of the pipeline sees a completed GPU result.
 
@@ -32,30 +32,26 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-/// Register a GL-Vulkan shared image with a Vulkan compute context so that
-/// subsequent BindImage() / BindSamplerTexture() calls for that GL texture
-/// name resolve to the backing VkImage.
+/// Register a Vulkan image with the compute context so that subsequent
+/// BindImage() / BindSamplerTexture() calls resolve to the backing VkImage.
 ///
 /// @param ctx               Created by CreateComputeGpuContextVulkan().
-/// @param gl_name           GL texture name from SharedImageDesc.gl_texture.
-/// @param vk_image_opaque   SharedImageDesc.vk_image cast to uintptr_t.
+/// @param vk_image_opaque   VkImage handle cast to uintptr_t.
 /// @param vk_format_opaque  VkFormat value cast to uint32_t.
 /// @param width, height     Image dimensions in pixels.
-void RegisterSharedImageInVulkanContext(GaussianSplatGpuContext& ctx,
-                                        std::uint32_t gl_name,
-                                        std::uintptr_t vk_image_opaque,
-                                        std::uint32_t vk_format_opaque,
-                                        std::uint32_t width,
-                                        std::uint32_t height);
+void RegisterVkImageInComputeContext(GaussianSplatGpuContext& ctx,
+                                     std::uintptr_t vk_image_opaque,
+                                     std::uint32_t vk_format_opaque,
+                                     std::uint32_t width,
+                                     std::uint32_t height);
 
-/// Unregister a previously registered shared image (called on resize / teardown
-/// before VulkanInteropContext::DestroySharedImage).
-void UnregisterSharedImageFromVulkanContext(GaussianSplatGpuContext& ctx,
-                                            std::uint32_t gl_name);
+/// Unregister a previously registered image (called on resize/teardown).
+void UnregisterVkImageFromComputeContext(GaussianSplatGpuContext& ctx,
+                                         std::uintptr_t vk_image_opaque);
 
 /// Factory: create a Vulkan-backed GaussianSplatGpuContext.
-/// Uses device / queue from GaussianSplatVulkanInteropContext::GetInstance().
-/// Returns nullptr if the interop context is not initialized.
+/// Uses device / queue from GaussianSplatVulkanContext::GetInstance().
+/// Returns nullptr if the context is not initialized.
 [[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
 CreateComputeGpuContextVulkan();
 

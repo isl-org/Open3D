@@ -1136,15 +1136,14 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
     }
     ImGui::Image(image_id, ImVec2(f.width, f.height), uv0, uv1);
 
-    // Overlay Gaussian splat compute output.  The compute composite
-    // shader outputs straight-alpha RGBA so standard ImGui blending
-    // (SrcAlpha, 1-SrcAlpha) composites correctly over the Filament
-    // scene rendered above.
-    auto gs_tex = impl_->scene_->GetView()->GetGaussianSplatOverlay();
-    if (gs_tex) {
-        ImGui::SetCursorPos(ImVec2(0, 0));
-        ImTextureID gs_id = reinterpret_cast<ImTextureID>(gs_tex.GetId());
-        ImGui::Image(gs_id, ImVec2(f.width, f.height), uv0, uv1);
+    // Metal retains a separate Gaussian overlay; Vulkan composites in place.
+    if (context.renderer.GetBackendType() == rendering::RenderingType::kMetal) {
+        auto gs_tex = impl_->scene_->GetView()->GetGaussianSplatOverlay();
+        if (gs_tex) {
+            ImGui::SetCursorPos(ImVec2(0, 0));
+            ImTextureID gs_id = reinterpret_cast<ImTextureID>(gs_tex.GetId());
+            ImGui::Image(gs_id, ImVec2(f.width, f.height), uv0, uv1);
+        }
     }
 
     if (!impl_->labels_3d_.empty()) {

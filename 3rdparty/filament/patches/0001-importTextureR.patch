@@ -1,0 +1,26 @@
+Subject: [PATCH] backend/vulkan: import externally owned Vulkan images
+
+Implement VulkanDriver::importTextureCommon for Open3D's zero-copy Gaussian
+Splat targets. The imported VkImage remains externally owned: null device
+memory prevents Filament from destroying or freeing it. Its initial layout is
+left UNDEFINED, allowing Filament to record the first required transition.
+
+diff --git a/filament/backend/src/vulkan/VulkanDriver.cpp b/filament/backend/src/vulkan/VulkanDriver.cpp
+--- a/filament/backend/src/vulkan/VulkanDriver.cpp
++++ b/filament/backend/src/vulkan/VulkanDriver.cpp
+@@ -1029,6 +1029,13 @@ void VulkanDriver::importTextureCommon(Handle<HwTexture> th, intptr_t id,
+         TextureFormat format, uint8_t samples, uint32_t w, uint32_t h, uint32_t depth,
+         TextureUsage usage, utils::ImmutableCString&& tag) {
+-    // not supported in this backend
+-    assert_invariant(false && "Not supported in Vulkan backend");
++    auto texture = resource_ptr<VulkanTexture>::make(
++            &mResourceManager, th, mContext, mPlatform->getDevice(), mAllocator,
++            &mResourceManager, &mCommands, reinterpret_cast<VkImage>(id), VK_NULL_HANDLE,
++            fvkutils::getVkFormat(format), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
++            Platform::ExternalImageHandle(), levels, samples, w, h, depth, usage, mStagePool);
++
++    // The external owner creates these images in UNDEFINED layout. Filament records
++    // their first attachment or sampling transition and does not own their lifetime.
++    texture.inc();
+     mResourceManager.associateHandle(th.getId(), std::move(tag));
+ }

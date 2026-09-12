@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 //
 // Generic GPU compute abstraction used by the Gaussian splatting pipeline.
-// One header covers all platforms (OpenGL on Linux/Windows, Metal on macOS).
+// One header covers both Vulkan and Metal.
 // Runtime shader resources are loaded from resources/gaussian_splat/.
 //
 // Typical usage:
@@ -83,7 +83,7 @@ struct RadixSortParams {
 static_assert(sizeof(RadixSortParams) == 16,
               "RadixSortParams must be 16 bytes to match GLSL layout");
 
-/// Per-view GPU resource handles (opaque: GL name or MTLBuffer/MTLTexture).
+/// Per-view opaque GPU buffer and texture handles.
 struct GaussianSplatViewGpuResources {
     std::uintptr_t view_params_buf = 0;
     std::uintptr_t positions_buf = 0;
@@ -146,7 +146,7 @@ public:
                                         const char* label = nullptr) = 0;
 
     /// GPU-private buffer: never CPU-mapped after creation.
-    /// Metal: MTLStorageModePrivate; OpenGL: GL_DYNAMIC_COPY.
+    /// Metal uses MTLStorageModePrivate; Vulkan uses device-local memory.
     virtual std::uintptr_t CreatePrivateBuffer(std::size_t size,
                                                const char* label = nullptr) {
         return CreateBuffer(size, label);
@@ -239,6 +239,19 @@ public:
         return false;
     }
 
+    /// Download an RGBA16F texture as four IEEE-754 half-float bit patterns
+    /// per pixel. Used for Vulkan GS offscreen color readback.
+    virtual bool DownloadTextureRGBA16F(std::uintptr_t tex,
+                                        std::uint32_t width,
+                                        std::uint32_t height,
+                                        std::vector<std::uint16_t>& out) {
+        (void)tex;
+        (void)width;
+        (void)height;
+        (void)out;
+        return false;
+    }
+
     /// Bind a write image at the given unit with the specified format.
     virtual void BindImage(std::uint32_t binding,
                            std::uintptr_t tex,
@@ -252,10 +265,6 @@ public:
                                     std::uint32_t height) = 0;
 
     // --- Frame sync -------------------------------------------------------
-    /// Drain any pending GPU work (GL: glFinish; Metal: no-op, EndCompositePass
-    /// already waits synchronously).
-    virtual void FinishGpuWork() = 0;
-
     /// Returns whether the most recently submitted GPU work succeeded.
     virtual bool WasLastSubmitSuccessful() const { return true; }
 
@@ -296,8 +305,10 @@ public:
         : ctx_(ctx), kind_(kind) {
         if (kind_ == kGeometry) {
             ctx_.BeginGeometryPass();
+            ctx_.PushDebugGroup("gs_geometry_frame");
         } else {
             ctx_.BeginCompositePass();
+            ctx_.PushDebugGroup("gs_composite_frame");
         }
     }
     ~GpuComputeFrame() { End(); }
@@ -309,6 +320,7 @@ public:
     void End() {
         if (!ended_) {
             ended_ = true;
+            ctx_.PopDebugGroup();
             if (kind_ == kGeometry) {
                 ctx_.EndGeometryPass();
             } else {
@@ -415,9 +427,6 @@ private:
 // Factory functions
 // ---------------------------------------------------------------------------
 
-#if !defined(__APPLE__)
-// Vulkan-only: no GL compute factory.
-#endif
 #if defined(__APPLE__)
 [[nodiscard]] std::unique_ptr<GaussianSplatGpuContext>
 CreateComputeGpuContextMetal(std::uintptr_t device_handle,

@@ -61,9 +61,11 @@ def slam(depth_file_names, color_file_names, intrinsic, config):
                                      config.depth_min, config.depth_max,
                                      config.trunc_voxel_multiplier, False)
         stop = time.time()
-        print('{:04d}/{:04d} slam takes {:.4}s'.format(i, n_files,
-                                                       stop - start))
+        print('\r{:04d}/{:04d} slam takes {:.4}s'.format(
+            i, n_files, stop - start),
+              end='')
 
+    print("\n")
     return model.voxel_grid, poses
 
 
