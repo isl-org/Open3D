@@ -5,13 +5,21 @@ set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
 # Handle build type for single and multi-config generators.
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(is_multi_config)
-    # Select the optimized configuration when the parent build requests Debug.
-    set(FILAMENT_BUILD_TYPE "RelWithDebInfo")
-    set(FILAMENT_BUILD_CONFIG
-        "$<IF:$<CONFIG:Debug>,RelWithDebInfo,$<CONFIG>>")
+    if(MSVC)
+        # MSVC Debug uses a distinct CRT and STL iterator ABI.
+        set(FILAMENT_BUILD_TYPE "Debug")
+        set(FILAMENT_BUILD_CONFIG "$<CONFIG>")
+    else()
+        # Keep Filament optimized when the parent build requests Debug.
+        set(FILAMENT_BUILD_TYPE "RelWithDebInfo")
+        set(FILAMENT_BUILD_CONFIG
+            "$<IF:$<CONFIG:Debug>,RelWithDebInfo,$<CONFIG>>")
+    endif()
 else()
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR
-       CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND MSVC)
+        set(FILAMENT_BUILD_TYPE "Debug")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Debug" OR
+           CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
         # Keep Filament optimized when Open3D is built with debug information.
         set(FILAMENT_BUILD_TYPE "RelWithDebInfo")
     else()

@@ -320,6 +320,11 @@ protected:
             GTEST_SKIP() << "Gaussian splat Metal rendering is not "
                             "supported on virtualized macOS CI runners.";
         }
+#elif defined(_WIN32)
+        if (std::getenv("CI") != nullptr) {
+            GTEST_SKIP() << "Gaussian splat Vulkan rendering is not supported "
+                            "on Windows CI runners.";
+        }
 #endif
         if (!initialized_) {
             // Filament resources are at <build>/bin/resources/ relative

@@ -1527,6 +1527,12 @@ if(BUILD_GUI)
         )
         set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
+        if(WIN32 AND NOT BUILD_FILAMENT_FROM_SOURCE AND
+           NOT FILAMENT_PRECOMPILED_ROOT)
+            target_link_libraries(3rdparty_filament INTERFACE
+                $<$<CONFIG:Debug>:${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_DEBUG_TAG}/${CMAKE_STATIC_LIBRARY_PREFIX}matdbg${CMAKE_STATIC_LIBRARY_SUFFIX}>
+            )
+        endif()
         if(UNIX AND NOT APPLE AND NOT FILAMENT_USE_STATIC_LIBCXX_STDABI)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
             # We first search for these paths, and then search CMake's default

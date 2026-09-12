@@ -1032,6 +1032,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                         points.GetDataPtr(), vertex_array_size);
                 vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
             }
+            MarkGaussianSplatChanged();
         }
 
         if (update_flags & kUpdateColorsFlag && point_cloud.HasPointColors()) {

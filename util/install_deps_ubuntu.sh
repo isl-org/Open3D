@@ -58,7 +58,7 @@ if [[ "$ID" == "ubuntu" && "$VERSION_ID" == "22.04" ]]; then
     $SUDO rm -f /etc/apt/sources.list.d/llvm-17.list
     $SUDO apt-get update
     $SUDO apt-get install ${APT_CONFIRM} ca-certificates curl gnupg wget
-    curl --fail --location --retry 3 https://apt.llvm.org/llvm-snapshot.gpg.key |
+    curl --fail --location --retry 3 --retry-connrefused https://apt.llvm.org/llvm-snapshot.gpg.key |
         gpg --dearmor |
         $SUDO tee /usr/share/keyrings/apt.llvm.org.gpg >/dev/null
     echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main" |

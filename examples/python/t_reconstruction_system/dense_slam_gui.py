@@ -210,9 +210,6 @@ class ReconstructionWindow:
         self.idx = 0
         self.poses = []
 
-        # Start running
-        threading.Thread(name='UpdateMain', target=self.update_main).start()
-
     def _on_layout(self, ctx):
         em = ctx.theme.font_size
 
@@ -234,11 +231,11 @@ class ReconstructionWindow:
     # Toggle callback: application's main controller
     def _on_switch(self, is_on):
         if not self.is_started:
-            gui.Application.instance.post_to_main_thread(
-                self.window, self._on_start)
-        self.is_running = not self.is_running
+            self._on_start()
+            threading.Thread(name='UpdateMain', target=self.update_main).start()
+        self.is_running = is_on
 
-    # On start: point cloud buffer and model initialization.
+    # On start: initialize the point cloud buffer before starting the worker.
     def _on_start(self):
         max_points = self.est_point_count_slider.int_value
 
@@ -251,6 +248,7 @@ class ReconstructionWindow:
 
         set_enabled(self.fixed_prop_grid, False)
         set_enabled(self.adjustable_prop_grid, True)
+        self.is_started = True
 
     def _on_close(self):
         self.is_done = True
@@ -331,7 +329,6 @@ class ReconstructionWindow:
         self.model = o3d.t.pipelines.slam.Model(self.config.voxel_size, 16,
                                                 self.config.block_count,
                                                 o3c.Tensor(np.eye(4)), device)
-        self.is_started = True
 
         T_frame_to_model = o3c.Tensor(np.identity(4))
         depth_ref = o3d.t.io.read_image(depth_file_names[0])

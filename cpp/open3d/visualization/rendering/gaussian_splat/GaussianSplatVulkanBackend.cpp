@@ -151,11 +151,21 @@ public:
                                  Tex::Usage::COLOR_ATTACHMENT |
                                  Tex::Usage::BLIT_SRC));
 
-        if (!targets.color) return false;
-
-        if (!targets.depth) {
-            targets.depth = resource_mgr.CreateDepthAttachmentTexture(
-                    int(width), int(height));
+        if (!targets.color || !targets.depth) {
+            if (targets.color) resource_mgr.Destroy(targets.color);
+            if (targets.depth) resource_mgr.Destroy(targets.depth);
+            if (gpu_) {
+                UnregisterVkImageFromComputeContext(*gpu_,
+                                                    targets.color_vk_image);
+                UnregisterVkImageFromComputeContext(*gpu_,
+                                                    targets.depth_vk_image);
+            }
+            DestroySharedImage(targets.color_vk_image, targets.color_vk_memory);
+            DestroySharedImage(targets.depth_vk_image, targets.depth_vk_memory);
+            targets = GaussianSplatRenderer::OutputTargets();
+            utility::LogError(
+                    "GaussianSplatVulkan: failed to import output textures "
+                    "into Filament");
         }
         targets.render_target =
                 resource_mgr.CreateRenderTarget(targets.color, targets.depth);

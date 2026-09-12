@@ -31,6 +31,9 @@ function Install-WingetPackage([string]$PackageId, [string]$Override = '') {
             $arguments += @('--override', $Override)
         }
         & winget.exe @arguments
+        if ($LASTEXITCODE -ne 0) {
+            throw "winget failed to install $PackageId (exit $LASTEXITCODE)"
+        }
     }
 }
 
