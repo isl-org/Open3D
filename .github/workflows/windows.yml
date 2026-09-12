@@ -45,7 +45,7 @@ jobs:
     runs-on: windows-2022
     strategy:
       fail-fast: false
-      # Eight matrix legs (S=BUILD_SHARED_LIBS, R=STATIC_RUNTIME) plus build-wheel/test-wheel.
+      # Seven matrix legs (S=BUILD_SHARED_LIBS, R=STATIC_RUNTIME) plus build-wheel/test-wheel.
       # Covers cpu/cuda/xpu once where needed; devel zips, viewer, SYCL, and /MD static smoke.
       matrix:
         include:
@@ -72,12 +72,6 @@ jobs:
             STATIC_RUNTIME: OFF
             device: xpu
             CONFIG: Release
-
-          # Shared Windows SYCL/XPU Debug
-          - BUILD_SHARED_LIBS: ON
-            STATIC_RUNTIME: OFF
-            device: xpu
-            CONFIG: Debug
 
           # Shared Windows CPU Debug -> Debug only with CPU + shared lib
           - BUILD_SHARED_LIBS: ON

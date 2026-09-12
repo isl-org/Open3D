@@ -538,6 +538,9 @@ build_pip_package_from_installed() {
 
     local commonOptions=(
         "-DOPEN3D_USE_INSTALLED_LIBRARY=ON"
+        # CI's paired devel packages use Filament's prebuilt static GNU-ABI
+        # runtime. Do not look for shared system libc++ in wheel images.
+        "-DOPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI=ON"
         "-DDEVELOPER_BUILD=${DEVELOPER_BUILD}"
         "-DOPEN3D_GIT_HASH=${OPEN3D_GIT_HASH:-}"
         "-DBUILD_SHARED_LIBS=ON"

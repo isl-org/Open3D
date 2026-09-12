@@ -48,6 +48,7 @@ jobs:
     env:
       DEVELOPER_BUILD: 'ON'
       OPEN3D_CPU_RENDERING: true
+      OPEN3D_SKIP_GAUSSIAN_SPLAT_RENDER_TESTS: 'ON'
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

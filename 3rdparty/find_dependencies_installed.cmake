@@ -121,7 +121,14 @@ endif()
 
 # Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux
 # unless the installed Filament target already exports the static GNU-ABI runtime.
+# CI's paired devel packages use the prebuilt runtime, but its private archive is
+# not necessarily represented in their public CMake target interfaces.
+option(OPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI
+       "Use Filament's prebuilt static GNU-ABI C++ runtime" OFF)
 set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI OFF)
+if(OPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI)
+    set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI ON)
+endif()
 foreach(_filament_target IN ITEMS Open3D::3rdparty_filament Open3D::Open3D)
     if(TARGET ${_filament_target})
         get_property(_filament_link_libraries TARGET ${_filament_target}
