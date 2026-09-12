@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// CPU data structures and packing helpers shared by the OpenGL and Metal
+// CPU data structures and packing helpers shared by the Vulkan and Metal
 // Gaussian splat compute backends.  The structures mirror the std140/std430
 // layouts expected by the GLSL/MSL compute shaders.
 
@@ -168,9 +168,8 @@ struct PackedGaussianScene {
 
 // ----- GPU buffer sizing (absorbed from GaussianSplatBuffers) ----------------
 
-/// UBO stride for radix-sort params: must match
-/// GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT padding used by both the OpenGL backend
-/// and the radix-sort dispatch shaders.
+/// UBO stride for radix-sort params shared by both GPU backends and the
+/// radix-sort dispatch shaders.
 inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 
 /// Byte sizes and capacities for Gaussian splat SSBOs/UBOs.

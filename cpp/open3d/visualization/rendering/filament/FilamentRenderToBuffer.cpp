@@ -265,10 +265,9 @@ void FilamentRenderToBuffer::Render() {
 
     if (run_gs_pipeline) {
         gaussian_splat_renderer_->RequestRedrawForView(*view_);
-        gaussian_splat_renderer_->BeginFrame();
 #if !defined(__APPLE__)
-        // Drain Filament work before Gaussian compute dispatches (shared
-        // GL/Vulkan queue on non-Apple backends).
+        // Drain Filament work before Gaussian compute uses the shared Vulkan
+        // device on non-Apple backends.
         engine_.flushAndWait();
 #endif
         gaussian_splat_renderer_->RenderGeometryStage(*view_, *scene_);

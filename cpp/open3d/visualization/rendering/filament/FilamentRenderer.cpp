@@ -52,9 +52,13 @@ namespace rendering {
 
 namespace {
 
-inline bool ScenesHaveGaussianSplatGeometry(
+bool ShouldRunGaussianSplatPipeline(
+        const GaussianSplatRenderer* renderer,
         const std::unordered_map<REHandle_abstract,
                                  std::unique_ptr<FilamentScene>>& scenes) {
+    if (!renderer || !renderer->HasUsableBackend()) {
+        return false;
+    }
     for (const auto& [handle, scene] : scenes) {
         if (scene->HasGaussianSplatGeometry()) {
             return true;
@@ -189,9 +193,8 @@ void FilamentRenderer::UpdateBitmapSwapChain(int width, int height) {
 }
 
 void FilamentRenderer::BeginFrame() {
-    const bool run_gs_pipeline = gaussian_splat_renderer_ &&
-                                 gaussian_splat_renderer_->HasUsableBackend() &&
-                                 ScenesHaveGaussianSplatGeometry(scenes_);
+    const bool run_gs_pipeline = ShouldRunGaussianSplatPipeline(
+            gaussian_splat_renderer_.get(), scenes_);
     rendered_views_.clear();
 
     // We will complete render to buffer requests first
@@ -212,7 +215,6 @@ void FilamentRenderer::BeginFrame() {
     }
 
     if (gaussian_splat_renderer_) {
-        gaussian_splat_renderer_->BeginFrame();
         if (run_gs_pipeline) {
             // Drain the previous Filament frame before GS submits directly to
             // a Vulkan queue that may be shared with Filament.
@@ -257,10 +259,9 @@ void FilamentRenderer::Draw() {
         // frame. Apple runs the composite stage after endFrame() so the Metal
         // depth texture is fully produced before compute samples it.
 #if !defined(__APPLE__)
-        if (gaussian_splat_renderer_ &&
-            gaussian_splat_renderer_->HasUsableBackend() &&
-            ScenesHaveGaussianSplatGeometry(scenes_)) {
-            // Wait for Filament's OpenGL scene draw to finish so the shared
+        if (ShouldRunGaussianSplatPipeline(gaussian_splat_renderer_.get(),
+                                           scenes_)) {
+            // Wait for Filament's Vulkan scene draw to finish so the shared
             // depth texture is fully written before the composite pass reads
             // it.
             engine_.flushAndWait();
@@ -296,9 +297,8 @@ void FilamentRenderer::EndFrame() {
     if (frame_started_) {
         renderer_->endFrame();
 #if defined(__APPLE__)
-        if (gaussian_splat_renderer_ &&
-            gaussian_splat_renderer_->HasUsableBackend() &&
-            ScenesHaveGaussianSplatGeometry(scenes_)) {
+        if (ShouldRunGaussianSplatPipeline(gaussian_splat_renderer_.get(),
+                                           scenes_)) {
             // endFrame() commits Filament's Metal command buffer. Our
             // composite CB, committed below on the same queue, will
             // execute after Filament's render — guaranteeing the depth
