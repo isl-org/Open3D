@@ -1,3 +1,15 @@
+# TODO: Cleanup libc++ handling for filament in Linux.
+# Filament needs libc++ - will not compile with libstdc++ instead in Linux.
+# llvm libc++ < 11 (Ubuntu 20.04 or older): libc++ and libc++abi needed. We can
+# package libc++, libc++abi with Open3D and things work correctly.
+# llvm libc++ >=1 : Also needs llvm libunwind - this conflicts with system libunwind
+# and leads to crashes when exceptions are used. No way to isolate llvm libc++,
+# libc++abi and libunwind away from the rest of libstdc++ based Open3D.
+# From Open3D v0.20+, we instead build llvm libc++stdabi.a: static libc++ linked
+# against libstdc++ for low level ABi and unwind. This is packaged with
+# filament. No separate llvm libraries are needed, and the system libunwind and
+# libstdc++ works correctly.
+
 include(ExternalProject)
 
 set(FILAMENT_ROOT "${CMAKE_BINARY_DIR}/filament-binaries")
@@ -73,39 +85,20 @@ if(NOT WIN32)
     set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
 endif()
 
-# Clang on Linux needs the GCC libstdc++ library path for linking.
-# When building Filament from source with clang while the rest of
-# Open3D uses GCC, the GCC library directory must be explicitly added.
+# Clang needs the system GCC libstdc++ directory when Filament is built from
+# source on supported Debian-based Linux distributions.
 set(filament_linker_flags "")
 if(UNIX AND NOT APPLE)
-    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -print-search-dirs
-        OUTPUT_VARIABLE _gcc_search_dirs
+    execute_process(COMMAND g++ -print-file-name=libstdc++.so
+        OUTPUT_VARIABLE filament_libstdcxx
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(_gcc_search_dirs MATCHES "libraries: *=([^\n]+)")
-        string(STRIP "${CMAKE_MATCH_1}" _gcc_lib_path)
-        # Pick the first path that contains libstdc++.
-        string(REPLACE ":" ";" _gcc_lib_list "${_gcc_lib_path}")
-        foreach(_dir ${_gcc_lib_list})
-            if(EXISTS "${_dir}/libstdc++.so")
-                set(filament_linker_flags "-L${_dir}")
-                break()
-            endif()
-        endforeach()
-    endif()
-    # Fallback: try common locations.
-    if(NOT filament_linker_flags)
-        foreach(_dir /usr/lib/gcc/x86_64-linux-gnu/11
-                     /usr/lib/gcc/x86_64-linux-gnu/12
-                     /usr/lib/gcc/x86_64-linux-gnu/13
-                     /usr/lib/x86_64-linux-gnu)
-            if(EXISTS "${_dir}/libstdc++.so")
-                set(filament_linker_flags "-L${_dir}")
-                break()
-            endif()
-        endforeach()
-    endif()
-    if(filament_linker_flags)
+    if(EXISTS "${filament_libstdcxx}")
+        get_filename_component(filament_libstdcxx_dir
+                               "${filament_libstdcxx}" DIRECTORY)
+        set(filament_linker_flags "-L${filament_libstdcxx_dir}")
         message(STATUS "Filament: using linker flags ${filament_linker_flags}")
+    else()
+        message(FATAL_ERROR "Could not locate the system libstdc++.so")
     endif()
 endif()
 

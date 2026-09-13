@@ -1,5 +1,11 @@
 # Bootstrap the tools needed to build Open3D on Windows.
 # Example: .\util\setup_windows_development.ps1 -CloneDirectory Open3D
+#
+# Steps:
+# 1. Install Git, VS Code, Visual Studio Build Tools, CMake, Python, and Vulkan.
+# 2. Clone Open3D when -CloneDirectory is provided.
+# 3. Create the requested Python virtual environment.
+# 4. Install build requirements, plus Jupyter requirements with -InstallJupyter.
 
 [CmdletBinding()]
 param(
@@ -16,7 +22,8 @@ $vsCodePackage = 'Microsoft.VisualStudioCode'
 $buildToolsPackage = 'Microsoft.VisualStudio.2022.BuildTools'
 $buildToolsOverride = '--wait --passive --norestart --nocache --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100 --add Microsoft.VisualStudio.Component.VC.CMake.Project'
 $cmakePackage = 'Kitware.CMake'
-$pythonPackage = 'Python.Python.3.14'
+$pythonVersion = '3.14'
+$pythonPackage = "Python.Python.$pythonVersion"
 $vulkanSdkPackage = 'KhronosGroup.VulkanSDK'
 
 function Install-WingetPackage([string]$PackageId, [string]$Override = '') {
@@ -75,7 +82,7 @@ $environmentPath = if ([System.IO.Path]::IsPathRooted($EnvironmentDirectory)) {
     Join-Path $destination $EnvironmentDirectory
 }
 if (-not (Test-Path -LiteralPath $environmentPath)) {
-    py.exe -3.14 -m venv $environmentPath
+    py.exe "-$pythonVersion" -m venv $environmentPath
 }
 
 $pythonExecutable = Join-Path $environmentPath 'Scripts\python.exe'

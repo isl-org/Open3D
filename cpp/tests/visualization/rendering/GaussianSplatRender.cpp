@@ -25,15 +25,12 @@
 #include <vector>
 
 #include "open3d/Open3D.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/Camera.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderer.h"
-#include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
 
 using namespace open3d;
 
@@ -321,9 +318,18 @@ protected:
                             "supported on virtualized macOS CI runners.";
         }
 #elif defined(_WIN32)
+        // TODO: GitHub hosted Windows runners need Vulkan software rendering
+        // (Mesa lavapipe) setup.
         if (std::getenv("CI") != nullptr) {
             GTEST_SKIP() << "Gaussian splat Vulkan rendering is not supported "
                             "on Windows CI runners.";
+        }
+#elif defined(__aarch64__)
+        // TODO: GitHub-hosted ARM64 Linux runners hang on this test - likely
+        // Vulkan lavapipe driver issue. Investigate and fix.
+        if (std::getenv("CI") != nullptr) {
+            GTEST_SKIP() << "Gaussian splat Vulkan rendering is not supported "
+                            "on ARM64 Linux CI runners.";
         }
 #endif
         if (!initialized_) {

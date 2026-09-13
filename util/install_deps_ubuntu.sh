@@ -24,7 +24,7 @@ deps=(
     glslang-tools
     # ML
     libtbb-dev
-    # Headless / offscreen GPU rendering (EGL)
+    # Headless / offscreen GPU rendering (EGL, Vulkan)
     libegl1-mesa-dev
     mesa-vulkan-drivers
     # RealSense

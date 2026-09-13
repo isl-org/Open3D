@@ -73,6 +73,14 @@ jobs:
             device: xpu
             CONFIG: Release
 
+          # Shared Windows SYCL/XPU Debug
+          # TODO: Restore after Windows ninja + IntelLLVM debug builds are fixed in cmake
+          # (or restrict IntelLLVM to sycl code only)
+          # - BUILD_SHARED_LIBS: ON
+          #   STATIC_RUNTIME: OFF
+          #   device: xpu
+          #   CONFIG: Debug
+
           # Shared Windows CPU Debug -> Debug only with CPU + shared lib
           - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: OFF
@@ -320,8 +328,6 @@ jobs:
       - name: Run C++ unit tests
         if: ${{ matrix.device != 'cuda' }}
         working-directory: ${{ env.BUILD_DIR }}
-        env:
-          VK_LOADER_DEBUG: error,warn
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
           $testExe = if ('${{ matrix.device }}' -eq 'xpu') { ".\bin\tests.exe" } else { ".\bin\${{ matrix.CONFIG }}\tests.exe" }
