@@ -151,10 +151,6 @@ cpp_test() {
     restart_docker_daemon_if_on_gcloud
 
     gtest_args="--gtest_shuffle"
-    if [ "${OPEN3D_SKIP_GAUSSIAN_SPLAT_RENDER_TESTS:-OFF}" = "ON" ]; then
-        # CPU Vulkan Gaussian-splat rendering hangs on Linux ARM64 CI runners.
-        gtest_args+=" --gtest_filter=-GaussianSplatRenderTest.*"
-    fi
 
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c " \

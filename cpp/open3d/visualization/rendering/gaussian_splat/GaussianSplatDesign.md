@@ -9,12 +9,6 @@ lets the composite shader reject splats behind Filament-rendered mesh geometry f
 per-splat occlusion.  Multiple Gaussian scenes are supported.  The full pipeline also runs in
 offscreen `RenderToImage` / `RenderToDepthImage` captures.
 
-**Implemented backends**: Vulkan on non-Apple platforms and Metal on macOS.
-The shared-device Vulkan path has been exercised locally on Linux with two
-vendors: NVIDIA RTX 3070 Laptop (proprietary driver 580.173.02, two queues) and
-Intel UHD Graphics CML GT2 (Mesa 25.2.8, single queue). Both produce identical
-focused-test output. Windows, AMD, hybrid graphics, desktop X11/XWayland, and
-macOS/Metal still require explicit validation.
 
 **Renderer backend**: Pure Vulkan on non-Apple platforms (GPU compute and the
 Filament Vulkan backend share one `VkDevice`), Metal on macOS. The former
@@ -22,8 +16,7 @@ GL-Vulkan interop path (`GL_EXT_memory_object` export/import) has been replaced
 with direct Vulkan image sharing through Filament's `importTextureR()` API.
 
 **Image coordinates**: Metal and Vulkan output textures use a top-left origin,
-matching Filament's displayed image coordinates. OpenGL uses a bottom-left
-origin; `screen_y_down` communicates this distinction to the 3DGS projection.
+matching Filament's displayed image coordinates.
 
 ---
 
@@ -84,7 +77,7 @@ reversed-Z convention for downstream readback compatibility.
 
 The pipeline splits into two GPU stages: Stage A (projection + sort) and Stage B (composite).
 
-**Non-Apple** (shared-device Vulkan):
+**Vulkan**:
 
 Open3D creates the Vulkan instance, physical device, logical device, and queues,
 then passes Filament a layout-compatible shared-context record at
@@ -97,17 +90,16 @@ splats into the same colour image.
 
 ```
 BeginFrame:
-  1. GaussianSplatRenderer::BeginFrame()
-  2. engine_.flushAndWait()    -- drain prior Filament Vulkan work
-  3. Stage A (geometry)        -- VK Submit + fence signal, NO CPU WAIT (fire-and-forget)
-  4. renderer_->beginFrame()
+  1. engine_.flushAndWait()    -- drain prior Filament Vulkan work
+  2. Stage A (geometry)        -- VK Submit + fence signal, NO CPU WAIT (fire-and-forget)
+  3. renderer_->beginFrame()
 
 Draw:
-  5. Filament scene draw       -- writes mesh colour and depth to imported VkImages
-  6. engine_.flushAndWait()    -- depth ready for composite
-  7. WaitForGeometryPass()     -- VK fence wait (usually no-op; geometry done during step 5)
-  8. Stage B (composite)       -- VK Submit + wait; source-over blends splats in-place
-  9. ImGui                     -- presents the already-composited colour image once
+  4. Filament scene draw       -- writes mesh colour and depth to imported VkImages
+  5. engine_.flushAndWait()    -- depth ready for composite
+  6. WaitForGeometryPass()     -- VK fence wait (usually no-op; geometry done during step 4)
+  7. Stage B (composite)       -- VK Submit + wait; source-over blends splats in-place
+  8. ImGui                     -- presents the already-composited colour image once
 ```
 
 The two mandatory CPU stalls (`flushAndWait`) cannot be eliminated without modifying Filament.
@@ -573,7 +565,7 @@ consistency even though the shader does not evaluate them.
 
 | File | Purpose |
 |------|---------|
-| `GaussianSplatRenderer.h/.cpp` | Backend interface; per-view output lifecycle; `BeginFrame()`; `RenderCompositeStage()`; `ReadMergedDepthToUint16Cpu()` |
+| `GaussianSplatRenderer.h/.cpp` | Backend interface; per-view output lifecycle; `RenderCompositeStage()`; `ReadMergedDepthToUint16Cpu()` |
 | `GaussianSplatDataPacking.h/.cpp` | CPU→GPU data packing (std140/std430); `GaussianGpuBufferSizes`; `PackGaussianViewParams`; `PackGaussianSplatAttrsDirect` |
 | `ComputeGPU.h` | `ComputeProgramId` enum; `GaussianSplatGpuContext` abstract base; `GpuComputeFrame` / `GpuComputePass` RAII helpers; `kGsShaderNames[]` |
 | `ComputeGPUVulkan.h/.cpp` | Vulkan `GaussianSplatGpuContext`: pipeline management, SSBO/UBO binding, command buffer lifecycle, fence-based geometry sync, and direct-VkImage binding. |
@@ -613,7 +605,7 @@ consistency even though the shader does not evaluate them.
 | File | Purpose |
 |------|---------|
 | `cpp/tests/visualization/rendering/GaussianSplatRender.cpp` | Focused 8×8 `RenderToImage` and `RenderToDepthImage` goldens for two splats and a mixed parameterized-blue-mesh/splat occlusion scene. Every pixel is compared exactly; a mismatch prints both grids as paste-ready initializer rows. Byte-identical on Linux/NVIDIA and Linux/Intel, so the goldens are vendor-independent and need no tolerance. |
-| `examples/cpp/GaussianSplat.cpp` | Interactive viewer with a red sphere for depth-compositing validation; not yet run for this implementation update. |
+| `examples/cpp/GaussianSplat.cpp` | Interactive viewer with a red cube for depth-compositing validation. |
 
 To check frame rate:
 

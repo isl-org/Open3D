@@ -24,7 +24,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
          FOLLOW_SYMLINK_CHAIN)
 endforeach()
 # Include additional libraries that may be absent from the user system (e.g. TBB).
-# Linux LLVM libc++ for legacy Filament is bundled separately via ldd; see below.
+# Linux LLVM libc++ for Filament is bundled separately via ldd; see below.
 # The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
@@ -37,8 +37,8 @@ foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
 endforeach()
 
-# Linux GUI wheels using legacy Filament bundle LLVM libc++/libc++abi (and
-# libunwind if linked) via ldd. Patched Filament exports its C++ runtime as a
+# Linux GUI wheels using Filament bundle LLVM libc++/libc++abi (and libunwind if
+# linked) via ldd. v0.20+ Open3D wheel filament exports its C++ runtime as a
 # static GNU-ABI archive, so no shared LLVM runtime belongs in that wheel.
 # Shared builds ship libOpen3D; static builds link Filament into the pybind
 # extension instead, so fall back to that as the ELF to probe.
