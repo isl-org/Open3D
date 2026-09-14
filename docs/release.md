@@ -1,5 +1,34 @@
 # Open3D release process
 
+## Generate release assets
+
+After the version bump has merged to `main`, authenticate with GitHub and
+dispatch the release workflows with developer builds disabled:
+
+```bash
+gh auth login
+
+for workflow in \
+    ubuntu.yml \
+    ubuntu-wheel.yml \
+    ubuntu-cuda.yml \
+    ubuntu-sycl.yml \
+    ubuntu-openblas.yml \
+    macos.yml \
+    windows.yml; do
+    gh workflow run "$workflow" --repo isl-org/Open3D --ref main \
+        --field developer_build=OFF
+done
+```
+
+Monitor the dispatched runs and download their artifacts with:
+
+```bash
+gh run list --repo isl-org/Open3D --branch main --limit 20
+gh run watch RUN_ID --repo isl-org/Open3D --exit-status
+gh run download RUN_ID --repo isl-org/Open3D
+```
+
 ## Release checklist
 
 Collect all release artifacts in the [Github draft release page](https://github.com/isl-org/Open3D/releases)
