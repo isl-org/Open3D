@@ -63,7 +63,7 @@ else()  # Linux
 endif()
 
 if(WIN32 AND WEBRTC_MULTI_CONFIG)
-    # ExternalProject_Add cannot vary URL per config; use add_custom_command + webrtc_fetch_variant.cmake.
+    # ExternalProject_Add cannot vary URL per config; fetch the selected variant at build time.
     set(WEBRTC_PREBUILT_ROOT "${CMAKE_BINARY_DIR}/webrtc/$<CONFIG>")
     set(WEBRTC_STAMP "${WEBRTC_PREBUILT_ROOT}/webrtc_fetch.stamp")
     set(WEBRTC_LIB_DIR "${WEBRTC_PREBUILT_ROOT}/lib")
@@ -72,9 +72,10 @@ if(WIN32 AND WEBRTC_MULTI_CONFIG)
         COMMAND ${CMAKE_COMMAND}
             "-DURL=$<IF:$<CONFIG:Debug>,${WEBRTC_DEBUG_URL},${WEBRTC_RELEASE_URL}>"
             "-DSHA256=$<IF:$<CONFIG:Debug>,${WEBRTC_DEBUG_SHA256},${WEBRTC_RELEASE_SHA256}>"
+            "-DCACHE_DIR=${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/webrtc"
             "-DDEST=${WEBRTC_PREBUILT_ROOT}"
             "-DSTAMP=${WEBRTC_STAMP}"
-            -P "${CMAKE_CURRENT_LIST_DIR}/webrtc_fetch_variant.cmake"
+            -P "${Open3D_SOURCE_DIR}/cmake/fetch_variant.cmake"
         BYPRODUCTS
             ${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc${CMAKE_STATIC_LIBRARY_SUFFIX}
             ${WEBRTC_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}webrtc_extra${CMAKE_STATIC_LIBRARY_SUFFIX}

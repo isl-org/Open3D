@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
-// CPU data structures and packing helpers shared by the OpenGL and Metal
+// CPU data structures and packing helpers shared by the Vulkan and Metal
 // Gaussian splat compute backends.  The structures mirror the std140/std430
 // layouts expected by the GLSL/MSL compute shaders.
 
@@ -55,7 +55,8 @@ struct alignas(16) GaussianViewParams {
     // z=max_tile_entries_total, w=tile_key_bits T = ceil(log2(tile_count)),
     // clamped to [1,31]: T bits for tile index, (32-T) bits for depth)
     std::uint32_t limits[4];
-    // vec4 depth_range_and_flags (x=near, y=far, z=reserved, w=0)
+    // vec4 depth_range_and_flags (x=near, y=far, z=composite_over_base,
+    // w=scene_depth_present)
     float depth_range_and_flags[4];
 };
 static_assert(sizeof(GaussianViewParams) == 288,
@@ -127,6 +128,8 @@ inline constexpr std::uint32_t kGaussianGpuErrorKnownMask =
 ///   dc_opacity      — fp16×4 as uvec2 pair, 8 B/splat
 ///   sh_coefficients — fp16 uvec2, stride = 3×degree×2 u32/splat
 struct GaussianSplatPackedAttrs {
+    /// Monotonic scene revision used by per-view GPU upload caches.
+    std::uint64_t revision = 0;
     std::vector<Std430Vec4> positions;  ///< fp32 vec4, 16 B/splat
     std::vector<std::uint32_t>
             scales;  ///< fp16×4 in uvec2 pair, 8 B/splat; linear
@@ -165,9 +168,8 @@ struct PackedGaussianScene {
 
 // ----- GPU buffer sizing (absorbed from GaussianSplatBuffers) ----------------
 
-/// UBO stride for radix-sort params: must match
-/// GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT padding used by both the OpenGL backend
-/// and the radix-sort dispatch shaders.
+/// UBO stride for radix-sort params shared by both GPU backends and the
+/// radix-sort dispatch shaders.
 inline constexpr std::uint32_t kGaussianRadixParamsStride = 256;
 
 /// Byte sizes and capacities for Gaussian splat SSBOs/UBOs.

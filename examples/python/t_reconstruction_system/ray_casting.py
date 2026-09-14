@@ -88,7 +88,7 @@ if __name__ == '__main__':
             config.depth_scale, config.depth_min, config.depth_max)
 
         # Render color via indexing
-        vbg_color = vbg.attribute('color').reshape((-1, 3))
+        vbg_color = vbg.attribute('color').reshape((-1, 3)).to(o3c.float32)
         nb_indices = result['index'].reshape((-1))
         nb_interp_ratio = result['interp_ratio'].reshape((-1, 1))
         nb_colors = vbg_color[nb_indices] * nb_interp_ratio
@@ -98,7 +98,8 @@ if __name__ == '__main__':
         axs[0, 0].imshow(colorized_depth.as_tensor().cpu().numpy())
         axs[0, 0].set_title('depth')
 
-        axs[0, 1].imshow(result['normal'].cpu().numpy())
+        normal = (result['normal'] + 1.0) * 0.5
+        axs[0, 1].imshow(normal.cpu().numpy())
         axs[0, 1].set_title('normal')
 
         axs[1, 0].imshow(result['color'].cpu().numpy())

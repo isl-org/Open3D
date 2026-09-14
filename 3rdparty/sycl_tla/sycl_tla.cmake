@@ -20,7 +20,7 @@ ExternalProject_Add(
         ${CMAKE_COMMAND}
         -DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/0001-fix-oneapi-2025.3-ieee-gemm.patch
         -DSOURCE_DIR=<SOURCE_DIR>
-        -P ${CMAKE_CURRENT_LIST_DIR}/../librealsense/apply_patch.cmake
+        -P ${Open3D_SOURCE_DIR}/cmake/apply_patch.cmake
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""

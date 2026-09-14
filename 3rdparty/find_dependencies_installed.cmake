@@ -119,11 +119,36 @@ if(NOT TARGET TBB::tbb)
         "exports Open3D::tbb / find_dependency(TBB).")
 endif()
 
-# Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux.
-if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE)
+# Filament-linked libOpen3D needs matching libc++/libc++abi in the wheel on Linux
+# unless the installed Filament target already exports the static GNU-ABI runtime.
+# CI's paired devel packages use the prebuilt runtime, but its private archive is
+# not necessarily represented in their public CMake target interfaces.
+option(OPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI
+       "Use Filament's prebuilt static GNU-ABI C++ runtime" OFF)
+set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI OFF)
+if(OPEN3D_USE_PREBUILT_FILAMENT_STATIC_LIBCXX_STDABI)
+    set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI ON)
+endif()
+foreach(_filament_target IN ITEMS Open3D::3rdparty_filament Open3D::Open3D)
+    if(TARGET ${_filament_target})
+        get_property(_filament_link_libraries TARGET ${_filament_target}
+            PROPERTY INTERFACE_LINK_LIBRARIES)
+        foreach(_filament_link_library IN LISTS _filament_link_libraries)
+            if(_filament_link_library MATCHES "c\\+\\+stdabi")
+                set(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI ON)
+                break()
+            endif()
+        endforeach()
+        if(OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI)
+            break()
+        endif()
+    endif()
+endforeach()
+if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE AND
+   NOT OPEN3D_FILAMENT_USES_STATIC_LIBCXX_STDABI)
     if(NOT CPP_LIBRARY OR NOT CPPABI_LIBRARY)
-        message(STATUS "Searching /usr/lib/llvm-[7..19]/lib/ for libc++ and libc++abi")
-        foreach(llvm_ver RANGE 7 19)
+        message(STATUS "Searching /usr/lib/llvm-[17..20]/lib/ for libc++ and libc++abi")
+        foreach(llvm_ver RANGE 17 20)
             set(llvm_lib_dir "/usr/lib/llvm-${llvm_ver}/lib")
             find_library(CPP_LIBRARY    c++ PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
             find_library(CPPABI_LIBRARY c++abi PATHS ${llvm_lib_dir} NO_DEFAULT_PATH)
@@ -136,9 +161,9 @@ if(BUILD_GUI AND BUILD_PYTHON_MODULE AND UNIX AND NOT APPLE)
         endforeach()
     endif()
     if(NOT CPP_LIBRARY OR NOT CPPABI_LIBRARY)
-        message(WARNING
-            "libc++/libc++abi not found; GUI wheels may fail to load Filament "
-            "symbols from the installed libOpen3D.")
+        message(FATAL_ERROR
+            "libc++/libc++abi >= 17 not found; required for Filament-linked "
+            "libOpen3D GUI wheels.")
     endif()
 endif()
 

@@ -159,7 +159,14 @@ function(open3d_build_3rdparty_library name)
 endfunction()
 
 # CMake arguments for configuring ExternalProjects. Use the second _hidden
-# version by default.
+# version by default. Single-config Windows Ninja builds need Debug artifacts
+# when the parent is Debug; multi-config generators select their config later.
+set(OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE Release)
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND
+   CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE Debug)
+endif()
+
 set(ExternalProject_CMAKE_ARGS
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5      # for VTK 9.1
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -173,9 +180,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
     -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
     -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
-    # Always build 3rd party code in Release mode. Ignored by multi-config
-    # generators (XCode, MSVC). MSVC needs matching config anyway.
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=${OPEN3D_EXTERNAL_PROJECT_BUILD_TYPE}
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -1427,11 +1432,11 @@ if(BUILD_GUI)
             message(STATUS "Building third-party library Filament from source")
             if(MSVC OR (CMAKE_C_COMPILER_ID MATCHES ".*Clang" AND
                 CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"
-                AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7))
+                AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17))
                 set(FILAMENT_C_COMPILER "${CMAKE_C_COMPILER}")
                 set(FILAMENT_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
             else()
-                message(STATUS "Filament can only be built with Clang >= 7")
+                message(STATUS "Filament requires Clang >= 17 for C++20 ranges support")
                 # First, check default version, because the user may have configured
                 # a particular version as default for a reason.
                 find_program(CLANG_DEFAULT_CC NAMES clang)
@@ -1439,7 +1444,7 @@ if(BUILD_GUI)
                 if(CLANG_DEFAULT_CC AND CLANG_DEFAULT_CXX)
                     execute_process(COMMAND ${CLANG_DEFAULT_CXX} --version OUTPUT_VARIABLE clang_version)
                     if(clang_version MATCHES "clang version ([0-9]+)")
-                        if (CMAKE_MATCH_1 GREATER_EQUAL 7)
+                        if(CMAKE_MATCH_1 GREATER_EQUAL 17)
                             message(STATUS "Using ${CLANG_DEFAULT_CXX} to build Filament")
                             set(FILAMENT_C_COMPILER "${CLANG_DEFAULT_CC}")
                             set(FILAMENT_CXX_COMPILER "${CLANG_DEFAULT_CXX}")
@@ -1448,42 +1453,21 @@ if(BUILD_GUI)
                 endif()
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                    find_program(CLANG_VERSIONED_CC NAMES
-                                 clang-19
-                                 clang-18
-                                 clang-17
-                                 clang-16
-                                 clang-15
-                                 clang-14
-                                 clang-13
-                                 clang-12
-                                 clang-11
-                                 clang-10
-                                 clang-9
-                                 clang-8
-                                 clang-7
-                    )
-                    find_program(CLANG_VERSIONED_CXX NAMES
-                                 clang++-19
-                                 clang++-18
-                                 clang++-17
-                                 clang++-16
-                                 clang++-15
-                                 clang++-14
-                                 clang++-13
-                                 clang++-12
-                                 clang++-11
-                                 clang++-10
-                                 clang++-9
-                                 clang++-8
-                                 clang++-7
-                    )
+                    set(filament_clang_candidates
+                        clang-19 clang-18 clang-17)
+                    set(filament_clangxx_candidates
+                        clang++-19 clang++-18 clang++-17)
+                    find_program(CLANG_VERSIONED_CC NAMES ${filament_clang_candidates})
+                    find_program(CLANG_VERSIONED_CXX NAMES ${filament_clangxx_candidates})
                     if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                         set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                         set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
                         message(STATUS "Using ${CLANG_VERSIONED_CXX} to build Filament")
                     else()
-                        message(FATAL_ERROR "Need Clang >= 7 to compile Filament from source")
+                        message(FATAL_ERROR
+                            "Need Clang >= 17 with matching libc++/libc++abi to compile "
+                            "Filament from source. It uses C++20 ranges algorithms "
+                            "unavailable in older libc++ releases.")
                     endif()
                 endif()
             endif()
@@ -1497,9 +1481,11 @@ if(BUILD_GUI)
                 # find_library. Therefore, when compiling Filament from source,
                 # we explicitly find the corresponding path based on the clang
                 # version.
-                execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
-                if(clang_version MATCHES "clang version ([0-9]+)")
-                    set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+                if(NOT CLANG_LIBDIR)
+                    execute_process(COMMAND ${FILAMENT_CXX_COMPILER} --version OUTPUT_VARIABLE clang_version)
+                    if(clang_version MATCHES "clang version ([0-9]+)")
+                        set(CLANG_LIBDIR "/usr/lib/llvm-${CMAKE_MATCH_1}/lib")
+                    endif()
                 endif()
             endif()
             include(${Open3D_3RDPARTY_DIR}/filament/filament_build.cmake)
@@ -1520,12 +1506,16 @@ if(BUILD_GUI)
                 set(FILAMENT_RUNTIME_VER x86_64)
             endif()
         else()  # WIN32
-            # Match the prebuilt Filament archive's runtime selection in
-            # filament_download.cmake.
-            if (STATIC_WINDOWS_RUNTIME)
-                set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+            if (BUILD_FILAMENT_FROM_SOURCE)
+                set(FILAMENT_RUNTIME_VER x86_64)
             else()
-                set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+                # Match the prebuilt Filament archive's runtime selection in
+                # filament_download.cmake.
+                if (STATIC_WINDOWS_RUNTIME)
+                    set(FILAMENT_RUNTIME_VER "x86_64/mt$<$<CONFIG:DEBUG>:d>")
+                else()
+                    set(FILAMENT_RUNTIME_VER "x86_64/md$<$<CONFIG:DEBUG>:d>")
+                endif()
             endif()
         endif()
         open3d_import_3rdparty_library(3rdparty_filament
@@ -1537,7 +1527,14 @@ if(BUILD_GUI)
         )
         set(FILAMENT_MATC "${FILAMENT_ROOT}/bin/matc")
         target_link_libraries(3rdparty_filament INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
-        if(UNIX AND NOT APPLE)
+        if(WIN32 AND NOT BUILD_FILAMENT_FROM_SOURCE AND
+           NOT FILAMENT_PRECOMPILED_ROOT)
+            target_link_libraries(3rdparty_filament INTERFACE
+                $<$<CONFIG:Debug>:${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_DEBUG_TAG}/${CMAKE_STATIC_LIBRARY_PREFIX}matdbg${CMAKE_STATIC_LIBRARY_SUFFIX}>
+                $<$<CONFIG:Debug>:${FILAMENT_ROOT}/lib/x86_64/${FILAMENT_DEBUG_TAG}/${CMAKE_STATIC_LIBRARY_PREFIX}filamat${CMAKE_STATIC_LIBRARY_SUFFIX}>
+            )
+        endif()
+        if(UNIX AND NOT APPLE AND NOT FILAMENT_USE_STATIC_LIBCXX_STDABI)
             # For ubuntu, llvm libs are located in /usr/lib/llvm-{version}/lib.
             # We first search for these paths, and then search CMake's default
             # search path. LLVM version must be >= 7 to compile Filament.
@@ -1590,8 +1587,12 @@ if(BUILD_GUI)
             else()
                 message(FATAL_ERROR "Cannot find matching libc++ and libc++abi libraries with version >=7.")
             endif()
-            find_library(CPP_LIBRARY    c++    PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
-            find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR} REQUIRED NO_DEFAULT_PATH)
+            unset(CPP_LIBRARY CACHE)
+            unset(CPPABI_LIBRARY CACHE)
+            find_library(CPP_LIBRARY c++ PATHS ${CLANG_LIBDIR}
+                         ${CLANG_LIBDIR}/x86_64-unknown-linux-gnu REQUIRED NO_DEFAULT_PATH)
+            find_library(CPPABI_LIBRARY c++abi PATHS ${CLANG_LIBDIR}
+                         ${CLANG_LIBDIR}/x86_64-unknown-linux-gnu REQUIRED NO_DEFAULT_PATH)
 
             # Ensure that libstdc++ gets linked first.
             target_link_libraries(3rdparty_filament INTERFACE -lstdc++
@@ -1863,6 +1864,15 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     # the oneMKL pip packages do not ship.
     set(MKL_STATIC_LIBS mkl_intel_ilp64 mkl_tbb_thread mkl_core)
     set(MKL_SHARED_LIBRARIES)
+    if(WIN32)
+        # oneMKL's Release TBB threading archive uses /MD. Select its Debug
+        # variant for /MDd builds to avoid CRT mismatches and its object count
+        # contributing to the MSVC linker limit.
+        set(MKL_STATIC_LIBS
+            mkl_intel_ilp64
+            $<IF:$<CONFIG:Debug>,mkl_tbb_threadd,mkl_tbb_thread>
+            mkl_core)
+    endif()
     if(BUILD_SYCL_MODULE)
         if(WIN32)
             # oneAPI >= 2026.0 dropped the umbrella mkl_sycl(d).lib import

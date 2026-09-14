@@ -36,7 +36,7 @@ class ReconstructionWindow:
         self.config = config
 
         self.window = gui.Application.instance.create_window(
-            'Open3D - Reconstruction', 1280, 800)
+            'Open3D - Reconstruction', 1280, 960)
 
         w = self.window
         em = w.theme.font_size
@@ -190,6 +190,13 @@ class ReconstructionWindow:
         self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
         self.widget3d.scene.set_background([1, 1, 1, 1])
 
+        self.point_material = rendering.MaterialRecord()
+        self.point_material.shader = 'defaultUnlit'
+        self.point_material.sRGB_color = True
+        self.frustum_material = rendering.MaterialRecord()
+        self.frustum_material.shader = 'unlitLine'
+        self.frustum_material.line_width = 5.0
+
         w.set_on_layout(self._on_layout)
         w.set_on_close(self._on_close)
 
@@ -198,12 +205,10 @@ class ReconstructionWindow:
         self.is_started = False
         self.is_running = False
         self.is_surface_updated = False
+        self.model = None
 
         self.idx = 0
         self.poses = []
-
-        # Start running
-        threading.Thread(name='UpdateMain', target=self.update_main).start()
 
     def _on_layout(self, ctx):
         em = ctx.theme.font_size
@@ -226,11 +231,11 @@ class ReconstructionWindow:
     # Toggle callback: application's main controller
     def _on_switch(self, is_on):
         if not self.is_started:
-            gui.Application.instance.post_to_main_thread(
-                self.window, self._on_start)
-        self.is_running = not self.is_running
+            self._on_start()
+            threading.Thread(name='UpdateMain', target=self.update_main).start()
+        self.is_running = is_on
 
-    # On start: point cloud buffer and model initialization.
+    # On start: initialize the point cloud buffer before starting the worker.
     def _on_start(self):
         max_points = self.est_point_count_slider.int_value
 
@@ -238,24 +243,17 @@ class ReconstructionWindow:
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
         pcd_placeholder.point.colors = o3c.Tensor(
             np.zeros((max_points, 3), dtype=np.float32))
-        mat = rendering.MaterialRecord()
-        mat.shader = 'defaultUnlit'
-        mat.sRGB_color = True
-        self.widget3d.scene.scene.add_geometry('points', pcd_placeholder, mat)
-
-        self.model = o3d.t.pipelines.slam.Model(
-            self.voxel_size_slider.double_value, 16,
-            self.est_block_count_slider.int_value, o3c.Tensor(np.eye(4)),
-            o3c.Device(self.config.device))
-        self.is_started = True
+        self.widget3d.scene.scene.add_geometry('points', pcd_placeholder,
+                                               self.point_material)
 
         set_enabled(self.fixed_prop_grid, False)
         set_enabled(self.adjustable_prop_grid, True)
+        self.is_started = True
 
     def _on_close(self):
         self.is_done = True
 
-        if self.is_started:
+        if self.model is not None:
             print('Saving model to {}...'.format(config.path_npz))
             self.model.voxel_grid.save(config.path_npz)
             print('Finished.')
@@ -292,31 +290,32 @@ class ReconstructionWindow:
         self.widget3d.look_at([0, 0, 0], [0, -1, -3], [0, -1, 0])
 
     def update_render(self, input_depth, input_color, raycast_depth,
-                      raycast_color, pcd, frustum):
-        self.input_depth_image.update_image(
-            input_depth.colorize_depth(
-                float(self.scale_slider.int_value), config.depth_min,
-                self.max_slider.double_value).to_legacy())
-        self.input_color_image.update_image(input_color.to_legacy())
+                      raycast_color, pcd, frustum, fps_text, info,
+                      scene_updated):
+        self.input_depth_image.update_image(input_depth)
+        self.input_color_image.update_image(input_color)
 
-        self.raycast_depth_image.update_image(
-            raycast_depth.colorize_depth(
-                float(self.scale_slider.int_value), config.depth_min,
-                self.max_slider.double_value).to_legacy())
-        self.raycast_color_image.update_image(
-            (raycast_color).to(o3c.uint8, False, 255.0).to_legacy())
+        self.raycast_depth_image.update_image(raycast_depth)
+        self.raycast_color_image.update_image(raycast_color)
 
-        if self.is_scene_updated:
+        if fps_text is not None:
+            self.output_fps.text = fps_text
+        self.output_info.text = info
+
+        if scene_updated:
             if pcd is not None and pcd.point.positions.shape[0] > 0:
-                self.widget3d.scene.scene.update_geometry(
-                    'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
-                    rendering.Scene.UPDATE_COLORS_FLAG)
+                if os.name == 'nt':
+                    self.widget3d.scene.remove_geometry('points')
+                    self.widget3d.scene.add_geometry('points', pcd,
+                                                     self.point_material)
+                else:
+                    self.widget3d.scene.scene.update_geometry(
+                        'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
+                        rendering.Scene.UPDATE_COLORS_FLAG)
 
         self.widget3d.scene.remove_geometry("frustum")
-        mat = rendering.MaterialRecord()
-        mat.shader = "unlitLine"
-        mat.line_width = 5.0
-        self.widget3d.scene.add_geometry("frustum", frustum, mat)
+        self.widget3d.scene.add_geometry("frustum", frustum,
+                                         self.frustum_material)
 
     # Major loop
     def update_main(self):
@@ -325,6 +324,11 @@ class ReconstructionWindow:
 
         n_files = len(color_file_names)
         device = o3d.core.Device(config.device)
+
+        # Keep model creation and processing on the same worker thread.
+        self.model = o3d.t.pipelines.slam.Model(self.config.voxel_size, 16,
+                                                self.config.block_count,
+                                                o3c.Tensor(np.eye(4)), device)
 
         T_frame_to_model = o3c.Tensor(np.identity(4))
         depth_ref = o3d.t.io.read_image(depth_file_names[0])
@@ -399,12 +403,12 @@ class ReconstructionWindow:
             frustum.paint_uniform_color([0.961, 0.475, 0.000])
 
             # Output FPS
+            fps_text = None
             if (self.idx % fps_interval_len == 0):
                 end = time.time()
                 elapsed = end - start
                 start = time.time()
-                self.output_fps.text = 'FPS: {:.3f}'.format(fps_interval_len /
-                                                            elapsed)
+                fps_text = 'FPS: {:.3f}'.format(fps_interval_len / elapsed)
 
             # Output info
             info = 'Frame {}/{}\n\n'.format(self.idx, n_files)
@@ -420,14 +424,25 @@ class ReconstructionWindow:
                 0 if pcd is None else pcd.point.positions.shape[0],
                 self.est_point_count_slider.int_value)
 
-            self.output_info.text = info
+            input_depth = input_frame.get_data_as_image('depth').colorize_depth(
+                float(self.scale_slider.int_value), config.depth_min,
+                self.max_slider.double_value).to_legacy()
+            input_color = input_frame.get_data_as_image('color').to_legacy()
+            raycast_depth = raycast_frame.get_data_as_image(
+                'depth').colorize_depth(
+                    float(self.scale_slider.int_value), config.depth_min,
+                    self.max_slider.double_value).to_legacy()
+            raycast_color = raycast_frame.get_data_as_image('color').to(
+                o3c.uint8, False, 255.0).to_legacy()
 
             gui.Application.instance.post_to_main_thread(
-                self.window, lambda: self.update_render(
-                    input_frame.get_data_as_image('depth'),
-                    input_frame.get_data_as_image('color'),
-                    raycast_frame.get_data_as_image('depth'),
-                    raycast_frame.get_data_as_image('color'), pcd, frustum))
+                self.window, lambda input_depth=input_depth, input_color=input_color, \
+                raycast_depth=raycast_depth, raycast_color=raycast_color, \
+                pcd=pcd, frustum=frustum, fps_text=fps_text, info=info, \
+                scene_updated=self.is_scene_updated: \
+                    self.update_render(
+                    input_depth, input_color, raycast_depth, raycast_color,
+                    pcd, frustum, fps_text, info, scene_updated))
 
             self.idx += 1
             self.is_done = self.is_done | (self.idx >= n_files)

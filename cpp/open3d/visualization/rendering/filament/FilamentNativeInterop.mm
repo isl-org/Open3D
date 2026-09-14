@@ -23,8 +23,11 @@ FilamentMetalNativeHandles GetFilamentMetalNativeHandles(
     FilamentMetalNativeHandles handles;
 
 #if defined(OPEN3D_HAS_FILAMENT_METAL_PLATFORM)
+    // Use static_cast: on Apple platforms the backend is always Metal.
+    // dynamic_cast is avoided here because Filament prebuilt libraries
+    // are compiled with -fno-rtti, so the typeinfo symbols are missing.
     auto* metal_platform =
-            dynamic_cast<filament::backend::PlatformMetal*>(platform);
+            static_cast<filament::backend::PlatformMetal*>(platform);
     if (!metal_platform) {
         return handles;
     }

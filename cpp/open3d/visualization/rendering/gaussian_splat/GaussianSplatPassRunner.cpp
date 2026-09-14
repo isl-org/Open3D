@@ -39,9 +39,30 @@ constexpr std::size_t kIndirectStride = 3u * sizeof(std::uint32_t);
 constexpr std::uint32_t kSlotRadixHist0 = 0u;     // passes 0-3 → slots 0-3
 constexpr std::uint32_t kSlotRadixScatter0 = 4u;  // passes 0-3 → slots 4-7
 
+constexpr std::array<const char*, 4> kRadixHistogramLabels = {
+        "gs_radix_histogram_pass_0", "gs_radix_histogram_pass_1",
+        "gs_radix_histogram_pass_2", "gs_radix_histogram_pass_3"};
+constexpr std::array<const char*, 4> kRadixScatterLabels = {
+        "gs_radix_scatter_pass_0", "gs_radix_scatter_pass_1",
+        "gs_radix_scatter_pass_2", "gs_radix_scatter_pass_3"};
+
 // Compute the byte offset of a dispatch_args slot for DispatchIndirect().
 inline std::size_t IndirectByteOffset(std::uint32_t slot) {
     return slot * kIndirectStride;
+}
+
+// Opaque handles of the two shared output images. Exactly one of the Metal /
+// Vulkan members is populated depending on the active backend.
+inline std::uintptr_t SharedColorTexture(
+        const GaussianSplatRenderer::OutputTargets& targets) {
+    return targets.gs_color_mtl_texture ? targets.gs_color_mtl_texture
+                                        : targets.color_vk_image;
+}
+
+inline std::uintptr_t SharedSceneDepthTexture(
+        const GaussianSplatRenderer::OutputTargets& targets) {
+    return targets.scene_depth_mtl_texture ? targets.scene_depth_mtl_texture
+                                           : targets.depth_vk_image;
 }
 
 /// Download the GPU error-flag counters and log each active error code once
@@ -108,7 +129,7 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
         ctx.FullBarrier();
 
         GpuComputePass(ctx, ComputeProgramId::kGsRadixHistograms,
-                       "gs_radix_histogram")
+                       kRadixHistogramLabels[pass])
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])
@@ -118,7 +139,7 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
         ctx.FullBarrier();
 
         GpuComputePass(ctx, ComputeProgramId::kGsRadixScatter,
-                       "gs_radix_scatter")
+                       kRadixScatterLabels[pass])
                 .UBORange(14, vs.radix_params_buf, params_offset,
                           sizeof(RadixSortParams))
                 .SSBO(0, vs.sort_keys_buf[src])
@@ -137,6 +158,43 @@ int RunClassicalRadixSort(GaussianSplatGpuContext& ctx,
 }
 
 }  // namespace
+
+void DestroyGaussianSplatViewGpuResources(
+        GaussianSplatGpuContext& ctx,
+        GaussianSplatViewGpuResources& resources) {
+    auto destroy_buffer = [&ctx](std::uintptr_t& buffer) {
+        if (buffer != 0) {
+            ctx.DestroyBuffer(buffer);
+            buffer = 0;
+        }
+    };
+    destroy_buffer(resources.view_params_buf);
+    destroy_buffer(resources.positions_buf);
+    destroy_buffer(resources.scales_buf);
+    destroy_buffer(resources.rotations_buf);
+    destroy_buffer(resources.dc_opacity_buf);
+    destroy_buffer(resources.sh_buf);
+    destroy_buffer(resources.projected_composite_buf);
+    destroy_buffer(resources.tile_counts_buf);
+    destroy_buffer(resources.counters_buf);
+    destroy_buffer(resources.dispatch_args_buf);
+    destroy_buffer(resources.sort_keys_buf[0]);
+    destroy_buffer(resources.sort_keys_buf[1]);
+    destroy_buffer(resources.sort_values_buf[0]);
+    destroy_buffer(resources.sort_values_buf[1]);
+    destroy_buffer(resources.histogram_buf);
+    destroy_buffer(resources.radix_params_buf);
+    destroy_buffer(resources.mask_buf);
+
+    if (resources.composite_depth_tex != 0) {
+        ctx.DestroyTexture(resources.composite_depth_tex);
+        resources.composite_depth_tex = 0;
+    }
+    if (resources.merged_depth_u16_tex != 0) {
+        ctx.DestroyTexture(resources.merged_depth_u16_tex);
+        resources.merged_depth_u16_tex = 0;
+    }
+}
 
 bool RunGaussianGeometryPasses(
         GaussianSplatGpuContext& ctx,
@@ -345,11 +403,19 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     const std::uint32_t morton_range = morton_side * morton_side;
     const std::uint32_t steal_wg_count = std::max(1u, (morton_range + 3u) / 4u);
 
-    // Always upload depth flag when scene depth is present (which is always
-    // for interactive GS views). The shader will use this to test occlusion
-    // against mesh geometry.
-    const bool has_scene_depth = (targets.scene_depth_gl_handle != 0) ||
-                                 (targets.scene_depth_mtl_texture != 0);
+    // The Vulkan target contains the Filament mesh color, whereas Metal
+    // retains a separate transparent splat overlay for presentation.
+    const float composite_over_base = targets.uses_vulkan_interop ? 1.0f : 0.0f;
+    static constexpr std::size_t kCompositeOverBaseFlagOffset =
+            offsetof(GaussianViewParams, depth_range_and_flags) +
+            2 * sizeof(float);
+    ctx.UploadBuffer(vs.view_params_buf, &composite_over_base,
+                     sizeof(composite_over_base), kCompositeOverBaseFlagOffset);
+
+    // Upload the depth flag when scene depth is present so the shader can
+    // reject splats occluded by mesh geometry.
+    const std::uintptr_t scene_depth_tex = SharedSceneDepthTexture(targets);
+    const bool has_scene_depth = (scene_depth_tex != 0);
     if (has_scene_depth) {
         float flag = 1.0f;
         static constexpr std::size_t kDepthFlagOffset =
@@ -380,10 +446,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
                 vs.merged_depth_u16_tex, w, h, "gs.merged_depth");
     }
 
-    const std::uintptr_t color_tex =
-            targets.gs_color_mtl_texture
-                    ? targets.gs_color_mtl_texture
-                    : static_cast<std::uintptr_t>(targets.color_gl_handle);
+    const std::uintptr_t color_tex = SharedColorTexture(targets);
 
     if (color_tex == 0 || vs.composite_depth_tex == 0) {
         utility::LogWarning(
@@ -414,11 +477,7 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
             .Image(1, vs.composite_depth_tex, w, h, ImageFormat::kR32F);
 
     if (has_scene_depth) {
-        std::uintptr_t sd = targets.scene_depth_mtl_texture
-                                    ? targets.scene_depth_mtl_texture
-                                    : static_cast<std::uintptr_t>(
-                                              targets.scene_depth_gl_handle);
-        pass.Sampler(14, sd, w, h);
+        pass.Sampler(14, scene_depth_tex, w, h);
     }
 
     pass.Dispatch(steal_wg_count, 1u, 1u);
@@ -429,24 +488,17 @@ bool RunGaussianCompositePass(GaussianSplatGpuContext& ctx,
     // Only dispatched when a readback was requested AND the merged texture
     // was successfully allocated.
     if (targets.wants_depth_readback && vs.merged_depth_u16_tex != 0) {
-        const std::uintptr_t sd =
-                targets.scene_depth_mtl_texture
-                        ? targets.scene_depth_mtl_texture
-                        : static_cast<std::uintptr_t>(
-                                  targets.scene_depth_gl_handle);
         GpuComputePass(ctx, ComputeProgramId::kGsDepthMerge, "gs_depth_merge")
                 .UBO(0, vs.view_params_buf)
                 .Sampler(15, vs.composite_depth_tex, w,
                          h)  // binding 15: Metal max texture/sampler index
                 .Image(1, vs.merged_depth_u16_tex, w, h, ImageFormat::kR16UI)
-                .Sampler(14, sd, w, h)
+                .Sampler(14, scene_depth_tex, w, h)
                 .Dispatch(DivUp(w, 16u), DivUp(h, 16u), 1u);
         ctx.FullBarrier();
     }
 
-    ctx.FinishGpuWork();
-    // frame destructor calls End() automatically; explicit call omitted.
-    LogGaussianGpuErrorsOnce(ctx, vs);
+    frame.End();
 
     return ctx.WasLastSubmitSuccessful();
 }

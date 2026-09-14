@@ -5,14 +5,13 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 //
-// Shared Gaussian splatting geometry + composite dispatch sequence.  OpenGL and
+// Shared Gaussian splatting geometry + composite dispatch sequence. Vulkan and
 // Metal backends supply a GaussianSplatGpuContext implementation; this file
 // contains the platform-agnostic pass logic that both backends invoke.
 
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 #include "open3d/visualization/rendering/gaussian_splat/ComputeGPU.h"
 #include "open3d/visualization/rendering/gaussian_splat/GaussianSplatRenderer.h"
@@ -23,6 +22,11 @@ namespace rendering {
 
 struct PackedGaussianScene;
 struct GaussianSplatPackedAttrs;
+
+/// Release every GPU buffer and texture owned by one view. Keeping teardown
+/// shared prevents the Metal and Vulkan resource lists from drifting.
+void DestroyGaussianSplatViewGpuResources(
+        GaussianSplatGpuContext& ctx, GaussianSplatViewGpuResources& resources);
 
 /// Resize/upload buffers, then run the projection → radix → payload chain.
 /// Dispatch grid sizes are computed inline from frame_data and config.

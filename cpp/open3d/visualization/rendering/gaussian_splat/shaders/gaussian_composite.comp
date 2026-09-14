@@ -111,7 +111,7 @@ layout(std430, binding = 11) restrict readonly buffer SortedSplatIndices {
 // above live in separate namespaces and are not affected.
 // Binding 16 avoids the (set=0, binding=0) conflict with GaussianViewParams
 // UBO.
-layout(binding = 16, rgba16f) uniform writeonly image2D out_color;
+layout(binding = 16, rgba16f) uniform image2D out_color;
 layout(binding = 1, r32f) uniform writeonly image2D out_depth;
 
 // Scene depth from Filament's render pass (reversed-Z, non-linear).
@@ -178,21 +178,21 @@ uint LowerBound(uint target_tile, uint lo, uint hi, uint D) {
     return lo;
 }
 
-// Convert Filament inverse depth (near=1, far=0) to normalized linear depth
-// (near=0, far=1) using the near/far planes from the view params UBO.
-// Formula derived from: inv = near*(far-d) / (d*(far-near))
-//   => d = near*far / (inv*(far-near) + near)
-//   => linear_01 = (d - near) / (far - near)
-//                = near*(1 - inv) / (inv*(far-near) + near)
+// Convert Filament's infinite-far reversed depth (near=1, infinity=0) to
+// normalized linear depth (near=0, far=1) using the finite culling far plane.
+// Filament's render projection stores inv = near / d, so:
+//   linear_01 = (d - near) / (far - near)
+//              = near * (1 - inv) / (inv * (far - near))
 float InverseToLinear01(float inv, float near, float far) {
-    return near * (1.0 - inv) / (inv * (far - near) + near);
+    if (inv <= 0.0) return 1.0;
+    return clamp(near * (1.0 - inv) / (inv * (far - near)), 0.0, 1.0);
 }
 
-// Convert normalized linear depth (near=0, far=1) back to Filament inverse
-// depth (near=1, far=0), for writing depth outputs in Filament convention.
-// Formula: inv = near*(1 - linear_01) / (near + linear_01*(far - near))
+// Convert normalized linear depth (near=0, far=1) back to Filament's
+// infinite-far reversed depth (near=1, infinity=0).
+// Formula: inv = near / (near + linear_01 * (far - near))
 float Linear01ToInverse(float linear_01, float near, float far) {
-    return near * (1.0 - linear_01) / (near + linear_01 * (far - near));
+    return near / (near + clamp(linear_01, 0.0, 1.0) * (far - near));
 }
 
 // Opt7: Shared memory arrays for cooperative tile loading.
@@ -246,6 +246,7 @@ void main() {
 
     float near = view_params.depth_range_and_flags.x;
     float far = view_params.depth_range_and_flags.y;
+    bool composite_over_base = view_params.depth_range_and_flags.z > 0.5;
     bool has_scene_depth = view_params.depth_range_and_flags.w > 0.5;
 
     // Opt9 work-stealing loop: each workgroup atomically claims one tile at a
@@ -405,15 +406,23 @@ void main() {
             float out_alpha = 1.0 - transmittance;
             // accum_color is already premultiplied by construction:
             //   each splat contributes transmittance * alpha * color.
-            // Filament's transparent blend mode uses One, 1-SrcAlpha
-            // (premultiplied-alpha compositing), so store premultiplied RGB
-            // directly: final = accum_color + transmittance * background.
-            imageStore(out_color, pixel, vec4(accum_color, out_alpha));
+            // Vulkan renders meshes into out_color before this pass. Metal
+            // renders splats into a separate transparent overlay that the UI
+            // composites over Filament's mesh color.
+            vec4 out_color_value = vec4(accum_color, out_alpha);
+            if (composite_over_base) {
+                vec4 base_color = imageLoad(out_color, pixel);
+                out_color_value =
+                        vec4(accum_color + base_color.rgb * transmittance,
+                             out_alpha + base_color.a * transmittance);
+            }
+            imageStore(out_color, pixel, out_color_value);
             // Convert nearest-splat depth back to Filament inverse convention
             // (near=1, far=0) so gaussian_depth_merge.comp and CPU readback
             // can compare against Filament's own depth buffer unchanged.
             float out_inverse_depth =
-                    Linear01ToInverse(out_norm_depth, near, far);
+                    depth_written ? Linear01ToInverse(out_norm_depth, near, far)
+                                  : 0.0;
             imageStore(out_depth, pixel,
                        vec4(out_inverse_depth, 0.0, 0.0, 0.0));
         }

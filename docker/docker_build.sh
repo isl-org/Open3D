@@ -344,7 +344,7 @@ ci_build() {
                && tar -caf /opt/mount/${CCACHE_TAR_NAME}.tar.xz \
                    -C \$(dirname \"\$CCACHE_DIR\") \$(basename \"\$CCACHE_DIR\") \
                && find /opt/mount -maxdepth 1 -name 'open3d*' \
-                    -exec chown $(id -u):$(id -g) {} +"
+                -exec chown $(id -u):$(id -g) {} +"
 }
 
 2-noble_export_env() {

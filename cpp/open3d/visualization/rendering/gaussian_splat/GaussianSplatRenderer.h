@@ -92,17 +92,10 @@ public:
         RenderTargetHandle render_target;
         std::uint32_t width = 0;
         std::uint32_t height = 0;
-        /// Non-Apple: shared GL texture id for Filament depth + GS composite
-        /// read.
-        std::uint32_t scene_depth_gl_handle = 0;
-        /// Non-Apple: GL texture id for GS color (written by composite, sampled
-        /// by UI).
-        std::uint32_t color_gl_handle = 0;
 
-        /// When true, the GL textures above are backed by Vulkan-exported
-        /// dedicated memory (EXT_memory_object). ReleaseOutputTextures uses
-        /// the opaque handles below to destroy both the GL objects and the
-        /// Vulkan allocation. Always false on Apple.
+        /// When true, the Vulkan images below are allocated by the non-Apple
+        /// backend and must be destroyed in ReleaseOutputTextures.
+        /// Always false on Apple (which uses MTLTexture).
         bool uses_vulkan_interop = false;
 
         /// Opaque Vulkan handles stored as uintptr_t to avoid including Vulkan
@@ -110,10 +103,8 @@ public:
         /// backend. Zero unless uses_vulkan_interop=true.
         std::uintptr_t color_vk_image = 0;
         std::uintptr_t color_vk_memory = 0;
-        std::uint32_t color_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
         std::uintptr_t depth_vk_image = 0;
         std::uintptr_t depth_vk_memory = 0;
-        std::uint32_t depth_gl_mem_obj = 0;  ///< glCreateMemoryObjectsEXT name
 
         /// Apple (Metal): imported Filament scene depth / GS color native
         /// textures.
@@ -125,22 +116,24 @@ public:
         RenderTargetHandle gs_readback_rt;
         bool has_render_data = false;
         bool has_valid_output = false;
-        bool needs_render = true;
+        bool needs_geometry_render = true;
+        bool needs_composite_render = true;
+        bool needs_output_ready_redraw = false;
+        bool needs_followup_scene_render = false;
         /// True when an offscreen depth readback has been requested for this
         /// view.  Controls allocation of the merged_depth_u16_tex scratch
         /// texture; cleared after each frame.
         bool wants_depth_readback = false;
         std::uint64_t last_scene_change_id = 0;
-        std::uint64_t last_updated_frame = 0;
     };
 
-    /// GPU backend for geometry + composite compute (OpenGL or Metal).
+    /// GPU backend for geometry and composite compute.
     class Backend {
     public:
         virtual ~Backend() = default;
 
         virtual const char* GetName() const = 0;
-        virtual void BeginFrame(std::uint64_t frame_index) = 0;
+        virtual bool IsAvailable() const { return true; }
         virtual void ForgetView(const FilamentView& view) = 0;
         virtual bool RenderGeometryStage(const FilamentView& view,
                                          const FilamentScene& scene,
@@ -150,12 +143,9 @@ public:
                                           const ViewRenderData& render_data,
                                           OutputTargets& targets) = 0;
 
-        /// Create platform-specific output textures (zero-copy path).
-        /// On OpenGL: creates shared GL textures and imports them into
-        /// Filament. On Metal: creates MTLTextures and imports them into
-        /// Filament. Returns true if zero-copy setup succeeded; false falls
-        /// through to the Filament-owned texture fallback in
-        /// PrepareOutputTargets.
+        /// Create platform-specific output textures (zero-copy path). Returns
+        /// true if setup succeeded; false falls through to Filament-owned
+        /// textures in PrepareOutputTargets.
         virtual bool PrepareOutputTextures(
                 FilamentView& view,
                 FilamentResourceManager& resource_mgr,
@@ -197,13 +187,22 @@ public:
             (void)height;
             return false;
         }
+
+        /// Read the GS composite color overlay (RGBA16F, premultiplied, four
+        /// half-float bit patterns per pixel) into \p out.  Reads the shared
+        /// output image referenced by \p targets directly, bypassing Filament's
+        /// readPixels. Default: unsupported (returns false).
+        virtual bool ReadColorToRGBA16FCpu(const OutputTargets& targets,
+                                           std::vector<std::uint16_t>& out) {
+            (void)targets;
+            (void)out;
+            return false;
+        }
     };
 
     GaussianSplatRenderer(filament::Engine& engine,
                           FilamentResourceManager& resource_mgr);
     ~GaussianSplatRenderer();
-
-    void BeginFrame();
 
     void RenderGeometryStage(FilamentView& view, const FilamentScene& scene);
     /// Returns true if the composite pass ran and the backend reported success.
@@ -226,9 +225,23 @@ public:
     /// splats).
     void RequestRedrawForView(const FilamentView& view);
 
+    /// Marks the final composite pass dirty after Filament redraws its shared
+    /// color target while the geometry pass inputs remain unchanged.
+    void RequestCompositeForView(const FilamentView& view);
+
+    /// Returns and clears a request to redraw after a newly created output
+    /// target has received its first successful composite.
+    bool ConsumeOutputReadyRedrawRequest(const FilamentView& view);
+
+    /// Returns and clears a one-shot cached scene render request created when
+    /// a Metal output target is recreated.
+    bool ConsumeFollowupSceneRenderRequest(const FilamentView& view);
+
     bool IsEnabled() const;
     void SetEnabled(bool enabled);
-    bool IsSupported() const;
+
+    /// Returns whether the selected backend can render Gaussian splats.
+    bool HasUsableBackend() const;
 
     bool HasOutput(const FilamentView& view) const;
     TextureHandle GetColorTexture(const FilamentView& view) const;
@@ -252,15 +265,18 @@ public:
                                       std::uint32_t width,
                                       std::uint32_t height);
 
+    /// Read the GS composite color overlay for \p view as RGBA16F half-float
+    /// bit patterns (4 per pixel, premultiplied alpha).  Returns false when the
+    /// backend cannot read the shared image directly.
+    bool ReadColorToRGBA16FCpu(const FilamentView& view,
+                               std::vector<std::uint16_t>& out);
+
     /// Signal that an offscreen depth readback is needed for \p view in the
     /// next composite pass.  Causes the merged_depth_u16_tex to be allocated
     /// only when a scene-depth texture is also available.
     void RequestDepthReadbackForView(const FilamentView& view,
                                      bool wanted = true);
 
-    /// Returns the GL texture handle for the scene depth texture
-    /// that Filament should render into (shared via import).
-    std::uint32_t GetSceneDepthGLHandle(const FilamentView& view) const;
     const ViewRenderData* GetViewRenderData(const FilamentView& view) const;
     const RenderConfig& GetRenderConfig() const;
     void SetRenderConfig(const RenderConfig& config);
@@ -281,7 +297,6 @@ private:
     RenderConfig render_config_;
     std::unique_ptr<Backend> backend_;
     bool enabled_ = false;
-    std::uint64_t frame_index_ = 0;
 };
 
 }  // namespace rendering
