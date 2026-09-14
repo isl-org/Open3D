@@ -3,6 +3,11 @@ permissions: {}
 
 on:
   workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release wheels'
+        required: false
+        default: 'ON'
   push:
     branches:
       - main
@@ -87,17 +92,6 @@ jobs:
       fail-fast: false
       matrix:
         python_version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        is_main:
-          - ${{ github.ref == 'refs/heads/main' }}
-        exclude:
-          - is_main: false
-            python_version: '3.10'
-          - is_main: false
-            python_version: '3.11'
-          - is_main: false
-            python_version: '3.12'
-          - is_main: false
-            python_version: '3.13'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
