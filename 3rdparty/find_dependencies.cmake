@@ -1936,9 +1936,30 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     # MKL/BLAS
     if(USE_BLAS)
         if (USE_SYSTEM_BLAS)
+            if(NOT DEFINED BLA_SIZEOF_INTEGER)
+                set(BLA_SIZEOF_INTEGER 4 CACHE STRING
+                  "BLAS/LAPACK integer size (4 for LP64, 8 for ILP64)")
+            endif()
+            if(NOT BLA_SIZEOF_INTEGER EQUAL 4 AND
+                NOT BLA_SIZEOF_INTEGER EQUAL 8)
+              message(FATAL_ERROR
+                  "Open3D requires BLA_SIZEOF_INTEGER to be explicitly 4 (LP64) or 8 (ILP64) so that LAPACKE integer ABI can be selected.")
+            endif()
+            if(BLA_SIZEOF_INTEGER EQUAL 8)
+                add_compile_definitions(
+                    HAVE_LAPACK_CONFIG_H
+                    LAPACK_ILP64
+                )
+            endif()
             find_package(BLAS)
             find_package(LAPACK)
             find_package(LAPACKE)
+            if(BLA_VENDOR STREQUAL "OpenBLAS" AND
+                BLA_SIZEOF_INTEGER EQUAL 8)
+                find_package(PkgConfig REQUIRED)
+                pkg_check_modules(OPENBLAS_PC REQUIRED openblas64)
+                include_directories(BEFORE SYSTEM ${OPENBLAS_PC_INCLUDE_DIRS})
+            endif()
             if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
                 message(STATUS "System BLAS/LAPACK/LAPACKE found.")
                 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
@@ -1946,6 +1967,9 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
                     ${LAPACK_LIBRARIES}
                     ${LAPACKE_LIBRARIES}
                 )
+            elseif(BLA_SIZEOF_INTEGER EQUAL 8)
+                message(FATAL_ERROR
+                  "ILP64 was requested, but an ILP64 system BLAS/LAPACK/LAPACKE was not found.")
             else()
                 message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
                 set(USE_SYSTEM_BLAS OFF)
