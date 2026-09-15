@@ -126,4 +126,8 @@ RUN mkdir -p build \
  && make -j$NPROC \
  && if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then make install-pip-package -j$NPROC; fi \
  && make install -j$NPROC
-RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then cp build/lib/python_package/pip_package/*.whl /; fi
+RUN if [ "${BUILD_PYTHON_MODULE}" = "ON" ]; then \
+        cp build/lib/python_package/pip_package/*.whl /; \
+    else \
+        rm -f /*.whl; \
+    fi
