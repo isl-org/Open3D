@@ -236,28 +236,30 @@ Extract the archive and move the contents to a local folder (such as
     Open3D_install                        Open3D_install
     ├── include                           ├── bin
     │   └── open3d                        │   ├── Open3D.dll
-    │       ├── core                      │   └── resources
-    │       ├── ...                       │       ├── brightday_ibl.ktx
-    │       ├── Open3DConfig.h            │       ├── ...
-    │       ├── Open3D.h                  │
-    │       ├── ...                       ├── CMake
-    ├── lib                               │   ├── Open3DConfig.cmake
-    │   ├── cmake                         │   ├── ...
-    │   │   └── Open3D                    ├── include
-    │   │        ├── ...                  │   └── open3d
-    │   ├── pkgconfig                     │       ├── core
-    │   │   ├── Open3D.pc                 │       ├── ...
-    │   │   ├── ...                       │       ├── Open3DConfig.h
-    |   |                                 │       ├── Open3D.h
-    │   ├── libOpen3D.so                  │       ├── ...
-    │   ├── open3d_tf_ops.so              └── lib
-    │   └── open3d_torch_ops.so               └── Open3D.lib
-    └── share
+    │       ├── core                      │   ├── Open3D
+    │       ├── ...                       │   │   └── agent_skills
+    │       ├── Open3DConfig.h            │   └── resources
+    │       ├── Open3D.h                  │       ├── html
+    │       └── ...                       │       │   └── ...
+    ├── lib                               │       ├── ...
+    │   ├── cmake                         │       └── ...
+    │   │   └── Open3D                    ├── CMake
+    │   │       ├── Open3DConfig.cmake    │   ├── Open3DConfig.cmake
+    │   │       └── ...                   │   └── ...
+    │   ├── pkgconfig                     ├── include
+    │   │   └── Open3D.pc                 │   └── open3d
+    │   ├── libOpen3D.so                  │       ├── core
+    │   ├── open3d_tf_ops.so              │       ├── ...
+    │   └── open3d_torch_ops.so           │       ├── Open3DConfig.h
+    └── share                             │       ├── Open3D.h
+        ├── Open3D                        │       └── ...
+        │   └── agent_skills              └── lib
+        │       └── open3d-cpp                └── Open3D.lib
         └── resources
-            ├── html
-            │    ├── ...
+            ├── html
+            │   └── ...
             ├── brightday_ibl.ktx
-            ├── ...
+            └── ...
 
 
 Some files may be absent in the case of unsupported functionality. To use Open3D

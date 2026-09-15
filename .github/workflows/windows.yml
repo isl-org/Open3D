@@ -258,7 +258,7 @@ jobs:
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' }}
         uses: actions/upload-artifact@v4
         with:
-          name: open3d-devel-windows-${{ matrix.device }}-${{ matrix.CONFIG }}
+          name: open3d-devel-windows-${{ matrix.device == 'xpu' && 'sycl' || matrix.device }}-${{ matrix.CONFIG }}
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
@@ -460,7 +460,7 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: open3d-devel-windows-${{ matrix.device }}-Release
+          name: open3d-devel-windows-${{ matrix.device == 'xpu' && 'sycl' || matrix.device }}-Release
           path: ${{ env.SRC_DIR }}/open3d_devel
 
       - name: Extract devel package
