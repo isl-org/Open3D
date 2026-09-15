@@ -57,3 +57,9 @@ Collect all release artifacts in the [Github draft release page](https://github.
 -   [ ] open3d.org (wordpress) : Update downloads table and post release notes
 -   [ ] Upload release video to YouTube
 -   [ ] Announce on Twitter, Discord, etc.
+
+## @AGENT TODO [only after explicit user instruction]:
+- ubuntu workflow uploads python 3.12 cpu wheel. Skip this.
+- two linux devel packages for cpu and two viewers - one from ubuntu and one from ubuntu wheel. wheel viewer deb is 37MB while ubuntu viewer deb is 90MB
+- devel packages have both include/tbb and include/oneapi/tbb - due to api change in tbb. perhaps leave this alone?
+-  open3d-lib-sycl-shared 	21.9 GB  - why is this so big?

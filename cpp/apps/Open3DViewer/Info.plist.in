@@ -272,6 +272,34 @@
             <key>LSHandlerRank</key>
             <string>Owner</string>
         </dict>
+        <dict> <!-- SPLAT -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>3D Gaussian Splat</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.open3d.splat</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+        <dict> <!-- SPZ -->
+            <key>CFBundleTypeIconFile</key>
+            <string>documentIcon</string>
+            <key>CFBundleTypeName</key>
+            <string>3D Gaussian Splat (compressed)</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.open3d.spz</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
     </array>
     <key>UTImportedTypeDeclarations</key>
     <array>
@@ -555,6 +583,48 @@
                 <key>public.mime-type</key>
                 <array>
                     <string>model/xyzrgb</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- SPLAT -->
+            <key>UTTypeIdentifier</key>
+            <string>org.open3d.splat</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>3D Gaussian Splat</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>splat</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>application/x-splat</string>
+                </array>
+            </dict>
+        </dict>
+        <dict> <!-- SPZ -->
+            <key>UTTypeIdentifier</key>
+            <string>org.open3d.spz</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeDescription</key>
+            <string>3D Gaussian Splat (compressed)</string>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>spz</string>
+                </array>
+                <key>public.mime-type</key>
+                <array>
+                    <string>application/x-spz</string>
                 </array>
             </dict>
         </dict>

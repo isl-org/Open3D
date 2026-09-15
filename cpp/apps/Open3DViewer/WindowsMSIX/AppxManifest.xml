@@ -69,6 +69,8 @@
               <uap:FileType>.pcd</uap:FileType>
               <uap:FileType>.pts</uap:FileType>
               <uap:FileType>.xyz</uap:FileType>
+              <uap:FileType>.xyzn</uap:FileType>
+              <uap:FileType>.xyzrgb</uap:FileType>
               <uap:FileType>.splat</uap:FileType>
               <uap:FileType>.spz</uap:FileType>
             </uap:SupportedFileTypes>
