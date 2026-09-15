@@ -118,7 +118,11 @@ jobs:
           # Strip the dot: 3.12 ➜ 312, 3.14 ➜ 314 …
           PY_NO_DOT="${PYTHON_VERSION//./}"
           # Add “-dev” only when requested
-          DEV_SUFFIX=$([ "${DEVELOPER_BUILD}" = "ON" ] && echo "-dev")
+          if [ "${DEVELOPER_BUILD}" = "ON" ]; then
+            DEV_SUFFIX="-dev"
+          else
+            DEV_SUFFIX=""
+          fi
           echo "DOCKER_TAG=openblas-arm64-py${PY_NO_DOT}${DEV_SUFFIX}" >> $GITHUB_ENV
 
       - name: Docker build
