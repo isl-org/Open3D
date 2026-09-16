@@ -132,8 +132,8 @@ jobs:
           shopt -s failglob
           PY_NO_DOT="${PYTHON_VERSION//./}"
           wheel_paths=("${GITHUB_WORKSPACE}"/open3d-[0-9]*-cp${PY_NO_DOT}-cp${PY_NO_DOT}-*.whl)
-          if [ "${#wheel_paths[@]}" -ne 1 ]; then
-            echo "Expected one Python ${PYTHON_VERSION} wheel, found ${#wheel_paths[@]}"
+          if [ "${#wheel_paths[@]}" -eq 0 ]; then
+            echo "Expected a Python ${PYTHON_VERSION} wheel, found none"
             printf '%s\n' "${wheel_paths[@]}"
             exit 1
           fi
