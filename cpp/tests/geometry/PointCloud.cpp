@@ -796,6 +796,86 @@ TEST(PointCloud, VoxelDownSample) {
              covariances_down);
 }
 
+// Shared discriminating input for the two nearest-point reduction modes.
+// voxel_size 1.0 with points_min_bound = (0.5, 0.5, 0.5) so
+// voxel_min_bound = (0, 0, 0) and all points land in voxel (0, 0, 0).
+// Voxel center = (0.5, 0.5, 0.5) which coincides with point A.
+// Centroid = ((0.5 + 0.6 + 0.9) / 3)^3 = (0.667, 0.667, 0.667), closest to B.
+// So the three modes emit three distinct winners:
+//   Centroid          -> synthetic (0.667, 0.667, 0.667), averaged color
+//   NearestToCentroid -> point B at (0.6, 0.6, 0.6), B's color
+//   NearestToCenter   -> point A at (0.5, 0.5, 0.5), A's color
+TEST(PointCloud, VoxelDownSample_NearestToCentroid) {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.9, 0.9, 0.9}};
+    pcd.colors_ = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+
+    auto out = pcd.VoxelDownSample(
+            1.0, geometry::PointCloud::VoxelReduction::NearestToCentroid);
+    ASSERT_EQ(out->points_.size(), 1u);
+    ExpectEQ(out->points_[0], Eigen::Vector3d(0.6, 0.6, 0.6));
+    ExpectEQ(out->colors_[0], Eigen::Vector3d(0.0, 1.0, 0.0));
+}
+
+TEST(PointCloud, VoxelDownSample_NearestToCenter) {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.9, 0.9, 0.9}};
+    pcd.colors_ = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+
+    auto out = pcd.VoxelDownSample(
+            1.0, geometry::PointCloud::VoxelReduction::NearestToCenter);
+    ASSERT_EQ(out->points_.size(), 1u);
+    ExpectEQ(out->points_[0], Eigen::Vector3d(0.5, 0.5, 0.5));
+    ExpectEQ(out->colors_[0], Eigen::Vector3d(1.0, 0.0, 0.0));
+}
+
+// Two voxels, each with a distinct nearest-to-center winner. Verifies
+// per-voxel accounting: the tracked winner is not shared across voxels.
+TEST(PointCloud, VoxelDownSample_NearestToCenter_MultiVoxel) {
+    geometry::PointCloud pcd;
+    // voxel (0,0,0): center (0.5, 0.5, 0.5); A wins (dist 0), B loses (dist
+    // 0.4) voxel (1,0,0): center (1.5, 0.5, 0.5); C wins (dist 0.2), D loses
+    // (dist 0.4)
+    pcd.points_ = {
+            {0.5, 0.5, 0.5}, {0.9, 0.5, 0.5}, {1.7, 0.5, 0.5}, {1.9, 0.5, 0.5}};
+
+    auto out = pcd.VoxelDownSample(
+            1.0, geometry::PointCloud::VoxelReduction::NearestToCenter);
+    ASSERT_EQ(out->points_.size(), 2u);
+    std::vector<Eigen::Vector3d> expected{{0.5, 0.5, 0.5}, {1.7, 0.5, 0.5}};
+    std::vector<size_t> sort_indices = GetIndicesAToB(out->points_, expected);
+    ExpectEQ(ApplyIndices(out->points_, sort_indices), expected);
+}
+
+// Degenerate case: one point per voxel. All three modes must return the
+// input point unchanged with attributes preserved.
+TEST(PointCloud, VoxelDownSample_SingletonVoxel_AllModes) {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{5.0, 5.0, 5.0}};
+    pcd.colors_ = {{0.25, 0.5, 0.75}};
+
+    for (auto mode : {geometry::PointCloud::VoxelReduction::Centroid,
+                      geometry::PointCloud::VoxelReduction::NearestToCentroid,
+                      geometry::PointCloud::VoxelReduction::NearestToCenter}) {
+        auto out = pcd.VoxelDownSample(1.0, mode);
+        ASSERT_EQ(out->points_.size(), 1u);
+        ExpectEQ(out->points_[0], Eigen::Vector3d(5.0, 5.0, 5.0));
+        ExpectEQ(out->colors_[0], Eigen::Vector3d(0.25, 0.5, 0.75));
+    }
+}
+
+// The invalid-voxel-size guard must fire for all three reduction modes.
+TEST(PointCloud, VoxelDownSample_InvalidVoxelSize_AllModes) {
+    geometry::PointCloud pcd;
+    pcd.points_ = {{0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}};
+    for (auto mode : {geometry::PointCloud::VoxelReduction::Centroid,
+                      geometry::PointCloud::VoxelReduction::NearestToCentroid,
+                      geometry::PointCloud::VoxelReduction::NearestToCenter}) {
+        EXPECT_ANY_THROW(pcd.VoxelDownSample(-1.0, mode));
+        EXPECT_ANY_THROW(pcd.VoxelDownSample(0.0, mode));
+    }
+}
+
 TEST(PointCloud, UniformDownSample) {
     std::vector<Eigen::Vector3d> points({
             {0, 0, 0},

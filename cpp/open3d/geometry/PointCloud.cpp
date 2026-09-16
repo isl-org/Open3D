@@ -277,6 +277,16 @@ public:
         num_of_points_++;
     }
 
+    /// Update the tracked nearest-point winner if this candidate is closer
+    /// to the per-voxel reference than the current best. Used by both
+    /// NearestToCentroid and NearestToCenter reduction modes.
+    void TrackNearest(int index, double distance_sq) {
+        if (distance_sq < best_distance_sq_) {
+            best_distance_sq_ = distance_sq;
+            best_index_ = index;
+        }
+    }
+
     Eigen::Vector3d GetAveragePoint() const {
         return point_ / double(num_of_points_);
     }
@@ -300,6 +310,11 @@ public:
     Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
+    // Winner tracking for the two nearest-point reduction modes. Unused in
+    // Centroid mode; the sentinel infinity keeps the first candidate always
+    // winning.
+    int best_index_ = -1;
+    double best_distance_sq_ = std::numeric_limits<double>::infinity();
 };
 
 class point_cubic_id {
@@ -365,7 +380,7 @@ private:
 }  // namespace
 
 std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
-        double voxel_size) const {
+        double voxel_size, VoxelReduction reduction) const {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
         utility::LogError("voxel_size <= 0.");
@@ -382,28 +397,82 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                        utility::hash_eigen<Eigen::Vector3i>>
             voxelindex_to_accpoint;
 
-    Eigen::Vector3d ref_coord;
-    Eigen::Vector3i voxel_index;
-    for (int i = 0; i < (int)points_.size(); i++) {
-        ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
-        voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
-                int(floor(ref_coord(2)));
-        voxelindex_to_accpoint[voxel_index].AddPoint(*this, i);
+    // Cache each point's voxel index in pass 1 so the NearestToCentroid
+    // second pass can skip recomputing floor((p - min) / voxel_size).
+    // Only allocated when needed.
+    const bool needs_index_cache =
+            reduction == VoxelReduction::NearestToCentroid;
+    std::vector<Eigen::Vector3i> voxel_indices;
+    if (needs_index_cache) {
+        voxel_indices.resize(points_.size());
     }
+
+    // Pass 1: bin each input point into its voxel and accumulate stats.
+    // For NearestToCenter the voxel center is known immediately from the
+    // voxel index, so tracking is folded into this same pass.
+    for (int i = 0; i < (int)points_.size(); i++) {
+        const Eigen::Vector3d ref_coord =
+                (points_[i] - voxel_min_bound) / voxel_size;
+        const Eigen::Vector3i voxel_index(int(floor(ref_coord(0))),
+                                          int(floor(ref_coord(1))),
+                                          int(floor(ref_coord(2))));
+        if (needs_index_cache) {
+            voxel_indices[i] = voxel_index;
+        }
+        auto &acc = voxelindex_to_accpoint[voxel_index];
+        acc.AddPoint(*this, i);
+        if (reduction == VoxelReduction::NearestToCenter) {
+            const Eigen::Vector3d voxel_center =
+                    voxel_min_bound + (voxel_index.cast<double>() +
+                                       Eigen::Vector3d::Constant(0.5)) *
+                                              voxel_size;
+            acc.TrackNearest(i, (points_[i] - voxel_center).squaredNorm());
+        }
+    }
+
+    // Pass 2 (NearestToCentroid only): the per-voxel centroid is now known,
+    // so walk the points again and track the point closest to its voxel's
+    // centroid. Uses the cached voxel index from pass 1.
+    if (reduction == VoxelReduction::NearestToCentroid) {
+        for (int i = 0; i < (int)points_.size(); i++) {
+            auto &acc = voxelindex_to_accpoint[voxel_indices[i]];
+            const Eigen::Vector3d centroid = acc.GetAveragePoint();
+            acc.TrackNearest(i, (points_[i] - centroid).squaredNorm());
+        }
+    }
+
+    // Emit one output point per occupied voxel. Centroid mode emits the
+    // averaged position and averaged attributes; the two nearest modes emit
+    // the tracked winner's original position and copy attributes through
+    // unchanged.
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
     bool has_covariances = HasCovariances();
-    for (auto accpoint : voxelindex_to_accpoint) {
-        output->points_.push_back(accpoint.second.GetAveragePoint());
-        if (has_normals) {
-            output->normals_.push_back(accpoint.second.GetAverageNormal());
-        }
-        if (has_colors) {
-            output->colors_.push_back(accpoint.second.GetAverageColor());
-        }
-        if (has_covariances) {
-            output->covariances_.emplace_back(
-                    accpoint.second.GetAverageCovariance());
+    for (const auto &kv : voxelindex_to_accpoint) {
+        const auto &acc = kv.second;
+        if (reduction == VoxelReduction::Centroid) {
+            output->points_.push_back(acc.GetAveragePoint());
+            if (has_normals) {
+                output->normals_.push_back(acc.GetAverageNormal());
+            }
+            if (has_colors) {
+                output->colors_.push_back(acc.GetAverageColor());
+            }
+            if (has_covariances) {
+                output->covariances_.emplace_back(acc.GetAverageCovariance());
+            }
+        } else {
+            const int winner = acc.best_index_;
+            output->points_.push_back(points_[winner]);
+            if (has_normals) {
+                output->normals_.push_back(normals_[winner]);
+            }
+            if (has_colors) {
+                output->colors_.push_back(colors_[winner]);
+            }
+            if (has_covariances) {
+                output->covariances_.emplace_back(covariances_[winner]);
+            }
         }
     }
     utility::LogDebug(

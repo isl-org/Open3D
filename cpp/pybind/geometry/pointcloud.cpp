@@ -27,6 +27,19 @@ void pybind_pointcloud_declarations(py::module& m) {
                        "PointCloud class. A point cloud consists of point "
                        "coordinates, and optionally point colors and point "
                        "normals.");
+    py::native_enum<PointCloud::VoxelReduction>(
+            pointcloud, "VoxelReduction", "enum.Enum",
+            "Selects how each occupied voxel is reduced to a single output "
+            "point in voxel_down_sample. Centroid returns the arithmetic "
+            "mean of the points in each voxel with averaged attributes. "
+            "NearestToCentroid and NearestToCenter each return one of the "
+            "original input points with its attributes copied through.")
+            .value("Centroid", PointCloud::VoxelReduction::Centroid)
+            .value("NearestToCentroid",
+                   PointCloud::VoxelReduction::NearestToCentroid)
+            .value("NearestToCenter",
+                   PointCloud::VoxelReduction::NearestToCenter)
+            .finalize();
 }
 
 void pybind_pointcloud_definitions(py::module& m) {
@@ -65,9 +78,14 @@ void pybind_pointcloud_definitions(py::module& m) {
                  "indices"_a, "invert"_a = false)
             .def("voxel_down_sample", &PointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
-                 "pointcloud with "
-                 "a voxel. Normals and colors are averaged if they exist.",
-                 "voxel_size"_a)
+                 "pointcloud with a voxel. In the default VoxelReduction."
+                 "Centroid mode, normals, covariances, and colors are "
+                 "averaged if they exist. In the two nearest modes, the "
+                 "output point is one of the original input points and "
+                 "its attributes are copied through unchanged.",
+                 "voxel_size"_a,
+                 py::arg_v("reduction", PointCloud::VoxelReduction::Centroid,
+                           "VoxelReduction.Centroid"))
             .def("voxel_down_sample_and_trace",
                  &PointCloud::VoxelDownSampleAndTrace,
                  "Function to downsample using PointCloud::VoxelDownSample. "
@@ -339,7 +357,13 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
     docstring::ClassMethodDocInject(
             m, "PointCloud", "voxel_down_sample",
             {{"voxel_size", "Voxel size to downsample into."},
-             {"invert", "set to ``True`` to invert the selection of indices"}});
+             {"reduction",
+              "VoxelReduction mode. Centroid (default) emits the averaged "
+              "position and averaged attributes. NearestToCentroid emits "
+              "the input point closest to the per-voxel centroid with its "
+              "original attributes. NearestToCenter emits the input point "
+              "closest to the voxel's geometric center with its original "
+              "attributes."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "voxel_down_sample_and_trace",
             {{"voxel_size", "Voxel size to downsample into."},
