@@ -54,8 +54,8 @@ protected:
                         (__bridge CFStringRef) @"com.isl-org.open3d.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef) @"public.filmbox-format",
-                    kLSRolesAll, open3dBundleId);
+                        (__bridge CFStringRef) @"public.filmbox-format",
+                        kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
                         (__bridge CFStringRef) @"public.gl-transmission-format",
                         kLSRolesAll, open3dBundleId);
@@ -94,11 +94,11 @@ protected:
                         (__bridge CFStringRef) @"public.xyzrgb-points-format",
                         kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef) @"org.open3d.splat", kLSRolesAll,
-                    open3dBundleId);
+                        (__bridge CFStringRef) @"org.open3d.splat", kLSRolesAll,
+                        open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
-                    (__bridge CFStringRef) @"org.open3d.spz", kLSRolesAll,
-                    open3dBundleId);
+                        (__bridge CFStringRef) @"org.open3d.spz", kLSRolesAll,
+                        open3dBundleId);
 
                 this->CloseDialog();
             });
