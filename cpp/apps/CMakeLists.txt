@@ -45,9 +45,9 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}" "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
-        if (UNIX)
-            install(FILES "$<TARGET_FILE:TBB::tbb>"
+        install(FILES "$<TARGET_FILE:TBB::tbb>"
                 DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}")
+        if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
