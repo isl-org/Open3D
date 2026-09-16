@@ -198,7 +198,7 @@ jobs:
           # fresh checkout. build-lib builds the C++ library only
           # (BUILD_PYTHON_MODULE=OFF); build-wheel reuses it to build the wheel.
           cmake -G $CMAKE_GENERATOR @CMAKE_ARGS @cmakeExtraArgs `
-            -DDEVELOPER_BUILD=$Env:DEVELOPER_BUILD `
+            -DDEVELOPER_BUILD="${{ github.event.inputs.developer_build || 'ON' }}" `
             -DBUILD_EXAMPLES=OFF `
             -DBUILD_PYTHON_MODULE=OFF `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
@@ -571,7 +571,7 @@ jobs:
             -DOpen3D_ROOT="$env:OPEN3D_INSTALL_ROOT" `
             -DCMAKE_PREFIX_PATH="$env:OPEN3D_INSTALL_ROOT" `
             -DCMAKE_INSTALL_PREFIX="$env:INSTALL_DIR" `
-            -DDEVELOPER_BUILD="$Env:DEVELOPER_BUILD" `
+            -DDEVELOPER_BUILD="${{ github.event.inputs.developer_build || 'ON' }}" `
             -DOPEN3D_THIRD_PARTY_DOWNLOAD_DIR="$env:BUILD_DIR/3rdparty_downloads" `
             -DBUILD_SHARED_LIBS=ON `
             -DSTATIC_WINDOWS_RUNTIME=OFF `
