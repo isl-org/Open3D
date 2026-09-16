@@ -105,8 +105,16 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
-          pushd bin
-          zip -rv "open3d-${OPEN3D_VERSION_FULL}-app-macosx-10_15-${{ runner.arch }}.zip" Open3D.app
+          DMG_NAME="open3d-${OPEN3D_VERSION_FULL}-app-macosx-11_0.dmg"
+          DMG_ROOT="$(mktemp -d)"
+          mv bin/Open3D.app "${DMG_ROOT}/Open3D.app"
+          ln -s /Applications "${DMG_ROOT}/Applications"
+          hdiutil create \
+            -volname "Open3D ${OPEN3D_VERSION_FULL}" \
+            -srcfolder "${DMG_ROOT}" \
+            -ov \
+            -format UDZO \
+            "bin/${DMG_NAME}"
           ccache -s
 
       - name: Generate package attestation
@@ -127,14 +135,14 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' && env.BUILD_SHARED_LIBS == 'OFF' }}
         uses: actions/attest@v4
         with:
-          subject-path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          subject-path: build/bin/open3d-*-app-macosx-11_0.dmg
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v4
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         with:
-          name: open3d-app-macosx-10_15-${{ runner.arch}}
-          path: build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+          name: open3d-app-macosx-11_0
+          path: build/bin/open3d-*-app-macosx-11_0.dmg
           if-no-files-found: error
 
       - name: Update devel release
@@ -145,7 +153,7 @@ jobs:
           if [[ "${{ env.BUILD_SHARED_LIBS }}" == 'ON' ]]; then
             .github/workflows/update_release.sh build/package/${{ env.DEVEL_PKG_NAME }}
           else
-            .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-10_15-${{ runner.arch }}.zip
+            .github/workflows/update_release.sh build/bin/open3d-*-app-macosx-11_0.dmg
           fi
 
       - name: Surface test failures

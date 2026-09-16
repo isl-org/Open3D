@@ -9,15 +9,6 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
         file(GLOB RESOURCE_FILES "${SOURCE_DIR}/*.icns")
         list(APPEND RESOURCE_FILES "${SOURCE_DIR}/Assets.car")
 
-        set(INFO_PLIST "${SOURCE_DIR}/Info.plist.in")
-
-        set(MACOSX_BUNDLE_NAME ${APP_NAME})
-        set(MACOSX_BUNDLE_EXECUTABLE_NAME ${APP_NAME})
-        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.isl-org.open3d.${APP_NAME})
-        set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2026 www.open3d.org")
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
@@ -54,9 +45,9 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_DIR}/${RESOURCE_DIR_NAME}"
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${GUI_RESOURCE_DIR}" "${APP_DIR}/${RESOURCE_DIR_NAME}"
         )
-        if (UNIX)
-            install(FILES "$<TARGET_FILE:TBB::tbb>"
+        install(FILES "$<TARGET_FILE:TBB::tbb>"
                 DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}")
+        if (UNIX)
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
                     USE_SOURCE_PERMISSIONS)
@@ -126,10 +117,26 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
         set_target_properties(${TARGET_NAME} PROPERTIES
                               MACOSX_BUNDLE TRUE
-                              MACOSX_BUNDLE_INFO_PLIST "${INFO_PLIST}"
+                              MACOSX_BUNDLE_NAME ${APP_NAME}
+                              MACOSX_BUNDLE_EXECUTABLE_NAME ${APP_NAME}
+                              MACOSX_BUNDLE_GUI_IDENTIFIER
+                              com.isl-org.open3d.${APP_NAME}
+                              MACOSX_BUNDLE_LONG_VERSION_STRING
+                              ${PROJECT_VERSION_THREE_NUMBER}
+                              MACOSX_BUNDLE_SHORT_VERSION_STRING
+                              ${PROJECT_VERSION_THREE_NUMBER}
+                              MACOSX_BUNDLE_BUNDLE_VERSION
+                              ${PROJECT_VERSION_THREE_NUMBER}
+                              MACOSX_BUNDLE_COPYRIGHT
+                              "Copyright (c) 2018-2026 www.open3d.org"
                               XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" # disable
                               OUTPUT_NAME ${APP_NAME}
                               INSTALL_RPATH "@loader_path;@loader_path/../lib/")
+        if (EXISTS "${SOURCE_DIR}/Info.plist.in")
+            set_property(TARGET ${TARGET_NAME} PROPERTY
+                         MACOSX_BUNDLE_INFO_PLIST
+                         "${SOURCE_DIR}/Info.plist.in")
+        endif()
     elseif (WIN32)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})

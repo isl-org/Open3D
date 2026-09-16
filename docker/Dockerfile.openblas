@@ -111,7 +111,8 @@ WORKDIR /root/Open3D
 
 # Build
 # Use cmake --fresh to clear old configs and ensure correct Python/CMake settings in build/.
-RUN mkdir -p build \
+RUN rm -f /*.whl build/lib/python_package/pip_package/*.whl \
+ && mkdir -p build \
  && cd build \
  && cmake --fresh \
     -DBUILD_UNIT_TESTS=ON \

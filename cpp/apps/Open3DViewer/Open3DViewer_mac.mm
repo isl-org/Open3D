@@ -54,6 +54,9 @@ protected:
                         (__bridge CFStringRef) @"com.isl-org.open3d.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
+                        (__bridge CFStringRef) @"public.filmbox-format",
+                        kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
                         (__bridge CFStringRef) @"public.gl-transmission-format",
                         kLSRolesAll, open3dBundleId);
                 LSSetDefaultRoleHandlerForContentType(
@@ -90,6 +93,12 @@ protected:
                 LSSetDefaultRoleHandlerForContentType(
                         (__bridge CFStringRef) @"public.xyzrgb-points-format",
                         kLSRolesAll, open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                        (__bridge CFStringRef) @"org.open3d.splat", kLSRolesAll,
+                        open3dBundleId);
+                LSSetDefaultRoleHandlerForContentType(
+                        (__bridge CFStringRef) @"org.open3d.spz", kLSRolesAll,
+                        open3dBundleId);
 
                 this->CloseDialog();
             });
@@ -102,10 +111,10 @@ protected:
             auto table = std::make_shared<VGrid>(2, 0, Margins(em, 0, 0, 0));
             table->AddChild(std::make_shared<Label>("Mesh:"));
             table->AddChild(std::make_shared<Label>(
-                    ".gltf, .glb, .obj, .off, .ply, .stl"));
+                    ".fbx, .gltf, .glb, .obj, .off, .ply, .stl"));
             table->AddChild(std::make_shared<Label>("Point clouds:"));
             table->AddChild(std::make_shared<Label>(
-                    ".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb"));
+                    ".pcd, .ply, .pts, .xyz, .xyzn, .xyzrgb, .splat, .spz"));
             vert->AddChild(table);
             vert->AddFixed(em);
             auto buttons = std::make_shared<Horiz>(0.5 * em);

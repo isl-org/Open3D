@@ -243,28 +243,14 @@ need to :
 Advanced topic: local server in airplane mode
 ------------------------------------------------
 
-When the computer has no active network interfaces (e.g. Wi-Fi is turned off and
-ethernet is unplugged, the machine only has the loopback ``lo`` interface),
-WebRTC may fail to work. In this case, we need to create a dummy interface.
-The workaround is tested on Ubuntu.
+Open3D enables loopback ICE candidates on all platforms, so a browser on the
+same computer can connect through ``localhost`` even when Wi-Fi and ethernet
+are unavailable. No dummy network interface is required.
 
 .. code-block:: sh
 
-    # Setup
-    sudo ip link add dummy0 type dummy
-    sudo ip addr add 1.1.1.1/24 dev dummy0
-    sudo ip link set dummy0 up
-
-    # Check interfaces
-    ip addr
-
-    # Do WebRTC things here
     python examples/python/visualization/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
-
-    # Clean up
-    sudo ip link set dummy0 down
-    sudo ip link delete dummy0
 
 Advanced topic: TURN server
 ------------------------------
@@ -314,8 +300,9 @@ servers can be disabled explicitly:
 
     WEBRTC_STUN_SERVER="" python examples/python/visualization/draw_webrtc.py
 
-This host-only mode also enables loopback ICE candidates. It can help when
-external ICE servers are unreachable or local network interfaces interfere with
-candidate selection. Do not use it when the browser and Open3D server run on
-different machines; remote connections generally require the default STUN/TURN
-servers or a custom ``WEBRTC_STUN_SERVER`` value.
+Loopback ICE candidates are always enabled. This host-only mode additionally
+disables external ICE servers, which can help when they are unreachable or
+local network interfaces interfere with candidate selection. Do not use it when
+the browser and Open3D server run on different machines; remote connections
+generally require the default STUN/TURN servers or a custom
+``WEBRTC_STUN_SERVER`` value.
