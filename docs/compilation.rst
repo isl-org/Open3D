@@ -71,8 +71,13 @@ On Linux, first install the host build and graphics packages with
     cmake -S . -B build \
         -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake \
         -DBUILD_PYTHON_MODULE=OFF \
-        -DBUILD_GUI=OFF
+        -DBUILD_GUI=OFF \
+        -DBUILD_TOOLS=OFF \
+        -DBUILD_APPS=OFF
     cmake --build build --config Release
+
+``BUILD_TOOLS`` and ``BUILD_APPS`` both default to ``ON``. Disable them as
+shown for a library-only package-manager build.
 
 A custom toolchain that includes vcpkg cannot be detected from its filename;
 add ``-DOPEN3D_USE_VCPKG=ON`` in that case. Individual dependencies can still
