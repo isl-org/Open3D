@@ -28,6 +28,21 @@ gh run list --repo isl-org/Open3D --branch main --limit 20
 gh run watch RUN_ID --repo isl-org/Open3D --exit-status
 gh run download RUN_ID --repo isl-org/Open3D
 ```
+Upload the collected assets to the existing draft release. Do not publish unsigned apps (macOS and Windows viewers) 
+
+```bash
+draft_ref="untagged-5fff9c34536d727e8591" # from the release webpage URL
+find $RELEASE_DIR -type f -exec \
+gh release upload "${draft_ref}" {}  --repo "${REPO}"  --clobber \;
+```
+
+Upload wheels to PyPI:
+
+```bash
+export TWINE_USERNAME=__token__ TWINE_PASSWORD=pypi-<TOKEN>  TWINE_REPOSITORY_URL="https://upload.pypi.org/legacy/"
+find $RELEASE_DIR -type f -name '*.whl' -exec twine check {}  \;
+find $RELEASE_DIR -type f -name '*.whl' -exec twine upload --skip-existing {}  \;
+```
 
 ## Release checklist
 
