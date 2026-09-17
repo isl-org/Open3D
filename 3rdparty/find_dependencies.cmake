@@ -984,6 +984,33 @@ if(NOT USE_SYSTEM_CURL)
         LIBRARIES    ${CURL_LIBRARIES}
         DEPENDS      ext_zlib ext_curl
     )
+    if(UNIX AND NOT APPLE AND NOT USE_SYSTEM_OPENSSL)
+        # Bundled curl and BoringSSL are mutually referential static archives.
+        # Group their concrete build paths: grouping the INTERFACE targets
+        # produces an empty group before their archive paths are expanded.
+        set(_curl_openssl_archives
+            "${CURL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${CURL_LIBRARIES}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        foreach(_library IN LISTS BORINGSSL_LIBRARIES)
+            list(APPEND _curl_openssl_archives
+                "${BORINGSSL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${_library}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        endforeach()
+        set(_curl_iface_libs
+            "$<BUILD_INTERFACE:$<LINK_GROUP:RESCAN,${_curl_openssl_archives}>>")
+        get_target_property(_curl_existing_libs
+            3rdparty_curl INTERFACE_LINK_LIBRARIES)
+        foreach(_item IN LISTS _curl_existing_libs)
+            if(_item MATCHES "INSTALL_INTERFACE")
+                list(APPEND _curl_iface_libs "${_item}")
+            endif()
+        endforeach()
+        set_property(TARGET 3rdparty_curl PROPERTY INTERFACE_LINK_LIBRARIES
+            "${_curl_iface_libs}")
+        unset(_curl_openssl_archives)
+        unset(_curl_iface_libs)
+        unset(_curl_existing_libs)
+        unset(_library)
+        unset(_item)
+    endif()
     # Bundled libcurl is always static; system/vcpkg CURL::libcurl sets this.
     target_compile_definitions(3rdparty_curl INTERFACE CURL_STATICLIB)
     if(APPLE)
@@ -1005,23 +1032,8 @@ if(NOT USE_SYSTEM_CURL)
     endif()
     target_link_libraries(3rdparty_curl INTERFACE 3rdparty_openssl)
 endif()
-# curl and openssl (BoringSSL) are mutually-referential static archives, so a
-# single left-to-right ld scan can fail depending on final link order. Wrap
-# them in a GNU ld archive group (UNIX non-Apple) to force rescanning. Use the
-# short "-Wl,-(" / "-Wl,-)" alias, not "--start-group"/"--end-group", since
-# CMake's link-line deduplication would otherwise collapse those with MKL's
-# identical GROUPED markers below, breaking both groups. Parens are escaped
-# because the link command runs via "/bin/sh -c" and "(" / ")" are shell
-# metacharacters.
-if(UNIX AND NOT APPLE)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
-        "-Wl,-\\("
-        Open3D::3rdparty_curl
-        Open3D::3rdparty_openssl
-        "-Wl,-\\)")
-else()
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl Open3D::3rdparty_openssl)
-endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM
+    Open3D::3rdparty_curl)
 
 # PNG
 if(USE_SYSTEM_PNG)
