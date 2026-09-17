@@ -218,6 +218,10 @@ std::tuple<vbdata, ibdata> CreateColoredBuffers(
     for (size_t i = 0; i < vertex_data.vertices_count; ++i) {
         TexturedVertex& element = vertices[i];
 
+        // This path advertises UV0 to Filament even when the mesh has no UVs.
+        // malloc does not run TexturedVertex's default member initializers.
+        element.uv = kDefault.uv;
+
         SetVertexPosition(element, geometry.vertices_[i]);
         if (tangents != nullptr) {
             element.tangent = tangents[i];
