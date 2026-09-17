@@ -248,14 +248,21 @@ if (LAPACK_FOUND)
     # ----------------------------------------------
 
     # name of the lapacke library
-    set(LAPACKE_lapacke_NAMES "lapacke")
+    if(BLA_SIZEOF_INTEGER EQUAL 8)
+        set(LAPACKE_lapacke_NAME "lapacke64")
+    else()
+        set(LAPACKE_lapacke_NAME "lapacke")
+    endif()
+    set(LAPACKE_lapacke_NAMES "${LAPACKE_lapacke_NAME}")
     if(LAPACKE_STATIC)
         if(WIN32)
-            set(LAPACKE_lapacke_NAMES "liblapacke.lib")
+            set(LAPACKE_lapacke_NAMES
+                "lib${LAPACKE_lapacke_NAME}.lib")
         endif()
 
         if(UNIX)
-            set(LAPACKE_lapacke_NAMES "liblapacke.a")
+            set(LAPACKE_lapacke_NAMES
+                "lib${LAPACKE_lapacke_NAME}.a")
         endif()
     endif()
 

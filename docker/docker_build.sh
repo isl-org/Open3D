@@ -23,16 +23,17 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
-    openblas-amd64-py311-dev    : OpenBLAS AMD64 3.11 wheel, developer mode
-    openblas-amd64-py312-dev    : OpenBLAS AMD64 3.12 wheel, developer mode
-    openblas-amd64-py313-dev    : OpenBLAS AMD64 3.13 wheel, developer mode
-    openblas-amd64-py314-dev    : OpenBLAS AMD64 3.14 wheel, developer mode
-    openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
-    openblas-amd64-py311        : OpenBLAS AMD64 3.11 wheel, release mode
-    openblas-amd64-py312        : OpenBLAS AMD64 3.12 wheel, release mode
-    openblas-amd64-py313        : OpenBLAS AMD64 3.13 wheel, release mode
-    openblas-amd64-py314        : OpenBLAS AMD64 3.14 wheel, release mode
+    openblas-amd64-py310-dev       : OpenBLAS AMD64 3.10 wheel, developer mode
+    openblas-amd64-py311-dev       : OpenBLAS AMD64 3.11 wheel, developer mode
+    openblas-amd64-py312-dev       : OpenBLAS AMD64 3.12 wheel, developer mode
+    openblas-amd64-ilp64-py312-dev : OpenBLAS AMD64 3.12 wheel, developer mode
+    openblas-amd64-py313-dev       : OpenBLAS AMD64 3.13 wheel, developer mode
+    openblas-amd64-py314-dev       : OpenBLAS AMD64 3.14 wheel, developer mode
+    openblas-amd64-py310           : OpenBLAS AMD64 3.10 wheel, release mode
+    openblas-amd64-py311           : OpenBLAS AMD64 3.11 wheel, release mode
+    openblas-amd64-py312           : OpenBLAS AMD64 3.12 wheel, release mode
+    openblas-amd64-py313           : OpenBLAS AMD64 3.13 wheel, release mode
+    openblas-amd64-py314           : OpenBLAS AMD64 3.14 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
@@ -108,12 +109,27 @@ openblas_export_env() {
         export BASE_IMAGE=${BASE_IMAGE:-ubuntu:22.04}
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
+        export USE_SYSTEM_BLAS=ON
+        if [[ "ilp64" =~ ^($options)$ ]] ; then
+            export BLA_SIZEOF_INTEGER=8
+            export OPENBLAS_PACKAGE=libopenblas64-pthread-dev
+            export LAPACKE_ABI_PACKAGE=liblapacke64-dev
+            export DOCKER_TAG=${DOCKER_TAG}-ilp64
+        else
+            export BLA_SIZEOF_INTEGER=4
+            export OPENBLAS_PACKAGE=libopenblas-pthread-dev
+            export LAPACKE_ABI_PACKAGE=
+        fi
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
         export BASE_IMAGE=${BASE_IMAGE:-arm64v8/ubuntu:22.04}
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION}
+        export USE_SYSTEM_BLAS=OFF
+        export BLA_SIZEOF_INTEGER=4
+        export OPENBLAS_PACKAGE=
+        export LAPACKE_ABI_PACKAGE=
     else
         echo "Invalid platform."
         print_usage_and_exit_docker_build
@@ -174,7 +190,11 @@ openblas_build() {
         --build-arg OPEN3D_GIT_HASH="${OPEN3D_GIT_HASH}" \
         --build-arg BUILD_PYTHON_MODULE="${BUILD_PYTHON_MODULE}" \
         --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
-        -t "${DOCKER_TAG}" \
+        --build-arg USE_SYSTEM_BLAS="${USE_SYSTEM_BLAS}" \
+        --build-arg BLA_SIZEOF_INTEGER="${BLA_SIZEOF_INTEGER}" \
+        --build-arg OPENBLAS_PACKAGE="${OPENBLAS_PACKAGE}" \
+        --build-arg LAPACKE_ABI_PACKAGE="${LAPACKE_ABI_PACKAGE}" \
+	-t "${DOCKER_TAG}" \
         -f docker/Dockerfile.openblas .
     popd
 
@@ -538,6 +558,10 @@ function main() {
         ;;
     openblas-amd64-py312-dev)
         openblas_export_env amd64 py312 dev
+        openblas_build
+        ;;
+    openblas-amd64-ilp64-py312-dev)
+        openblas_export_env amd64 ilp64 py312 dev
         openblas_build
         ;;
     openblas-amd64-py313-dev)
