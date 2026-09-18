@@ -3,6 +3,26 @@
 Non-blocking visualization
 -------------------------------------
 
+Updating tensor meshes with the Filament renderer
+```````````````````````````````````````````````
+
+The Filament renderer can update vertex positions, normals, colors, and UVs of
+an existing tensor ``TriangleMesh`` without removing and recreating its render
+resources. The vertex count, triangle count, triangle indices, and choice of
+vertex- versus triangle-domain attributes must stay unchanged. Remove and add
+the mesh again when its topology or attribute layout changes.
+
+Pass the changed attributes through ``update_geometry`` and combine the
+corresponding ``Scene.UPDATE_*_FLAG`` values. GUI updates must run on the main
+thread. Non-CPU tensors are staged synchronously through CPU memory before the
+Filament upload. This example deforms a sphere while retaining its renderable,
+material, visibility, and transform:
+
+.. literalinclude:: ../../../examples/python/visualization/tensor_mesh_update.py
+   :language: python
+   :linenos:
+   :lineno-match:
+
 .. note::
 
     This tutorial uses the legacy OpenGL ``Visualizer`` API. For new applications,

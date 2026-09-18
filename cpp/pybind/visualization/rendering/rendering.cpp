@@ -8,6 +8,7 @@
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
 #include "open3d/visualization/rendering/MaterialRecord.h"
@@ -599,12 +600,25 @@ void pybind_rendering_definitions(py::module &m) {
             .def("has_geometry", &Scene::HasGeometry, "name"_a,
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
-            .def("update_geometry", &Scene::UpdateGeometry, "name"_a,
-                 "point_cloud"_a, "update_flag"_a,
+            .def("update_geometry",
+                 (void(Scene::*)(const std::string &,
+                                 const t::geometry::PointCloud &, uint32_t)) &
+                         Scene::UpdateGeometry,
+                 "name"_a, "point_cloud"_a, "update_flag"_a,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
                  "Scene.UPDATE_UV0_FLAG")
+            .def("update_geometry",
+                 (void(Scene::*)(const std::string &,
+                                 const t::geometry::TriangleMesh &, uint32_t)) &
+                         Scene::UpdateGeometry,
+                 "name"_a, "triangle_mesh"_a, "update_flag"_a,
+                 "Updates flagged vertex attributes of an existing tensor "
+                 "TriangleMesh in place. Vertex and triangle counts, triangle "
+                 "indices, and vertex/triangle attribute layout must remain "
+                 "unchanged. Remove and add the mesh again to change its "
+                 "topology or layout.")
             .def("remove_geometry", &Scene::RemoveGeometry, "name"_a,
                  "Removes the named geometry from the scene.")
             .def("show_geometry", &Scene::ShowGeometry, "name"_a, "show"_a,
@@ -736,6 +750,20 @@ void pybind_rendering_definitions(py::module &m) {
                  "add_downsampled_copy_for_fast_rendering"_a = true,
                  "Adds a geometry with the specified name. Default visible is "
                  "true.")
+            .def("update_geometry",
+                 py::overload_cast<const std::string &,
+                                   const t::geometry::PointCloud &, uint32_t>(
+                         &Open3DScene::UpdateGeometry),
+                 "name"_a, "point_cloud"_a, "update_flag"_a,
+                 "Updates selected tensor PointCloud attributes and refreshes "
+                 "the scene bounds.")
+            .def("update_geometry",
+                 py::overload_cast<const std::string &,
+                                   const t::geometry::TriangleMesh &, uint32_t>(
+                         &Open3DScene::UpdateGeometry),
+                 "name"_a, "triangle_mesh"_a, "update_flag"_a,
+                 "Updates selected fixed-topology tensor TriangleMesh vertex "
+                 "attributes and refreshes the scene bounds.")
             .def("add_model", &Open3DScene::AddModel, "name"_a, "model"_a,
                  "Adds TriangleMeshModel to the scene.")
             .def("has_geometry", &Open3DScene::HasGeometry, "name"_a,

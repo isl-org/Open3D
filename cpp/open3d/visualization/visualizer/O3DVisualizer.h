@@ -125,8 +125,8 @@ public:
     /// Removes the named geometry from the Visualizer
     void RemoveGeometry(const std::string& name);
 
-    /// Updates `update_flags` attributes of named geometry with the matching
-    /// attributes from `tgeom`
+    /// Updates `update_flags` attributes of a named tensor PointCloud or
+    /// fixed-topology TriangleMesh with matching attributes from `tgeom`.
     void UpdateGeometry(const std::string& name,
                         std::shared_ptr<t::geometry::Geometry> tgeom,
                         uint32_t update_flags);

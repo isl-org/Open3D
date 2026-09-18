@@ -25,6 +25,7 @@ namespace t {
 namespace geometry {
 class Geometry;
 class PointCloud;
+class TriangleMesh;
 }  // namespace geometry
 }  // namespace t
 
@@ -86,6 +87,11 @@ public:
     virtual bool HasGeometry(const std::string& object_name) const = 0;
     virtual void UpdateGeometry(const std::string& object_name,
                                 const t::geometry::PointCloud& point_cloud,
+                                uint32_t update_flags) = 0;
+    /// Updates selected vertex attributes of an existing tensor triangle mesh.
+    /// The mesh topology and render attribute layout must remain unchanged.
+    virtual void UpdateGeometry(const std::string& object_name,
+                                const t::geometry::TriangleMesh& triangle_mesh,
                                 uint32_t update_flags) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;

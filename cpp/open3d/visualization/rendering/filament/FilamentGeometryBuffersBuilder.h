@@ -160,6 +160,21 @@ public:
     Buffers ConstructBuffers() override;
     filament::Box ComputeAABB() override;
 
+    /// Updates selected vertex attributes in existing, compatible Filament
+    /// buffers. The caller must preserve the mesh topology and render layout.
+    bool UpdateBuffers(VertexBufferHandle vertex_buffer,
+                       IndexBufferHandle index_buffer,
+                       bool update_positions,
+                       bool update_normals,
+                       bool update_colors,
+                       bool update_uvs,
+                       bool update_indices = false);
+
+    size_t GetVertexCount() const;
+    size_t GetIndexCount() const;
+    bool RequiresVertexDuplication() const;
+    uint64_t GetTopologyHash() const;
+
 private:
     t::geometry::TriangleMesh geometry_;
 };

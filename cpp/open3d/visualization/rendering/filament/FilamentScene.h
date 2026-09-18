@@ -112,6 +112,9 @@ public:
     void UpdateGeometry(const std::string& object_name,
                         const t::geometry::PointCloud& point_cloud,
                         uint32_t update_flags) override;
+    void UpdateGeometry(const std::string& object_name,
+                        const t::geometry::TriangleMesh& triangle_mesh,
+                        uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
     bool GeometryIsVisible(const std::string& object_name) override;
@@ -292,6 +295,12 @@ private:
     };
 
     struct RenderableGeometry {
+        enum class TensorGeometryType {
+            kNone,
+            kPointCloud,
+            kTriangleMesh,
+        };
+
         std::string name;
         bool visible = true;
         bool was_hidden_before_picking = false;
@@ -316,6 +325,11 @@ private:
         filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
+        TensorGeometryType tensor_geometry_type = TensorGeometryType::kNone;
+        bool duplicates_tensor_mesh_vertices = false;
+        size_t tensor_mesh_source_vertex_count = 0;
+        size_t tensor_mesh_triangle_count = 0;
+        uint64_t tensor_mesh_topology_hash = 0;
         void ReleaseResources(filament::Engine& engine,
                               FilamentResourceManager& manager);
     };
