@@ -110,6 +110,9 @@ public:
                      const TriangleMeshModel& model) override;
     bool HasGeometry(const std::string& object_name) const override;
     void UpdateGeometry(const std::string& object_name,
+                        const t::geometry::LineSet& line_set,
+                        uint32_t update_flags) override;
+    void UpdateGeometry(const std::string& object_name,
                         const t::geometry::PointCloud& point_cloud,
                         uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
@@ -318,6 +321,12 @@ private:
         IndexBufferHandle ib;
         void ReleaseResources(filament::Engine& engine,
                               FilamentResourceManager& manager);
+
+        bool is_tensor_line_set = false;
+        uint8_t tensor_line_set_layout = 0;
+        size_t tensor_line_set_source_point_count = 0;
+        size_t tensor_line_set_line_count = 0;
+        uint64_t tensor_line_set_topology_hash = 0;
     };
 
     struct LightEntity {

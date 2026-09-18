@@ -308,6 +308,22 @@ bool Open3DScene::HasGeometry(const std::string& name) const {
     return scene->HasGeometry(name);
 }
 
+void Open3DScene::UpdateGeometry(const std::string& name,
+                                 const t::geometry::LineSet& line_set,
+                                 uint32_t update_flags) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->UpdateGeometry(name, line_set, update_flags);
+    if (update_flags & Scene::kUpdatePointsFlag) {
+        bounds_ = geometry::AxisAlignedBoundingBox();
+        for (const auto& entry : geometries_) {
+            if (scene->HasGeometry(entry.second.name)) {
+                bounds_ += scene->GetGeometryBoundingBox(entry.second.name);
+            }
+        }
+        axis_dirty_ = true;
+    }
+}
+
 void Open3DScene::RemoveGeometry(const std::string& name) {
     auto scene = renderer_.GetScene(scene_);
     auto g = geometries_.find(name);

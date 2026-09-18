@@ -95,3 +95,22 @@ The result looks like the image below.
 
 .. image:: ../../_static/visualization/non_blocking_visualization/visualize_icp_iteration.gif
     :width: 400px
+
+Updating tensor line sets with the Filament renderer
+```````````````````````````````````````````````````
+
+The Filament renderer can update tensor ``LineSet`` point positions and line
+colors without recreating render resources. The point and line counts, line
+indices, and width mode must stay unchanged. For thin lines, the presence of
+per-line colors must also stay unchanged. Wide lines update both packed
+endpoint attributes so their screen-space triangles follow the changed points.
+
+Pass the changed attributes through ``update_geometry`` and combine the
+corresponding ``Scene.UPDATE_*_FLAG`` values. GUI updates must run on the main
+thread. Non-CPU tensors are staged synchronously through CPU memory before the
+Filament upload.
+
+.. literalinclude:: ../../../examples/python/visualization/tensor_lineset_update.py
+   :language: python
+   :linenos:
+   :lineno-match:
