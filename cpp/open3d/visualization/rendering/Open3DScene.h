@@ -86,6 +86,11 @@ public:
                      const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;
+    /// Updates selected attributes of an existing fixed-topology tensor line
+    /// set and refreshes aggregate scene bounds.
+    void UpdateGeometry(const std::string& name,
+                        const t::geometry::LineSet& line_set,
+                        uint32_t update_flags);
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);

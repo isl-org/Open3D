@@ -24,7 +24,11 @@
 #pragma warning(pop)
 #endif  // _MSC_VER
 
+#include <algorithm>
+#include <cstring>
+#include <limits>
 #include <map>
+#include <numeric>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/LineSet.h"
@@ -363,37 +367,30 @@ Box LineSetBuffersBuilder::ComputeAABB() {
 TLineSetBuffersBuilder::TLineSetBuffersBuilder(
         const t::geometry::LineSet& geometry)
     : geometry_(geometry) {
-    // Make sure geometry is on CPU
-    auto pts = geometry.GetPointPositions();
-    if (pts.IsCUDA()) {
+    if (!geometry.GetDevice().IsCPU()) {
         utility::LogWarning(
-                "GPU resident line sets are not currently supported for "
+                "Non-CPU tensor line sets are not currently supported for "
                 "visualization. Copying data to CPU.");
         geometry_ = geometry.To(core::Device("CPU:0"));
     }
 
-    // Make sure data types are Float32 for points
+    auto& pts = geometry_.GetPointPositions();
     if (pts.GetDtype() != core::Float32) {
         utility::LogWarning(
-                "Tensor point cloud points must have DType of Float32 not {}. "
+                "Tensor line set points must have DType of Float32 not {}. "
                 "Converting.",
                 pts.GetDtype().ToString());
-        geometry_.GetPointPositions() = pts.To(core::Float32);
     }
-    // Colors should be Float32 but will often by UInt8
-    if (geometry_.HasLineColors() &&
-        geometry_.GetLineColors().GetDtype() != core::Float32) {
-        auto colors = geometry_.GetLineColors();
-        geometry_.GetLineColors() = colors.To(core::Float32);
-        if (colors.GetDtype() == core::UInt8) {
-            geometry_.GetLineColors() = geometry_.GetLineColors() / 255.0f;
-        }
-    }
-    // Make sure line indices are Uint32
-    if (geometry_.HasLineIndices() &&
-        geometry_.GetLineIndices().GetDtype() != core::UInt32) {
-        auto indices = geometry_.GetLineIndices();
-        geometry_.GetLineIndices() = indices.To(core::UInt32);
+    pts = pts.To(core::Float32).Contiguous();
+
+    auto& indices = geometry_.GetLineIndices();
+    indices = indices.To(core::UInt32).Contiguous();
+
+    if (geometry_.HasLineColors()) {
+        auto& colors = geometry_.GetLineColors();
+        const bool is_uint8 = colors.GetDtype() == core::UInt8;
+        colors = colors.To(core::Float32).Contiguous();
+        if (is_uint8) colors = colors / 255.0f;
     }
 }
 
@@ -406,199 +403,66 @@ RenderableManager::PrimitiveType TLineSetBuffersBuilder::GetPrimitiveType()
     }
 }
 
-void TLineSetBuffersBuilder::ConstructThinLines(uint32_t& n_vertices,
-                                                float** vertex_data,
-                                                uint32_t& n_indices,
-                                                uint32_t& indices_bytes,
-                                                uint32_t** line_indices) {
-    const auto& points = geometry_.GetPointPositions();
-    const uint32_t n_elements = 7;
-    const uint32_t vertex_stride = n_elements * sizeof(float);
-    float* vdata;
-    uint32_t* idata;
-
-    // Two separate paths for lines with colors and those without
-    if (geometry_.HasLineColors()) {
-        // NOTE: The following code naively duplicates vertex positions for each
-        // line in case there are multiple different colored lines sharing a
-        // vertex. This could be made more intelligent to avoid unnecessary
-        // duplication but as a practical matter there shouldn't be much if any
-        // performance difference. This can be revisited in the future if
-        // necessary.
-        const auto& lines = geometry_.GetLineIndices();
-        const auto& colors = geometry_.GetLineColors();
-        n_vertices = lines.GetLength() * 2;
-        core::Tensor filament_data =
-                core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
-        filament_data.Slice(1, 0, 3) =
-                points.IndexGet({lines.Reshape({n_vertices}).To(core::Int64)});
-        filament_data.Slice(0, 0, n_vertices, 2).Slice(1, 3, 6) = colors;
-        filament_data.Slice(0, 1, n_vertices, 2).Slice(1, 3, 6) = colors;
-        filament_data.Slice(1, 6, 7) = 1.f;
-        vdata = static_cast<float*>(malloc(n_vertices * vertex_stride));
-        memcpy(vdata, filament_data.GetDataPtr(), n_vertices * vertex_stride);
-        indices_bytes = n_vertices * sizeof(IndexType);
-        n_indices = n_vertices;
-        idata = static_cast<IndexType*>(malloc(indices_bytes));
-        std::iota(idata, idata + n_vertices, 0);
-    } else {
-        n_vertices = points.GetLength();
-        core::Tensor filament_data =
-                core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
-        filament_data.Slice(1, 0, 3) = points;
-        filament_data.Slice(1, 3, 7) = 1.f;
-        const auto vertex_array_size = n_vertices * vertex_stride;
-        vdata = static_cast<float*>(malloc(vertex_array_size));
-        memcpy(vdata, filament_data.GetDataPtr(), vertex_array_size);
-        indices_bytes =
-                geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
-        n_indices = geometry_.GetLineIndices().GetLength() * 2;
-        idata = static_cast<IndexType*>(malloc(indices_bytes));
-        memcpy(idata, geometry_.GetLineIndices().GetDataPtr(), indices_bytes);
-    }
-
-    // Assign buffers back to inputs
-    *vertex_data = vdata;
-    *line_indices = idata;
+TLineSetBuffersBuilder::Layout TLineSetBuffersBuilder::GetLayout() const {
+    if (wide_lines_) return Layout::kWideExpanded;
+    return geometry_.HasLineColors() ? Layout::kThinExpanded
+                                     : Layout::kThinIndexed;
 }
 
-void TLineSetBuffersBuilder::ConstructWideLines(uint32_t& n_vertices,
-                                                float** vertex_data,
-                                                uint32_t& n_indices,
-                                                uint32_t& indices_bytes,
-                                                uint32_t** line_indices) {
-    const auto& points = geometry_.GetPointPositions();
-    const auto& lines = geometry_.GetLineIndices();
-
-    const uint32_t n_elements = 11;
-    const uint32_t vertex_stride = n_elements * sizeof(float);
-    float* vdata;
-    uint32_t* idata;
-
-    n_vertices = lines.GetLength() * 4;
-    core::Tensor filament_data =
-            core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
-    // Get the start and end vertex of each line
-    core::Tensor pos1_data =
-            points.IndexGet({lines.Slice(1, 0, 1)
-                                     .Reshape({lines.GetLength()})
-                                     .To(core::Int64)});
-    core::Tensor pos2_data =
-            points.IndexGet({lines.Slice(1, 1, 2)
-                                     .Reshape({lines.GetLength()})
-                                     .To(core::Int64)});
-    // Fill the vertices. The original vertices get expanded to 4 vertices
-    // for the 4 corners of the line (composed of 2 triangles) as follows:
-    // pos1 pos2 1.0 [color]
-    // pos1 pos2 -1.0 [color]
-    // pos2 pos1 -1.0 [color]
-    // pos2 pos1 1.0 [color]
-    // Vertex
-    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 0, 3) = pos1_data;
-    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 0, 3) = pos1_data;
-    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 0, 3) = pos2_data;
-    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 0, 3) = pos2_data;
-    // Next parameter
-    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 3, 6) = pos2_data;
-    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 3, 6) = pos2_data;
-    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 3, 6) = pos1_data;
-    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 3, 6) = pos1_data;
-    // Direction parameter
-    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 6, 7) = 1.f;
-    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 6, 7) = -1.f;
-    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 6, 7) = -1.f;
-    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 6, 7) = 1.f;
-    // Fill in color
-    if (geometry_.HasLineColors()) {
-        const auto& colors = geometry_.GetLineColors();
-        filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 7, 10) = colors;
-        filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 7, 10) = colors;
-        filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 7, 10) = colors;
-        filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 7, 10) = colors;
-        filament_data.Slice(1, 10, 11) = 1.f;  // alpha value
-    } else {
-        filament_data.Slice(1, 7, 11) = 1.f;
+size_t TLineSetBuffersBuilder::GetVertexCount() const {
+    switch (GetLayout()) {
+        case Layout::kThinIndexed:
+            return geometry_.GetPointPositions().GetLength();
+        case Layout::kThinExpanded:
+            return geometry_.GetLineIndices().GetLength() * 2;
+        case Layout::kWideExpanded:
+            return geometry_.GetLineIndices().GetLength() * 4;
     }
+    return 0;
+}
 
-    // Copy per-vertex data to output array
-    const auto vertex_array_size = n_vertices * vertex_stride;
-    vdata = static_cast<float*>(malloc(vertex_array_size));
-    memcpy(vdata, filament_data.GetDataPtr(), vertex_array_size);
+size_t TLineSetBuffersBuilder::GetIndexCount() const {
+    return geometry_.GetLineIndices().GetLength() *
+           (GetLayout() == Layout::kWideExpanded ? 6 : 2);
+}
 
-    // Build the triangles for the wide lines
-    n_indices = geometry_.GetLineIndices().GetLength() * 6;
-    indices_bytes = n_indices * sizeof(IndexType);
-    idata = static_cast<IndexType*>(malloc(indices_bytes));
-    for (uint32_t i = 0, vertex_idx = 0; i < n_indices; vertex_idx += 4) {
-        // Triangle 1
-        idata[i++] = vertex_idx;
-        idata[i++] = vertex_idx + 1;
-        idata[i++] = vertex_idx + 2;
-        // Triangle 2
-        idata[i++] = vertex_idx + 3;
-        idata[i++] = vertex_idx + 2;
-        idata[i++] = vertex_idx + 1;
+uint64_t TLineSetBuffersBuilder::GetTopologyHash() const {
+    const auto& indices = geometry_.GetLineIndices();
+    const auto* data = indices.GetDataPtr<uint32_t>();
+    const size_t count = indices.GetLength() * 2;
+    uint64_t hash = 1469598103934665603ULL;
+    for (size_t i = 0; i < count; ++i) {
+        hash ^= data[i];
+        hash *= 1099511628211ULL;
     }
-
-    // Assign buffers back to inputs
-    *vertex_data = vdata;
-    *line_indices = idata;
+    return hash;
 }
 
 GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
-
-    const uint32_t n_elements = wide_lines_ ? 11 : 7;
-    const uint32_t vertex_stride = n_elements * sizeof(float);
-    const uint32_t vertex_start_offset = 0;
-    const uint32_t next_start_offest = 3 * sizeof(float);
-    const uint32_t color_start_offset =
-            wide_lines_ ? 7 * sizeof(float) : 3 * sizeof(float);
-
-    uint32_t n_vertices = 0;
-    float* vertex_data = nullptr;
-    uint32_t n_indices = 0;
-    IndexType* line_indices = nullptr;
-    uint32_t indices_bytes = 0;
-
-    // Separate paths for thin and wide lines
-    if (wide_lines_) {
-        ConstructWideLines(n_vertices, &vertex_data, n_indices, indices_bytes,
-                           &line_indices);
-    } else {
-        ConstructThinLines(n_vertices, &vertex_data, n_indices, indices_bytes,
-                           &line_indices);
+    const size_t n_vertices = GetVertexCount();
+    const size_t n_indices = GetIndexCount();
+    if (n_vertices > std::numeric_limits<uint32_t>::max() ||
+        n_indices > std::numeric_limits<uint32_t>::max()) {
+        utility::LogWarning(
+                "Tensor line set is too large for Filament's 32-bit buffer "
+                "counts.");
+        return {};
     }
 
-    VertexBuffer* vbuf;
-    // Different GPU vertex layouts for
+    VertexBuffer::Builder builder;
+    builder.bufferCount(wide_lines_ ? 3 : 2)
+            .vertexCount(static_cast<uint32_t>(n_vertices))
+            .attribute(VertexAttribute::POSITION, 0,
+                       VertexBuffer::AttributeType::FLOAT3)
+            .attribute(VertexAttribute::COLOR, wide_lines_ ? 2 : 1,
+                       VertexBuffer::AttributeType::FLOAT4);
     if (wide_lines_) {
-        vbuf = VertexBuffer::Builder()
-                       .bufferCount(1)
-                       .vertexCount(n_vertices)
-                       .attribute(VertexAttribute::POSITION, 0,
-                                  VertexBuffer::AttributeType::FLOAT3,
-                                  vertex_start_offset, vertex_stride)
-                       .attribute(VertexAttribute::CUSTOM0, 0,
-                                  VertexBuffer::AttributeType::FLOAT4,
-                                  next_start_offest, vertex_stride)
-                       .attribute(VertexAttribute::COLOR, 0,
-                                  VertexBuffer::AttributeType::FLOAT4,
-                                  color_start_offset, vertex_stride)
-                       .build(engine);
-    } else {
-        vbuf = VertexBuffer::Builder()
-                       .bufferCount(1)
-                       .vertexCount(n_vertices)
-                       .attribute(VertexAttribute::POSITION, 0,
-                                  VertexBuffer::AttributeType::FLOAT3,
-                                  vertex_start_offset, vertex_stride)
-                       .attribute(VertexAttribute::COLOR, 0,
-                                  VertexBuffer::AttributeType::FLOAT4,
-                                  color_start_offset, vertex_stride)
-                       .build(engine);
+        builder.attribute(VertexAttribute::CUSTOM0, 1,
+                          VertexBuffer::AttributeType::FLOAT4);
     }
+    VertexBuffer* vbuf = builder.build(engine);
 
     VertexBufferHandle vb_handle;
     if (vbuf) {
@@ -607,24 +471,142 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
-    // Create vertex and index buffer
-    VertexBuffer::BufferDescriptor vb_descriptor(vertex_data,
-                                                 n_vertices * vertex_stride);
-    vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
-
     auto ib_handle =
             resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
-    if (!ib_handle) {
-        free(line_indices);
+    if (!ib_handle || !UpdateBuffers(vb_handle, ib_handle, true, true, true)) {
+        if (ib_handle) resource_mgr.Destroy(ib_handle);
+        resource_mgr.Destroy(vb_handle);
         return {};
     }
-    auto ibuf = resource_mgr.GetIndexBuffer(ib_handle).lock();
-    IndexBuffer::BufferDescriptor ib_descriptor(line_indices, indices_bytes);
-    ib_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
-    ibuf->setBuffer(engine, std::move(ib_descriptor));
 
     return {vb_handle, ib_handle, IndexBufferHandle()};
+}
+
+bool TLineSetBuffersBuilder::UpdateBuffers(VertexBufferHandle vertex_buffer,
+                                           IndexBufferHandle index_buffer,
+                                           bool update_points,
+                                           bool update_colors,
+                                           bool update_indices) {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+    auto vbuf = resource_mgr.GetVertexBuffer(vertex_buffer).lock();
+    auto ibuf = resource_mgr.GetIndexBuffer(index_buffer).lock();
+    const size_t n_vertices = GetVertexCount();
+    const size_t n_indices = GetIndexCount();
+    if (!vbuf || !ibuf || vbuf->getVertexCount() != n_vertices ||
+        ibuf->getIndexCount() != n_indices) {
+        utility::LogWarning(
+                "Tensor line set update requires unchanged render vertex and "
+                "index counts (vertices: expected {}, available {}; indices: "
+                "expected {}, available {}).",
+                n_vertices, vbuf ? vbuf->getVertexCount() : 0, n_indices,
+                ibuf ? ibuf->getIndexCount() : 0);
+        return false;
+    }
+
+    const auto layout = GetLayout();
+    const auto& points = geometry_.GetPointPositions();
+    const auto& lines = geometry_.GetLineIndices();
+    const auto flat_lines =
+            lines.To(core::Int64)
+                    .Reshape({static_cast<int64_t>(
+                            geometry_.GetLineIndices().GetLength() * 2)});
+
+    core::Tensor pos1;
+    core::Tensor pos2;
+    if (layout == Layout::kWideExpanded) {
+        const auto n_lines = static_cast<int64_t>(lines.GetLength());
+        pos1 = points.IndexGet(
+                {lines.Slice(1, 0, 1).Reshape({n_lines}).To(core::Int64)});
+        pos2 = points.IndexGet(
+                {lines.Slice(1, 1, 2).Reshape({n_lines}).To(core::Int64)});
+    }
+
+    if (update_points) {
+        core::Tensor packed;
+        if (layout == Layout::kThinIndexed) {
+            packed = points;
+        } else if (layout == Layout::kThinExpanded) {
+            packed = points.IndexGet({flat_lines});
+        } else {
+            packed = core::Tensor::Empty({static_cast<int64_t>(n_vertices), 3},
+                                         core::Float32);
+            packed.Slice(0, 0, n_vertices, 4) = pos1;
+            packed.Slice(0, 1, n_vertices, 4) = pos1;
+            packed.Slice(0, 2, n_vertices, 4) = pos2;
+            packed.Slice(0, 3, n_vertices, 4) = pos2;
+        }
+        const size_t array_size = n_vertices * 3 * sizeof(float);
+        auto* data = malloc(array_size);
+        memcpy(data, packed.GetDataPtr(), array_size);
+        VertexBuffer::BufferDescriptor descriptor(
+                data, array_size, GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, 0, std::move(descriptor));
+
+        if (layout == Layout::kWideExpanded) {
+            core::Tensor next = core::Tensor::Empty(
+                    {static_cast<int64_t>(n_vertices), 4}, core::Float32);
+            next.Slice(0, 0, n_vertices, 4).Slice(1, 0, 3) = pos2;
+            next.Slice(0, 1, n_vertices, 4).Slice(1, 0, 3) = pos2;
+            next.Slice(0, 2, n_vertices, 4).Slice(1, 0, 3) = pos1;
+            next.Slice(0, 3, n_vertices, 4).Slice(1, 0, 3) = pos1;
+            next.Slice(0, 0, n_vertices, 4).Slice(1, 3, 4) = 1.f;
+            next.Slice(0, 1, n_vertices, 4).Slice(1, 3, 4) = -1.f;
+            next.Slice(0, 2, n_vertices, 4).Slice(1, 3, 4) = -1.f;
+            next.Slice(0, 3, n_vertices, 4).Slice(1, 3, 4) = 1.f;
+            const size_t next_size = n_vertices * 4 * sizeof(float);
+            auto* next_data = malloc(next_size);
+            memcpy(next_data, next.GetDataPtr(), next_size);
+            VertexBuffer::BufferDescriptor next_descriptor(
+                    next_data, next_size,
+                    GeometryBuffersBuilder::DeallocateBuffer);
+            vbuf->setBufferAt(engine, 1, std::move(next_descriptor));
+        }
+    }
+
+    if (update_colors) {
+        core::Tensor packed = core::Tensor::Ones(
+                {static_cast<int64_t>(n_vertices), 4}, core::Float32);
+        if (geometry_.HasLineColors()) {
+            const auto& colors = geometry_.GetLineColors();
+            const int64_t stride =
+                    layout == Layout::kWideExpanded ? int64_t{4} : int64_t{2};
+            for (int64_t offset = 0; offset < stride; ++offset) {
+                packed.Slice(0, offset, n_vertices, stride).Slice(1, 0, 3) =
+                        colors;
+            }
+        }
+        const size_t array_size = n_vertices * 4 * sizeof(float);
+        auto* data = malloc(array_size);
+        memcpy(data, packed.GetDataPtr(), array_size);
+        VertexBuffer::BufferDescriptor descriptor(
+                data, array_size, GeometryBuffersBuilder::DeallocateBuffer);
+        vbuf->setBufferAt(engine, wide_lines_ ? 2 : 1, std::move(descriptor));
+    }
+
+    if (update_indices) {
+        const size_t array_size = n_indices * sizeof(IndexType);
+        auto* data = static_cast<IndexType*>(malloc(array_size));
+        if (layout == Layout::kThinIndexed) {
+            memcpy(data, lines.GetDataPtr(), array_size);
+        } else if (layout == Layout::kThinExpanded) {
+            std::iota(data, data + n_indices, 0);
+        } else {
+            for (uint32_t i = 0, vertex_idx = 0; i < n_indices;
+                 vertex_idx += 4) {
+                data[i++] = vertex_idx;
+                data[i++] = vertex_idx + 1;
+                data[i++] = vertex_idx + 2;
+                data[i++] = vertex_idx + 3;
+                data[i++] = vertex_idx + 2;
+                data[i++] = vertex_idx + 1;
+            }
+        }
+        IndexBuffer::BufferDescriptor descriptor(
+                data, array_size, GeometryBuffersBuilder::DeallocateBuffer);
+        ibuf->setBuffer(engine, std::move(descriptor));
+    }
+    return true;
 }
 
 filament::Box TLineSetBuffersBuilder::ComputeAABB() {

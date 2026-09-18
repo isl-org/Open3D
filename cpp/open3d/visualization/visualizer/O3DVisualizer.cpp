@@ -1076,6 +1076,12 @@ Ctrl-alt-click to polygon select)";
     void UpdateGeometry(const std::string &name,
                         std::shared_ptr<t::geometry::Geometry> tgeom,
                         uint32_t update_flags) {
+        auto t_lines = std::dynamic_pointer_cast<t::geometry::LineSet>(tgeom);
+        if (t_lines) {
+            scene_->GetScene()->UpdateGeometry(name, *t_lines, update_flags);
+            scene_->ForceRedraw();
+            return;
+        }
         auto t_cloud =
                 std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
         if (!t_cloud) {
