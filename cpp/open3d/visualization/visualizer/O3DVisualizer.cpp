@@ -1078,15 +1078,19 @@ Ctrl-alt-click to polygon select)";
                         uint32_t update_flags) {
         auto t_cloud =
                 std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-        if (!t_cloud) {
+        auto t_mesh =
+                std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+        if (t_cloud) {
+            scene_->GetScene()->UpdateGeometry(name, *t_cloud, update_flags);
+        } else if (t_mesh) {
+            scene_->GetScene()->UpdateGeometry(name, *t_mesh, update_flags);
+        } else {
             utility::LogWarning(
-                    "Only TGeometry PointClouds can currently be updated using "
-                    "UpdateGeometry. Try removing the geometry that needs to "
-                    "be updated then adding the update geometry.");
+                    "Only tensor PointClouds and TriangleMeshes can currently "
+                    "be updated using UpdateGeometry. Remove and add other "
+                    "geometry types to update them.");
             return;
         }
-        scene_->GetScene()->GetScene()->UpdateGeometry(name, *t_cloud,
-                                                       update_flags);
         scene_->ForceRedraw();
     }
 

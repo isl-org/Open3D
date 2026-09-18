@@ -303,6 +303,37 @@ void Open3DScene::AddGeometry(
     axis_dirty_ = true;
 }
 
+void Open3DScene::UpdateGeometry(const std::string& name,
+                                 const t::geometry::PointCloud& point_cloud,
+                                 uint32_t update_flags) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->UpdateGeometry(name, point_cloud, update_flags);
+    if (update_flags & Scene::kUpdatePointsFlag) {
+        RecomputeGeometryBounds();
+    }
+}
+
+void Open3DScene::UpdateGeometry(const std::string& name,
+                                 const t::geometry::TriangleMesh& triangle_mesh,
+                                 uint32_t update_flags) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->UpdateGeometry(name, triangle_mesh, update_flags);
+    if (update_flags & Scene::kUpdatePointsFlag) {
+        RecomputeGeometryBounds();
+    }
+}
+
+void Open3DScene::RecomputeGeometryBounds() {
+    auto scene = renderer_.GetScene(scene_);
+    bounds_ = geometry::AxisAlignedBoundingBox();
+    for (const auto& entry : geometries_) {
+        if (scene->HasGeometry(entry.second.name)) {
+            bounds_ += scene->GetGeometryBoundingBox(entry.second.name);
+        }
+    }
+    axis_dirty_ = true;
+}
+
 bool Open3DScene::HasGeometry(const std::string& name) const {
     auto scene = renderer_.GetScene(scene_);
     return scene->HasGeometry(name);

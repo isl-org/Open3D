@@ -85,6 +85,16 @@ public:
                      const t::geometry::Geometry* geom,
                      const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
+    /// Updates selected attributes of an existing tensor point cloud and
+    /// refreshes aggregate scene bounds.
+    void UpdateGeometry(const std::string& name,
+                        const t::geometry::PointCloud& point_cloud,
+                        uint32_t update_flags);
+    /// Updates selected attributes of an existing fixed-topology tensor mesh
+    /// and refreshes aggregate scene bounds.
+    void UpdateGeometry(const std::string& name,
+                        const t::geometry::TriangleMesh& triangle_mesh,
+                        uint32_t update_flags);
     bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
@@ -131,6 +141,7 @@ private:
     };
 
     void SetGeometryToLOD(const GeometryData&, LOD lod);
+    void RecomputeGeometryBounds();
 
 private:
     Renderer& renderer_;

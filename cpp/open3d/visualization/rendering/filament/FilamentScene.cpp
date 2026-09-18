@@ -63,6 +63,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #ifdef WITH_IPP
 #include "open3d/t/geometry/kernel/IPPImage.h"
 #endif
@@ -851,6 +852,25 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         }
     }
     if (success) {
+        auto& renderable = geometries_.at(object_name);
+        if (dynamic_cast<const t::geometry::PointCloud*>(&geometry)) {
+            renderable.tensor_geometry_type =
+                    RenderableGeometry::TensorGeometryType::kPointCloud;
+        } else if (auto* mesh = dynamic_cast<const t::geometry::TriangleMesh*>(
+                           &geometry)) {
+            renderable.tensor_geometry_type =
+                    RenderableGeometry::TensorGeometryType::kTriangleMesh;
+            auto* mesh_builder =
+                    dynamic_cast<TMeshBuffersBuilder*>(buffer_builder.get());
+            renderable.duplicates_tensor_mesh_vertices =
+                    mesh_builder->RequiresVertexDuplication();
+            renderable.tensor_mesh_source_vertex_count =
+                    static_cast<size_t>(mesh->GetVertexPositions().GetLength());
+            renderable.tensor_mesh_triangle_count =
+                    static_cast<size_t>(mesh->GetTriangleIndices().GetLength());
+            renderable.tensor_mesh_topology_hash =
+                    mesh_builder->GetTopologyHash();
+        }
         // Mesh changes alter the cached Filament color/depth attachments that
         // Gaussian compositing samples, so invalidate its per-view render data.
         MarkGaussianSplatChanged();
@@ -1124,6 +1144,70 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
 #endif
         }
     }
+}
+
+void FilamentScene::UpdateGeometry(
+        const std::string& object_name,
+        const t::geometry::TriangleMesh& triangle_mesh,
+        uint32_t update_flags) {
+    auto geoms = GetGeometry(object_name, false);
+    if (geoms.empty()) {
+        utility::LogWarning("Geometry {} is not in the scene graph",
+                            object_name);
+        return;
+    }
+    if (geoms.size() != 1 ||
+        geoms[0]->tensor_geometry_type !=
+                RenderableGeometry::TensorGeometryType::kTriangleMesh) {
+        utility::LogWarning(
+                "Geometry {} is not a tensor TriangleMesh and cannot be "
+                "updated from one.",
+                object_name);
+        return;
+    }
+
+    auto* geometry = geoms[0];
+    TMeshBuffersBuilder buffer_builder(triangle_mesh);
+    const bool incompatible_layout =
+            buffer_builder.RequiresVertexDuplication() !=
+                    geometry->duplicates_tensor_mesh_vertices ||
+            static_cast<size_t>(
+                    triangle_mesh.GetVertexPositions().GetLength()) !=
+                    geometry->tensor_mesh_source_vertex_count ||
+            static_cast<size_t>(
+                    triangle_mesh.GetTriangleIndices().GetLength()) !=
+                    geometry->tensor_mesh_triangle_count ||
+            buffer_builder.GetTopologyHash() !=
+                    geometry->tensor_mesh_topology_hash;
+    if (incompatible_layout) {
+        utility::LogWarning(
+                "Tensor triangle mesh {} cannot be updated because its vertex "
+                "count, triangle topology, or render attribute layout has "
+                "changed. Remove and add the mesh again.",
+                object_name);
+        return;
+    }
+
+    const bool update_positions = update_flags & kUpdatePointsFlag;
+    const bool update_normals = update_flags & kUpdateNormalsFlag;
+    const bool update_colors = update_flags & kUpdateColorsFlag;
+    const bool update_uvs = update_flags & kUpdateUv0Flag;
+    if (!update_positions && !update_normals && !update_colors && !update_uvs) {
+        return;
+    }
+    if (!buffer_builder.UpdateBuffers(geometry->vb, geometry->ib,
+                                      update_positions, update_normals,
+                                      update_colors, update_uvs, false)) {
+        return;
+    }
+
+    if (update_positions) {
+        auto& renderable_mgr = engine_.getRenderableManager();
+        auto instance = renderable_mgr.getInstance(geometry->filament_entity);
+        renderable_mgr.setAxisAlignedBoundingBox(instance,
+                                                 buffer_builder.ComputeAABB());
+    }
+    MarkGaussianSplatChanged();
 }
 
 void FilamentScene::RemoveGeometry(const std::string& object_name) {
