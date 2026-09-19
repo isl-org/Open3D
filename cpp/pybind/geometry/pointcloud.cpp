@@ -263,7 +263,7 @@ Returns:
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
                  "eps"_a, "min_points"_a, "print_progress"_a = false,
-                 "precompute_neighbors"_a = true)
+                 py::arg("precompute_neighbors") = true)
             .def("segment_plane", &PointCloud::SegmentPlane,
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
