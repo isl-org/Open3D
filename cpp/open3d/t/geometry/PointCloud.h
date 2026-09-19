@@ -449,11 +449,15 @@ public:
     /// \param min_points Minimum number of points to form a cluster.
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
-    /// \return A Tensor list of point labels on the same device as the point
-    /// cloud, -1 indicates noise according to the algorithm.
+    /// \param precompute_neighbors If `true`, cache all neighborhoods in
+    /// parallel. If `false`, query them on demand using linear auxiliary
+    /// memory, at the cost of sequential neighborhood searches. \return A
+    /// Tensor list of point labels on the same device as the point cloud, -1
+    /// indicates noise according to the algorithm.
     core::Tensor ClusterDBSCAN(double eps,
                                size_t min_points,
-                               bool print_progress = false) const;
+                               bool print_progress = false,
+                               bool precompute_neighbors = true) const;
 
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     /// This is a wrapper for a CPU implementation and a copy of the point cloud

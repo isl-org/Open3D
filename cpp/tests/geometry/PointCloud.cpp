@@ -8,6 +8,7 @@
 #include "open3d/geometry/PointCloud.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/data/Dataset.h"
@@ -1353,6 +1354,77 @@ TEST(PointCloud, ClusterDBSCAN) {
     EXPECT_EQ(cluster_set.size(), 11);
     int cluster_sum = std::accumulate(cluster.begin(), cluster.end(), 0);
     EXPECT_EQ(cluster_sum, 398580);
+    EXPECT_EQ(pcd.ClusterDBSCAN(0.02, 10, false, false), cluster);
+}
+
+TEST(PointCloud, ClusterDBSCANBoundaryCases) {
+    struct TestCase {
+        const char* name;
+        std::vector<double> xs;
+        double eps;
+        size_t min_points;
+        std::vector<int> expected;
+    };
+    const std::vector<TestCase> cases = {
+            {"empty", {}, 1.0, 1, {}},
+            {"singleton core", {0}, 1.0, 1, {0}},
+            {"singleton noise", {0}, 1.0, 2, {-1}},
+            {"duplicates", {0, 0, 0, 4}, 0.125, 3, {0, 0, 0, -1}},
+            {"all noise", {0, 2, 4}, 1.0, 2, {-1, -1, -1}},
+            {"radius boundary", {0, 1}, 1.0, 2, {-1, -1}},
+            {"inside radius", {0, std::nextafter(1.0, 0.0)}, 1.0, 2, {0, 0}},
+            {"outside radius", {0, std::nextafter(1.0, 2.0)}, 1.0, 2, {-1, -1}},
+            {"noise becomes border", {0, 0.75, 1, 1.25}, 1.0, 4, {0, 0, 0, 0}},
+            {"shared border",
+             {0, -0.75, -1.25, -1.375, -1.5, -1.625, 0.75, 1.25, 1.375, 1.5,
+              1.625},
+             1.0,
+             4,
+             {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1}},
+            {"shared border reversed",
+             {0, 0.75, 1.25, 1.375, 1.5, 1.625, -0.75, -1.25, -1.375, -1.5,
+              -1.625},
+             1.0,
+             4,
+             {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1}},
+            {"zero radius", {0, 0, 1}, 0.0, 1, {-1, -1, -1}},
+            {"zero min points", {0, 0, 1}, 0.0, 0, {0, 1, 2}},
+            {"negative radius", {0, 0.5, 5}, -1.0, 2, {0, 0, -1}},
+    };
+    for (const auto& test : cases) {
+        SCOPED_TRACE(test.name);
+        geometry::PointCloud pcd;
+        for (double x : test.xs) {
+            pcd.points_.emplace_back(x, 0, 0);
+        }
+        const auto points = pcd.points_;
+        for (bool precompute_neighbors : {true, false}) {
+            SCOPED_TRACE(precompute_neighbors);
+            EXPECT_EQ(pcd.ClusterDBSCAN(test.eps, test.min_points, false,
+                                        precompute_neighbors),
+                      test.expected);
+            ExpectEQ(pcd.points_, points);
+        }
+    }
+}
+
+TEST(PointCloud, ClusterDBSCANDenseNeighborhoods) {
+    // Every point in a component is a neighbor of every other point. This
+    // exercises repeated discovery of pending points and multiple expansions.
+    geometry::PointCloud pcd;
+    std::vector<int> expected;
+    for (int cluster = 0; cluster < 2; ++cluster) {
+        for (int i = 0; i < 512; ++i) {
+            pcd.points_.emplace_back(10.0 * cluster, 0, 0);
+            expected.push_back(cluster);
+        }
+    }
+    pcd.points_.emplace_back(30, 0, 0);
+    expected.push_back(-1);
+    for (bool precompute_neighbors : {true, false}) {
+        EXPECT_EQ(pcd.ClusterDBSCAN(0.125, 512, false, precompute_neighbors),
+                  expected);
+    }
 }
 
 TEST(PointCloud, SegmentPlane) {

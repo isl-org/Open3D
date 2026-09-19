@@ -538,6 +538,7 @@ Example:
     pointcloud.def(
             "cluster_dbscan", &PointCloud::ClusterDBSCAN, "eps"_a,
             "min_points"_a, "print_progress"_a = false,
+            "precompute_neighbors"_a = true,
             R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A
 Density-Based Algorithm for Discovering Clusters in Large Spatial Databases
 with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the
@@ -548,7 +549,11 @@ Args:
 
     min_points: Minimum number of points to form a cluster.
 
-print_progress (default False): If 'True' the progress is visualized in the console.
+    print_progress (default False): If 'True' the progress is visualized in the console.
+
+    precompute_neighbors (default True): If 'True', cache all neighborhoods in
+        parallel. If 'False', query them on demand using linear auxiliary memory,
+        at the cost of sequential neighborhood searches.
 
 Return:
     A Tensor list of point labels on the same device as the point cloud, -1
