@@ -426,9 +426,13 @@ public:
     /// \param min_points Minimum number of points to form a cluster.
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
+    /// \param precompute_neighbors If `true`, cache all neighborhoods in
+    /// parallel. If `false`, query them on demand using linear auxiliary
+    /// memory, at the cost of sequential neighborhood searches.
     std::vector<int> ClusterDBSCAN(double eps,
                                    size_t min_points,
-                                   bool print_progress = false) const;
+                                   bool print_progress = false,
+                                   bool precompute_neighbors = true) const;
 
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     ///

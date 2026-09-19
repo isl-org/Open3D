@@ -1542,6 +1542,11 @@ TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     // Hard-coded test
     pcd = pcd.To(device);
     core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
+    EXPECT_EQ(cluster.GetDevice(), device);
+    core::Tensor streaming = pcd.ClusterDBSCAN(0.02, 10, false, false);
+    EXPECT_EQ(streaming.GetDevice(), device);
+    EXPECT_EQ(streaming.GetDtype(), core::Int32);
+    EXPECT_TRUE(streaming.AllEqual(cluster));
 
     cluster = cluster.To(core::Device("CPU:0"));
     EXPECT_EQ(cluster.GetDtype(), core::Int32);
@@ -1552,6 +1557,36 @@ TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     EXPECT_EQ(cluster_set.size(), 11);
     int cluster_sum = cluster.Sum({0}).Item<int>();
     EXPECT_EQ(cluster_sum, 398580);
+}
+
+TEST_P(PointCloudPermuteDevices, ClusterDBSCANBorderPoints) {
+    const core::Device device = GetParam();
+    // The first point is non-core and touches both disconnected components.
+    // It must be promoted from noise into the first component only.
+    const core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                            {-0.75, 0, 0},
+                                                            {-1.25, 0, 0},
+                                                            {-1.375, 0, 0},
+                                                            {-1.5, 0, 0},
+                                                            {-1.625, 0, 0},
+                                                            {0.75, 0, 0},
+                                                            {1.25, 0, 0},
+                                                            {1.375, 0, 0},
+                                                            {1.5, 0, 0},
+                                                            {1.625, 0, 0}});
+    const std::vector<int> expected = {0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1};
+    for (core::Dtype dtype : {core::Float32, core::Float64}) {
+        const core::Tensor positions = points.To(device, dtype);
+        t::geometry::PointCloud pcd(positions.Clone());
+        for (bool precompute_neighbors : {true, false}) {
+            core::Tensor labels =
+                    pcd.ClusterDBSCAN(1.0, 4, false, precompute_neighbors);
+            EXPECT_EQ(labels.GetDevice(), device);
+            EXPECT_EQ(labels.GetDtype(), core::Int32);
+            EXPECT_EQ(labels.ToFlatVector<int>(), expected);
+            EXPECT_TRUE(pcd.GetPointPositions().AllEqual(positions));
+        }
+    }
 }
 
 TEST_P(PointCloudPermuteDevices, SegmentPlane) {

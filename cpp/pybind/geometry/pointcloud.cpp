@@ -262,7 +262,8 @@ Returns:
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
-                 "eps"_a, "min_points"_a, "print_progress"_a = false)
+                 "eps"_a, "min_points"_a, "print_progress"_a = false,
+                 py::arg("precompute_neighbors") = true)
             .def("segment_plane", &PointCloud::SegmentPlane,
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
@@ -455,7 +456,11 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "Density parameter that is used to find neighbouring points."},
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
-              "If true the progress is visualized in the console."}});
+              "If true the progress is visualized in the console."},
+             {"precompute_neighbors",
+              "If true, cache all neighborhoods in parallel. If false, query "
+              "them on demand using linear auxiliary memory, at the cost of "
+              "sequential neighborhood searches."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "segment_plane",
             {{"distance_threshold",
