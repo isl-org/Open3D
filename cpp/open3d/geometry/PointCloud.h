@@ -430,6 +430,16 @@ public:
                                    size_t min_points,
                                    bool print_progress = false) const;
 
+    /// \brief Overload with explicit neighborhood caching control.
+    ///
+    /// \param precompute_neighbors If `true`, cache all neighborhoods in
+    /// parallel. If `false`, query them on demand using linear auxiliary
+    /// memory, at the cost of sequential neighborhood searches.
+    std::vector<int> ClusterDBSCAN(double eps,
+                                   size_t min_points,
+                                   bool print_progress,
+                                   bool precompute_neighbors) const;
+
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     ///
     /// \param distance_threshold Max distance a point can be from the plane

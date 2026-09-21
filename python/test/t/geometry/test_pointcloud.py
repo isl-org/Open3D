@@ -20,6 +20,58 @@ from open3d_test import list_devices
 
 
 @pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+@pytest.mark.parametrize("precompute_neighbors", [True, False])
+@pytest.mark.parametrize("xs,eps,min_points,expected", [
+    ([], 1.0, 1, []),
+    ([0.0], 1.0, 1, [0]),
+    ([0.0], 1.0, 2, [-1]),
+    ([0.0, 0.0, 0.0, 4.0], 0.125, 3, [0, 0, 0, -1]),
+    ([0.0, 2.0, 4.0], 1.0, 2, [-1, -1, -1]),
+    ([0.0, 1.0], 1.0, 2, [-1, -1]),
+    ([0.0, 0.75, 1.0, 1.25], 1.0, 4, [0, 0, 0, 0]),
+    ([0.0, -0.75, -1.25, -1.375, -1.5, -1.625, 0.75, 1.25, 1.375, 1.5, 1.625
+     ], 1.0, 4, [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1]),
+    ([0.0, 0.0, 1.0], 0.0, 1, [-1, -1, -1]),
+    ([0.0, 0.0, 1.0], 0.0, 0, [0, 1, 2]),
+],
+                         ids=[
+                             "empty", "singleton-core", "singleton-noise",
+                             "duplicates", "all-noise", "radius-boundary",
+                             "noise-to-border", "shared-border", "zero-radius",
+                             "zero-min-points"
+                         ])
+def test_cluster_dbscan(device, dtype, precompute_neighbors, xs, eps,
+                        min_points, expected):
+    # The early noise point in the border cases must be assigned to the first
+    # cluster that reaches it, without joining disconnected core components.
+    points = np.zeros((len(xs), 3))
+    points[:, 0] = xs
+    positions = o3c.Tensor(points, dtype, device)
+    pcd = o3d.t.geometry.PointCloud(positions)
+    labels = pcd.cluster_dbscan(eps,
+                                min_points,
+                                precompute_neighbors=precompute_neighbors)
+    assert labels.dtype == o3c.int32
+    assert labels.device == device
+    assert labels.shape == (len(xs),)
+    np.testing.assert_array_equal(labels.cpu().numpy(), expected)
+    np.testing.assert_array_equal(pcd.point.positions.cpu().numpy(), points)
+
+    legacy = pcd.to_legacy()
+    legacy_labels = legacy.cluster_dbscan(
+        eps, min_points, precompute_neighbors=precompute_neighbors)
+    assert isinstance(legacy_labels, o3d.utility.IntVector)
+    np.testing.assert_array_equal(legacy_labels, expected)
+    np.testing.assert_array_equal(np.asarray(legacy.points), points)
+    # Existing calls without the new option keep the same labels.
+    np.testing.assert_array_equal(legacy.cluster_dbscan(eps, min_points),
+                                  expected)
+    np.testing.assert_array_equal(
+        pcd.cluster_dbscan(eps, min_points).cpu().numpy(), expected)
+
+
+@pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
     dtype = o3c.float32
 
