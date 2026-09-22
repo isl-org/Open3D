@@ -196,16 +196,36 @@ TriangleMesh LineSet::ExtrudeRotation(double angle,
                                       int resolution,
                                       double translation,
                                       bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)angle;
+    (void)axis;
+    (void)resolution;
+    (void)translation;
+    (void)capping;
+    utility::LogError(
+            "LineSet::ExtrudeRotation requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
                                        translation, capping);
+#endif
 }
 
 TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
                                     double scale,
                                     bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)vector;
+    (void)scale;
+    (void)capping;
+    utility::LogError(
+            "LineSet::ExtrudeLinear requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+#endif
 }
 
 OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {

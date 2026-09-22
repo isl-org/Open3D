@@ -17,7 +17,12 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
+skip_if_vtk_disabled = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_VTK"],
+    reason="VTK is disabled in this Open3D build")
 
+
+@skip_if_vtk_disabled
 def test_extrude_rotation():
     line = o3d.t.geometry.LineSet([[0.7, 0, 0], [1, 0, 0]], [[0, 1]])
     ans = line.extrude_rotation(3 * 360, [0, 1, 0],
@@ -27,6 +32,7 @@ def test_extrude_rotation():
     assert ans.triangle.indices.shape == (96, 3)
 
 
+@skip_if_vtk_disabled
 def test_extrude_linear():
     lines = o3d.t.geometry.LineSet([[1.0, 0.0, 0.0], [0, 0, 0], [0, 0, 1]],
                                    [[0, 1], [1, 2]])

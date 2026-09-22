@@ -175,6 +175,11 @@ def Xform "Root"
 })";
 
 TEST(FileFormatIO, ReadTriangleModelMinimalUSD) {
+#ifndef OPEN3D_ASSIMP_HAS_USD
+    // The Assimp in use (e.g. a system/vcpkg package on Windows ARM64) was not
+    // built with the USD importer, so .usd/.usda cannot be read.
+    GTEST_SKIP() << "Assimp built without USD importer; USD read unavailable.";
+#endif
     const std::string path = utility::filesystem::GetTempDirectoryPath() +
                              "/minimal_triangle.usda";
     std::ofstream output(path, std::ios::binary);

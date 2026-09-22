@@ -8,5 +8,10 @@ target_sources(tests PRIVATE
     OrientedBoundingBox.cpp
     OrientedBoundingEllipsoid.cpp
     VoxelBlockGrid.cpp
-    VtkUtils.cpp
 )
+
+if(NOT OPEN3D_DISABLE_VTK)
+    target_sources(tests PRIVATE
+        VtkUtils.cpp
+    )
+endif()

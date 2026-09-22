@@ -17,7 +17,14 @@
 #define OPEN3D_CPU_LINALG_INT int32_t
 #define lapack_int int32_t
 #include <cblas.h>
+
+// LAPACKE is not available on Windows ARM64 in our vcpkg-based toolchain.
+// Build in BLAS-only mode and disable LAPACKE-dependent routines.
+#if defined(_WIN32) && defined(_M_ARM64)
+#define OPEN3D_DISABLE_LAPACKE 1
+#else
 #include <lapacke.h>
+#endif
 #else
 #include <mkl.h>
 #define OPEN3D_CPU_LINALG_INT MKL_INT

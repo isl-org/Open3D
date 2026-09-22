@@ -9,6 +9,7 @@
 
 #include <fmt/core.h>
 #include <tbb/parallel_for_each.h>
+#if !defined(OPEN3D_DISABLE_VTK)
 #include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
@@ -16,6 +17,7 @@
 #include <vtkFillHolesFilter.h>
 #include <vtkPlane.h>
 #include <vtkQuadricDecimation.h>
+#endif
 
 #include <Eigen/Core>
 #include <algorithm>
@@ -648,10 +650,15 @@ TriangleMesh TriangleMesh::ComputeConvexHull(bool joggle_inputs) const {
 
 TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
                                      const core::Tensor &normal) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)point;
+    (void)normal;
+    utility::LogError("ClipPlane requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
-    // allow int types for convenience
     core::AssertTensorDtypes(
             point, {core::Float32, core::Float64, core::Int32, core::Int64});
     core::AssertTensorDtypes(
@@ -675,16 +682,23 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     cleaner->Update();
     auto clipped_polydata = cleaner->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
+#endif
 }
 
 LineSet TriangleMesh::SlicePlane(
         const core::Tensor &point,
         const core::Tensor &normal,
         const std::vector<double> contour_values) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)point;
+    (void)normal;
+    (void)contour_values;
+    utility::LogError("SlicePlane requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return LineSet();
+#else
     using namespace vtkutils;
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
-    // allow int types for convenience
     core::AssertTensorDtypes(
             point, {core::Float32, core::Float64, core::Int32, core::Int64});
     core::AssertTensorDtypes(
@@ -713,10 +727,18 @@ LineSet TriangleMesh::SlicePlane(
     auto slices_polydata = cutter->GetOutput();
 
     return CreateLineSetFromVtkPolyData(slices_polydata);
+#endif
 }
 
 TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
         double target_reduction, bool preserve_volume) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)target_reduction;
+    (void)preserve_volume;
+    utility::LogError(
+            "SimplifyQuadricDecimation requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     if (target_reduction >= 1.0 || target_reduction < 0) {
         utility::LogError(
@@ -724,7 +746,6 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
                 target_reduction);
     }
 
-    // exclude attributes because they will not be preserved
     auto polydata = CreateVtkPolyDataFromGeometry(*this, {}, {}, {}, {}, false);
 
     vtkNew<vtkQuadricDecimation> decimate;
@@ -735,21 +756,21 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     auto decimated_polydata = decimate->GetOutput();
 
     return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
+#endif
 }
 
 namespace {
+#if !defined(OPEN3D_DISABLE_VTK)
 TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               const TriangleMesh &mesh_B,
                               double tolerance,
                               int op) {
     using namespace vtkutils;
-    // exclude triangle attributes because they will not be preserved
     auto polydata_A = CreateVtkPolyDataFromGeometry(
             mesh_A, mesh_A.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
     auto polydata_B = CreateVtkPolyDataFromGeometry(
             mesh_B, mesh_B.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
 
-    // clean meshes before passing them to the boolean operation
     vtkNew<vtkCleanPolyData> cleaner_A;
     cleaner_A->SetInputData(polydata_A);
 
@@ -766,25 +787,48 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
 
     return CreateTriangleMeshFromVtkPolyData(out_polydata);
 }
+#endif
 }  // namespace
 
 TriangleMesh TriangleMesh::BooleanUnion(const TriangleMesh &mesh,
                                         double tolerance) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)mesh;
+    (void)tolerance;
+    utility::LogError("BooleanUnion requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     return BooleanOperation(*this, mesh, tolerance,
                             vtkBooleanOperationPolyDataFilter::VTK_UNION);
+#endif
 }
 
 TriangleMesh TriangleMesh::BooleanIntersection(const TriangleMesh &mesh,
                                                double tolerance) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)mesh;
+    (void)tolerance;
+    utility::LogError(
+            "BooleanIntersection requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     return BooleanOperation(
             *this, mesh, tolerance,
             vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION);
+#endif
 }
 
 TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
                                              double tolerance) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)mesh;
+    (void)tolerance;
+    utility::LogError("BooleanDifference requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     return BooleanOperation(*this, mesh, tolerance,
                             vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
+#endif
 }
 
 AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
@@ -832,9 +876,12 @@ TriangleMesh TriangleMesh::CreateFromOrientedBoundingEllipsoid(
 }
 
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)hole_size;
+    utility::LogError("FillHoles requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
-    // do not include triangle attributes because they will not be preserved by
-    // the hole filling algorithm
     auto polydata = CreateVtkPolyDataFromGeometry(
             *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
     vtkNew<vtkFillHolesFilter> fill_holes;
@@ -843,6 +890,7 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     fill_holes->Update();
     auto result = fill_holes->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(result);
+#endif
 }
 
 std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
@@ -1142,16 +1190,34 @@ TriangleMesh TriangleMesh::ExtrudeRotation(double angle,
                                            int resolution,
                                            double translation,
                                            bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)angle;
+    (void)axis;
+    (void)resolution;
+    (void)translation;
+    (void)capping;
+    utility::LogError("ExtrudeRotation requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
                                        translation, capping);
+#endif
 }
 
 TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
                                          double scale,
                                          bool capping) const {
+#if defined(OPEN3D_DISABLE_VTK)
+    (void)vector;
+    (void)scale;
+    (void)capping;
+    utility::LogError("ExtrudeLinear requires VTK (OPEN3D_DISABLE_VTK=1).");
+    return TriangleMesh();
+#else
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+#endif
 }
 
 int TriangleMesh::PCAPartition(int max_faces) {

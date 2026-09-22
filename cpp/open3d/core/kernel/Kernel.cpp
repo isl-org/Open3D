@@ -26,6 +26,10 @@ void TestLinalgIntegration() {
                 3, B.data(), 3, 2, C.data(), 3);
     utility::LogInfo("TestBlas Done.");
 
+#if defined(OPEN3D_DISABLE_LAPACKE)
+    utility::LogWarning(
+            "TestLapack skipped: LAPACKE is disabled on this platform.");
+#else
     // Lapack
     int64_t m = 6;
     int64_t n = 5;
@@ -44,6 +48,7 @@ void TestLinalgIntegration() {
     LAPACKE_sgesvd(LAPACK_COL_MAJOR, 'A', 'A', m, n, a.data(), lda, s.data(),
                    u.data(), ldu, vt.data(), ldvt, superb.data());
     utility::LogInfo("TestLapack Done.");
+#endif
 }
 
 }  // namespace kernel

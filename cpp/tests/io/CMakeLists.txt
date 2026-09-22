@@ -27,12 +27,23 @@ target_sources(tests PRIVATE
     file_format/FileXYZRGB.cpp
 )
 
-target_sources(tests PRIVATE
-    rpc/RemoteFunctions.cpp
-)
+if(BUILD_RPC_INTERFACE)
+    target_sources(tests PRIVATE
+        rpc/RemoteFunctions.cpp
+    )
+endif()
 
 if (BUILD_AZURE_KINECT)
     target_sources(tests PRIVATE
         sensor/AzureKinect/AzureKinectSensorConfig.cpp
     )
+endif()
+
+# The USD importer is only compiled into Open3D's from-source Assimp
+# (assimp.cmake sets ASSIMP_BUILD_USD_IMPORTER=ON). System/vcpkg Assimp
+# packages (used e.g. on Windows ARM64) generally omit the USD importer, so
+# the USD read test is only meaningful when Assimp is built from source.
+if(NOT USE_SYSTEM_ASSIMP)
+    set_source_files_properties(FileFormatIO.cpp PROPERTIES
+        COMPILE_DEFINITIONS OPEN3D_ASSIMP_HAS_USD=1)
 endif()

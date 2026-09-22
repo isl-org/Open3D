@@ -36,16 +36,18 @@ target_sources(io PRIVATE
     file_format/FileXYZRGB.cpp
 )
 
-target_sources(io PRIVATE
-    rpc/BufferConnection.cpp
-    rpc/Connection.cpp
-    rpc/DummyReceiver.cpp
-    rpc/MessageProcessorBase.cpp
-    rpc/MessageUtils.cpp
-    rpc/RemoteFunctions.cpp
-    rpc/ZMQContext.cpp
-    rpc/ZMQReceiver.cpp
-)
+if(BUILD_RPC_INTERFACE)
+    target_sources(io PRIVATE
+        rpc/BufferConnection.cpp
+        rpc/Connection.cpp
+        rpc/DummyReceiver.cpp
+        rpc/MessageProcessorBase.cpp
+        rpc/MessageUtils.cpp
+        rpc/RemoteFunctions.cpp
+        rpc/ZMQContext.cpp
+        rpc/ZMQReceiver.cpp
+    )
+endif()
 
 if (BUILD_AZURE_KINECT)
     target_sources(io PRIVATE

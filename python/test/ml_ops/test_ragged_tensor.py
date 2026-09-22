@@ -9,7 +9,8 @@ import open3d as o3d
 import numpy as np
 import pytest
 import mltest
-import torch
+if o3d._build_config['BUILD_PYTORCH_OPS']:
+    import torch
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow

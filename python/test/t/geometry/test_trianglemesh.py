@@ -18,7 +18,15 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
+skip_if_vtk_disabled = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_VTK"],
+    reason="VTK is disabled in this Open3D build")
+skip_if_embree_disabled = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_EMBREE"],
+    reason="Embree is disabled in this Open3D build")
 
+
+@skip_if_vtk_disabled
 def test_clip_plane():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
@@ -27,6 +35,7 @@ def test_clip_plane():
     assert clipped_cube.triangle.indices.shape == (14, 3)
 
 
+@skip_if_vtk_disabled
 def test_slice_plane():
     box = o3d.t.geometry.TriangleMesh.create_box()
     slices = box.slice_plane([0, 0.5, 0], [1, 1, 1], [-0.1, 0, 0.1])
@@ -610,12 +619,14 @@ def test_create_mobius(device):
     assert mobius_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
+@skip_if_vtk_disabled
 def test_create_text():
     mesh = o3d.t.geometry.TriangleMesh.create_text("Open3D", depth=1)
     assert mesh.vertex.positions.shape == (624, 3)
     assert mesh.triangle.indices.shape == (936, 3)
 
 
+@skip_if_vtk_disabled
 def test_create_isosurfaces():
     """Create signed distance field for sphere of radius 0.5 and extract sphere
     from it.
@@ -629,6 +640,7 @@ def test_create_isosurfaces():
     assert mesh.triangle.indices.shape[0] == 9452
 
 
+@skip_if_vtk_disabled
 def test_simplify_quadric_decimation():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))
@@ -642,6 +654,7 @@ def test_simplify_quadric_decimation():
     assert simplified.triangle.indices.shape == (12, 3)
 
 
+@skip_if_vtk_disabled
 def test_boolean_operations():
     box = o3d.geometry.TriangleMesh.create_box()
     box = o3d.t.geometry.TriangleMesh.from_legacy(box)
@@ -664,6 +677,7 @@ def test_boolean_operations():
     assert ans.triangle.indices.shape == (244, 3)
 
 
+@skip_if_vtk_disabled
 def test_hole_filling():
     sphere = o3d.geometry.TriangleMesh.create_sphere(1.0)
     sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
@@ -679,6 +693,7 @@ def test_uvatlas():
     assert box.triangle["texture_uvs"].shape == (12, 3, 2)
 
 
+@skip_if_embree_disabled
 def test_bake_vertex_attr_textures():
     desired = np.array(
         [
@@ -773,6 +788,7 @@ def test_bake_vertex_attr_textures():
     np.testing.assert_allclose(textures["positions"].numpy(), desired)
 
 
+@skip_if_embree_disabled
 def test_bake_triangle_attr_textures():
     desired = np.array(
         [
@@ -800,6 +816,7 @@ def test_bake_triangle_attr_textures():
     np.testing.assert_equal(textures["index"].numpy(), desired)
 
 
+@skip_if_vtk_disabled
 def test_extrude_rotation():
     mesh = o3d.t.geometry.TriangleMesh([[1, 1, 0], [0.7, 1, 0], [1, 0.7, 0]],
                                        [[0, 1, 2]])
@@ -810,6 +827,7 @@ def test_extrude_rotation():
     assert ans.triangle.indices.shape == (290, 3)
 
 
+@skip_if_vtk_disabled
 def test_extrude_linear():
     triangle = o3d.t.geometry.TriangleMesh(
         [[1.0, 1.0, 0.0], [0, 1, 0], [1, 0, 0]], [[0, 1, 2]])
@@ -1394,6 +1412,7 @@ def test_remove_non_manifold_edges(device, int_t, float_t):
     assert test_box.triangle.indices.allclose(box.triangle.indices)
 
 
+@skip_if_embree_disabled
 def test_metrics():
 
     from open3d.t.geometry import TriangleMesh, Metric, MetricParameters
