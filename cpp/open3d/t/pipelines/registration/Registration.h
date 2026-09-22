@@ -88,8 +88,8 @@ public:
     core::Tensor correspondences_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// For ICP: the overlapping area (# of inlier correspondences / # of points
-    /// in target). Higher is better.
+    /// The overlapping area (# of inlier correspondences / # of points in
+    /// source). Higher is better.
     double fitness_;
     /// Specifies whether the algorithm converged or not.
     bool converged_{false};
