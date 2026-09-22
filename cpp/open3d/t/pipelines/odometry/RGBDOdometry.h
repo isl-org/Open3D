@@ -63,7 +63,8 @@ public:
     /// \param transformation The estimated transformation matrix of dtype
     /// Float64 on CPU device.
     /// \param inlier_rmse RMSE of the inliers.
-    /// \param fitness Ratio between #inliers and #pixels.
+    /// \param fitness Ratio between #inliers and #pixels in the source
+    /// vertex map.
     OdometryResult(const core::Tensor& transformation = core::Tensor::Eye(
                            4, core::Float64, core::Device("CPU:0")),
                    double inlier_rmse = 0.0,
@@ -79,8 +80,8 @@ public:
     core::Tensor transformation_;
     /// RMSE of all inlier. Lower is better.
     double inlier_rmse_;
-    /// The overlapping area (# of inlier correspondences / # of points
-    /// in target). Higher is better.
+    /// The overlapping area (# of inliers / # of pixels in the source vertex
+    /// map). Higher is better.
     double fitness_;
 };
 
