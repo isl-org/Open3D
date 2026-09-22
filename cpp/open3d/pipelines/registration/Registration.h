@@ -121,10 +121,9 @@ public:
     CorrespondenceSet correspondence_set_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// For ICP: the overlapping area (# of inlier correspondences / # of points
-    /// in source). Higher is better.
-    /// For RANSAC: inlier ratio (# of inlier correspondences / # of
-    /// all correspondences)
+    /// The overlapping area (# of inlier correspondences / # of points in
+    /// source). Higher is better. Computed the same way for ICP, RANSAC and
+    /// fast global registration.
     double fitness_;
 };
 
