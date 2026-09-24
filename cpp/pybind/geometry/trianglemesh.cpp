@@ -57,6 +57,7 @@ void pybind_trianglemesh_definitions(py::module &m) {
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)
+            .def(py::self == py::self)
             .def("compute_triangle_normals",
                  &TriangleMesh::ComputeTriangleNormals,
                  "Function to compute triangle normals, usually called before "
