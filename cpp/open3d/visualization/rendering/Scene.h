@@ -103,6 +103,9 @@ public:
                                  bool receive_shadows) = 0;
     virtual void SetGeometryCulling(const std::string& object_name,
                                     bool enable) = 0;
+    /// Enables/disables back-face culling for the named geometry.
+    virtual void SetGeometryBackfaceCulling(const std::string& object_name,
+                                            bool enable) = 0;
     virtual void SetGeometryPriority(const std::string& object_name,
                                      uint8_t priority) = 0;
     virtual void QueryGeometry(std::vector<std::string>& geometry) = 0;

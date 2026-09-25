@@ -96,6 +96,8 @@ public:
 
     void ModifyGeometryMaterial(const std::string& name,
                                 const MaterialRecord& mat);
+    /// Enables or disables back-face culling for the named geometry.
+    void SetGeometryBackfaceCulling(const std::string& name, bool enable);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
