@@ -406,5 +406,24 @@ TEST(Octree, ConvertToJsonValue) {
     EXPECT_TRUE(src_octree == dst_octree);
 }
 
+TEST(Octree, ConvertFromBinaryStream) {
+    geometry::PointCloud pcd;
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    size_t max_depth = 5;
+    geometry::Octree src_octree(max_depth);
+    src_octree.ConvertFromPointCloud(pcd, 0.01);
+
+    // Serialize to binary
+    std::string binary_data;
+    src_octree.SerializeToBinaryStream(binary_data);
+
+    // Deserialize from binary
+    geometry::Octree dst_octree;
+    dst_octree.DeserializeFromBinaryStream(binary_data);
+
+    EXPECT_TRUE(src_octree == dst_octree);
+}
+
 }  // namespace tests
 }  // namespace open3d
