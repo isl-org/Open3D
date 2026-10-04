@@ -1504,16 +1504,16 @@ TEST(PointCloud, CreateFromDepthImage) {
     // visualization::DrawGeometries({pcd}); // Uncomment for manual check
 }
 
-TEST(PointCloud, CreateFromFloatDepthImageTruncatesDepth) {
+TEST(PointCloud, CreateFromFloatDepthImageScalesAndTruncatesDepth) {
     geometry::Image depth;
     depth.Prepare(2, 1, 1, 4);
     float* depth_data = depth.PointerAs<float>();
-    depth_data[0] = 1.0f;
-    depth_data[1] = 2.0f;
+    depth_data[0] = 1000.0f;
+    depth_data[1] = 2000.0f;
 
     camera::PinholeCameraIntrinsic intrinsic(2, 1, 1.0, 1.0, 0.0, 0.0);
     auto pointcloud = geometry::PointCloud::CreateFromDepthImage(
-            depth, intrinsic, Eigen::Matrix4d::Identity(), 1.0, 2.0);
+            depth, intrinsic, Eigen::Matrix4d::Identity(), 1000.0, 2.0);
 
     ASSERT_EQ(pointcloud->points_.size(), 1);
     EXPECT_EQ(pointcloud->points_[0], Eigen::Vector3d(0.0, 0.0, 1.0));
