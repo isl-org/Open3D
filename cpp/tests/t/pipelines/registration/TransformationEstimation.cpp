@@ -145,7 +145,7 @@ TEST_P(TransformationEstimationPermuteDevices, ComputeRMSEPointToPlane) {
         double p2plane_rmse =
                 estimation_p2plane.ComputeRMSE(source_pcd, target_pcd, corres);
 
-        EXPECT_NEAR(p2plane_rmse, 0.335499, 0.0001);
+        EXPECT_NEAR(p2plane_rmse, 0.421430, 0.0001);
     }
 }
 
@@ -173,7 +173,97 @@ TEST_P(TransformationEstimationPermuteDevices,
                 source_transformed_p2plane, target_pcd, corres);
 
         // Compare the new RMSE after transformation.
-        EXPECT_NEAR(p2plane_rmse_, 0.601422, 0.0001);
+        EXPECT_NEAR(p2plane_rmse_, 0.445121, 0.0001);
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices,
+       ComputeRMSEPointToPlaneTangentialDisplacement) {
+    const core::Device device = GetParam();
+
+    for (const auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source(
+                core::Tensor::Init<double>({{4.0, -3.0, 0.0}})
+                        .To(device, dtype));
+        t::geometry::PointCloud target(
+                core::Tensor::Zeros({1, 3}, dtype, device));
+        target.SetPointNormals(core::Tensor::Init<double>({{0.6, 0.8, 0.0}})
+                                       .To(device, dtype));
+        const core::Tensor corres = core::Tensor::Init<int64_t>({0}, device);
+        t::pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+
+        // The displacement is tangent to the oblique target plane.
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, corres), 0.0,
+                    dtype == core::Float32 ? 1e-6 : 1e-12);
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices,
+       ComputeRMSEPointToPlaneNormalProjectionAndRotation) {
+    const core::Device device = GetParam();
+
+    for (const auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source(
+                core::Tensor::Init<double>({{1.2, 1.6, 0.0}})
+                        .To(device, dtype));
+        t::geometry::PointCloud target(
+                core::Tensor::Zeros({1, 3}, dtype, device));
+        target.SetPointNormals(core::Tensor::Init<double>({{0.6, 0.8, 0.0}})
+                                       .To(device, dtype));
+        const core::Tensor corres = core::Tensor::Init<int64_t>({0}, device);
+        t::pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+        const double tolerance = dtype == core::Float32 ? 1e-6 : 1e-12;
+
+        // Moving two units along a unit normal gives the same error after
+        // rotating both point clouds and the target normals.
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, corres), 2.0,
+                    tolerance);
+        const core::Tensor rotation =
+                core::Tensor::Init<double>({{0.6, 0.8, 0.0, 0.0},
+                                            {-0.8, 0.6, 0.0, 0.0},
+                                            {0.0, 0.0, 1.0, 0.0},
+                                            {0.0, 0.0, 0.0, 1.0}});
+        source.Transform(rotation);
+        target.Transform(rotation);
+        EXPECT_NEAR(estimation.ComputeRMSE(source, target, corres), 2.0,
+                    tolerance);
+    }
+}
+
+TEST_P(TransformationEstimationPermuteDevices,
+       ComputeRMSEPointToPlaneCorrespondenceMaskAndLayout) {
+    const core::Device device = GetParam();
+
+    for (const auto dtype : {core::Float32, core::Float64}) {
+        t::geometry::PointCloud source(
+                core::Tensor::Init<double>({{14.0, 17.0, 30.0},
+                                            {0.2, 4.6, 2.0},
+                                            {100.0, 100.0, 100.0},
+                                            {5.8, -0.6, 0.0}})
+                        .To(device, dtype));
+        t::geometry::PointCloud target(
+                core::Tensor::Init<double>(
+                        {{0.0, 0.0, 0.0}, {10.0, 20.0, 30.0}, {-1.0, 3.0, 2.0}})
+                        .To(device, dtype));
+        target.SetPointNormals(
+                core::Tensor::Init<double>(
+                        {{0.6, 0.8, 0.0}, {0.6, 0.8, 0.0}, {0.6, 0.8, 0.0}})
+                        .To(device, dtype));
+        const core::Tensor corres =
+                core::Tensor::Init<int64_t>({1, 2, -1, 0}, device);
+        t::pipelines::registration::TransformationEstimationPointToPlane
+                estimation;
+        const double tolerance = dtype == core::Float32 ? 1e-6 : 1e-12;
+
+        // Only the three matched points contribute, with residuals 0, 2, 3.
+        for (const auto& shape :
+             {core::SizeVector{4}, core::SizeVector{4, 1}}) {
+            EXPECT_NEAR(estimation.ComputeRMSE(source, target,
+                                               corres.Reshape(shape)),
+                        std::sqrt(13.0 / 3.0), tolerance);
+        }
     }
 }
 

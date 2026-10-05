@@ -103,7 +103,7 @@ def test_compute_rmse_point_to_plane(device):
         p2l_rmse = estimation_p2l.compute_rmse(source_t, target_t,
                                                correspondences)
 
-        np.testing.assert_allclose(p2l_rmse, 0.335499, 0.0001)
+        np.testing.assert_allclose(p2l_rmse, 0.421430, 0.0001)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -129,4 +129,81 @@ def test_compute_transformation_point_to_plane(device):
         # different BLAS implementations (OpenBLAS vs MKL) and architectures
         # (ARM64 vs x86_64). The relative tolerance is increased from 0.0001
         # to 0.0002 to accommodate these variations.
-        np.testing.assert_allclose(p2l_rmse, 0.601422, rtol=0.0002, atol=1e-4)
+        np.testing.assert_allclose(p2l_rmse, 0.445121, rtol=0.0002, atol=1e-4)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_compute_rmse_point_to_plane_tangential_displacement(device, dtype):
+    source = o3d.t.geometry.PointCloud(
+        o3c.Tensor([[4.0, -3.0, 0.0]], dtype, device))
+    target = o3d.t.geometry.PointCloud(o3c.Tensor.zeros((1, 3), dtype, device))
+    target.point.normals = o3c.Tensor([[0.6, 0.8, 0.0]], dtype, device)
+    correspondences = o3c.Tensor([0], o3c.int64, device)
+    estimator = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+    )
+
+    # The displacement is tangent to the oblique target plane.
+    tolerance = 1e-6 if dtype == o3c.float32 else 1e-12
+    np.testing.assert_allclose(estimator.compute_rmse(source, target,
+                                                      correspondences),
+                               0.0,
+                               rtol=0.0,
+                               atol=tolerance)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+def test_compute_rmse_point_to_plane_normal_projection_and_rotation(
+        device, dtype):
+    source = o3d.t.geometry.PointCloud(
+        o3c.Tensor([[1.2, 1.6, 0.0]], dtype, device))
+    target = o3d.t.geometry.PointCloud(o3c.Tensor.zeros((1, 3), dtype, device))
+    target.point.normals = o3c.Tensor([[0.6, 0.8, 0.0]], dtype, device)
+    correspondences = o3c.Tensor([0], o3c.int64, device)
+    estimator = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+    )
+    tolerance = 1e-6 if dtype == o3c.float32 else 1e-12
+
+    # Moving two units along a unit normal gives the same error after rotation.
+    np.testing.assert_allclose(estimator.compute_rmse(source, target,
+                                                      correspondences),
+                               2.0,
+                               rtol=0.0,
+                               atol=tolerance)
+    rotation = o3c.Tensor([[0.6, 0.8, 0.0, 0.0], [-0.8, 0.6, 0.0, 0.0],
+                           [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
+                          o3c.float64)
+    source.transform(rotation)
+    target.transform(rotation)
+    np.testing.assert_allclose(estimator.compute_rmse(source, target,
+                                                      correspondences),
+                               2.0,
+                               rtol=0.0,
+                               atol=tolerance)
+
+
+@pytest.mark.parametrize("device", list_devices())
+@pytest.mark.parametrize("dtype", [o3c.float32, o3c.float64])
+@pytest.mark.parametrize("shape", [(4,), (4, 1)])
+def test_compute_rmse_point_to_plane_correspondence_mask_and_layout(
+        device, dtype, shape):
+    source = o3d.t.geometry.PointCloud(
+        o3c.Tensor([[14.0, 17.0, 30.0], [0.2, 4.6, 2.0], [100.0, 100.0, 100.0],
+                    [5.8, -0.6, 0.0]], dtype, device))
+    target = o3d.t.geometry.PointCloud(
+        o3c.Tensor([[0.0, 0.0, 0.0], [10.0, 20.0, 30.0], [-1.0, 3.0, 2.0]],
+                   dtype, device))
+    target.point.normals = o3c.Tensor([[0.6, 0.8, 0.0]] * 3, dtype, device)
+    correspondences = o3c.Tensor([1, 2, -1, 0], o3c.int64,
+                                 device).reshape(shape)
+    estimator = o3d.t.pipelines.registration.TransformationEstimationPointToPlane(
+    )
+
+    # Only the three matched points contribute, with residuals 0, 2, 3.
+    tolerance = 1e-6 if dtype == o3c.float32 else 1e-12
+    np.testing.assert_allclose(estimator.compute_rmse(source, target,
+                                                      correspondences),
+                               np.sqrt(13.0 / 3.0),
+                               rtol=0.0,
+                               atol=tolerance)

@@ -120,7 +120,9 @@ void pybind_registration_declarations(py::module &m) {
                TransformationEstimation>
             te_p2l(m_registration, "TransformationEstimationPointToPlane",
                    "Class to estimate a transformation for point to "
-                   "plane distance.");
+                   "plane distance. The ``compute_rmse`` method projects each "
+                   "point displacement onto the corresponding target normal "
+                   "before squaring. Normals are used without normalization.");
     py::class_<TransformationEstimationSymmetric,
                PyTransformationEstimation<TransformationEstimationSymmetric>,
                TransformationEstimation>
