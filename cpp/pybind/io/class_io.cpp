@@ -44,7 +44,8 @@ static const std::unordered_map<std::string, std::string>
                 {"compressed",
                  "Set to ``True`` to write in compressed format."},
                 {"format",
-                 "The format of the input file. When not specified or set as "
+                 "The format of the input file. Supported formats are ``xyz``, ``xyzn``, "
+                 "``xyzrgb``, ``ply``, ``pcd``, and ``pts``. When not specified or set as "
                  "``auto``, the format is inferred from file extension name."},
                 {"remove_nan_points",
                  "If true, all points that include a NaN are removed from "
