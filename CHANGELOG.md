@@ -99,6 +99,7 @@
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
+-   Fix the docs build also publishing the raw `dev_wheels.in.rst` and `sycl.in.rst` templates, which made the Getting Started link to the development wheels page show unreplaced version placeholders (PR #7601) (issue #7588).
 
 ## 0.13
 
