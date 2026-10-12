@@ -247,6 +247,8 @@ void IntegrateCPU
 
         // coordinate in image (in pixel)
         transform_indexer.Project(xc, yc, zc, &u, &v);
+        u = roundf(u);
+        v = roundf(v);
         if (!depth_indexer.InBoundary(u, v)) {
             return;
         }
