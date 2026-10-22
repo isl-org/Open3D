@@ -156,6 +156,53 @@ def test_Matrix4dVector(input_array, expect_exception):
         run_test(input_array)
 
 
+@pytest.mark.parametrize("vector_name, width, dtype", [
+    ("Vector2dVector", 2, np.float64),
+    ("Vector3dVector", 3, np.float64),
+    ("Vector2iVector", 2, np.int32),
+    ("Vector3iVector", 3, np.int32),
+    ("Vector4iVector", 4, np.int32),
+])
+@pytest.mark.parametrize("writeable", [True, False],
+                         ids=["writable", "readonly"])
+@pytest.mark.parametrize(
+    "layout",
+    ["c", "empty", "fortran", "column_slice", "reversed", "converted"])
+def test_eigen_vector_numpy_input_is_copied(vector_name, width, dtype,
+                                            writeable, layout):
+    input_array = np.arange(4 * width, dtype=dtype).reshape(4, width)
+    if layout == "empty":
+        input_array = input_array[:0]
+    elif layout == "fortran":
+        input_array = np.asfortranarray(input_array)
+    elif layout == "column_slice":
+        input_array = np.arange(8 * width, dtype=dtype).reshape(4, 2 * width)
+        input_array = input_array[:, ::2]
+    elif layout == "reversed":
+        input_array = input_array[::-1, ::-1]
+    elif layout == "converted":
+        converted_dtype = np.float32 if dtype == np.float64 else np.int64
+        input_array = input_array.astype(converted_dtype)
+    input_array.setflags(write=writeable)
+    expected = input_array.copy()
+
+    vector = getattr(o3d.utility, vector_name)(input_array)
+    output_array = np.asarray(vector)
+
+    assert output_array.dtype == np.dtype(dtype)
+    np.testing.assert_array_equal(output_array, expected)
+    assert not np.shares_memory(output_array, input_array)
+    assert input_array.flags.writeable == writeable
+    np.testing.assert_array_equal(input_array, expected)
+
+    # Open3D owns the copy even when the NumPy input is read-only.
+    output_array[...] = -1
+    np.testing.assert_array_equal(np.asarray(vector),
+                                  np.full_like(expected, -1))
+    np.testing.assert_array_equal(input_array, expected)
+    assert input_array.flags.writeable == writeable
+
+
 # Run with pytest -s to show output
 def test_benchmark():
     vector_size = int(2e6)
