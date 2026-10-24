@@ -65,10 +65,7 @@ if __name__ == "__main__":
             result = execute_global_registration(source_down, target_down,
                                                  source_fpfh, target_fpfh,
                                                  voxel_size)
-            if (result.transformation.trace() == 4.0):
-                success = False
-            else:
-                success = True
+            success = result.fitness > 0.0
 
             # Note: we save inverse of result.transformation
             # to comply with http://redwood-data.org/indoor/fileformat.html
