@@ -326,10 +326,14 @@ SortEntryParams ProjectGaussian(uint splat_index) {
                           view_params.clip_from_view[1].w,
                           view_params.clip_from_view[2].w);
 
-    float inv_w_sq = 1.0 / (clip_center.w * clip_center.w);
+    vec4 jac_clip = clip_center;
+    jac_clip.xy = clamp(jac_clip.xy,
+                    vec2(-1.3) * jac_clip.w,
+                    vec2(1.3) * jac_clip.w);
+    float inv_w_sq = 1.0 / (jac_clip.w * jac_clip.w);
     vec2 resolution = GetViewportSize();
     vec3 jacobian_x = 0.5 * resolution.x *
-                      (clip_row0 * clip_center.w - clip_row3 * clip_center.x) *
+                      (clip_row0 * jac_clip.w - clip_row3 * jac_clip.x) *
                       inv_w_sq;
     // Match the projected 2D covariance to the output image's Y convention.
     // OpenGL images use Y increasing upward; Metal/output textures use Y=0 at
@@ -337,7 +341,7 @@ SortEntryParams ProjectGaussian(uint splat_index) {
     // by the composite shader.
     float y_sign = GetScreenYDown() ? -1.0 : 1.0;
     vec3 jacobian_y = y_sign * 0.5 * resolution.y *
-                      (clip_row1 * clip_center.w - clip_row3 * clip_center.y) *
+                      (clip_row1 * jac_clip.w - clip_row3 * jac_clip.y) *
                       inv_w_sq;
 
     vec3 cov_jx = covariance_view * jacobian_x;
