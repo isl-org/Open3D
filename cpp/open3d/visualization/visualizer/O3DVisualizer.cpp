@@ -2249,7 +2249,10 @@ Ctrl-alt-click to polygon select)";
             };
             if (image && image->num_of_channels_ == 1 &&
                 image->bytes_per_channel_ == 4) {
-                // Depth export stores normalized depth in 16-bit PNG.
+                // Depth export stores linear view-space depth (see the
+                // z_in_view_space=true above), scaled into 16-bit PNG
+                // relative to the farthest finite (i.e., actually hit) pixel
+                // -- background pixels are +inf and excluded from the scale.
                 auto depth_float = std::make_shared<geometry::Image>(*image);
                 float *depth_data = depth_float->PointerAs<float>();
                 size_t num_pixels =
@@ -2280,7 +2283,7 @@ Ctrl-alt-click to polygon select)";
                                 .c_str());
             }
             scene_->EnableSceneCaching(true);
-        });
+        }, /*z_in_view_space=*/true);
     }
 
     void OnAbout() {

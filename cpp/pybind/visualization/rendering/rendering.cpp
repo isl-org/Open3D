@@ -676,10 +676,13 @@ void pybind_rendering_definitions(py::module &m) {
                  "GUI app. To render without a window, use "
                  "``Application.render_to_image``.")
             .def("render_to_depth_image", &Scene::RenderToDepthImage,
+                 "z_in_view_space"_a = false,
                  "Renders the scene to a depth image. This can only be used in "
                  "GUI app. To render without a window, use "
                  "``Application.render_to_depth_image``. Pixels range from "
-                 "0.0 (near plane) to 1.0 (far plane)");
+                 "0.0 (near plane) to 1.0 (far plane). If z_in_view_space is "
+                 "set to True then pixels are pre-transformed into view "
+                 "space (i.e., distance from camera).");
 
     scene.attr("UPDATE_POINTS_FLAG") = py::int_(Scene::kUpdatePointsFlag);
     scene.attr("UPDATE_NORMALS_FLAG") = py::int_(Scene::kUpdateNormalsFlag);

@@ -192,9 +192,12 @@ public:
     virtual void RenderToImage(
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
-    /// Size of image is the size of the window.
+    /// Size of image is the size of the window. Depth is normalized to
+    /// [0, 1] (near to far plane) unless z_in_view_space is true, in which
+    /// case it is linear distance from the camera.
     virtual void RenderToDepthImage(
-            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+            std::function<void(std::shared_ptr<geometry::Image>)> callback,
+            bool z_in_view_space = false) = 0;
 
 protected:
     Renderer& renderer_;
