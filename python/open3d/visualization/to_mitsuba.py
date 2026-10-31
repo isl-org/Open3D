@@ -73,6 +73,15 @@ def to_mitsuba(self, name, bsdf=None):
 
     Returns:
         A Mitsuba Mesh (with associated BSDF) ready for use in a Mitsuba scene.
+
+    Example:
+        The returned mesh has updated bounds and can be inserted into a scene::
+
+            import mitsuba as mi
+            mi.set_variant('scalar_rgb')
+            mesh = o3d.t.geometry.TriangleMesh.create_box()
+            converted = mesh.to_mitsuba('box', mi.load_dict({'type': 'diffuse'}))
+            scene = mi.load_dict({'type': 'scene', 'mesh': converted})
     """
 
     import mitsuba as mi
@@ -108,6 +117,9 @@ def to_mitsuba(self, name, bsdf=None):
     mesh_params = mi.traverse(mi_mesh)
     mesh_params['vertex_positions'] = self.vertex.positions.numpy().flatten()
     mesh_params['faces'] = self.triangle.indices.numpy().flatten()
+    # Geometry updates recompute vertex normals, so apply them before copying
+    # authored normals from Open3D.
+    mesh_params.update()
     if has_normals:
         mesh_params['vertex_normals'] = self.vertex.normals.numpy().flatten()
     if has_uvs:
@@ -122,6 +134,7 @@ def to_mitsuba(self, name, bsdf=None):
                                                              True]).flatten()
 
     # Let Mitsuba know parameters have been updated
+    mesh_params.update()
     return mi_mesh
 
 
