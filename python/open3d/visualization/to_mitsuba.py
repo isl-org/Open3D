@@ -9,6 +9,11 @@ import open3d as o3d
 
 
 def o3d_material_to_bsdf(mat, vertex_color=False):
+    """Convert color textures with sRGB decoding and scalar maps as linear data.
+
+    Roughness, metallic, and anisotropy maps contain material parameters, so
+    their stored values must not be transformed by Mitsuba's color decoding.
+    """
     import mitsuba as mi
 
     def create_bsdf_entry(mat, value, o3d_name, per_vertex):
@@ -18,6 +23,8 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
             return {
                 'type':
                     'bitmap',
+                'raw':
+                    o3d_name != 'albedo',
                 'bitmap':
                     mi.Bitmap(mat.texture_maps[o3d_name].as_tensor().numpy())
             }
