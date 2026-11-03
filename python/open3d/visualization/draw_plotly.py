@@ -162,8 +162,9 @@ def get_plotly_fig(geometry_list,
             geometries. A value of 1.0 means all points are used.
             Defaults to 1.0.
         front (list of float, optional): A list of 3 floats representing the
-            camera's front vector (e.g., [x, y, z]). If None, a default
-            orientation is used. Defaults to None.
+            camera's front vector (e.g., [x, y, z]). Must be finite and nonzero;
+            its direction is normalized independently of its magnitude. If
+            None, a default orientation is used. Defaults to None.
         lookat (list of float, optional): A list of 3 floats representing the
             point the camera is looking at (e.g., [x, y, z]). If None, the
             camera looks at the center of the combined geometries.
@@ -176,6 +177,13 @@ def get_plotly_fig(geometry_list,
 
     Returns:
         plotly.graph_objects.Figure: The generated Plotly figure object.
+
+    Raises:
+        ValueError: If ``front`` is zero or contains nonfinite values.
+
+    Example:
+        >>> mesh = o3d.geometry.TriangleMesh.create_box()
+        >>> fig = o3d.visualization.get_plotly_fig([mesh], front=[1, -1, 0])
     """
     graph_objects = get_graph_objects(geometry_list, mesh_show_wireframe,
                                       point_sample_factor)
@@ -196,8 +204,13 @@ def get_plotly_fig(geometry_list,
         plotly_center = dict(x=0, y=0, z=0)
 
     if front is not None:
-        normalize_factor = np.sqrt(np.abs(np.sum(front)))
-        front = [i / normalize_factor for i in front]
+        front = np.asarray(front, dtype=float)
+        front_scale = np.max(np.abs(front))
+        if not np.isfinite(front_scale) or front_scale == 0:
+            raise ValueError("front must be a finite, nonzero vector.")
+        # Scale first to avoid overflow or underflow in the Euclidean norm.
+        front = front / front_scale
+        front = front / np.linalg.norm(front)
         plotly_eye = dict(x=zoom * 5 * front[0] + plotly_center['x'],
                           y=zoom * 5 * front[1] + plotly_center['y'],
                           z=zoom * 5 * front[2] + plotly_center['z'])
@@ -249,7 +262,8 @@ def draw_plotly(geometry_list,
             TriangleMesh geometries. Defaults to False.
         point_sample_factor (float, optional): Sampling factor for point clouds
             (0.0 to 1.0). Defaults to 1.0.
-        front (list of float, optional): Camera's front vector. Defaults to None.
+        front (list of float, optional): Finite, nonzero camera front vector;
+            its direction is normalized. Defaults to None.
         lookat (list of float, optional): Point camera is looking at.
             Defaults to None.
         up (list of float, optional): Camera's up vector. Defaults to None.
@@ -257,6 +271,9 @@ def draw_plotly(geometry_list,
 
     Returns:
         plotly.graph_objects.Figure: The generated and displayed Plotly figure.
+
+    Raises:
+        ValueError: If ``front`` is zero or contains nonfinite values.
     """
     fig = get_plotly_fig(geometry_list, width, height, mesh_show_wireframe,
                          point_sample_factor, front, lookat, up, zoom)
@@ -295,7 +312,8 @@ def draw_plotly_server(geometry_list,
             TriangleMesh geometries. Defaults to False.
         point_sample_factor (float, optional): Sampling factor for point clouds
             (0.0 to 1.0). Defaults to 1.0.
-        front (list of float, optional): Camera's front vector. Defaults to None.
+        front (list of float, optional): Finite, nonzero camera front vector;
+            its direction is normalized. Defaults to None.
         lookat (list of float, optional): Point camera is looking at.
             Defaults to None.
         up (list of float, optional): Camera's up vector. Defaults to None.
@@ -306,6 +324,9 @@ def draw_plotly_server(geometry_list,
     Returns:
         tuple[dash.Dash, plotly.graph_objects.Figure]: A tuple containing the
         Dash application instance and the Plotly figure object.
+
+    Raises:
+        ValueError: If ``front`` is zero or contains nonfinite values.
     """
     fig = get_plotly_fig(geometry_list, width, height, mesh_show_wireframe,
                          point_sample_factor, front, lookat, up, zoom)
