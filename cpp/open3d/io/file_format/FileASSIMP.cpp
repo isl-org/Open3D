@@ -222,6 +222,16 @@ bool ReadTriangleMeshUsingASSIMP(
         // copy face indices data
         for (size_t fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
             auto& face = assimp_mesh->mFaces[fidx];
+            if (face.mNumIndices != 3 ||
+                face.mIndices[0] >= assimp_mesh->mNumVertices ||
+                face.mIndices[1] >= assimp_mesh->mNumVertices ||
+                face.mIndices[2] >= assimp_mesh->mNumVertices) {
+                utility::LogWarning(
+                        "Unable to load file {} with ASSIMP: invalid triangle "
+                        "indices.",
+                        filename);
+                return false;
+            }
             Eigen::Vector3i facet(
                     face.mIndices[0] + static_cast<int>(current_vidx),
                     face.mIndices[1] + static_cast<int>(current_vidx),
@@ -403,6 +413,16 @@ bool ReadModelUsingAssimp(const std::string& filename,
         // copy face indices data
         for (size_t fidx = 0; fidx < assimp_mesh->mNumFaces; ++fidx) {
             auto& face = assimp_mesh->mFaces[fidx];
+            if (face.mNumIndices != 3 ||
+                face.mIndices[0] >= assimp_mesh->mNumVertices ||
+                face.mIndices[1] >= assimp_mesh->mNumVertices ||
+                face.mIndices[2] >= assimp_mesh->mNumVertices) {
+                utility::LogWarning(
+                        "Unable to load file {} with ASSIMP: invalid triangle "
+                        "indices.",
+                        filename);
+                return false;
+            }
             Eigen::Vector3i facet(face.mIndices[0], face.mIndices[1],
                                   face.mIndices[2]);
             mesh->triangles_.push_back(facet);

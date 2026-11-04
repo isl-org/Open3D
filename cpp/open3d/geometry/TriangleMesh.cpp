@@ -22,6 +22,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/Smoothing.h"
+#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/Random.h"
@@ -123,6 +124,8 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
     triangle_normals_.resize(triangles_.size());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
+        detail::AssertTriangleIndicesInRange(
+                triangle, static_cast<int64_t>(vertices_.size()));
         Eigen::Vector3d v01 = vertices_[triangle(1)] - vertices_[triangle(0)];
         Eigen::Vector3d v02 = vertices_[triangle(2)] - vertices_[triangle(0)];
         triangle_normals_[i] = v01.cross(v02);
@@ -140,6 +143,8 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
               Eigen::Vector3d::Zero());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
+        detail::AssertTriangleIndicesInRange(
+                triangle, static_cast<int64_t>(vertices_.size()));
         vertex_normals_[triangle(0)] += triangle_normals_[i];
         vertex_normals_[triangle(1)] += triangle_normals_[i];
         vertex_normals_[triangle(2)] += triangle_normals_[i];
@@ -154,6 +159,8 @@ TriangleMesh &TriangleMesh::ComputeAdjacencyList() {
     adjacency_list_.clear();
     adjacency_list_.resize(vertices_.size());
     for (const auto &triangle : triangles_) {
+        detail::AssertTriangleIndicesInRange(
+                triangle, static_cast<int64_t>(vertices_.size()));
         adjacency_list_[triangle(0)].insert(triangle(1));
         adjacency_list_[triangle(0)].insert(triangle(2));
         adjacency_list_[triangle(1)].insert(triangle(0));
@@ -473,6 +480,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         double c = std::sqrt(r1) * r2;
         size_t tidx = triangle_index_generator();
         const Eigen::Vector3i &triangle = triangles_[tidx];
+        detail::AssertTriangleIndicesInRange(
+                triangle, static_cast<int64_t>(vertices_.size()));
         pcd->points_[point_idx] = a * vertices_[triangle(0)] +
                                   b * vertices_[triangle(1)] +
                                   c * vertices_[triangle(2)];
@@ -710,6 +719,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     if (has_vert_color) vertex_colors_.resize(k);
     if (k < old_vertex_num) {
         for (auto &triangle : triangles_) {
+            detail::AssertTriangleIndicesInRange(
+                    triangle, static_cast<int64_t>(old_vertex_num));
             triangle(0) = index_old_to_new[triangle(0)];
             triangle(1) = index_old_to_new[triangle(1)];
             triangle(2) = index_old_to_new[triangle(2)];
@@ -780,6 +791,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
 TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     std::vector<bool> vertex_has_reference(vertices_.size(), false);
     for (const auto &triangle : triangles_) {
+        detail::AssertTriangleIndicesInRange(
+                triangle, static_cast<int64_t>(vertices_.size()));
         vertex_has_reference[triangle(0)] = true;
         vertex_has_reference[triangle(1)] = true;
         vertex_has_reference[triangle(2)] = true;
@@ -931,6 +944,7 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
 }
 
 TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
+    const int64_t old_vertex_count = static_cast<int64_t>(vertices_.size());
     KDTreeFlann kdtree(*this);
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
@@ -1001,6 +1015,7 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     std::swap(vertex_colors_, new_vertex_colors);
 
     for (auto &triangle : triangles_) {
+        detail::AssertTriangleIndicesInRange(triangle, old_vertex_count);
         triangle(0) = new_vert_mapping[triangle(0)];
         triangle(1) = new_vert_mapping[triangle(1)];
         triangle(2) = new_vert_mapping[triangle(2)];
@@ -1183,6 +1198,8 @@ double TriangleMesh::ComputeTriangleArea(const Eigen::Vector3d &p0,
 
 double TriangleMesh::GetTriangleArea(size_t triangle_idx) const {
     const Eigen::Vector3i &triangle = triangles_[triangle_idx];
+    detail::AssertTriangleIndicesInRange(
+            triangle, static_cast<int64_t>(vertices_.size()));
     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
@@ -1235,6 +1252,8 @@ double TriangleMesh::GetVolume() const {
                     // determined by checking if the origin is at the same side
                     // as the normal with respect to the triangle.
                     const Eigen::Vector3i &triangle = triangles_[tidx];
+                    detail::AssertTriangleIndicesInRange(
+                            triangle, static_cast<int64_t>(vertices_.size()));
                     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
                     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
                     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
@@ -1263,6 +1282,8 @@ Eigen::Vector4d TriangleMesh::ComputeTrianglePlane(const Eigen::Vector3d &p0,
 
 Eigen::Vector4d TriangleMesh::GetTrianglePlane(size_t triangle_idx) const {
     const Eigen::Vector3i &triangle = triangles_[triangle_idx];
+    detail::AssertTriangleIndicesInRange(
+            triangle, static_cast<int64_t>(vertices_.size()));
     const Eigen::Vector3d &vertex0 = vertices_[triangle(0)];
     const Eigen::Vector3d &vertex1 = vertices_[triangle(1)];
     const Eigen::Vector3d &vertex2 = vertices_[triangle(2)];
@@ -1315,6 +1336,8 @@ std::vector<int> TriangleMesh::GetNonManifoldVertices() const {
     std::vector<std::unordered_set<int>> vert_to_triangles(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto &tria = triangles_[tidx];
+        detail::AssertTriangleIndicesInRange(
+                tria, static_cast<int64_t>(vertices_.size()));
         vert_to_triangles[tria(0)].emplace(int(tidx));
         vert_to_triangles[tria(1)].emplace(int(tidx));
         vert_to_triangles[tria(2)].emplace(int(tidx));
@@ -1373,6 +1396,8 @@ bool TriangleMesh::IsVertexManifold() const {
 
 std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const {
+    detail::AssertTriangleIndicesInRange(
+            triangles_, static_cast<int64_t>(vertices_.size()));
     tbb::concurrent_vector<Eigen::Vector2i> self_intersecting_triangles;
     tbb::parallel_for(
             tbb::blocked_range<std::size_t>(0, triangles_.size(),
@@ -1435,6 +1460,10 @@ bool TriangleMesh::IsBoundingBoxIntersecting(const TriangleMesh &other) const {
 }
 
 bool TriangleMesh::IsIntersecting(const TriangleMesh &other) const {
+    detail::AssertTriangleIndicesInRange(
+            triangles_, static_cast<int64_t>(vertices_.size()));
+    detail::AssertTriangleIndicesInRange(
+            other.triangles_, static_cast<int64_t>(other.vertices_.size()));
     if (!IsBoundingBoxIntersecting(other)) {
         return false;
     }
@@ -1600,6 +1629,8 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
         utility::LogError("vertex_mask has a different size than vertices_");
     }
 
+    const int64_t old_vertex_count = static_cast<int64_t>(vertices_.size());
+
     bool has_normal = HasVertexNormals();
     bool has_color = HasVertexColors();
     int to_vidx = 0;
@@ -1628,6 +1659,7 @@ void TriangleMesh::RemoveVerticesByMask(const std::vector<bool> &vertex_mask) {
     std::vector<bool> triangle_mask(triangles_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         auto &tria = triangles_[tidx];
+        detail::AssertTriangleIndicesInRange(tria, old_vertex_count);
         triangle_mask[tidx] = vertex_mask[tria(0)] || vertex_mask[tria(1)] ||
                               vertex_mask[tria(2)];
         if (!triangle_mask[tidx]) {

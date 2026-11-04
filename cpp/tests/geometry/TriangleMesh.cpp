@@ -771,6 +771,26 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
     ExpectEQ(ref, tm.triangle_normals_);
 }
 
+TEST(TriangleMesh, RejectsOutOfRangeTriangleIndices) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 0, 0),
+                      Eigen::Vector3d(0, 1, 0)};
+    mesh.triangles_ = {Eigen::Vector3i(0, 1, 3)};
+    EXPECT_THROW(mesh.ComputeTriangleNormals(), std::runtime_error);
+    EXPECT_THROW(mesh.ComputeAdjacencyList(), std::runtime_error);
+    EXPECT_THROW(mesh.IsVertexManifold(), std::runtime_error);
+    EXPECT_THROW(mesh.SimplifyVertexClustering(1.0), std::runtime_error);
+    EXPECT_THROW(mesh.SimplifyQuadricDecimation(1, 0.0, 1.0),
+                 std::runtime_error);
+    EXPECT_THROW(mesh.SubdivideMidpoint(1), std::runtime_error);
+    EXPECT_THROW(mesh.SubdivideLoop(1), std::runtime_error);
+
+    mesh.triangles_ = {Eigen::Vector3i(0, -1, 2)};
+    EXPECT_THROW(mesh.ComputeTriangleNormals(), std::runtime_error);
+    EXPECT_THROW(mesh.ComputeAdjacencyList(), std::runtime_error);
+    EXPECT_THROW(mesh.IsVertexManifold(), std::runtime_error);
+}
+
 TEST(TriangleMesh, ComputeVertexNormals) {
     std::vector<Eigen::Vector3d> ref = {
             {0.635868, 0.698804, 0.327636},    {0.327685, 0.717012, 0.615237},

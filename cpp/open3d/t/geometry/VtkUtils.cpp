@@ -409,10 +409,25 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
     } else if (geometry.GetGeometryType() ==
                Geometry::GeometryType::TriangleMesh) {
         auto mesh = static_cast<const TriangleMesh&>(geometry);
+        auto triangle_indices = mesh.GetTriangleIndices()
+                                        .To(core::Device(), core::Int64)
+                                        .Contiguous();
+        const int64_t num_vertices = mesh.GetVertexPositions().GetLength();
+        const int64_t* triangle_index_data =
+                triangle_indices.GetDataPtr<int64_t>();
+        for (int64_t i = 0; i < triangle_indices.NumElements(); ++i) {
+            if (triangle_index_data[i] < 0 ||
+                triangle_index_data[i] >= num_vertices) {
+                utility::LogError(
+                        "Triangle vertex index {} is out of range for {} "
+                        "vertices.",
+                        triangle_index_data[i], num_vertices);
+            }
+        }
         polydata->SetPoints(
                 CreateVtkPointsFromTensor(mesh.GetVertexPositions(), copy));
         polydata->SetPolys(
-                CreateVtkCellArrayFromTensor(mesh.GetTriangleIndices(), copy));
+                CreateVtkCellArrayFromTensor(triangle_indices, copy));
 
         AddTensorMapToVtkFieldData(polydata->GetPointData(),
                                    mesh.GetVertexAttr(), copy,

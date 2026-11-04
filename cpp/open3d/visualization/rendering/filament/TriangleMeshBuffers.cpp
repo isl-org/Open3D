@@ -33,6 +33,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
@@ -411,6 +412,9 @@ RenderableManager::PrimitiveType TriangleMeshBuffersBuilder::GetPrimitiveType()
 }
 
 GeometryBuffersBuilder::Buffers TriangleMeshBuffersBuilder::ConstructBuffers() {
+    open3d::geometry::detail::AssertTriangleIndicesInRange(
+            geometry_.triangles_,
+            static_cast<int64_t>(geometry_.vertices_.size()));
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
@@ -619,6 +623,13 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     const auto& points = geometry_.GetVertexPositions();
     const auto& indices = geometry_.GetTriangleIndices();
     const auto indices_64 = indices.To(core::Int64);  // for Tensor indexing
+    const int64_t* triangle_index_data = indices_64.GetDataPtr<int64_t>();
+    const int64_t num_vertices = points.GetLength();
+    for (int64_t i = 0; i < indices_64.NumElements(); ++i) {
+        OPEN3D_ASSERT(triangle_index_data[i] >= 0 &&
+                              triangle_index_data[i] < num_vertices,
+                      "Triangle vertex index is out of range.");
+    }
     const size_t n_vertices = need_duplicate_vertices ? indices.GetLength() * 3
                                                       : points.GetLength();
 

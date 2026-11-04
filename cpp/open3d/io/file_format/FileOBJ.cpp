@@ -87,6 +87,14 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             for (int v = 0; v < fv; v++) {
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
                 int vidx = idx.vertex_index;
+                if (vidx < 0 ||
+                    static_cast<size_t>(vidx) >= mesh.vertices_.size()) {
+                    utility::LogWarning(
+                            "Read OBJ failed: face contains out-of-range "
+                            "vertex index {}.",
+                            vidx);
+                    return false;
+                }
                 facet(v) = vidx;
 
                 if (!attrib.normals.empty() && !normals_indicator[vidx] &&
