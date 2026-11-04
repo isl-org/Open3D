@@ -645,16 +645,36 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
 
     core::SizeVector shape;
     char type;
-    size_t word_size;
+    int64_t word_size;
     bool fortran_order;
     std::tie(shape, type, word_size, fortran_order) =
             ParseNpyHeaderFromBuffer(buffer_uncompressed.Data());
 
+    const int64_t member_size =
+            static_cast<int64_t>(num_uncompressed_bytes);
+    const int64_t max_num_elements =
+            word_size > 0 ? member_size / word_size : 0;
+    int64_t num_elements = 1;
+    bool invalid_array_size = word_size <= 0 || word_size > member_size;
+    for (int64_t dimension : shape) {
+        if (dimension < 0 ||
+            (dimension > 0 && num_elements > max_num_elements / dimension)) {
+            invalid_array_size = true;
+            break;
+        }
+        num_elements *= dimension;
+    }
+    if (invalid_array_size || num_elements > max_num_elements) {
+        utility::LogError("Invalid compressed npy array size.");
+    }
+    const size_t array_num_bytes =
+            static_cast<size_t>(num_elements * word_size);
+
     NumpyArray array(shape, type, word_size, fortran_order);
 
-    size_t offset = num_uncompressed_bytes - array.NumBytes();
+    size_t offset = num_uncompressed_bytes - array_num_bytes;
     memcpy(array.GetDataPtr<char>(), buffer_uncompressed.Data() + offset,
-           array.NumBytes());
+           array_num_bytes);
 
     return array;
 }
