@@ -7,6 +7,7 @@
 
 #include <cstddef>
 
+#include "open3d/Macro.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/TriangleMeshImpl.h"
@@ -24,6 +25,7 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                              core::Tensor& vertex_normals) {
     const core::Dtype dtype = vertex_normals.GetDtype();
     const int64_t n = triangles.GetLength();
+    const int64_t num_vertices = vertex_normals.GetLength();
     const core::Tensor triangles_d = triangles.To(core::Int64);
 
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -37,6 +39,11 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
             int64_t triangle_id1 = triangle_ptr[idx];
             int64_t triangle_id2 = triangle_ptr[idx + 1];
             int64_t triangle_id3 = triangle_ptr[idx + 2];
+            OPEN3D_ASSERT(
+                    triangle_id1 >= 0 && triangle_id1 < num_vertices &&
+                            triangle_id2 >= 0 && triangle_id2 < num_vertices &&
+                            triangle_id3 >= 0 && triangle_id3 < num_vertices,
+                    "Triangle vertex index is out of range.");
 
             scalar_t n1 = triangle_normals_ptr[idx];
             scalar_t n2 = triangle_normals_ptr[idx + 1];
@@ -100,6 +107,7 @@ std::array<core::Tensor, 3> SamplePointsUniformlyCPU(
     }
     const size_t tex_width = use_albedo ? albedo.GetShape(1) : 0,
                  tex_height = use_albedo ? albedo.GetShape(0) : 0;
+    const int64_t num_vertices = vertices.GetLength();
     DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(
             vertices.GetDtype(), triangles.GetDtype(), [&]() {
                 const int_t* p_triangles = triangles.GetDataPtr<int_t>();
@@ -141,9 +149,16 @@ std::array<core::Tensor, 3> SamplePointsUniformlyCPU(
                     float wts[3] = {1 - std::sqrt(r1), std::sqrt(r1) * (1 - r2),
                                     std::sqrt(r1) * r2};
                     size_t tidx = triangle_index_generator();
-                    int_t vert_idx[3] = {p_triangles[3 * tidx + 0],
-                                         p_triangles[3 * tidx + 1],
-                                         p_triangles[3 * tidx + 2]};
+                    int64_t vert_idx[3] = {p_triangles[3 * tidx + 0],
+                                           p_triangles[3 * tidx + 1],
+                                           p_triangles[3 * tidx + 2]};
+                    OPEN3D_ASSERT(vert_idx[0] >= 0 &&
+                                          vert_idx[0] < num_vertices &&
+                                          vert_idx[1] >= 0 &&
+                                          vert_idx[1] < num_vertices &&
+                                          vert_idx[2] >= 0 &&
+                                          vert_idx[2] < num_vertices,
+                                  "Triangle vertex index is out of range.");
 
                     mix_3x3(p_points, p_vertices + 3 * vert_idx[0],
                             p_vertices + 3 * vert_idx[1],

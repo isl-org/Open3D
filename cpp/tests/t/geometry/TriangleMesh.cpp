@@ -19,6 +19,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/TriangleMeshIO.h"
 #include "open3d/visualization/utility/Draw.h"
@@ -32,6 +33,23 @@ INSTANTIATE_TEST_SUITE_P(
         TriangleMesh,
         TriangleMeshPermuteDevices,
         testing::ValuesIn(TriangleMeshPermuteDevices::TestCases()));
+
+TEST(TriangleMesh, RejectsOutOfRangeIndicesOnCPU) {
+    core::Tensor vertices = core::Tensor::Zeros({3, 3}, core::Float32);
+    for (int64_t invalid_index : {-1, 3}) {
+        t::geometry::TriangleMesh mesh(
+                vertices, core::Tensor::Init<int64_t>({{0, 1, invalid_index}}));
+        EXPECT_ANY_THROW(mesh.ComputeTriangleNormals());
+        EXPECT_ANY_THROW(mesh.ComputeTriangleAreas());
+    }
+}
+
+TEST(TriangleMesh, RaycastingSceneRejectsOutOfRangeIndices) {
+    t::geometry::RaycastingScene scene;
+    core::Tensor vertices = core::Tensor::Zeros({3, 3}, core::Float32);
+    core::Tensor triangles = core::Tensor::Init<uint32_t>({{0, 1, 3}});
+    EXPECT_ANY_THROW(scene.AddTriangles(vertices, triangles));
+}
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {
     t::geometry::TriangleMesh mesh;

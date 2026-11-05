@@ -1301,6 +1301,15 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
     rtcCommitGeometry(geom);
 
     uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
+    for (size_t i = 0; i < 3 * num_triangles; ++i) {
+        if (index_buffer[i] >= num_vertices) {
+            rtcReleaseGeometry(geom);
+            utility::LogError(
+                    "Triangle vertex index {} is out of range for {} "
+                    "vertices.",
+                    index_buffer[i], num_vertices);
+        }
+    }
     rtcReleaseGeometry(geom);
 
     GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,

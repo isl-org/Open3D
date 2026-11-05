@@ -170,6 +170,15 @@ bool IsPointInsidePolygon(const Eigen::MatrixX2d &polygon, double x, double y) {
 
 bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
                                std::vector<unsigned int> &indices) {
+    for (unsigned int index : indices) {
+        if (index >= mesh.vertices_.size()) {
+            utility::LogWarning(
+                    "Cannot triangulate polygon with out-of-range vertex "
+                    "index {} ({} vertices).",
+                    index, mesh.vertices_.size());
+            return false;
+        }
+    }
     int n = int(indices.size());
     Eigen::Vector3d face_normal = Eigen::Vector3d::Zero();
     if (n > 3) {

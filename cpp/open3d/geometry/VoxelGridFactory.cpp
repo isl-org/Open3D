@@ -11,6 +11,7 @@
 #include "open3d/geometry/IntersectionTest.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -125,6 +126,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
     for (const Eigen::Vector3i &tria : input.triangles_) {
+        detail::AssertTriangleIndicesInRange(
+                tria, static_cast<int64_t>(input.vertices_.size()));
         const Eigen::Vector3d &v0 = input.vertices_[tria(0)];
         const Eigen::Vector3d &v1 = input.vertices_[tria(1)];
         const Eigen::Vector3d &v2 = input.vertices_[tria(2)];
