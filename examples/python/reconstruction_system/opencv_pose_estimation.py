@@ -92,9 +92,12 @@ def pose_estimation(source_rgbd_image, target_rgbd_image,
         if mask[i]:
             xyz_s = get_xyz_from_pts(pts_s[i, :], depth_s, pp_x, pp_y,
                                      focal_input)
-            pts_xyz_s[:, cnt] = xyz_s
             xyz_t = get_xyz_from_pts(pts_t[i, :], depth_t, pp_x, pp_y,
                                      focal_input)
+            if not (np.isfinite(xyz_s[2]) and xyz_s[2] > 0 and
+                    np.isfinite(xyz_t[2]) and xyz_t[2] > 0):
+                continue
+            pts_xyz_s[:, cnt] = xyz_s
             pts_xyz_t[:, cnt] = xyz_t
             cnt = cnt + 1
     pts_xyz_s = pts_xyz_s[:, :cnt]
