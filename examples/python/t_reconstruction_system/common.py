@@ -119,10 +119,14 @@ def load_rgbd_file_names(config):
 
     color_folder = os.path.join(config.path_dataset, config.color_folder)
     extensions = ['*.png', '*.jpg']
+    color_file_names = []
     for ext in extensions:
-        color_file_names = glob.glob(os.path.join(color_folder, ext))
-        if len(color_file_names) == len(depth_file_names):
-            return depth_file_names, sorted(color_file_names)
+        matches = glob.glob(os.path.join(color_folder, ext))
+        if len(matches) == len(depth_file_names):
+            return depth_file_names, sorted(matches)
+        color_file_names.extend(matches)
+    if len(color_file_names) == len(depth_file_names):
+        return depth_file_names, sorted(color_file_names)
 
     depth_folder = os.path.join(config.path_dataset, config.depth_folder)
     print('Found {} depth images in {}, but cannot find matched number of '
