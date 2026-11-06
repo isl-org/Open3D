@@ -208,10 +208,8 @@ def estimate_3D_transform(input_xyz_s, input_xyz_t):
     U, s, V = np.linalg.svd(H)
     R_approx = np.matmul(V.transpose(), U.transpose())
     if np.linalg.det(R_approx) < 0.0:
-        det = np.linalg.det(np.matmul(U, V))
-        D = np.identity(3)
-        D[2, 2] = det
-        R_approx = np.matmul(U, np.matmul(D, V))
+        V[-1, :] *= -1
+        R_approx = np.matmul(V.transpose(), U.transpose())
     t_approx = mean_t - np.matmul(R_approx, mean_s)
     return R_approx, t_approx
 
