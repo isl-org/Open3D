@@ -6,7 +6,6 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-from pathlib import Path
 import sys
 
 from open3d.tools import cli
