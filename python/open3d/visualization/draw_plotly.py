@@ -21,20 +21,20 @@ def get_point_object(geometry, point_sample_factor=1):
         colors = np.asarray(geometry.colors)
     elif geometry.has_normals():
         colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals) * 0.5
-    else:
-        geometry.paint_uniform_color((1.0, 0.0, 0.0))
-        colors = np.asarray(geometry.colors)
     if (point_sample_factor > 0 and point_sample_factor < 1):
         indices = np.random.choice(len(points),
                                    (int)(len(points) * point_sample_factor),
                                    replace=False)
         points = points[indices]
-        colors = colors[indices]
+        if colors is not None:
+            colors = colors[indices]
     scatter_3d = go.Scatter3d(x=points[:, 0],
                               y=points[:, 1],
                               z=points[:, 2],
                               mode='markers',
-                              marker=dict(size=1, color=colors))
+                              marker=dict(
+                                  size=1,
+                                  color='red' if colors is None else colors))
     return scatter_3d
 
 
