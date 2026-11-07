@@ -25,6 +25,7 @@
 -   Fix MSAA sample count not being copied when FilamentView is copied
 -   Fix TriangleMesh::SamplePointsUniformly and TriangleMesh::SamplePointsPoissonDisk now sampling colors from mesh if available (PR #6842)
 -   Fix TriangleMesh::SamplePointsUniformly not sampling triangle meshes uniformly (PR #6653)
+-   Honor the requested voxel size in the KITTI conversion example and preserve unrelated files in the output directory.
 -   Fix tensor based TSDF integration example.
 -   Use GLIBCXX_USE_CXX11_ABI=ON by default
 -   Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
