@@ -33,10 +33,10 @@ def sorted_alphanum(file_list_ordered):
 # get list of files inside a folder, matching the externsion, in sorted order.
 def get_file_list(path, extension=None):
     if extension is None:
-        file_list = [path + f for f in listdir(path) if isfile(join(path, f))]
+        file_list = [join(path, f) for f in listdir(path) if isfile(join(path, f))]
     else:
         file_list = [
-            path + f
+            join(path, f)
             for f in listdir(path)
             if isfile(join(path, f)) and splitext(f)[1] == extension
         ]
@@ -73,8 +73,8 @@ def preprocess_and_save(source_folder,
         "Converting .bin to .ply files and pre-processing from frame {} to index {}"
         .format(start_idx, end_idx))
 
-    if (end_idx < start_idx):
-        raise RuntimeError("End index must be smaller than start index.")
+    if start_idx < 0 or end_idx < start_idx:
+        raise ValueError("Expected 0 <= start index <= end index.")
     if (end_idx > len(filenames)):
         end_idx = len(filenames)
         print(
@@ -87,7 +87,7 @@ def preprocess_and_save(source_folder,
         pcd = bin_to_pcd(path)
 
         # downsample and estimate normals.
-        voxel_down_pcd = pcd.voxel_down_sample(voxel_size=0.05)
+        voxel_down_pcd = pcd.voxel_down_sample(voxel_size=voxel_size)
         voxel_down_pcd.estimate_normals(
             search_param=o3d.geometry.KDTreeSearchParamKNN(),
             fast_normal_computation=False)
@@ -98,12 +98,12 @@ def preprocess_and_save(source_folder,
         tpcd.point.normals = tpcd.point.normals.to(o3d.core.Dtype.Float32)
 
         # extract name from path.
-        name = str(path).rsplit('/', 1)[-1]
-        name = name[:-3] + "ply"
+        name = splitext(basename(path))[0] + ".ply"
 
         # write to the destination folder.
-        output_path = destination_folder + name
-        o3d.t.io.write_point_cloud(output_path, tpcd)
+        output_path = join(destination_folder, name)
+        if not o3d.t.io.write_point_cloud(output_path, tpcd):
+            raise RuntimeError("Could not write point cloud: " + output_path)
 
 
 def file_downloader(url):
@@ -148,8 +148,7 @@ def get_kitti_sample_dataset(dataset_path, dataset_name):
     path = join(dataset_path, dataset_name)
     if not os.path.exists(path):
         print("==================================")
-        download_path = join(download_parent_path + dataset_name,
-                             dataset_name + '_sync.zip')
+        download_path = download_parent_path + dataset_name + '/' + dataset_name + '_sync.zip'
         file_downloader(download_path)
         unzip_data("%s_sync.zip" % dataset_name,
                    "%s/%s" % (dataset_path, dataset_name))
@@ -221,7 +220,9 @@ if __name__ == '__main__':
         os.makedirs(destination_path)
     else:
         for f in os.listdir(destination_path):
-            os.remove(os.path.join(destination_path, f))
+            if (re.match(r'^[0-9]{10}\.ply\Z', f) and
+                    isfile(join(destination_path, f))):
+                os.remove(join(destination_path, f))
 
     source_folder = join(download_dataset_path,
                          find_source_pcd_folder_path(args.dataset_name))
