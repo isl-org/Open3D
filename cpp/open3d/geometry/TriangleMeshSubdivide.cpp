@@ -70,7 +70,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
         for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
             const auto& triangle = mesh->triangles_[tidx];
             detail::AssertTriangleIndicesInRange(
-                    triangle, static_cast<int64_t>(mesh->vertices_.size()));
+                    triangle, static_cast<int64_t>(vertices_.size()));
             int vidx0 = triangle(0);
             int vidx1 = triangle(1);
             int vidx2 = triangle(2);

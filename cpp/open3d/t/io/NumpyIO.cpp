@@ -33,6 +33,7 @@
 
 #include <zlib.h>
 
+#include <algorithm>
 #include <memory>
 #include <numeric>
 #include <regex>
@@ -650,19 +651,25 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
     std::tie(shape, type, word_size, fortran_order) =
             ParseNpyHeaderFromBuffer(buffer_uncompressed.Data());
 
-    const int64_t member_size =
-            static_cast<int64_t>(num_uncompressed_bytes);
+    const int64_t member_size = static_cast<int64_t>(num_uncompressed_bytes);
     const int64_t max_num_elements =
             word_size > 0 ? member_size / word_size : 0;
-    int64_t num_elements = 1;
+    int64_t num_elements =
+            std::find(shape.begin(), shape.end(), 0) == shape.end() ? 1 : 0;
     bool invalid_array_size = word_size <= 0 || word_size > member_size;
     for (int64_t dimension : shape) {
-        if (dimension < 0 ||
-            (dimension > 0 && num_elements > max_num_elements / dimension)) {
+        if (dimension < 0) {
             invalid_array_size = true;
-            break;
         }
-        num_elements *= dimension;
+    }
+    if (num_elements > 0 && !invalid_array_size) {
+        for (int64_t dimension : shape) {
+            if (num_elements > max_num_elements / dimension) {
+                invalid_array_size = true;
+                break;
+            }
+            num_elements *= dimension;
+        }
     }
     if (invalid_array_size || num_elements > max_num_elements) {
         utility::LogError("Invalid compressed npy array size.");

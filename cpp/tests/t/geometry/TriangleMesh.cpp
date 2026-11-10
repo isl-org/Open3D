@@ -49,6 +49,9 @@ TEST(TriangleMesh, RaycastingSceneRejectsOutOfRangeIndices) {
     core::Tensor vertices = core::Tensor::Zeros({3, 3}, core::Float32);
     core::Tensor triangles = core::Tensor::Init<uint32_t>({{0, 1, 3}});
     EXPECT_ANY_THROW(scene.AddTriangles(vertices, triangles));
+
+    triangles = core::Tensor::Init<uint32_t>({{0, 1, 2}});
+    EXPECT_EQ(scene.AddTriangles(vertices, triangles), 0u);
 }
 
 TEST_P(TriangleMeshPermuteDevices, DefaultConstructor) {

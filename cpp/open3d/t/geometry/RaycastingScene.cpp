@@ -1249,8 +1249,6 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
     const size_t num_vertices = vertex_positions.GetLength();
     const size_t num_triangles = triangle_indices.GetLength();
 
-    // scene needs to be recommitted
-    impl_->scene_committed_ = false;
     RTCGeometry geom =
             rtcNewGeometry(impl_->device_, RTC_GEOMETRY_TYPE_TRIANGLE);
 
@@ -1297,19 +1295,21 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
         }
 #endif
     }
-    rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
-    rtcCommitGeometry(geom);
-
-    uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
     for (size_t i = 0; i < 3 * num_triangles; ++i) {
         if (index_buffer[i] >= num_vertices) {
+            const uint32_t invalid_index = index_buffer[i];
             rtcReleaseGeometry(geom);
             utility::LogError(
                     "Triangle vertex index {} is out of range for {} "
                     "vertices.",
-                    index_buffer[i], num_vertices);
+                    invalid_index, num_vertices);
         }
     }
+
+    rtcSetGeometryEnableFilterFunctionFromArguments(geom, true);
+    rtcCommitGeometry(geom);
+    impl_->scene_committed_ = false;
+    uint32_t geom_id = rtcAttachGeometry(impl_->scene_, geom);
     rtcReleaseGeometry(geom);
 
     GeometryPtr geometry_ptr = {RTC_GEOMETRY_TYPE_TRIANGLE,

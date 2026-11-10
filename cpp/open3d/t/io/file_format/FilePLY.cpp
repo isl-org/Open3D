@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
@@ -241,6 +242,7 @@ bool ReadPointCloudFromPLY(const std::string& filename,
             {"opacity", false},   {"rot", false},     {"scale", false},
             {"f_dc", false},      {"f_rest", false},
     };
+    std::unordered_map<std::string, core::Dtype> attr_dtypes;
 
     int f_rest_count = 0;
     p_ply_property attribute = ply_get_next_property(element, nullptr);
@@ -257,20 +259,6 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                     name, GetDtypeString(type));
         } else {
             auto attr_state = std::make_shared<PLYReaderState::AttrState>();
-            long size = 0;
-            long id = static_cast<long>(state.id_to_attr_state_.size());
-            DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(type), [&]() {
-                size = ply_set_read_cb(ply_file, element_name, name,
-                                       ReadAttributeCallback<scalar_t>, &state,
-                                       id);
-            });
-            if (size != element_size) {
-                utility::LogError(
-                        "Total size of property {} ({}) is not equal to "
-                        "size of {} ({}).",
-                        name, size, element_name, element_size);
-            }
-
             const std::string attr_name = std::string(name);
             auto [name, stride, offset] =
                     GetNameStrideOffsetForAttribute(attr_name);
@@ -281,6 +269,36 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                         attr_name);
                 ply_close(ply_file);
                 return false;
+            }
+            const core::Dtype property_dtype = GetDtype(type);
+            const core::Dtype attr_dtype =
+                    name == "f_rest" ? core::Float32 : property_dtype;
+            const auto [dtype_it, inserted] =
+                    attr_dtypes.emplace(name, attr_dtype);
+            const bool is_primary_attr = primary_attr_init.count(name) != 0;
+            if (property_dtype != attr_dtype ||
+                (!inserted && dtype_it->second != attr_dtype) ||
+                (!is_primary_attr && !inserted)) {
+                utility::LogWarning(
+                        "Read PLY failed: property \"{}\" has a datatype "
+                        "incompatible with attribute \"{}\".",
+                        attr_name, name);
+                ply_close(ply_file);
+                return false;
+            }
+
+            long size = 0;
+            long id = static_cast<long>(state.id_to_attr_state_.size());
+            DISPATCH_DTYPE_TO_TEMPLATE(property_dtype, [&]() {
+                size = ply_set_read_cb(
+                        ply_file, element_name, attr_name.c_str(),
+                        ReadAttributeCallback<scalar_t>, &state, id);
+            });
+            if (size != element_size) {
+                utility::LogError(
+                        "Total size of property {} ({}) is not equal to "
+                        "size of {} ({}).",
+                        name, size, element_name, element_size);
             }
             if (name == "f_rest") {
                 f_rest_count++;
@@ -293,13 +311,13 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                 if (primary_attr_init.at(name) == false) {
                     pointcloud.SetPointAttr(
                             name, core::Tensor::Empty({element_size, stride},
-                                                      GetDtype(type)));
+                                                      attr_dtype));
                     primary_attr_init[name] = true;
                 }
             } else {
                 pointcloud.SetPointAttr(
                         name, core::Tensor::Empty({element_size, stride},
-                                                  GetDtype(type)));
+                                                  attr_dtype));
             }
             attr_state->data_ptr_ = pointcloud.GetPointAttr(name).GetDataPtr();
             attr_state->size_ = element_size;

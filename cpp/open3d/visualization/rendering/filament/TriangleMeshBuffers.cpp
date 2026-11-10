@@ -622,7 +622,8 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
                                    geometry_.HasTriangleAttr("texture_uvs");
     const auto& points = geometry_.GetVertexPositions();
     const auto& indices = geometry_.GetTriangleIndices();
-    const auto indices_64 = indices.To(core::Int64);  // for Tensor indexing
+    const auto indices_64 =
+            indices.To(core::Int64).Contiguous();  // for Tensor indexing
     const int64_t* triangle_index_data = indices_64.GetDataPtr<int64_t>();
     const int64_t num_vertices = points.GetLength();
     for (int64_t i = 0; i < indices_64.NumElements(); ++i) {
