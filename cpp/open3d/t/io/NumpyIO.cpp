@@ -310,6 +310,9 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         utility::LogError("Header preamble cannot be read.");
     }
     const size_t header_len = ParseNpyPreamble(preamble.Data());
+    if (header_len == 0) {
+        utility::LogError("Numpy header cannot be empty.");
+    }
 
     CharVector header(header_len, 0);
     if (fread(header.Data(), sizeof(char), header_len, fp) != header_len) {
@@ -323,8 +326,19 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool>
-ParseNpyHeaderFromBuffer(const char* buffer) {
+ParseNpyHeaderFromBuffer(const char* buffer,
+                         size_t buffer_size,
+                         size_t* payload_offset) {
+    constexpr size_t preamble_size = 10;
+    if (buffer_size < preamble_size) {
+        utility::LogError("Numpy header preamble is truncated.");
+    }
     const size_t header_len = ParseNpyPreamble(buffer);
+    if (header_len == 0 || header_len > buffer_size - preamble_size ||
+        buffer[preamble_size + header_len - 1] != '\n') {
+        utility::LogError("Numpy header is invalid or truncated.");
+    }
+    *payload_offset = preamble_size + header_len;
     std::string header(reinterpret_cast<const char*>(buffer + 10), header_len);
     return ParsePropertyDict(header);
 }
@@ -648,15 +662,19 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
     char type;
     int64_t word_size;
     bool fortran_order;
+    size_t payload_offset;
     std::tie(shape, type, word_size, fortran_order) =
-            ParseNpyHeaderFromBuffer(buffer_uncompressed.Data());
+            ParseNpyHeaderFromBuffer(buffer_uncompressed.Data(),
+                                     num_uncompressed_bytes, &payload_offset);
 
     const int64_t member_size = static_cast<int64_t>(num_uncompressed_bytes);
+    const int64_t payload_size =
+            member_size - static_cast<int64_t>(payload_offset);
     const int64_t max_num_elements =
-            word_size > 0 ? member_size / word_size : 0;
+            word_size > 0 ? payload_size / word_size : 0;
     int64_t num_elements =
             std::find(shape.begin(), shape.end(), 0) == shape.end() ? 1 : 0;
-    bool invalid_array_size = word_size <= 0 || word_size > member_size;
+    bool invalid_array_size = word_size <= 0;
     for (int64_t dimension : shape) {
         if (dimension < 0) {
             invalid_array_size = true;
@@ -679,9 +697,10 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
 
     NumpyArray array(shape, type, word_size, fortran_order);
 
-    size_t offset = num_uncompressed_bytes - array_num_bytes;
-    memcpy(array.GetDataPtr<char>(), buffer_uncompressed.Data() + offset,
-           array_num_bytes);
+    if (array_num_bytes > 0) {
+        memcpy(array.GetDataPtr<char>(),
+               buffer_uncompressed.Data() + payload_offset, array_num_bytes);
+    }
 
     return array;
 }
