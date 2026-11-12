@@ -295,8 +295,10 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3DGS) {
                    "property float y\n"
                    "property float z\n"
                    "property double f_rest_0\n"
+                   "property double f_rest_1\n"
+                   "property double f_rest_2\n"
                    "end_header\n"
-                   "0 0 0 0\n";
+                   "0 0 0 0 0 0\n";
     }
     t::geometry::PointCloud mismatched_pcd;
     EXPECT_FALSE(t::io::ReadPointCloud(filename_out, mismatched_pcd,
