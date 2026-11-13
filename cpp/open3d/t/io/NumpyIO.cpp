@@ -34,6 +34,7 @@
 #include <zlib.h>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <regex>
@@ -635,15 +636,17 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
         utility::LogError("Failed to read compressed data.");
     }
 
-    int err;
-    z_stream d_stream;
+    z_stream d_stream{};
 
     d_stream.zalloc = Z_NULL;
     d_stream.zfree = Z_NULL;
     d_stream.opaque = Z_NULL;
     d_stream.avail_in = 0;
     d_stream.next_in = Z_NULL;
-    err = inflateInit2(&d_stream, -MAX_WBITS);
+    const int init_err = inflateInit2(&d_stream, -MAX_WBITS);
+    if (init_err != Z_OK) {
+        utility::LogError("Failed to initialize decompression.");
+    }
 
     d_stream.avail_in = num_compressed_bytes;
     d_stream.next_in =
@@ -652,9 +655,11 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
     d_stream.next_out =
             reinterpret_cast<unsigned char*>(buffer_uncompressed.Data());
 
-    err = inflate(&d_stream, Z_FINISH);
-    err = inflateEnd(&d_stream);
-    if (err != Z_OK) {
+    const int inflate_err = inflate(&d_stream, Z_FINISH);
+    const bool output_complete =
+            inflate_err == Z_STREAM_END && d_stream.avail_out == 0;
+    const int end_err = inflateEnd(&d_stream);
+    if (!output_complete || end_err != Z_OK) {
         utility::LogError("Failed to decompress data.");
     }
 
@@ -672,22 +677,29 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
             member_size - static_cast<int64_t>(payload_offset);
     const int64_t max_num_elements =
             word_size > 0 ? payload_size / word_size : 0;
-    int64_t num_elements =
-            std::find(shape.begin(), shape.end(), 0) == shape.end() ? 1 : 0;
+    const bool has_zero_dimension =
+            std::find(shape.begin(), shape.end(), 0) != shape.end();
+    int64_t num_elements = 1;
     bool invalid_array_size = word_size <= 0;
+    const int64_t max_product = has_zero_dimension
+                                        ? std::numeric_limits<int64_t>::max()
+                                        : max_num_elements;
     for (int64_t dimension : shape) {
         if (dimension < 0) {
             invalid_array_size = true;
+            break;
         }
+        const int64_t factor = has_zero_dimension
+                                       ? std::max<int64_t>(dimension, 1)
+                                       : dimension;
+        if (num_elements > max_product / factor) {
+            invalid_array_size = true;
+            break;
+        }
+        num_elements *= factor;
     }
-    if (num_elements > 0 && !invalid_array_size) {
-        for (int64_t dimension : shape) {
-            if (num_elements > max_num_elements / dimension) {
-                invalid_array_size = true;
-                break;
-            }
-            num_elements *= dimension;
-        }
+    if (has_zero_dimension) {
+        num_elements = 0;
     }
     if (invalid_array_size || num_elements > max_num_elements) {
         utility::LogError("Invalid compressed npy array size.");

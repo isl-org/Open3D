@@ -1320,14 +1320,28 @@ uint32_t RaycastingScene::AddTriangles(const core::Tensor& vertex_positions,
 }
 
 uint32_t RaycastingScene::AddTriangles(const TriangleMesh& mesh) {
-    size_t num_verts = mesh.GetVertexPositions().GetLength();
+    const int64_t num_verts = mesh.GetVertexPositions().GetLength();
     if (num_verts > std::numeric_limits<uint32_t>::max()) {
         utility::LogError(
                 "Cannot add mesh with more than {} vertices to the scene",
                 std::numeric_limits<uint32_t>::max());
     }
+    const auto& triangle_indices = mesh.GetTriangleIndices();
+    if (triangle_indices.GetDtype() != core::UInt32 &&
+        triangle_indices.NumElements() > 0) {
+        const double min_index =
+                triangle_indices.Min({0, 1}).To(core::Float64).Item<double>();
+        const double max_index =
+                triangle_indices.Max({0, 1}).To(core::Float64).Item<double>();
+        if (min_index < 0 || max_index >= num_verts) {
+            utility::LogError(
+                    "Triangle vertex indices are out of range for {} "
+                    "vertices.",
+                    num_verts);
+        }
+    }
     return AddTriangles(mesh.GetVertexPositions(),
-                        mesh.GetTriangleIndices().To(core::UInt32));
+                        triangle_indices.To(core::UInt32));
 }
 
 std::unordered_map<std::string, core::Tensor> RaycastingScene::CastRays(

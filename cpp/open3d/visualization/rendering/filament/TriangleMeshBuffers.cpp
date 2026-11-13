@@ -800,8 +800,7 @@ GeometryBuffersBuilder::Buffers TMeshBuffersBuilder::ConstructBuffers() {
     if (need_duplicate_vertices) {
         std::iota(uint_indices, uint_indices + n_vertices, 0);
     } else {
-        // NOTE: if indices is already UInt32 the following is as no-op
-        const auto indices_32 = indices.To(core::UInt32);
+        const auto indices_32 = indices.To(core::UInt32).Contiguous();
         memcpy(uint_indices, indices_32.GetDataPtr(), n_bytes);
     }
     auto ib_handle =
