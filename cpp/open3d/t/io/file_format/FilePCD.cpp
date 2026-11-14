@@ -49,33 +49,33 @@ struct PCDHeader {
 public:
     std::string version;
     std::vector<PCLPointField> fields;
-    int width;
-    int height;
-    int points;
+    std::int64_t width;
+    std::int64_t height;
+    std::int64_t points;
     PCDDataType datatype;
     std::string viewpoint;
 
     // helper variables
     int elementnum;
-    int pointsize;
+    std::int64_t pointsize;
     std::unordered_map<std::string, bool> has_attr;
     std::unordered_map<std::string, core::Dtype> attr_dtype;
 };
 
 struct ReadAttributePtr {
     ReadAttributePtr(void *data_ptr = nullptr,
-                     const int row_idx = 0,
-                     const int row_length = 0,
-                     const int size = 0)
+                     const std::int64_t row_idx = 0,
+                     const std::int64_t row_length = 0,
+                     const std::int64_t size = 0)
         : data_ptr_(data_ptr),
           row_idx_(row_idx),
           row_length_(row_length),
           size_(size) {}
 
     void *data_ptr_;
-    const int row_idx_;
-    const int row_length_;
-    const int size_;
+    const std::int64_t row_idx_;
+    const std::int64_t row_length_;
+    const std::int64_t size_;
 };
 
 struct WriteAttributePtr {
@@ -138,6 +138,9 @@ static bool InitializeHeader(PCDHeader &header) {
     std::unordered_map<std::string, core::Dtype> field_dtype;
 
     for (const auto &field : header.fields) {
+        if (field.name == "_") {
+            continue;
+        }
         if (field.name == "x" || field.name == "y" || field.name == "z" ||
             field.name == "normal_x" || field.name == "normal_y" ||
             field.name == "normal_z" || field.name == "rgb" ||
@@ -303,7 +306,7 @@ static bool ReadPCDHeader(FILE *file, PCDHeader &header) {
 static void ReadASCIIPCDColorsFromField(ReadAttributePtr &attr,
                                         const PCLPointField &field,
                                         const char *data_ptr,
-                                        const int index) {
+                                        const std::int64_t index) {
     std::uint8_t *attr_data_ptr = static_cast<std::uint8_t *>(attr.data_ptr_) +
                                   index * attr.row_length_;
 
@@ -408,7 +411,7 @@ void UnpackASCIIPCDElement<std::uint64_t>(std::uint64_t &data,
 static void ReadASCIIPCDElementsFromField(ReadAttributePtr &attr,
                                           const PCLPointField &field,
                                           const char *data_ptr,
-                                          const int index) {
+                                          const std::int64_t index) {
     DISPATCH_DTYPE_TO_TEMPLATE(
             GetDtypeFromPCDHeaderField(field.type, field.size), [&] {
                 scalar_t *attr_data_ptr =
@@ -422,7 +425,7 @@ static void ReadASCIIPCDElementsFromField(ReadAttributePtr &attr,
 static void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
                                          const PCLPointField &field,
                                          const void *data_ptr,
-                                         const int index) {
+                                         const std::int64_t index) {
     std::uint8_t *attr_data_ptr = static_cast<std::uint8_t *>(attr.data_ptr_) +
                                   index * attr.row_length_;
 
@@ -444,7 +447,7 @@ static void ReadBinaryPCDColorsFromField(ReadAttributePtr &attr,
 static void ReadBinaryPCDElementsFromField(ReadAttributePtr &attr,
                                            const PCLPointField &field,
                                            const void *data_ptr,
-                                           const int index) {
+                                           const std::int64_t index) {
     DISPATCH_DTYPE_TO_TEMPLATE(
             GetDtypeFromPCDHeaderField(field.type, field.size), [&] {
                 scalar_t *attr_data_ptr =
@@ -508,6 +511,9 @@ static bool ReadPCDData(FILE *file,
 
     // PCLPointField
     for (const auto &field : header.fields) {
+        if (field.name == "_") {
+            continue;
+        }
         if (header.has_attr[field.name] && field.name != "x" &&
             field.name != "y" && field.name != "z" &&
             field.name != "normal_x" && field.name != "normal_y" &&
@@ -530,7 +536,7 @@ static bool ReadPCDData(FILE *file,
 
     if (header.datatype == PCDDataType::ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
-        int idx = 0;
+        std::int64_t idx = 0;
         while (fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, file) &&
                idx < header.points) {
             std::string line(line_buffer);
@@ -541,13 +547,21 @@ static bool ReadPCDData(FILE *file,
             }
             for (size_t i = 0; i < header.fields.size(); ++i) {
                 const auto &field = header.fields[i];
+                const std::string attr_name =
+                        field.name == "rgb" || field.name == "rgba"
+                                ? "colors"
+                                : field.name;
+                auto attr_it = map_field_to_attr_ptr.find(attr_name);
+                if (attr_it == map_field_to_attr_ptr.end()) {
+                    continue;
+                }
                 if (field.name == "rgb" || field.name == "rgba") {
                     ReadASCIIPCDColorsFromField(
-                            map_field_to_attr_ptr["colors"], field,
+                            attr_it->second, field,
                             strs[field.count_offset].c_str(), idx);
                 } else {
                     ReadASCIIPCDElementsFromField(
-                            map_field_to_attr_ptr[field.name], field,
+                            attr_it->second, field,
                             strs[field.count_offset].c_str(), idx);
                 }
             }
@@ -558,7 +572,7 @@ static bool ReadPCDData(FILE *file,
         }
     } else if (header.datatype == PCDDataType::BINARY) {
         std::unique_ptr<char[]> buffer(new char[header.pointsize]);
-        for (int i = 0; i < header.points; ++i) {
+        for (std::int64_t i = 0; i < header.points; ++i) {
             if (fread(buffer.get(), header.pointsize, 1, file) != 1) {
                 utility::LogWarning(
                         "[ReadPCDData] Failed to read data record.");
@@ -566,14 +580,22 @@ static bool ReadPCDData(FILE *file,
                 return false;
             }
             for (const auto &field : header.fields) {
+                const std::string attr_name =
+                        field.name == "rgb" || field.name == "rgba"
+                                ? "colors"
+                                : field.name;
+                auto attr_it = map_field_to_attr_ptr.find(attr_name);
+                if (attr_it == map_field_to_attr_ptr.end()) {
+                    continue;
+                }
                 if (field.name == "rgb" || field.name == "rgba") {
-                    ReadBinaryPCDColorsFromField(
-                            map_field_to_attr_ptr["colors"], field,
-                            buffer.get() + field.offset, i);
+                    ReadBinaryPCDColorsFromField(attr_it->second, field,
+                                                 buffer.get() + field.offset,
+                                                 i);
                 } else {
-                    ReadBinaryPCDElementsFromField(
-                            map_field_to_attr_ptr[field.name], field,
-                            buffer.get() + field.offset, i);
+                    ReadBinaryPCDElementsFromField(attr_it->second, field,
+                                                   buffer.get() + field.offset,
+                                                   i);
                 }
             }
             if (i % 1000 == 0) {
@@ -620,20 +642,27 @@ static bool ReadPCDData(FILE *file,
             return false;
         }
         for (const auto &field : header.fields) {
+            const std::string attr_name =
+                    field.name == "rgb" || field.name == "rgba" ? "colors"
+                                                                : field.name;
+            auto attr_it = map_field_to_attr_ptr.find(attr_name);
+            if (attr_it == map_field_to_attr_ptr.end()) {
+                continue;
+            }
             const char *base_ptr = buffer.get() + field.offset * header.points;
             double progress =
                     double(base_ptr - buffer.get()) / uncompressed_size;
             reporter.Update(int(reporter_total * (progress + .2)));
             if (field.name == "rgb" || field.name == "rgba") {
-                for (int i = 0; i < header.points; ++i) {
+                for (std::int64_t i = 0; i < header.points; ++i) {
                     ReadBinaryPCDColorsFromField(
-                            map_field_to_attr_ptr["colors"], field,
+                            attr_it->second, field,
                             base_ptr + i * field.size * field.count, i);
                 }
             } else {
-                for (int i = 0; i < header.points; ++i) {
+                for (std::int64_t i = 0; i < header.points; ++i) {
                     ReadBinaryPCDElementsFromField(
-                            map_field_to_attr_ptr[field.name], field,
+                            attr_it->second, field,
                             base_ptr + i * field.size * field.count, i);
                 }
             }
@@ -816,10 +845,10 @@ static bool WritePCDHeader(FILE *file, const PCDHeader &header) {
         fprintf(file, " %d", field.count);
     }
     fprintf(file, "\n");
-    fprintf(file, "WIDTH %d\n", header.width);
-    fprintf(file, "HEIGHT %d\n", header.height);
+    fprintf(file, "WIDTH %lld\n", static_cast<long long>(header.width));
+    fprintf(file, "HEIGHT %lld\n", static_cast<long long>(header.height));
     fprintf(file, "VIEWPOINT 0 0 0 1 0 0 0\n");
-    fprintf(file, "POINTS %d\n", header.points);
+    fprintf(file, "POINTS %lld\n", static_cast<long long>(header.points));
 
     switch (header.datatype) {
         case PCDDataType::BINARY:

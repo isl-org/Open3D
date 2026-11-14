@@ -15,6 +15,7 @@
 #include <vtkCutter.h>
 #include <vtkFillHolesFilter.h>
 #include <vtkPlane.h>
+#include <vtkPolyDataNormals.h>
 #include <vtkQuadricDecimation.h>
 
 #include <Eigen/Core>
@@ -841,8 +842,14 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     fill_holes->SetInputData(polydata);
     fill_holes->SetHoleSize(hole_size);
     fill_holes->Update();
-    auto result = fill_holes->GetOutput();
-    return CreateTriangleMeshFromVtkPolyData(result);
+
+    vtkNew<vtkPolyDataNormals> normals;
+    normals->SetInputConnection(fill_holes->GetOutputPort());
+    normals->ConsistencyOn();
+    normals->AutoOrientNormalsOn();
+    normals->SplittingOff();
+    normals->Update();
+    return CreateTriangleMeshFromVtkPolyData(normals->GetOutput());
 }
 
 std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
