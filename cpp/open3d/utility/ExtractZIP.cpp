@@ -24,7 +24,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_WIN32)
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
 // need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
@@ -47,7 +47,7 @@ static int ExtractCurrentFile(unzFile uf,
     int err = UNZ_OK;
     FILE *fout = nullptr;
     void *buf;
-    uInt size_buf;
+    unsigned int size_buf;
 
     unz_file_info64 file_info;
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
@@ -183,7 +183,7 @@ void ExtractFromZIP(const std::string &file_path,
     // ExtractFromZIP supports password. Can be exposed if required in future.
     const std::string password = "";
 
-    for (uLong i = 0; i < gi.number_entry; ++i) {
+    for (unsigned long i = 0; i < gi.number_entry; ++i) {
         err = ExtractCurrentFile(uf, extract_dir, password);
         if (err != UNZ_OK) {
             // Close file, before throwing exception.
