@@ -47,12 +47,12 @@ std::vector<EigenVector> py_array_to_vectors_double(
         throw py::cast_error();
     }
     std::vector<EigenVector> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
+    auto array_unchecked = array.unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        // The EigenVector here must be a double-typed eigen vector, since only
-        // open3d::Vector3dVector binds to py_array_to_vectors_double.
-        // Therefore, we can use the memory map directly.
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+        // Vector2dVector and Vector3dVector both use double-typed Eigen
+        // vectors. Copy through a const map to also accept read-only arrays.
+        eigen_vectors[i] =
+                Eigen::Map<const EigenVector>(&array_unchecked(i, 0));
     }
     return eigen_vectors;
 }
@@ -67,9 +67,10 @@ std::vector<EigenVector> py_array_to_vectors_int(py::array_t<int> array) {
         throw py::cast_error();
     }
     std::vector<EigenVector> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
+    auto array_unchecked = array.unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+        eigen_vectors[i] =
+                Eigen::Map<const EigenVector>(&array_unchecked(i, 0));
     }
     return eigen_vectors;
 }
@@ -86,9 +87,10 @@ py_array_to_vectors_int_eigen_allocator(py::array_t<int> array) {
         throw py::cast_error();
     }
     std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
+    auto array_unchecked = array.unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+        eigen_vectors[i] =
+                Eigen::Map<const EigenVector>(&array_unchecked(i, 0));
     }
     return eigen_vectors;
 }
@@ -105,9 +107,10 @@ py_array_to_vectors_int64_eigen_allocator(py::array_t<int64_t> array) {
         throw py::cast_error();
     }
     std::vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
+    auto array_unchecked = array.unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
+        eigen_vectors[i] =
+                Eigen::Map<const EigenVector>(&array_unchecked(i, 0));
     }
     return eigen_vectors;
 }
@@ -361,7 +364,8 @@ Example usage
     pcd = open3d.geometry.PointCloud()
     np_points = np.random.rand(100, 3)
 
-    # From numpy to Open3D
+    # From numpy to Open3D: the input is copied and may be read-only.
+    np_points.setflags(write=False)
     pcd.points = open3d.utility.Vector3dVector(np_points)
 
     # From Open3D to numpy
