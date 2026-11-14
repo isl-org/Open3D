@@ -67,11 +67,6 @@ if __name__ == "__main__":
             result = execute_fast_global_registration(source_down, target_down,
                                                       source_fpfh, target_fpfh,
                                                       voxel_size)
-            if (result.transformation.trace() == 4.0):
-                success = False
-            else:
-                success = True
-
             # Note: we save inverse of result_ransac.transformation
             # to comply with http://redwood-data.org/indoor/fileformat.html
             alignment.append(
