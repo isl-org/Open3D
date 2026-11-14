@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/Macro.h"
 #include "open3d/t/geometry/kernel/TriangleMeshImpl.h"
 
 namespace open3d {
@@ -18,6 +19,7 @@ void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
                               core::Tensor& vertex_normals) {
     const core::Dtype dtype = vertex_normals.GetDtype();
     const int64_t n = triangles.GetLength();
+    const int64_t num_vertices = vertex_normals.GetLength();
     const core::Tensor triangles_d = triangles.To(core::Int64);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -32,6 +34,13 @@ void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
                     int64_t triangle_id1 = triangle_ptr[idx];
                     int64_t triangle_id2 = triangle_ptr[idx + 1];
                     int64_t triangle_id3 = triangle_ptr[idx + 2];
+                    OPEN3D_ASSERT(triangle_id1 >= 0 &&
+                                          triangle_id1 < num_vertices &&
+                                          triangle_id2 >= 0 &&
+                                          triangle_id2 < num_vertices &&
+                                          triangle_id3 >= 0 &&
+                                          triangle_id3 < num_vertices,
+                                  "Triangle vertex index is out of range.");
 
                     scalar_t n1 = triangle_normals_ptr[idx];
                     scalar_t n2 = triangle_normals_ptr[idx + 1];

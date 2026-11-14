@@ -215,6 +215,22 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(filename_out, pcd, {"auto", false, false, true});
     EXPECT_FALSE(pcd.HasPointAttr("intensity"));
+
+    {
+        std::ofstream outfile(filename_out);
+        outfile << "ply\n"
+                   "format ascii 1.0\n"
+                   "element vertex 1\n"
+                   "property float x\n"
+                   "property double y\n"
+                   "property float z\n"
+                   "end_header\n"
+                   "0 0 0\n";
+    }
+    t::geometry::PointCloud mismatched_pcd;
+    EXPECT_FALSE(t::io::ReadPointCloud(filename_out, mismatched_pcd,
+                                       {"auto", false, false, true}));
+    utility::filesystem::RemoveFile(filename_out);
 }
 
 namespace {
@@ -270,6 +286,24 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3DGS) {
     EXPECT_TRUE(pcd.IsGaussianSplat());
     EXPECT_TRUE(pcd.HasPointAttr("f_rest"));
     EXPECT_EQ(pcd.GaussianSplatGetSHOrder(), 1);
+    {
+        std::ofstream outfile(filename_out);
+        outfile << "ply\n"
+                   "format ascii 1.0\n"
+                   "element vertex 1\n"
+                   "property float x\n"
+                   "property float y\n"
+                   "property float z\n"
+                   "property double f_rest_0\n"
+                   "property double f_rest_1\n"
+                   "property double f_rest_2\n"
+                   "end_header\n"
+                   "0 0 0 0 0 0\n";
+    }
+    t::geometry::PointCloud mismatched_pcd;
+    EXPECT_FALSE(t::io::ReadPointCloud(filename_out, mismatched_pcd,
+                                       {"auto", false, false, true}));
+    utility::filesystem::RemoveFile(filename_out);
 }
 
 // Read write empty point cloud.

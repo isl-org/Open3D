@@ -8,6 +8,8 @@
 #include <rply.h>
 
 #include <cmath>
+#include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
@@ -37,6 +39,7 @@ struct PLYReaderState {
         int offset_;
         int64_t size_;
         int64_t current_size_;
+        int64_t data_size_;
     };
     // Allow fast access of attr_state by index.
     std::vector<std::shared_ptr<AttrState>> id_to_attr_state_;
@@ -52,6 +55,14 @@ int ReadAttributeCallback(p_ply_argument argument) {
     std::shared_ptr<PLYReaderState::AttrState>& attr_state =
             state_ptr->id_to_attr_state_[id];
     if (attr_state->current_size_ >= attr_state->size_) {
+        return 0;
+    }
+    if (attr_state->stride_ <= 0 || attr_state->offset_ < 0 ||
+        attr_state->offset_ >= attr_state->stride_ ||
+        attr_state->data_size_ <= attr_state->offset_ ||
+        attr_state->current_size_ >
+                (attr_state->data_size_ - 1 - attr_state->offset_) /
+                        attr_state->stride_) {
         return 0;
     }
 
@@ -131,6 +142,21 @@ core::Dtype GetDtype(e_ply_type type) {
 }
 
 // Map ply attributes to Open3D point cloud attributes
+int ParseAttributeOffset(const std::string& name, size_t suffix_index) {
+    if (suffix_index >= name.size() || name[suffix_index] < '0' ||
+        name[suffix_index] > '9') {
+        return -1;
+    }
+
+    try {
+        size_t parsed_size = 0;
+        const int offset = std::stoi(name.substr(suffix_index), &parsed_size);
+        return parsed_size == name.size() - suffix_index ? offset : -1;
+    } catch (...) {
+        return -1;
+    }
+}
+
 std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
         const std::string& name) {
     // Positions attribute.
@@ -150,22 +176,22 @@ std::tuple<std::string, int, int> GetNameStrideOffsetForAttribute(
 
     // 3DGS SH DC component.
     if (name.rfind(std::string("f_dc") + "_", 0) == 0) {
-        int offset = std::stoi(name.substr(F_DC_SUFFIX_INDEX));
+        int offset = ParseAttributeOffset(name, F_DC_SUFFIX_INDEX);
         return std::make_tuple("f_dc", 3, offset);
     }
     // 3DGS SH higher order components. stride = 0 => set later
     if (name.rfind(std::string("f_rest") + "_", 0) == 0) {
-        int offset = std::stoi(name.substr(F_REST_SUFFIX_INDEX));
+        int offset = ParseAttributeOffset(name, F_REST_SUFFIX_INDEX);
         return std::make_tuple("f_rest", 0, offset);
     }
     // 3DGS Gaussian scale attribute.
     if (name.rfind(std::string("scale") + "_", 0) == 0) {
-        int offset = std::stoi(name.substr(SCALE_SUFFIX_INDEX));
+        int offset = ParseAttributeOffset(name, SCALE_SUFFIX_INDEX);
         return std::make_tuple("scale", 3, offset);
     }
     // 3DGS Gaussian rotation as a quaternion.
     if (name.rfind(std::string("rot") + "_", 0) == 0) {
-        int offset = std::stoi(name.substr(ROTATION_SUFFIX_INDEX));
+        int offset = ParseAttributeOffset(name, ROTATION_SUFFIX_INDEX);
         return std::make_tuple("rot", 4, offset);
     }
     // Other attribute.
@@ -216,6 +242,7 @@ bool ReadPointCloudFromPLY(const std::string& filename,
             {"opacity", false},   {"rot", false},     {"scale", false},
             {"f_dc", false},      {"f_rest", false},
     };
+    std::unordered_map<std::string, core::Dtype> attr_dtypes;
 
     int f_rest_count = 0;
     p_ply_property attribute = ply_get_next_property(element, nullptr);
@@ -232,12 +259,40 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                     name, GetDtypeString(type));
         } else {
             auto attr_state = std::make_shared<PLYReaderState::AttrState>();
+            const std::string attr_name = std::string(name);
+            auto [name, stride, offset] =
+                    GetNameStrideOffsetForAttribute(attr_name);
+            if (offset < 0 || (stride > 0 && offset >= stride)) {
+                utility::LogWarning(
+                        "Read PLY failed: property \"{}\" has an invalid "
+                        "attribute offset.",
+                        attr_name);
+                ply_close(ply_file);
+                return false;
+            }
+            const core::Dtype property_dtype = GetDtype(type);
+            const core::Dtype attr_dtype =
+                    name == "f_rest" ? core::Float32 : property_dtype;
+            const auto [dtype_it, inserted] =
+                    attr_dtypes.emplace(name, attr_dtype);
+            const bool is_primary_attr = primary_attr_init.count(name) != 0;
+            if (property_dtype != attr_dtype ||
+                (!inserted && dtype_it->second != attr_dtype) ||
+                (!is_primary_attr && !inserted)) {
+                utility::LogWarning(
+                        "Read PLY failed: property \"{}\" has a datatype "
+                        "incompatible with attribute \"{}\".",
+                        attr_name, name);
+                ply_close(ply_file);
+                return false;
+            }
+
             long size = 0;
             long id = static_cast<long>(state.id_to_attr_state_.size());
-            DISPATCH_DTYPE_TO_TEMPLATE(GetDtype(type), [&]() {
-                size = ply_set_read_cb(ply_file, element_name, name,
-                                       ReadAttributeCallback<scalar_t>, &state,
-                                       id);
+            DISPATCH_DTYPE_TO_TEMPLATE(property_dtype, [&]() {
+                size = ply_set_read_cb(
+                        ply_file, element_name, attr_name.c_str(),
+                        ReadAttributeCallback<scalar_t>, &state, id);
             });
             if (size != element_size) {
                 utility::LogError(
@@ -245,10 +300,6 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                         "size of {} ({}).",
                         name, size, element_name, element_size);
             }
-
-            const std::string attr_name = std::string(name);
-            auto [name, stride, offset] =
-                    GetNameStrideOffsetForAttribute(attr_name);
             if (name == "f_rest") {
                 f_rest_count++;
             }
@@ -260,17 +311,19 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                 if (primary_attr_init.at(name) == false) {
                     pointcloud.SetPointAttr(
                             name, core::Tensor::Empty({element_size, stride},
-                                                      GetDtype(type)));
+                                                      attr_dtype));
                     primary_attr_init[name] = true;
                 }
             } else {
                 pointcloud.SetPointAttr(
                         name, core::Tensor::Empty({element_size, stride},
-                                                  GetDtype(type)));
+                                                  attr_dtype));
             }
             attr_state->data_ptr_ = pointcloud.GetPointAttr(name).GetDataPtr();
             attr_state->size_ = element_size;
             attr_state->current_size_ = 0;
+            attr_state->data_size_ =
+                    pointcloud.GetPointAttr(name).NumElements();
             state.id_to_attr_state_.push_back(attr_state);
         }
         attribute = ply_get_next_property(element, attribute);
@@ -284,6 +337,17 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                     f_rest_count);
             ply_close(ply_file);
             return false;
+        }
+        for (const auto& attr_state : state.id_to_attr_state_) {
+            if (attr_state->name_ == "f_rest" &&
+                attr_state->offset_ >= f_rest_count) {
+                utility::LogWarning(
+                        "Read PLY failed: f_rest property offset {} is "
+                        "outside the {} declared properties.",
+                        attr_state->offset_, f_rest_count);
+                ply_close(ply_file);
+                return false;
+            }
         }
         core::Tensor new_f_rest =
                 core::Tensor::Empty({element_size, f_rest_count / 3, 3},
@@ -302,6 +366,8 @@ bool ReadPointCloudFromPLY(const std::string& filename,
                 const int basis = attr_state->offset_ % basis_count;
                 attr_state->stride_ = f_rest_count;
                 attr_state->offset_ = basis * 3 + channel;
+                attr_state->data_size_ =
+                        pointcloud.GetPointAttr("f_rest").NumElements();
             }
         }
     }

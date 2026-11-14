@@ -167,6 +167,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
         // Map triangles
         std::unordered_map<int, std::unordered_set<int>> vert_to_triangles;
         for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+            detail::AssertTriangleIndicesInRange(
+                    triangles_[tidx], static_cast<int64_t>(vertices_.size()));
             vert_to_triangles[triangles_[tidx](0)].emplace(int(tidx));
             vert_to_triangles[triangles_[tidx](1)].emplace(int(tidx));
             vert_to_triangles[triangles_[tidx](2)].emplace(int(tidx));
@@ -203,6 +205,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     std::unordered_set<Eigen::Vector3i, utility::hash_eigen<Eigen::Vector3i>>
             triangles;
     for (const auto& triangle : triangles_) {
+        if (contraction != SimplificationContraction::Quadric) {
+            detail::AssertTriangleIndicesInRange(
+                    triangle, static_cast<int64_t>(vertices_.size()));
+        }
         int vidx0 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(0)])];
         int vidx1 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(1)])];
         int vidx2 = voxel_vert_ind[GetVoxelIdx(vertices_[triangle(2)])];
@@ -268,6 +274,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     std::vector<Eigen::Vector4d> triangle_planes(triangles_.size());
     std::vector<double> triangle_areas(triangles_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
+        detail::AssertTriangleIndicesInRange(
+                triangles_[tidx], static_cast<int64_t>(vertices_.size()));
         vert_to_triangles[triangles_[tidx](0)].emplace(static_cast<int>(tidx));
         vert_to_triangles[triangles_[tidx](1)].emplace(static_cast<int>(tidx));
         vert_to_triangles[triangles_[tidx](2)].emplace(static_cast<int>(tidx));
