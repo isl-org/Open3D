@@ -1389,10 +1389,26 @@ endif()
 # imgui
 if(BUILD_GUI)
     if(USE_SYSTEM_IMGUI)
-        open3d_find_package_3rdparty_library(3rdparty_imgui
-            PACKAGE ImGui
-            TARGETS ImGui::ImGui
-        )
+        # Dear ImGui installs no CMake package configuration of its own, so
+        # both the package name and the namespace depend on who packaged it.
+        # conda-forge and vcpkg export imgui::imgui from a package named
+        # imgui; accept that as well as the capitalised spelling.
+        set(_open3d_imgui_package "")
+        foreach(_open3d_imgui_candidate imgui ImGui)
+            find_package(${_open3d_imgui_candidate} QUIET)
+            if(${_open3d_imgui_candidate}_FOUND)
+                set(_open3d_imgui_package ${_open3d_imgui_candidate})
+                break()
+            endif()
+        endforeach()
+        if(_open3d_imgui_package)
+            open3d_find_package_3rdparty_library(3rdparty_imgui
+                PACKAGE ${_open3d_imgui_package}
+                TARGET_ALTERNATIVES imgui::imgui ImGui::ImGui
+            )
+        endif()
+        unset(_open3d_imgui_candidate)
+        unset(_open3d_imgui_package)
         if(NOT 3rdparty_imgui_FOUND)
             set(USE_SYSTEM_IMGUI OFF)
         endif()
