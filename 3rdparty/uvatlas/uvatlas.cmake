@@ -32,6 +32,18 @@ ExternalProject_Add(
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
 )
 
+# DirectXMath has SSE and NEON code paths and a portable C++ one. On any other target it stops
+# with "DirectX Math does not support this target" unless _XM_NO_INTRINSICS_ selects the
+# portable code. UVAtlas includes DirectXMath, and so does Open3D's UVUnwrapping.cpp through
+# 3rdparty_uvatlas (see find_dependencies.cmake). Only RISC-V needs this for now.
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^riscv")
+    set(UVATLAS_XM_NO_INTRINSICS ON)
+    set(UVATLAS_EXTRA_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -D_XM_NO_INTRINSICS_")
+else()
+    set(UVATLAS_XM_NO_INTRINSICS OFF)
+    set(UVATLAS_EXTRA_CMAKE_ARGS)
+endif()
+
 # uvatlas
 ExternalProject_Add(
     ext_uvatlas
@@ -50,6 +62,7 @@ ExternalProject_Add(
         -DBUILD_TOOLS=OFF
         -Ddirectx-headers_DIR=<INSTALL_DIR>
         -Ddirectxmath_DIR=<INSTALL_DIR>
+        ${UVATLAS_EXTRA_CMAKE_ARGS}
     DEPENDS ext_directxheaders ext_directxmath
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}UVAtlas${CMAKE_STATIC_LIBRARY_SUFFIX}

@@ -1754,6 +1754,9 @@ open3d_import_3rdparty_library(3rdparty_uvatlas
     LIBRARIES    ${UVATLAS_LIBRARIES}
     DEPENDS      ext_uvatlas
 )
+if(UVATLAS_XM_NO_INTRINSICS)
+    target_compile_definitions(3rdparty_uvatlas INTERFACE _XM_NO_INTRINSICS_)
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_uvatlas)
 
 
