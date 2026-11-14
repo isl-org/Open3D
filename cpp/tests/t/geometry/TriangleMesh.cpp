@@ -599,6 +599,47 @@ TEST_P(TriangleMeshPermuteDevices, CreateBox) {
             box_custom.GetTriangleIndices().AllClose(triangle_indices_custom));
 }
 
+TEST(TriangleMesh, FillHolesOrientsFilledFaces) {
+    const core::Tensor vertices = core::Tensor::Init<float>({{0, 0, 0},
+                                                             {1, 0, 0},
+                                                             {1, 1, 0},
+                                                             {0, 1, 0},
+                                                             {0, 0, 1},
+                                                             {1, 0, 1},
+                                                             {1, 1, 1},
+                                                             {0, 1, 1}});
+    const core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 2, 1},
+                                                                {0, 3, 2},
+                                                                {0, 1, 5},
+                                                                {0, 5, 4},
+                                                                {1, 2, 6},
+                                                                {1, 6, 5},
+                                                                {2, 3, 7},
+                                                                {2, 7, 6},
+                                                                {3, 0, 4},
+                                                                {3, 4, 7}});
+    t::geometry::TriangleMesh mesh(vertices, triangles);
+
+    t::geometry::TriangleMesh filled = mesh.FillHoles(2.0);
+    filled.ComputeTriangleNormals();
+
+    const auto positions = filled.GetVertexPositions().ToFlatVector<float>();
+    const auto indices = filled.GetTriangleIndices().ToFlatVector<int64_t>();
+    const auto normals = filled.GetTriangleNormals().ToFlatVector<float>();
+    int top_triangle_count = 0;
+    for (size_t i = 0; i < indices.size() / 3; ++i) {
+        const float center_z = (positions[3 * indices[3 * i] + 2] +
+                                positions[3 * indices[3 * i + 1] + 2] +
+                                positions[3 * indices[3 * i + 2] + 2]) /
+                               3.0f;
+        if (center_z > 0.99f) {
+            ++top_triangle_count;
+            EXPECT_GT(normals[3 * i + 2], 0.0f);
+        }
+    }
+    EXPECT_EQ(top_triangle_count, 2);
+}
+
 TEST_P(TriangleMeshPermuteDevices, CreateSphere) {
     core::Device device = GetParam();
     core::Dtype float_dtype_custom = core::Float64;
