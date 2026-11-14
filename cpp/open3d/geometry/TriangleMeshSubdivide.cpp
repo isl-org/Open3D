@@ -10,7 +10,6 @@
 #include <tuple>
 
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

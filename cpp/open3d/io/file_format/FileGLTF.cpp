@@ -10,7 +10,7 @@
 #include <numeric>
 #include <vector>
 
-#include "open3d/geometry/TriangleMeshValidation.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/FileSystem.h"

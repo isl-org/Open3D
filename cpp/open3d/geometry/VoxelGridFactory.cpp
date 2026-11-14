@@ -11,7 +11,6 @@
 #include "open3d/geometry/IntersectionTest.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"

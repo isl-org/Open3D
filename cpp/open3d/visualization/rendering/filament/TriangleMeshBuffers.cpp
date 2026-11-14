@@ -33,7 +33,6 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/geometry/TriangleMeshValidation.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentGeometryBuffersBuilder.h"
