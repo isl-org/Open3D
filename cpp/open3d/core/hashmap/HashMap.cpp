@@ -156,8 +156,17 @@ void HashMap::Insert(const Tensor& input_keys,
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
 
-    if (new_size > capacity ||
-        device_hashmap_->GetNonEmptyCount() + length > capacity) {
+    // Reserve headroom before the map becomes exactly full: backends with
+    // fixed-size tables cannot reliably hold exactly `capacity` entries.
+    // Notably, the CUDA stdgpu backend sizes its excess list from the
+    // expected collision count, so filling the map to its nominal capacity
+    // can fail inserts ("Associated bucket and excess list full"), corrupt
+    // the free list, and segfault later uses (isl-org/Open3D#6795, where
+    // VoxelBlockGrid::Load rebuilds a map sized at the number of stored
+    // keys and bulk-inserts them all). Reserve once the insert would reach
+    // capacity, not only once it would exceed it.
+    if (new_size >= capacity ||
+        device_hashmap_->GetNonEmptyCount() + length >= capacity) {
         Reserve(std::max(new_size, capacity * 2));
     }
     InsertImpl(input_keys, input_values_soa, output_buf_indices, output_masks);
@@ -170,8 +179,10 @@ void HashMap::Activate(const Tensor& input_keys,
     int64_t new_size = Size() + length;
     int64_t capacity = GetCapacity();
 
-    if (new_size > capacity ||
-        device_hashmap_->GetNonEmptyCount() + length > capacity) {
+    // Same headroom rule as Insert: never let an activation fill the map
+    // exactly to its nominal capacity (see Insert above, #6795).
+    if (new_size >= capacity ||
+        device_hashmap_->GetNonEmptyCount() + length >= capacity) {
         Reserve(std::max(new_size, capacity * 2));
     }
 

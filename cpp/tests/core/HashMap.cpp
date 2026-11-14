@@ -304,6 +304,53 @@ TEST_P(HashMapPermuteDevices, InsertNoCapacitySlack) {
     }
 }
 
+// Regression test for isl-org/Open3D#6795: inserting exactly `capacity`
+// unique keys into a fresh map must reserve headroom instead of filling the
+// backend table to its nominal capacity. The CUDA stdgpu backend sizes its
+// excess list from the expected collision count, so an exactly-full map can
+// fail inserts ("Associated bucket and excess list full"), corrupt its free
+// list, and segfault later uses. VoxelBlockGrid::Load hits this directly:
+// it rebuilds a map sized at the number of stored keys and bulk-inserts
+// them all. Fails before the fix (capacity stays equal to size).
+TEST_P(HashMapPermuteDevices, InsertExactlyFillsCapacity) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends;
+    if (device.IsCUDA()) {
+        backends.push_back(core::HashBackendType::Slab);
+        backends.push_back(core::HashBackendType::StdGPU);
+    } else if (device.IsSYCL()) {
+        backends.push_back(core::HashBackendType::Default);
+    } else {
+        backends.push_back(core::HashBackendType::TBB);
+    }
+
+    const int n = 10000;
+    std::vector<int> unique_keys(n), unique_values(n);
+    for (int i = 0; i < n; ++i) {
+        unique_keys[i] = i * 100;
+        unique_values[i] = i;
+    }
+    core::Tensor keys(unique_keys, {n}, core::Int32, device);
+    core::Tensor values(unique_values, {n}, core::Int32, device);
+
+    for (auto backend : backends) {
+        core::HashMap hashmap(n, core::Int32, {1}, core::Int32, {1}, device,
+                              backend);
+
+        core::Tensor buf_indices, masks;
+        hashmap.Insert(keys, values, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), n);
+        EXPECT_EQ(hashmap.Size(), n);
+        // The insert must have reserved headroom instead of exactly
+        // filling the map.
+        EXPECT_GT(hashmap.GetCapacity(), n);
+
+        // Every key must be findable afterwards.
+        hashmap.Find(keys, buf_indices, masks);
+        EXPECT_EQ(masks.To(core::Int64).Sum({0}).Item<int64_t>(), n);
+    }
+}
+
 TEST_P(HashMapPermuteDevices, Reserve) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;

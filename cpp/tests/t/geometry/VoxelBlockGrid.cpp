@@ -342,6 +342,12 @@ TEST_P(VoxelBlockGridPermuteDevices, IO) {
 
         auto vbg_loaded = VoxelBlockGrid::Load(file_name);
         EXPECT_EQ(vbg_loaded.GetHashMap().GetDevice(), device);
+        // Regression test for isl-org/Open3D#6795: a loaded grid must not
+        // be exactly full. Load rebuilds the hash map sized at the number
+        // of stored keys; filling it to its nominal capacity can fail
+        // inserts on the CUDA stdgpu backend and segfault on later RayCast.
+        EXPECT_GT(vbg_loaded.GetHashMap().GetCapacity(),
+                  vbg_loaded.GetHashMap().Size());
         auto pcd_loaded = vbg_loaded.ExtractPointCloud();
 
         EXPECT_EQ(pcd.GetPointPositions().GetLength(),
