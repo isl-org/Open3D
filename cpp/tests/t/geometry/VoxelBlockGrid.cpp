@@ -284,13 +284,15 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
 #endif
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);
 
-    // Again, hard-coded result
-    std::unordered_map<int, int> kResolutionPoints = {{8, 225628},
-                                                      {16, 254787}};
-    std::unordered_map<int, int> kResolutionVertices = {{8, 223075},
-                                                        {16, 254339}};
-    std::unordered_map<int, int> kResolutionTriangles = {{8, 409271},
-                                                         {16, 490301}};
+    // Frozen reconstruction-size fingerprint. Correcting the nearest-depth
+    // lookup intentionally changes these counts; analytic plane regressions
+    // independently cover geometric accuracy.
+    std::unordered_map<int, int> kResolutionPoints = {{8, 227659},
+                                                      {16, 254159}};
+    std::unordered_map<int, int> kResolutionVertices = {{8, 224778},
+                                                        {16, 253650}};
+    std::unordered_map<int, int> kResolutionTriangles = {{8, 411503},
+                                                         {16, 488698}};
 
     // Cross-backend numerical-precision allowance for extracted surface size.
     // Reference counts are frozen from CPU/CUDA; SYCL may differ slightly.
