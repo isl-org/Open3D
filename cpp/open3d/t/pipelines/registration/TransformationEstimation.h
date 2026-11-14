@@ -173,6 +173,8 @@ public:
 
     /// \brief Computes RMSE (double) for PointToPlane method, between two
     /// pointclouds, given correspondences.
+    /// Each residual is the dot product of the point displacement and the
+    /// corresponding target normal. Normals are used without normalization.
     ///
     /// \param source Source pointcloud. (Float32 or Float64 type).
     /// \param target Target pointcloud. (Float32 or Float64 type). It must

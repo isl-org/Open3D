@@ -185,10 +185,13 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     core::Tensor target_normals_indexed =
             target.GetPointNormals().IndexGet({neighbour_indices});
 
+    // Project each displacement onto its target normal before squaring,
+    // so tangential displacement does not contribute to point-to-plane error.
     core::Tensor error_t = (source_points_indexed - target_points_indexed)
-                                   .Mul_(target_normals_indexed);
+                                   .Mul_(target_normals_indexed)
+                                   .Sum({1});
     error_t.Mul_(error_t);
-    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    double error = error_t.Sum({0}).To(core::Float64).Item<double>();
     return std::sqrt(error /
                      static_cast<double>(neighbour_indices.GetLength()));
 }
