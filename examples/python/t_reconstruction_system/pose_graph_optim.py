@@ -45,23 +45,17 @@ class PoseGraphWrapper:
             print('Only {} nodes found, abort pose graph construction'.format(
                 n_nodes))
 
-        nodes2indices = {}
-        for i, k in enumerate(sorted(self.dict_nodes.keys())):
-            nodes2indices[i] = k
-
-        for i in range(n_nodes):
-            k = nodes2indices[i]
+        node_indices = {key: i for i, key in enumerate(sorted(self.dict_nodes))}
+        for k in sorted(self.dict_nodes):
             pose_graph.nodes.append(
                 o3d.pipelines.registration.PoseGraphNode(self.dict_nodes[k]))
 
         for (i, j) in self.dict_edges:
             if not (i in self.dict_nodes) or not (j in self.dict_nodes):
-                print(
-                    f'Edge node ({i} {j}) not found, abort pose graph construction'
-                )
+                raise ValueError(f'Edge ({i}, {j}) references a missing node')
             trans, info, is_loop = self.dict_edges[(i, j)]
-            ki = nodes2indices[i]
-            kj = nodes2indices[j]
+            ki = node_indices[i]
+            kj = node_indices[j]
 
             pose_graph.edges.append(
                 o3d.pipelines.registration.PoseGraphEdge(ki,
@@ -71,17 +65,19 @@ class PoseGraphWrapper:
                                                          uncertain=is_loop))
         return pose_graph
 
-    def _graph2dicts(self):
+    def _graph2dicts(self, node_keys=None):
         nodes = self.pose_graph.nodes
         edges = self.pose_graph.edges
 
+        if node_keys is None:
+            node_keys = range(len(nodes))
         dict_nodes = {}
         dict_edges = {}
         for i, node in enumerate(nodes):
-            dict_nodes[i] = node.pose
+            dict_nodes[node_keys[i]] = node.pose
         for edge in edges:
-            dict_edges[(edge.source_node_id,
-                        edge.target_node_id)] = (edge.transformation,
+            dict_edges[(node_keys[edge.source_node_id],
+                        node_keys[edge.target_node_id])] = (edge.transformation,
                                                  edge.information,
                                                  edge.uncertain)
         return dict_nodes, dict_edges
@@ -101,13 +97,11 @@ class PoseGraphWrapper:
             reference_node=0)
 
         # In-place optimization
-        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
-        o3d.pipelines.registration.global_optimization(self.pose_graph, method,
-                                                       criteria, option)
-        o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)
+        with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug):
+            o3d.pipelines.registration.global_optimization(
+                self.pose_graph, method, criteria, option)
 
-        # Update dicts
-        self.dict_nodes, self.dict_edges = self._graph2dicts()
+        self.dict_nodes, self.dict_edges = self._graph2dicts(sorted(self.dict_nodes))
 
     @staticmethod
     def load(fname):
@@ -137,8 +131,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pose_graph = PoseGraphWrapper.load(args.path_pose_graph)
-    pose_graph.solve()
+    pose_graph.solve_()
 
     pose_graph.save('test.json')
     pose_graph = PoseGraphWrapper.load('test.json')
-    pose_graph.solve()
+    pose_graph.solve_()
