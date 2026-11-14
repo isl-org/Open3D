@@ -11,6 +11,10 @@ import open3d as o3d
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    not o3d._build_config["BUILD_RPC_INTERFACE"],
+    reason="RPC interface is disabled in this Open3D build")
+
 
 def _get_test_address():
     if os.name != 'nt':

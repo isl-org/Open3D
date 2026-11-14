@@ -18,6 +18,13 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
 from open3d_test import list_devices
 
+skip_if_vtk_disabled = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_VTK"],
+    reason="VTK is disabled in this Open3D build")
+skip_if_embree_disabled = pytest.mark.skipif(
+    o3d._build_config["OPEN3D_DISABLE_EMBREE"],
+    reason="Embree is disabled in this Open3D build")
+
 
 @pytest.mark.parametrize("device", list_devices())
 def test_constructor_and_accessors(device):
@@ -164,6 +171,7 @@ def test_member_functions(device):
         o3c.Tensor([[0.375, 0.375, 0.575]], dtype, device))
 
 
+@skip_if_vtk_disabled
 def test_extrude_rotation():
     pcd = o3d.t.geometry.PointCloud([[1.0, 0, 0]])
     ans = pcd.extrude_rotation(3 * 360, [0, 1, 0],
@@ -173,6 +181,7 @@ def test_extrude_rotation():
     assert ans.line.indices.shape == (48, 2)
 
 
+@skip_if_vtk_disabled
 def test_extrude_linear():
     pcd = o3d.t.geometry.PointCloud([[1.0, 0, 0]])
     ans = pcd.extrude_linear([0, 0, 1])
@@ -195,6 +204,7 @@ def test_pickle(device):
                                 pcd_load.point.positions.cpu().numpy())
 
 
+@skip_if_embree_disabled
 def test_metrics():
 
     from open3d.t.geometry import TriangleMesh, PointCloud, Metric, MetricParameters

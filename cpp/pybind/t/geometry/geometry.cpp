@@ -81,7 +81,9 @@ void pybind_geometry_declarations(py::module& m) {
     pybind_image_declarations(m_geometry);
     pybind_boundingvolume_declarations(m_geometry);
     pybind_voxel_block_grid_declarations(m_geometry);
+#if !defined(OPEN3D_DISABLE_EMBREE)
     pybind_raycasting_scene_declarations(m_geometry);
+#endif
 }
 
 void pybind_geometry_definitions(py::module& m) {
@@ -130,7 +132,9 @@ void pybind_geometry_definitions(py::module& m) {
     pybind_image_definitions(m_geometry);
     pybind_boundingvolume_definitions(m_geometry);
     pybind_voxel_block_grid_definitions(m_geometry);
+#if !defined(OPEN3D_DISABLE_EMBREE)
     pybind_raycasting_scene_definitions(m_geometry);
+#endif
 }
 
 }  // namespace geometry

@@ -1650,6 +1650,12 @@ TEST_P(TriangleMeshPermuteDevices, SamplePointsUniformly) {
 
 TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
     using ::testing::ElementsAre;
+#ifdef OPEN3D_DISABLE_EMBREE
+    // Baking tangents/normals to textures uses RaycastingScene (Embree), which
+    // is disabled on this platform (e.g. Windows ARM64).
+    GTEST_SKIP() << "Embree disabled (OPEN3D_DISABLE_EMBREE); "
+                    "RaycastingScene unavailable.";
+#endif
     core::Device device("CPU:0");
 
     // MikkTSpace and UVAtlas are CPU only.
@@ -1728,6 +1734,12 @@ TEST_P(TriangleMeshPermuteDevices, TangentSpace) {
 
 TEST_P(TriangleMeshPermuteDevices, ComputeAmbientOcclusion) {
     using ::testing::ElementsAre;
+#ifdef OPEN3D_DISABLE_EMBREE
+    // ComputeAmbientOcclusion uses RaycastingScene (Embree), which is disabled
+    // on this platform (e.g. Windows ARM64).
+    GTEST_SKIP() << "Embree disabled (OPEN3D_DISABLE_EMBREE); "
+                    "RaycastingScene unavailable.";
+#endif
     core::Device device("CPU:0");
 
     // UVAtlas is CPU only.

@@ -159,6 +159,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             "and unreferenced vertices");
 
     if (mesh->vertices_.size() > 0) {
+#if !defined(OPEN3D_DISABLE_VTK)
         auto tmesh = t::geometry::TriangleMesh::FromLegacy(*mesh);
 
         // use new object tmesh2 here even if some arrays share memory with
@@ -182,6 +183,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
                     core::eigen_converter::TensorToEigenVector3dVector(
                             tmesh2.GetVertexNormals());
         }
+#else
+        // VTK disabled: skip normal orientation/consistency pass.
+        (void)mesh;
+#endif
     } else {
         utility::LogWarning(
                 fmt::format("[CreateFromPointCloudAlphaShape] alpha shape "

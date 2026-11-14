@@ -9,6 +9,10 @@ import numpy as np
 import open3d as o3d
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    not o3d._build_config["BUILD_RPC_INTERFACE"],
+    reason="RPC interface is disabled in this Open3D build")
+
 
 def test_set_mesh_data_deserialization():
     """Tests the deserialization of messages created with the set_mesh_data

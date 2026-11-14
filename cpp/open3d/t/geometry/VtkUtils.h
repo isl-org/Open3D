@@ -5,9 +5,19 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#pragma once
+
+#if defined(OPEN3D_DISABLE_VTK)
+// Forward declarations to keep the API available when VTK is disabled.
+class vtkImageData;
+class vtkPolyData;
+template <class T>
+class vtkSmartPointer;
+#else
 #include <vtkImageData.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
+#endif
 
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/LineSet.h"
@@ -17,6 +27,9 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+#if !defined(OPEN3D_DISABLE_VTK)
+
 namespace vtkutils {
 
 /// Returns the corresponding vtk data type for core::Dtype
@@ -157,6 +170,9 @@ TriangleMesh ComputeNormals(const TriangleMesh& mesh,
                             double feature_angle_deg = 30);
 
 }  // namespace vtkutils
+
+#endif  // !defined(OPEN3D_DISABLE_VTK)
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
