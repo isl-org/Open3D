@@ -153,8 +153,8 @@ void pybind_odometry_definitions(py::module &m) {
                            "is better.")
             .def_readwrite(
                     "fitness", &OdometryResult::fitness_,
-                    "float: The overlapping area (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
+                    "float: The overlapping area (# of inliers / # of pixels "
+                    "in the source vertex map). Higher is better.")
             .def("__repr__", [](const OdometryResult &odom_result) {
                 return fmt::format(
                         "OdometryResult[fitness={:e}, inlier_rmse={:e}]."
