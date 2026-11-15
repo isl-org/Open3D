@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 
 // NVCC does not support deprecated attribute on Windows prior to v11.
 #if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
@@ -29,77 +30,23 @@
 
 #include "open3d/Macro.h"
 
-// Mimic "macro in namespace" by concatenating `utility::` and a macro.
-// Ref: https://stackoverflow.com/a/11791202
-//
-// We avoid using (format, ...) since in this case __VA_ARGS__ can be
-// empty, and the behavior of pruning trailing comma with ##__VA_ARGS__ is not
-// officially standard.
-// Ref: https://stackoverflow.com/a/28074198
-//
-// __PRETTY_FUNCTION__ has to be converted, otherwise a bug regarding [noreturn]
-// will be triggered.
-// Ref: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94742
-
-// LogError throws now a runtime_error with the given error message. This
-// should be used if there is no point in continuing the given algorithm at
-// some point and the error is not returned in another way (e.g., via a
-// bool/int as return value).
-//
-// Usage  : utility::LogError(format_string, arg0, arg1, ...);
-// Example: utility::LogError("name: {}, age: {}", "dog", 5);
-#define LogError(...)                     \
-    Logger::LogError_(__FILE__, __LINE__, \
-                      static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
-
-// LogWarning is used if an error occurs, but the error is also signaled
-// via a return value (i.e., there is no need to throw an exception). This
-// warning should further be used, if the algorithms encounters a state
-// that does not break its continuation, but the output is likely not to be
-// what the user expected.
-//
-// Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
-// Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
-#define LogWarning(...)                                             \
-    Logger::LogWarning_(__FILE__, __LINE__,                         \
-                        static_cast<const char *>(OPEN3D_FUNCTION), \
-                        __VA_ARGS__)
-
-// LogInfo is used to inform the user with expected output, e.g, pressed a
-// key in the visualizer prints helping information.
-//
-// Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
-// Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
-#define LogInfo(...)                     \
-    Logger::LogInfo_(__FILE__, __LINE__, \
-                     static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
-
-// LogDebug is used to print debug/additional information on the state of
-// the algorithm.
-//
-// Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
-// Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
-#define LogDebug(...)                     \
-    Logger::LogDebug_(__FILE__, __LINE__, \
-                      static_cast<const char *>(OPEN3D_FUNCTION), __VA_ARGS__)
-
 namespace open3d {
 namespace utility {
 
 enum class VerbosityLevel {
-    /// LogError throws now a runtime_error with the given error message. This
+    /// LogError throws a runtime_error with the given error message. This
     /// should be used if there is no point in continuing the given algorithm at
     /// some point and the error is not returned in another way (e.g., via a
     /// bool/int as return value).
     Error = 0,
     /// LogWarning is used if an error occurs, but the error is also signaled
     /// via a return value (i.e., there is no need to throw an exception). This
-    /// warning should further be used, if the algorithms encounters a state
+    /// warning should further be used if the algorithm encounters a state
     /// that does not break its continuation, but the output is likely not to be
     /// what the user expected.
     Warning = 1,
-    /// LogInfo is used to inform the user with expected output, e.g, pressed a
-    /// key in the visualizer prints helping information.
+    /// LogInfo is used to inform the user with expected output, e.g., pressing a
+    /// key in the visualizer prints helpful information.
     Info = 2,
     /// LogDebug is used to print debug/additional information on the state of
     /// the algorithm.
@@ -234,6 +181,85 @@ private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
+
+namespace detail {
+
+/// Captures the format string and caller source location at the call site.
+///
+/// Because a C++ variadic parameter pack (`Args &&...args`) consumes all
+/// trailing arguments, defaulted source-location parameters cannot be placed
+/// after `Args...`. Instead, `LogLocation` wraps the first argument (`format`)
+/// via a non-explicit converting constructor whose default arguments
+/// (`__builtin_FILE()`, `__builtin_LINE()`, `__builtin_FUNCTION()`) are
+/// evaluated at the caller's call site, leaving `Args &&...args` to deduce any
+/// remaining format arguments.
+///
+/// Ref: https://twdev.blog/2023/03/variadic_templates/#implicit-type-conversion
+/// Ref: https://stackoverflow.com/a/66402319
+/// Ref: https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+struct LogLocation {
+    const char *format;
+    const char *file;
+    int line;
+    const char *function;
+
+    constexpr LogLocation(const char *fmt,
+                          const char *f = __builtin_FILE(),
+                          int l = __builtin_LINE(),
+                          const char *fn = __builtin_FUNCTION()) noexcept
+        : format(fmt), file(f), line(l), function(fn) {}
+};
+
+}  // namespace detail
+
+/// LogError throws a runtime_error with the given error message. This
+/// should be used if there is no point in continuing the given algorithm at
+/// some point and the error is not returned in another way (e.g., via a
+/// bool/int as return value).
+///
+/// Usage  : utility::LogError(format_string, arg0, arg1, ...);
+/// Example: utility::LogError("name: {}, age: {}", "dog", 5);
+template <typename... Args>
+[[noreturn]] inline void LogError(detail::LogLocation loc, Args &&...args) {
+    Logger::LogError_(loc.file, loc.line, loc.function, loc.format,
+                      std::forward<Args>(args)...);
+}
+
+/// LogWarning is used if an error occurs, but the error is also signaled
+/// via a return value (i.e., there is no need to throw an exception). This
+/// warning should further be used if the algorithm encounters a state
+/// that does not break its continuation, but the output is likely not to be
+/// what the user expected.
+///
+/// Usage  : utility::LogWarning(format_string, arg0, arg1, ...);
+/// Example: utility::LogWarning("name: {}, age: {}", "dog", 5);
+template <typename... Args>
+inline void LogWarning(detail::LogLocation loc, Args &&...args) {
+    Logger::LogWarning_(loc.file, loc.line, loc.function, loc.format,
+                        std::forward<Args>(args)...);
+}
+
+/// LogInfo is used to inform the user with expected output, e.g., pressing a
+/// key in the visualizer prints helpful information.
+///
+/// Usage  : utility::LogInfo(format_string, arg0, arg1, ...);
+/// Example: utility::LogInfo("name: {}, age: {}", "dog", 5);
+template <typename... Args>
+inline void LogInfo(detail::LogLocation loc, Args &&...args) {
+    Logger::LogInfo_(loc.file, loc.line, loc.function, loc.format,
+                     std::forward<Args>(args)...);
+}
+
+/// LogDebug is used to print debug/additional information on the state of
+/// the algorithm.
+///
+/// Usage  : utility::LogDebug(format_string, arg0, arg1, ...);
+/// Example: utility::LogDebug("name: {}, age: {}", "dog", 5);
+template <typename... Args>
+inline void LogDebug(detail::LogLocation loc, Args &&...args) {
+    Logger::LogDebug_(loc.file, loc.line, loc.function, loc.format,
+                      std::forward<Args>(args)...);
+}
 
 /// Set global verbosity level of Open3D
 ///
