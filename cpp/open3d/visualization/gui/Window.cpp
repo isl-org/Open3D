@@ -264,13 +264,18 @@ struct Window::Impl {
 };
 
 Window::Window(const std::string& title, int flags /*= 0*/)
-    : Window(title, CENTERED_X, CENTERED_Y, AUTOSIZE_WIDTH, AUTOSIZE_HEIGHT) {}
+    : Window(title,
+             CENTERED_X,
+             CENTERED_Y,
+             AUTOSIZE_WIDTH,
+             AUTOSIZE_HEIGHT,
+             flags) {}
 
 Window::Window(const std::string& title,
                int width,
                int height,
                int flags /*= 0*/)
-    : Window(title, CENTERED_X, CENTERED_Y, width, height) {}
+    : Window(title, CENTERED_X, CENTERED_Y, width, height, flags) {}
 
 Window::Window(const std::string& title,
                int x,
