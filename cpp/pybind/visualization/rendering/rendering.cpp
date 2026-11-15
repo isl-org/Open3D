@@ -409,6 +409,12 @@ void pybind_rendering_definitions(py::module &m) {
             m_rendering.attr("MaterialRecord"));
     mat.def(py::init<>())
             .def_readwrite("has_alpha", &MaterialRecord::has_alpha)
+            .def_readwrite("backface_culling",
+                           &MaterialRecord::backface_culling,
+                           "If True, back faces are culled (single-sided "
+                           "rendering). If False (default), both faces are "
+                           "drawn. Inverse of the legacy Visualizer's "
+                           "RenderOption.mesh_show_back_face.")
             .def_readwrite("base_color", &MaterialRecord::base_color)
             .def_readwrite("base_metallic", &MaterialRecord::base_metallic)
             .def_readwrite("base_roughness", &MaterialRecord::base_roughness)
@@ -753,6 +759,12 @@ void pybind_rendering_definitions(py::module &m) {
             .def("modify_geometry_material",
                  &Open3DScene::ModifyGeometryMaterial, "name"_a, "material"_a,
                  "Modifies the material of the specified geometry")
+            .def("set_geometry_backface_culling",
+                 &Open3DScene::SetGeometryBackfaceCulling, "name"_a, "enable"_a,
+                 "Enables or disables back-face culling for the geometry with "
+                 "the given name. Pass enable=True to cull back faces "
+                 "(single-sided rendering), matching the legacy Visualizer's "
+                 "RenderOption.mesh_show_back_face=False.")
             .def("show_geometry", &Open3DScene::ShowGeometry, "name"_a,
                  "show"_a, "Shows or hides the geometry with the given name")
             .def("update_material", &Open3DScene::UpdateMaterial, "material"_a,
