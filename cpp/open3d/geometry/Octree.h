@@ -382,6 +382,17 @@ public:
     /// \param point Coordinates of the point.
     LocateLeafNode(const Eigen::Vector3d& point) const;
 
+    /// \brief Returns indices of points within search radius
+    ///
+    /// \param point_cloud_points Coordinates of pointcloud
+    ///                           used to construct the Octree
+    /// \param point Origin of the search sphere
+    /// \param radius Radius of the search sphere
+    std::vector<size_t> RadiusSearch(
+            const std::vector<Eigen::Vector3d>& point_cloud_points,
+            const Eigen::Vector3d& point,
+            const double& radius);
+
     /// \brief Return true if point within bound, that is,
     /// origin <= point < origin + size.
     ///
@@ -391,6 +402,24 @@ public:
     static bool IsPointInBound(const Eigen::Vector3d& point,
                                const Eigen::Vector3d& origin,
                                const double& size);
+
+    enum NodeSphereRelationValue {
+        FULLY_INSIDE = 0,  // Octree node inside radius search ball
+        OVERLAP = 1,
+        NO_OVERLAP = 2,
+    };
+
+    /// \brief Check the spatial relationship between
+    ///        Octree Node and search sphere
+    /// \param origin Coordinate of the of minimum point of the node cube
+    /// \param size Size of the octree node cube
+    /// \param point Origin of the search sphere
+    /// \param radius Radius of the search sphere
+    static NodeSphereRelationValue NodeSphereRelation(
+            const Eigen::Vector3d& origin,
+            const double& size,
+            const Eigen::Vector3d& point,
+            const double& radius);
 
     /// Returns true if the Octree is completely the same, used for testing.
     bool operator==(const Octree& other) const;
