@@ -9,9 +9,13 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "open3d/core/Blob.h"
 #include "open3d/core/DLPack.h"
@@ -1092,6 +1096,66 @@ public:
     /// to the beginning of blob_.
     inline bool IsContiguous() const {
         return shape_util::DefaultStrides(shape_) == strides_;
+    }
+
+    /// Returns true if elements are non-overlapping and cover a contiguous
+    /// memory span, regardless of dimension order. Empty tensors and scalar
+    /// tensors are dense; strides of singleton dimensions are ignored.
+    /// Negative strides are considered by magnitude. This does not imply that
+    /// GetDataPtr() points to the lowest address in the span: for negative
+    /// strides it points to the logical first element, so IsDense() alone does
+    /// not make memcpy from GetDataPtr() safe.
+    inline bool IsDense() const {
+        if (shape_.size() != strides_.size()) {
+            return false;
+        }
+
+        bool has_empty_dimension = false;
+        for (int64_t dimension_size : shape_) {
+            if (dimension_size < 0) {
+                return false;
+            }
+            has_empty_dimension |= (dimension_size == 0);
+        }
+        if (has_empty_dimension) {
+            return true;
+        }
+
+        // A dense layout can have any axis order. Sort the non-singleton axes
+        // by stride magnitude and check that each starts where the previous
+        // axis ends. Use unsigned magnitudes to support INT64_MIN safely.
+        std::vector<std::pair<std::uint64_t, int64_t>> dimensions;
+        dimensions.reserve(shape_.size());
+        for (std::size_t i = 0; i < shape_.size(); ++i) {
+            const int64_t dimension_size = shape_[i];
+            if (dimension_size <= 1) {
+                continue;
+            }
+            const int64_t stride = strides_[i];
+            const std::uint64_t stride_magnitude =
+                    stride < 0 ? static_cast<std::uint64_t>(-(stride + 1)) + 1
+                               : static_cast<std::uint64_t>(stride);
+            dimensions.emplace_back(stride_magnitude, dimension_size);
+        }
+        std::sort(dimensions.begin(), dimensions.end());
+
+        std::uint64_t expected_stride = 1;
+        for (const auto& [stride, dimension_size] : dimensions) {
+            if (stride != expected_stride) {
+                return false;
+            }
+            const auto extent = static_cast<std::uint64_t>(dimension_size);
+            // Tensor element counts and offsets are represented by int64_t.
+            // Keep the covered span in that range even when the intermediate
+            // product would still fit in uint64_t.
+            if (expected_stride > static_cast<std::uint64_t>(
+                                          std::numeric_limits<int64_t>::max()) /
+                                          extent) {
+                return false;
+            }
+            expected_stride *= extent;
+        }
+        return true;
     }
 
     /// Returns a C-contiguous Tensor containing the same data in the same

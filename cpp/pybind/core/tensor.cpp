@@ -937,6 +937,23 @@ Ref:
                "C-contiguous (row-major order). Consistent with PyTorch "
                "and NumPy conventions.");
     tensor.def(
+            "is_dense", &Tensor::IsDense,
+            R"(Returns True if tensor elements are non-overlapping and cover a
+contiguous memory span, regardless of dimension order. Negative strides are
+considered by magnitude. Empty tensors and scalars are dense; strides of
+singleton dimensions are ignored.
+For negative strides, the tensor's start pointer may not point to the lowest
+address in the span. Do not assume one memcpy from that pointer can copy the
+full span safely.
+
+Example:
+    >>> import numpy as np
+    >>> import open3d as o3d
+    >>> a = o3d.core.Tensor.from_numpy(
+    ...     np.arange(24).reshape(3, 2, 4).transpose(1, 0, 2))
+    >>> a.is_dense(), a.is_contiguous()
+    (True, False))");
+    tensor.def(
             "flatten", &Tensor::Flatten,
             R"(Flattens input by reshaping it into a one-dimensional tensor. If
 start_dim or end_dim are passed, only dimensions starting with start_dim

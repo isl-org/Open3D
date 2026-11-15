@@ -777,6 +777,53 @@ TEST_P(TensorPermuteDevices, ToString) {
  [True False False]])");
 }
 
+TEST(Tensor, IsDense) {
+    int32_t data[24] = {};
+
+    // The issue example is dense in a non-C-contiguous axis order.
+    core::Tensor issue_layout(data, core::Int32, {2, 3, 4}, {4, 8, 1});
+    EXPECT_FALSE(issue_layout.IsContiguous());
+    EXPECT_TRUE(issue_layout.IsDense());
+
+    core::Tensor c_contiguous(data, core::Int32, {2, 3, 4}, {12, 4, 1});
+    EXPECT_TRUE(c_contiguous.IsContiguous());
+    EXPECT_TRUE(c_contiguous.IsDense());
+
+    // Reversing an axis changes stride sign but does not introduce a gap.
+    core::Tensor reversed(data + 3, core::Int32, {4}, {-1});
+    EXPECT_TRUE(reversed.IsDense());
+    core::Tensor min_stride(data, core::Int32, {2},
+                            {std::numeric_limits<int64_t>::min()});
+    EXPECT_FALSE(min_stride.IsDense());
+
+    // Open3D element counts and offsets are signed int64_t, so reject a dense
+    // span that fits uint64_t but cannot be represented by the Tensor API.
+    core::Tensor oversized(data, core::Int32,
+                           {std::numeric_limits<int64_t>::max(), 2}, {2, 1});
+    EXPECT_FALSE(oversized.IsDense());
+
+    core::Tensor with_holes(data, core::Int32, {2, 2}, {3, 1});
+    EXPECT_FALSE(with_holes.IsDense());
+
+    core::Tensor overlapping(data, core::Int32, {2, 2}, {1, 1});
+    EXPECT_FALSE(overlapping.IsDense());
+    core::Tensor broadcast(data, core::Int32, {2, 3}, {0, 1});
+    EXPECT_FALSE(broadcast.IsDense());
+
+    core::Tensor singleton_stride(data, core::Int32, {2, 1, 3}, {3, -99, 1});
+    EXPECT_TRUE(singleton_stride.IsDense());
+    core::Tensor empty(data, core::Int32, {2, 0, 3}, {0, 0, 0});
+    EXPECT_TRUE(empty.IsDense());
+    core::Tensor scalar(data, core::Int32, {}, {});
+    EXPECT_TRUE(scalar.IsDense());
+
+    // Raw-buffer construction permits malformed metadata; reject it safely.
+    core::Tensor mismatched_rank(data, core::Int32, {2, 3}, {1});
+    EXPECT_FALSE(mismatched_rank.IsDense());
+    core::Tensor negative_extent(data, core::Int32, {-1}, {1});
+    EXPECT_FALSE(negative_extent.IsDense());
+}
+
 TEST_P(TensorPermuteDevicePairsWithSYCL, CopyContiguous) {
     core::Device dst_device;
     core::Device src_device;

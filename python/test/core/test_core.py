@@ -587,6 +587,34 @@ def test_tensor_from_to_numpy():
     np.testing.assert_equal(dst_t, o3d_t.numpy())
 
 
+def test_tensor_is_dense():
+    # Match the issue's shape {2, 3, 4} and strides {4, 8, 1}.
+    issue_layout = np.arange(24, dtype=np.int32).reshape(3, 2, 4)
+    issue_layout = issue_layout.transpose(1, 0, 2)
+    issue_tensor = o3c.Tensor.from_numpy(issue_layout)
+    assert list(issue_tensor.strides) == [4, 8, 1]
+    assert issue_tensor.is_dense()
+    assert not issue_tensor.is_contiguous()
+
+    c_contiguous = o3c.Tensor.from_numpy(
+        np.arange(24, dtype=np.int32).reshape(2, 3, 4))
+    assert c_contiguous.is_dense()
+    assert c_contiguous.is_contiguous()
+
+    reversed_axis = o3c.Tensor.from_numpy(
+        np.arange(6, dtype=np.int32).reshape(2, 3)[:, ::-1])
+    assert reversed_axis.is_dense()
+    assert not reversed_axis.is_contiguous()
+
+    with_holes = o3c.Tensor.from_numpy(
+        np.arange(48, dtype=np.int32).reshape(2, 3, 8)[:, :, ::2])
+    assert not with_holes.is_dense()
+
+    broadcast = o3c.Tensor.from_numpy(
+        np.broadcast_to(np.array([7], dtype=np.int32), (2, 3)))
+    assert not broadcast.is_dense()
+
+
 def test_tensor_to_numpy_scope():
     src_t = np.array([[10., 11., 12.], [13., 14., 15.]])
 
