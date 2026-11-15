@@ -168,8 +168,12 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
     custom_proj[1][2] = 0.0;
     custom_proj[1][3] = 0.0;
 
-    custom_proj[2][0] = 1.0 - 2.0 * intrinsics(0, 2) / width;
-    custom_proj[2][1] = -1.0 + 2.0 * intrinsics(1, 2) / height;
+    // In OpenCV convention, pixel coordinates (u, v) are centered at integers,
+    // where continuous window coordinates span [0, width] x [0, height] with
+    // x = u + 0.5 and y = v + 0.5. The +0.5 offset maps the principal point
+    // accurately to OpenGL NDC and matches RaycastingScene::CreateRaysPinhole.
+    custom_proj[2][0] = 1.0 - 2.0 * (intrinsics(0, 2) + 0.5) / width;
+    custom_proj[2][1] = -1.0 + 2.0 * (intrinsics(1, 2) + 0.5) / height;
     custom_proj[2][2] = -1.0;
     custom_proj[2][3] = -1.0;
 
