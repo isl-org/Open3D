@@ -1,4 +1,5 @@
 ## Main
+-   Added support for ILP64 system BLAS/LAPACK configurations. Open3D now uses the LAPACKE-provided integer type, selects the matching BLAS/LAPACK integer ABI through `BLA_SIZEOF_INTEGER`, and avoids memory corruption caused by mixing LP64 headers with ILP64 libraries.
 -   Add shared-device Vulkan Gaussian-splat rendering and update Filament integration for offscreen and interactive rendering.
 -   Reduce the installed size of the Open3D wheel: Open3D-ML Python dependencies are now an optional extra (`pip install open3d[ml]`, ~335 MB smaller for core-only installs) and `open3d.ml` submodules are imported lazily. `BUNDLE_OPEN3D_ML` now defaults to ON when ML ops are built and `OPEN3D_ML_ROOT` is set, and Windows wheels bundle Open3D-ML too (PR #7540).
 -   Add symmetric ICP registration to the legacy and Tensor pipelines (PR #7276).
