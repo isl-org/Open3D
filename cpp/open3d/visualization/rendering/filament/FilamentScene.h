@@ -211,8 +211,8 @@ public:
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
     void RenderToDepthImage(
-            std::function<void(std::shared_ptr<geometry::Image>)> callback)
-            override;
+            std::function<void(std::shared_ptr<geometry::Image>)> callback,
+            bool z_in_view_space = false) override;
 
     void ForEachActiveView(const std::function<void(FilamentView&)>& callback);
     void ForEachViewToRender(

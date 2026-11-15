@@ -1,4 +1,5 @@
 ## Main
+-   Fix `Scene.render_to_depth_image()` returning linear/metric depth (with an `inf` no-hit sentinel) instead of the documented `[0, 1]` normalized range (near to far plane), a regression from PR #7490. `z_in_view_space` is now an explicit, opt-in parameter (default `False`), matching `OffscreenRenderer.render_to_depth_image()` (issue #7611) (PR #7612).
 -   Add shared-device Vulkan Gaussian-splat rendering and update Filament integration for offscreen and interactive rendering.
 -   Reduce the installed size of the Open3D wheel: Open3D-ML Python dependencies are now an optional extra (`pip install open3d[ml]`, ~335 MB smaller for core-only installs) and `open3d.ml` submodules are imported lazily. `BUNDLE_OPEN3D_ML` now defaults to ON when ML ops are built and `OPEN3D_ML_ROOT` is set, and Windows wheels bundle Open3D-ML too (PR #7540).
 -   Add symmetric ICP registration to the legacy and Tensor pipelines (PR #7276).

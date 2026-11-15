@@ -2371,9 +2371,10 @@ void FilamentScene::RenderToImage(
 }
 
 void FilamentScene::RenderToDepthImage(
-        std::function<void(std::shared_ptr<geometry::Image>)> callback) {
+        std::function<void(std::shared_ptr<geometry::Image>)> callback,
+        bool z_in_view_space) {
     auto view = views_.begin()->second.view.get();
-    renderer_.RenderToDepthImage(view, this, callback, true /*linear depth*/);
+    renderer_.RenderToDepthImage(view, this, callback, z_in_view_space);
 }
 
 std::vector<FilamentScene::RenderableGeometry*> FilamentScene::GetGeometry(
