@@ -33,6 +33,8 @@
 
 #include <zlib.h>
 
+#include <algorithm>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <regex>
@@ -309,6 +311,9 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         utility::LogError("Header preamble cannot be read.");
     }
     const size_t header_len = ParseNpyPreamble(preamble.Data());
+    if (header_len == 0) {
+        utility::LogError("Numpy header cannot be empty.");
+    }
 
     CharVector header(header_len, 0);
     if (fread(header.Data(), sizeof(char), header_len, fp) != header_len) {
@@ -322,8 +327,19 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
 }
 
 static std::tuple<core::SizeVector, char, int64_t, bool>
-ParseNpyHeaderFromBuffer(const char* buffer) {
+ParseNpyHeaderFromBuffer(const char* buffer,
+                         size_t buffer_size,
+                         size_t* payload_offset) {
+    constexpr size_t preamble_size = 10;
+    if (buffer_size < preamble_size) {
+        utility::LogError("Numpy header preamble is truncated.");
+    }
     const size_t header_len = ParseNpyPreamble(buffer);
+    if (header_len == 0 || header_len > buffer_size - preamble_size ||
+        buffer[preamble_size + header_len - 1] != '\n') {
+        utility::LogError("Numpy header is invalid or truncated.");
+    }
+    *payload_offset = preamble_size + header_len;
     std::string header(reinterpret_cast<const char*>(buffer + 10), header_len);
     return ParsePropertyDict(header);
 }
@@ -620,15 +636,17 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
         utility::LogError("Failed to read compressed data.");
     }
 
-    int err;
-    z_stream d_stream;
+    z_stream d_stream{};
 
     d_stream.zalloc = Z_NULL;
     d_stream.zfree = Z_NULL;
     d_stream.opaque = Z_NULL;
     d_stream.avail_in = 0;
     d_stream.next_in = Z_NULL;
-    err = inflateInit2(&d_stream, -MAX_WBITS);
+    const int init_err = inflateInit2(&d_stream, -MAX_WBITS);
+    if (init_err != Z_OK) {
+        utility::LogError("Failed to initialize decompression.");
+    }
 
     d_stream.avail_in = num_compressed_bytes;
     d_stream.next_in =
@@ -637,24 +655,64 @@ static NumpyArray CreateNumpyArrayFromCompressedFile(
     d_stream.next_out =
             reinterpret_cast<unsigned char*>(buffer_uncompressed.Data());
 
-    err = inflate(&d_stream, Z_FINISH);
-    err = inflateEnd(&d_stream);
-    if (err != Z_OK) {
+    const int inflate_err = inflate(&d_stream, Z_FINISH);
+    const bool output_complete =
+            inflate_err == Z_STREAM_END && d_stream.avail_out == 0;
+    const int end_err = inflateEnd(&d_stream);
+    if (!output_complete || end_err != Z_OK) {
         utility::LogError("Failed to decompress data.");
     }
 
     core::SizeVector shape;
     char type;
-    size_t word_size;
+    int64_t word_size;
     bool fortran_order;
+    size_t payload_offset;
     std::tie(shape, type, word_size, fortran_order) =
-            ParseNpyHeaderFromBuffer(buffer_uncompressed.Data());
+            ParseNpyHeaderFromBuffer(buffer_uncompressed.Data(),
+                                     num_uncompressed_bytes, &payload_offset);
+
+    const int64_t member_size = static_cast<int64_t>(num_uncompressed_bytes);
+    const int64_t payload_size =
+            member_size - static_cast<int64_t>(payload_offset);
+    const int64_t max_num_elements =
+            word_size > 0 ? payload_size / word_size : 0;
+    const bool has_zero_dimension =
+            std::find(shape.begin(), shape.end(), 0) != shape.end();
+    int64_t num_elements = 1;
+    bool invalid_array_size = word_size <= 0;
+    const int64_t max_product = has_zero_dimension
+                                        ? std::numeric_limits<int64_t>::max()
+                                        : max_num_elements;
+    for (int64_t dimension : shape) {
+        if (dimension < 0) {
+            invalid_array_size = true;
+            break;
+        }
+        const int64_t factor = has_zero_dimension
+                                       ? std::max<int64_t>(dimension, 1)
+                                       : dimension;
+        if (num_elements > max_product / factor) {
+            invalid_array_size = true;
+            break;
+        }
+        num_elements *= factor;
+    }
+    if (has_zero_dimension) {
+        num_elements = 0;
+    }
+    if (invalid_array_size || num_elements > max_num_elements) {
+        utility::LogError("Invalid compressed npy array size.");
+    }
+    const size_t array_num_bytes =
+            static_cast<size_t>(num_elements * word_size);
 
     NumpyArray array(shape, type, word_size, fortran_order);
 
-    size_t offset = num_uncompressed_bytes - array.NumBytes();
-    memcpy(array.GetDataPtr<char>(), buffer_uncompressed.Data() + offset,
-           array.NumBytes());
+    if (array_num_bytes > 0) {
+        memcpy(array.GetDataPtr<char>(),
+               buffer_uncompressed.Data() + payload_offset, array_num_bytes);
+    }
 
     return array;
 }
