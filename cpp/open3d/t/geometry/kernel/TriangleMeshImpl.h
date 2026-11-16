@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
+#include "open3d/Macro.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -81,6 +82,7 @@ void ComputeTriangleNormalsCPU
          core::Tensor& normals) {
     const core::Dtype dtype = normals.GetDtype();
     const int64_t n = normals.GetLength();
+    const int64_t num_vertices = vertices.GetLength();
     const core::Tensor triangles_d = triangles.To(core::Int64);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -88,31 +90,38 @@ void ComputeTriangleNormalsCPU
         const int64_t* triangle_ptr = triangles_d.GetDataPtr<int64_t>();
         const scalar_t* vertex_ptr = vertices.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(normals.GetDevice(), n,
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                              int64_t idx = 3 * workload_idx;
+        core::ParallelFor(
+                normals.GetDevice(), n,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t idx = 3 * workload_idx;
 
-                              int64_t triangle_id1 = triangle_ptr[idx];
-                              int64_t triangle_id2 = triangle_ptr[idx + 1];
-                              int64_t triangle_id3 = triangle_ptr[idx + 2];
+                    int64_t triangle_id1 = triangle_ptr[idx];
+                    int64_t triangle_id2 = triangle_ptr[idx + 1];
+                    int64_t triangle_id3 = triangle_ptr[idx + 2];
+                    OPEN3D_ASSERT(triangle_id1 >= 0 &&
+                                          triangle_id1 < num_vertices &&
+                                          triangle_id2 >= 0 &&
+                                          triangle_id2 < num_vertices &&
+                                          triangle_id3 >= 0 &&
+                                          triangle_id3 < num_vertices,
+                                  "Triangle vertex index is out of range.");
 
-                              scalar_t v01[3], v02[3];
-                              v01[0] = vertex_ptr[3 * triangle_id2] -
-                                       vertex_ptr[3 * triangle_id1];
-                              v01[1] = vertex_ptr[3 * triangle_id2 + 1] -
-                                       vertex_ptr[3 * triangle_id1 + 1];
-                              v01[2] = vertex_ptr[3 * triangle_id2 + 2] -
-                                       vertex_ptr[3 * triangle_id1 + 2];
-                              v02[0] = vertex_ptr[3 * triangle_id3] -
-                                       vertex_ptr[3 * triangle_id1];
-                              v02[1] = vertex_ptr[3 * triangle_id3 + 1] -
-                                       vertex_ptr[3 * triangle_id1 + 1];
-                              v02[2] = vertex_ptr[3 * triangle_id3 + 2] -
-                                       vertex_ptr[3 * triangle_id1 + 2];
+                    scalar_t v01[3], v02[3];
+                    v01[0] = vertex_ptr[3 * triangle_id2] -
+                             vertex_ptr[3 * triangle_id1];
+                    v01[1] = vertex_ptr[3 * triangle_id2 + 1] -
+                             vertex_ptr[3 * triangle_id1 + 1];
+                    v01[2] = vertex_ptr[3 * triangle_id2 + 2] -
+                             vertex_ptr[3 * triangle_id1 + 2];
+                    v02[0] = vertex_ptr[3 * triangle_id3] -
+                             vertex_ptr[3 * triangle_id1];
+                    v02[1] = vertex_ptr[3 * triangle_id3 + 1] -
+                             vertex_ptr[3 * triangle_id1 + 1];
+                    v02[2] = vertex_ptr[3 * triangle_id3 + 2] -
+                             vertex_ptr[3 * triangle_id1 + 2];
 
-                              core::linalg::kernel::cross_3x1(v01, v02,
-                                                              &normal_ptr[idx]);
-                          });
+                    core::linalg::kernel::cross_3x1(v01, v02, &normal_ptr[idx]);
+                });
     });
 }
 
@@ -128,6 +137,7 @@ void ComputeTriangleAreasCPU
          core::Tensor& triangle_areas) {
     const int64_t n = triangle_areas.GetLength();
     const core::Dtype dtype = triangle_areas.GetDtype();
+    const int64_t num_vertices = vertices.GetLength();
     const core::Tensor triangles_d = triangles.To(core::Int64);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
@@ -135,32 +145,39 @@ void ComputeTriangleAreasCPU
         const int64_t* triangle_ptr = triangles_d.GetDataPtr<int64_t>();
         const scalar_t* vertex_ptr = vertices.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(triangle_areas.GetDevice(), n,
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                              int64_t idx = 3 * workload_idx;
+        core::ParallelFor(
+                triangle_areas.GetDevice(), n,
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int64_t idx = 3 * workload_idx;
 
-                              int64_t triangle_id1 = triangle_ptr[idx];
-                              int64_t triangle_id2 = triangle_ptr[idx + 1];
-                              int64_t triangle_id3 = triangle_ptr[idx + 2];
+                    int64_t triangle_id1 = triangle_ptr[idx];
+                    int64_t triangle_id2 = triangle_ptr[idx + 1];
+                    int64_t triangle_id3 = triangle_ptr[idx + 2];
+                    OPEN3D_ASSERT(triangle_id1 >= 0 &&
+                                          triangle_id1 < num_vertices &&
+                                          triangle_id2 >= 0 &&
+                                          triangle_id2 < num_vertices &&
+                                          triangle_id3 >= 0 &&
+                                          triangle_id3 < num_vertices,
+                                  "Triangle vertex index is out of range.");
 
-                              scalar_t v01[3], v02[3];
-                              v01[0] = vertex_ptr[3 * triangle_id2] -
-                                       vertex_ptr[3 * triangle_id1];
-                              v01[1] = vertex_ptr[3 * triangle_id2 + 1] -
-                                       vertex_ptr[3 * triangle_id1 + 1];
-                              v01[2] = vertex_ptr[3 * triangle_id2 + 2] -
-                                       vertex_ptr[3 * triangle_id1 + 2];
-                              v02[0] = vertex_ptr[3 * triangle_id3] -
-                                       vertex_ptr[3 * triangle_id1];
-                              v02[1] = vertex_ptr[3 * triangle_id3 + 1] -
-                                       vertex_ptr[3 * triangle_id1 + 1];
-                              v02[2] = vertex_ptr[3 * triangle_id3 + 2] -
-                                       vertex_ptr[3 * triangle_id1 + 2];
+                    scalar_t v01[3], v02[3];
+                    v01[0] = vertex_ptr[3 * triangle_id2] -
+                             vertex_ptr[3 * triangle_id1];
+                    v01[1] = vertex_ptr[3 * triangle_id2 + 1] -
+                             vertex_ptr[3 * triangle_id1 + 1];
+                    v01[2] = vertex_ptr[3 * triangle_id2 + 2] -
+                             vertex_ptr[3 * triangle_id1 + 2];
+                    v02[0] = vertex_ptr[3 * triangle_id3] -
+                             vertex_ptr[3 * triangle_id1];
+                    v02[1] = vertex_ptr[3 * triangle_id3 + 1] -
+                             vertex_ptr[3 * triangle_id1 + 1];
+                    v02[2] = vertex_ptr[3 * triangle_id3 + 2] -
+                             vertex_ptr[3 * triangle_id1 + 2];
 
-                              area_ptr[workload_idx] =
-                                      0.5 * core::linalg::kernel::cross_mag_3x1(
-                                                    v01, v02);
-                          });
+                    area_ptr[workload_idx] =
+                            0.5 * core::linalg::kernel::cross_mag_3x1(v01, v02);
+                });
     });
 }
 

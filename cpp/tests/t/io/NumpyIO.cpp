@@ -116,18 +116,22 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
     // t5: {0, 1, 0} tensor.
     core::Tensor t5 = core::Tensor::Ones({0, 1, 0}, core::Float32, device);
 
+    // Zero-sized arrays remain valid when a large dimension precedes zero.
+    core::Tensor t6 = core::Tensor::Ones({1000000, 0}, core::Float32, device);
+
     // Write t0 to t5.
     t::io::WriteNpz(file_name, {{"t0", t0},
                                 {"t1", t1},
                                 {"t2", t2},
                                 {"t3", t3},
                                 {"t4", t4},
-                                {"t5", t5}});
+                                {"t5", t5},
+                                {"t6", t6}});
 
     // Read from npz
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(file_name);
-    EXPECT_EQ(tensor_map.size(), 6);
+    EXPECT_EQ(tensor_map.size(), 7);
 
     core::Tensor t0_load = tensor_map.at("t0");
     EXPECT_TRUE(t0.AllClose(t0_load.To(device)));
@@ -152,6 +156,11 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
     core::Tensor t5_load = tensor_map.at("t5");
     EXPECT_TRUE(t5.AllClose(t5_load.To(device)));
     EXPECT_EQ(t5.GetDtype(), t5_load.GetDtype());
+
+    core::Tensor t6_load = tensor_map.at("t6");
+    EXPECT_TRUE(t6.AllClose(t6_load.To(device)));
+    EXPECT_EQ(t6.GetDtype(), t6_load.GetDtype());
+    EXPECT_EQ(t6.GetShape(), t6_load.GetShape());
 
     // Clean up.
     utility::filesystem::RemoveFile(file_name);

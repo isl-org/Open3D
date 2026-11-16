@@ -66,8 +66,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
                            utility::hash_eigen<Eigen::Vector2i>>
                 new_verts;
         std::vector<Eigen::Vector3i> new_triangles(4 * mesh->triangles_.size());
+        const int64_t vertex_count =
+                static_cast<int64_t>(mesh->vertices_.size());
         for (size_t tidx = 0; tidx < mesh->triangles_.size(); ++tidx) {
             const auto& triangle = mesh->triangles_[tidx];
+            detail::AssertTriangleIndicesInRange(triangle, vertex_count);
             int vidx0 = triangle(0);
             int vidx1 = triangle(1);
             int vidx2 = triangle(2);
@@ -271,6 +274,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     VertexNeighbours vertex_neighbours(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto& tria = triangles_[tidx];
+        detail::AssertTriangleIndicesInRange(
+                tria, static_cast<int64_t>(vertices_.size()));
         Eigen::Vector2i e0 = GetOrderedEdge(tria(0), tria(1));
         edge_to_triangles[e0].insert(int(tidx));
         Eigen::Vector2i e1 = GetOrderedEdge(tria(1), tria(2));
