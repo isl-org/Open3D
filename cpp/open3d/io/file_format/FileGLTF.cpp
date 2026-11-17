@@ -7,6 +7,8 @@
 
 #include <tiny_gltf.h>
 
+#include <algorithm>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -448,11 +450,15 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     model.bufferViews[indices_buffer_view_index].byteLength += byte_length;
 
     std::vector<unsigned char> index_buffer;
+    int min_index = std::numeric_limits<int>::max();
+    int max_index = std::numeric_limits<int>::lowest();
     for (size_t tidx = 0; tidx < num_of_triangles; ++tidx) {
         const Eigen::Vector3i& triangle = mesh.triangles_[tidx];
         size_t uint_size =
                 save_indices_as_uint32 ? sizeof(uint32_t) : sizeof(uint16_t);
         for (size_t i = 0; i < 3; ++i) {
+            min_index = std::min(min_index, triangle(i));
+            max_index = std::max(max_index, triangle(i));
             temp = (unsigned char*)&(triangle(i));
             for (size_t j = 0; j < uint_size; ++j) {
                 index_buffer.push_back(temp[j]);
@@ -460,8 +466,12 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
         }
     }
 
-    indices_accessor.minValues.push_back(0);
-    indices_accessor.maxValues.push_back(3 * int(num_of_triangles) - 1);
+    // Bounds describe referenced vertices, which may be shared or sparse.
+    // Empty index buffers have no extrema to record.
+    if (num_of_triangles > 0) {
+        indices_accessor.minValues.push_back(min_index);
+        indices_accessor.maxValues.push_back(max_index);
+    }
     model.accessors.push_back(indices_accessor);
     gltf_primitive.indices = int(model.accessors.size()) - 1;
 
