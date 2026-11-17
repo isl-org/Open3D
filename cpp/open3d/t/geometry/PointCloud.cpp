@@ -1634,12 +1634,19 @@ std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
 core::Tensor PointCloud::ClusterDBSCAN(double eps,
                                        size_t min_points,
                                        bool print_progress) const {
+    return ClusterDBSCAN(eps, min_points, print_progress, true);
+}
+
+core::Tensor PointCloud::ClusterDBSCAN(double eps,
+                                       size_t min_points,
+                                       bool print_progress,
+                                       bool precompute_neighbors) const {
     // Create a legacy point cloud with only points, no attributes to reduce
     // copying.
     PointCloud tpcd(GetPointPositions());
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
-    std::vector<int> labels =
-            lpcd.ClusterDBSCAN(eps, min_points, print_progress);
+    std::vector<int> labels = lpcd.ClusterDBSCAN(
+            eps, min_points, print_progress, precompute_neighbors);
     return core::Tensor(std::move(labels)).To(GetDevice());
 }
 

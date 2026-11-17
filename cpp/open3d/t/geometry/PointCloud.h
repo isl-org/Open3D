@@ -455,6 +455,16 @@ public:
                                size_t min_points,
                                bool print_progress = false) const;
 
+    /// \brief Overload with explicit neighborhood caching control.
+    ///
+    /// \param precompute_neighbors If `true`, cache all neighborhoods in
+    /// parallel. If `false`, query them on demand using linear auxiliary
+    /// memory, at the cost of sequential neighborhood searches.
+    core::Tensor ClusterDBSCAN(double eps,
+                               size_t min_points,
+                               bool print_progress,
+                               bool precompute_neighbors) const;
+
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     /// This is a wrapper for a CPU implementation and a copy of the point cloud
     /// data and resulting plane model and inlier indiecs will be made.
