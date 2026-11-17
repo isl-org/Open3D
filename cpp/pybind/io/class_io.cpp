@@ -263,6 +263,11 @@ void pybind_class_io_definitions(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
+    const char *write_triangle_mesh_docstring =
+            "Function to write TriangleMesh to file.\n\n"
+            "For GLTF/GLB output, index accessor bounds reflect the vertex "
+            "indices referenced by the mesh's triangles, including shared or "
+            "sparse indices.";
     m_io.def(
             "write_triangle_mesh",
             [](const fs::path &filename, const geometry::TriangleMesh &mesh,
@@ -275,14 +280,10 @@ void pybind_class_io_definitions(py::module &m_io) {
                                          write_vertex_colors,
                                          write_triangle_uvs, print_progress);
             },
-            "Function to write TriangleMesh to file.\n\n"
-            "For GLTF/GLB output, index accessor bounds reflect the vertex "
-            "indices referenced by the mesh's triangles, including shared or "
-            "sparse indices.",
-            "filename"_a, "mesh"_a, "write_ascii"_a = false,
-            "compressed"_a = false, "write_vertex_normals"_a = true,
-            "write_vertex_colors"_a = true, "write_triangle_uvs"_a = true,
-            "print_progress"_a = false);
+            write_triangle_mesh_docstring, "filename"_a, "mesh"_a,
+            "write_ascii"_a = false, "compressed"_a = false,
+            "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+            "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 
