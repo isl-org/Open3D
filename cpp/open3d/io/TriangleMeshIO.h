@@ -62,6 +62,8 @@ bool ReadTriangleMesh(const std::string &filename,
 /// two parameters will be used. Otherwise they will be ignored.
 /// At current only .obj format supports uv coordinates (triangle_uvs) and
 /// textures.
+/// For .gltf and .glb output, index accessor bounds reflect the vertex indices
+/// referenced by the mesh's triangles, including shared or sparse indices.
 /// \return return true if the write function is successful, false otherwise.
 bool WriteTriangleMesh(const std::string &filename,
                        const geometry::TriangleMesh &mesh,
