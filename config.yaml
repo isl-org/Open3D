@@ -1,0 +1,206 @@
+# All distances are meters, angles are degrees, and times are seconds unless
+# stated otherwise. Relative paths are resolved from this file's directory.
+
+dataset:
+  # RGB-D sequence containing rgb.txt, depth.txt, rgb/*.png, and depth/*.png.
+  # groundtruth.txt is optional except in gt-assisted mode.
+  path: data/rgbd_dataset_freiburg1_xyz
+
+  # Raw integer depth units per meter. TUM stores depth as raw_value / 5000.
+  # A wrong value scales both the reconstructed map and estimated translation.
+  depth_scale: 5000.0
+
+  # Maximum usable depth. Open3D changes farther depth pixels to invalid zero;
+  # this also sets the 0-to-maximum range of the colorized depth window.
+  depth_trunc_m: 4.0
+
+  # Maximum timestamp gap for nearest RGB-to-depth and optional RGB-to-GT
+  # associations. A bad depth match drops the RGB row; a bad GT match only
+  # leaves that record without evaluation data.
+  association_max_dt_s: 0.03
+
+camera:
+  # TUM Freiburg 1 pinhole calibration. Width and height must match the images.
+  width: 640
+  height: 480
+
+  # Horizontal and vertical focal lengths in pixels. These control how image
+  # displacement and depth are back-projected into metric X/Y coordinates.
+  fx: 517.3
+  fy: 516.5
+
+  # Principal point in pixels, measured from the image's top-left corner.
+  # These define which pixel lies on the camera's optical axis.
+  cx: 318.6
+  cy: 255.3
+
+slam:
+  # autonomous: ORB retrieval -> depth PnP -> ICP verification -> pose graph.
+  # gt-assisted: scheduled GT-derived constraints (the original teaching mode).
+  # odometry-only: no loop constraints or global graph optimization.
+  mode: autonomous
+
+processing:
+  # Keep every Nth associated record before odometry. Larger values reduce work
+  # but increase inter-frame motion and can make dense alignment fail.
+  frame_stride: 3
+
+  # Maximum number of records processed after association and frame_stride.
+  # This is an upper bound; the default sequence has only 266 strided records.
+  max_frames: 300
+
+  # Open3D voxel edge length for each frame cloud. Smaller voxels preserve more
+  # detail but increase point count, map memory, rebuild time, and rendering cost.
+  voxel_size_m: 0.05
+
+  # Cache/add one map keyframe every N processed frames. Odometry and the cyan
+  # current scan still update on every processed frame.
+  map_every_n_frames: 2
+
+  # Maximum points retained after each frame's voxel downsampling. This caps the
+  # cyan current scan and each cached keyframe, not the total accumulated map.
+  points_per_keyframe: 14000
+
+  # Maximum depth disagreement accepted by Open3D while forming dense RGB-D
+  # correspondences. This is not a standalone whole-frame rejection threshold.
+  depth_diff_max_m: 0.07
+
+  # GT-assisted mode only: add a synthetic GT-derived graph constraint at
+  # processed indices N, 2N, 3N, etc., then run global optimization.
+  loop_closure_every_n_frames: 50
+
+  # Requested GUI playback cadence. It can throttle fast processing but cannot
+  # make odometry run faster than the CPU; dataset timestamps are not used here.
+  playback_hz: 15.0
+
+autonomous_loop:
+  # ORB features requested from each map keyframe before depth filtering.
+  orb_features: 1800
+
+  # Ignore ORB keypoints whose metric depth is zero or farther than this value.
+  max_feature_depth_m: 4.0
+
+  # Do not compare keyframes closer than this many processed frame indices.
+  min_frame_separation: 30
+
+  # Minimum processed-frame gap after accepting a loop before accepting another.
+  cooldown_frames: 10
+
+  # Lowe ratio threshold for Hamming KNN descriptor matches. Lower is stricter.
+  ratio_test: 0.75
+
+  # Appearance candidate must pass both an absolute good-match count and this
+  # fraction of the smaller valid descriptor set.
+  min_matches: 40
+  min_match_score: 0.05
+
+  # Geometrically test at most this many strongest appearance candidates.
+  max_candidates: 3
+
+  # OpenCV solvePnPRansac controls. PnP estimates old-keyframe 3D points into the
+  # current camera from current-frame 2D observations.
+  pnp_iterations: 200
+  pnp_reprojection_error_px: 3.0
+  pnp_confidence: 0.999
+  min_pnp_inliers: 25
+  min_pnp_inlier_ratio: 0.35
+
+  # Point-to-point ICP refines and verifies the PnP transform. A loop is accepted
+  # only when fitness is high enough, RMSE low enough, and ICP does not move too
+  # far from PnP (a guard against repeated-plane false matches).
+  icp_max_correspondence_distance_m: 0.10
+  icp_max_iterations: 50
+  min_icp_fitness: 0.30
+  max_icp_rmse_m: 0.05
+  max_icp_translation_correction_m: 0.25
+  max_icp_rotation_correction_deg: 15.0
+
+optimization:
+  # Diagonal value of the synthetic loop edge's 6x6 information matrix. Larger
+  # values make the GT-derived constraint stronger relative to odometry edges.
+  loop_information: 5000.0
+
+  # Passed only to Open3D GlobalOptimizationOption. It controls the geometric
+  # distance scale used by graph optimization, not RGB-D odometry matching.
+  max_correspondence_distance_m: 0.08
+
+  # Open3D threshold for pruning uncertain graph edges that are inconsistent.
+  # Sequential odometry edges are marked certain and are not pruned this way.
+  edge_prune_threshold: 0.25
+
+  # Open3D weight preference for uncertain loop edges during global optimization.
+  # Larger values encourage the optimizer to retain/satisfy loop constraints.
+  preference_loop_closure: 2.0
+
+noise:
+  # Standard deviation of independent XYZ translation noise composed onto the
+  # red teaching trajectory after each successful odometry step. Map and graph
+  # poses are unaffected.
+  translation_std_m_per_frame: 0.006
+
+  # Standard deviation per XYZ rotation-vector component for the same red-only
+  # artificial drift. It is converted from degrees to radians before use.
+  rotation_std_deg_per_frame: 0.18
+
+covariance:
+  # Initial standard deviation for each XYZ element of the internal 6x6 pose
+  # covariance. The value is squared to create diagonal variances.
+  initial_translation_std_m: 0.01
+
+  # Initial standard deviation for each rotational covariance element. Converted
+  # to radians and squared; rotation uncertainty is not drawn in the viewer.
+  initial_rotation_std_deg: 0.5
+
+  # Translation random-walk standard deviation added as variance every frame,
+  # including frames where odometry fails.
+  process_translation_std_m: 0.008
+
+  # Rotation random-walk standard deviation added as variance every frame.
+  process_rotation_std_deg: 0.25
+
+  # Multiply the full 6x6 covariance by this number after every scheduled graph
+  # correction. Smaller values create a larger visible uncertainty reduction.
+  loop_closure_shrink: 0.08
+
+  # Number of positional standard deviations represented by the yellow rings.
+  # Only covariance[0:3, 0:3] contributes to this visualization.
+  ellipsoid_sigma: 3.0
+
+visualization:
+  # Initial Open3D 3D window dimensions in screen pixels.
+  window_width: 1280
+  window_height: 800
+
+  # Requested rendered point size for the RGB map and cyan current scan.
+  point_size: 2.0
+
+  # Scale of the cyan camera-frustum wireframe in map meters.
+  frustum_scale: 0.25
+
+  # Radius in meters of the magenta sphere marking the corrected camera center.
+  camera_marker_radius_m: 0.08
+
+  # Requested Open3D line width for paths, frustum, and covariance rings.
+  # Some OpenGL drivers render legacy LineSet geometry at one pixel regardless.
+  trajectory_width: 3.0
+
+output:
+  # Paths are resolved relative to config.yaml. The directory is created at run
+  # start and is ignored by Git.
+  directory: output
+
+  # Final displayed map after all accepted graph corrections. The writer applies
+  # one global voxel pass before saving compressed PLY; set size to 0 to skip it.
+  map_file: autonomous_map.ply
+  map_voxel_size_m: 0.05
+
+  # NumPy archive containing noisy, local_odometry, optimized, and optional
+  # ground_truth XYZ trajectories.
+  trajectory_file: trajectories.npz
+
+  # Open3D JSON pose graph with sequential and accepted loop edges.
+  pose_graph_file: pose_graph.json
+
+  # Machine-readable end-of-run KPIs. Accuracy fields are included only when
+  # groundtruth.txt is available; autonomous estimation never consumes them.
+  run_summary_file: run_summary.json
