@@ -2082,6 +2082,7 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     # used by utility::ProgressBar. Bundled TBB (mkl/tbb.cmake) is newer.
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
+            PUBLIC
             PACKAGE TBB
             VERSION 2021.4.0
             TARGETS TBB::tbb
