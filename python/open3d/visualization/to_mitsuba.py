@@ -64,6 +64,13 @@ def to_mitsuba(self, name, bsdf=None):
     user may provide a Mitsuba BSDF to be used instead of converting the Open3D
     material.
 
+    Triangle-corner UV seams are preserved by splitting vertices where their
+    UVs differ. Positions, normals, and colors follow the split; the source
+    mesh is unchanged. For example::
+
+        mesh = o3d.t.io.read_triangle_mesh('textured_mesh.obj')
+        converted = mesh.to_mitsuba('textured_mesh')
+
     Args:
         name (str): Name for the Mitsuba Mesh. Used by Mitsuba as an identifier
 
@@ -83,6 +90,26 @@ def to_mitsuba(self, name, bsdf=None):
     has_uvs = 'texture_uvs' in self.triangle
     has_colors = 'colors' in self.vertex
 
+    vertices = self.vertex.positions.numpy()
+    faces = self.triangle.indices.numpy()
+    vertex_indices = np.arange(len(vertices))
+    if has_uvs:
+        # Open3D stores UVs per triangle corner; Mitsuba stores them per vertex.
+        # Share vertices only when both the source vertex and UV agree.
+        corner_uvs = self.triangle.texture_uvs.numpy().reshape(-1, 2)
+        corners = np.empty(faces.size,
+                           dtype=[('vertex', faces.dtype),
+                                  ('uv', corner_uvs.dtype, (2,))])
+        corners['vertex'] = faces.reshape(-1)
+        corners['uv'] = corner_uvs
+        _, unique_corners, remapped_faces = np.unique(corners,
+                                                      return_index=True,
+                                                      return_inverse=True)
+        vertex_indices = faces.reshape(-1)[unique_corners]
+        vertices = vertices[vertex_indices]
+        faces = remapped_faces.reshape(faces.shape)
+        per_vtx_uvs = corner_uvs[unique_corners].copy()
+
     # Convert Open3D Material to Mitsuba's principled BSDF
     if bsdf is None:
         bsdf = o3d_material_to_bsdf(self.material, vertex_color=has_colors)
@@ -93,28 +120,26 @@ def to_mitsuba(self, name, bsdf=None):
 
     # Create Mitsuba mesh shell
     mi_mesh = mi.Mesh(name,
-                      vertex_count=self.vertex.positions.shape[0],
-                      face_count=self.triangle.indices.shape[0],
+                      vertex_count=len(vertices),
+                      face_count=len(faces),
                       has_vertex_normals=has_normals,
                       has_vertex_texcoords=has_uvs,
                       props=bsdf_prop)
 
     # Vertex color is not a 'built-in' attribute. Needs to be added.
     if has_colors:
-        mi_mesh.add_attribute('vertex_color', 3,
-                              self.vertex.colors.numpy().flatten())
+        mi_mesh.add_attribute(
+            'vertex_color', 3,
+            self.vertex.colors.numpy()[vertex_indices].flatten())
 
     # "Traverse" the mesh to get its updateable parameters
     mesh_params = mi.traverse(mi_mesh)
-    mesh_params['vertex_positions'] = self.vertex.positions.numpy().flatten()
-    mesh_params['faces'] = self.triangle.indices.numpy().flatten()
+    mesh_params['vertex_positions'] = vertices.flatten()
+    mesh_params['faces'] = faces.flatten()
     if has_normals:
-        mesh_params['vertex_normals'] = self.vertex.normals.numpy().flatten()
+        mesh_params['vertex_normals'] = self.vertex.normals.numpy(
+        )[vertex_indices].flatten()
     if has_uvs:
-        # Mitsuba wants UVs per-vertex so copy them into place
-        per_vtx_uvs = np.zeros((self.vertex.positions.shape[0], 2))
-        for idx, uvs in zip(self.triangle.indices, self.triangle.texture_uvs):
-            per_vtx_uvs[idx.numpy()] = uvs.numpy()
         mesh_params['vertex_texcoords'] = np.subtract(1.0,
                                                       per_vtx_uvs,
                                                       out=per_vtx_uvs,
