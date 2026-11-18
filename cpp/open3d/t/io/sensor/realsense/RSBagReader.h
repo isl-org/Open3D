@@ -47,6 +47,11 @@ namespace io {
 ///
 class RSBagReader : public RGBDVideoReader {
 public:
+    struct PostProcessingFilter {
+        std::string filter_name_;
+        std::unordered_map<std::string, float> options_;
+    };
+
     static const size_t DEFAULT_BUFFER_SIZE = 32;
 
     /// Constructor
@@ -69,6 +74,13 @@ public:
     ///
     /// \param filename Path to the RSBag file.
     virtual bool Open(const std::string &filename) override;
+
+    /// Open an RGBD Video playback with depth post-processing filters.
+    ///
+    /// \param filename Path to the RSBag file.
+    /// \param filters Ordered depth post-processing filters to apply.
+    bool Open(const std::string &filename,
+              const std::vector<PostProcessingFilter> &filters);
 
     /// Close the opened RSBag playback.
     virtual void Close() override;
@@ -132,7 +144,9 @@ private:
     std::thread frame_reader_thread_;
 
     std::unique_ptr<rs2::pipeline> pipe_;
+    std::vector<PostProcessingFilter> post_processing_filters_;
 
+    bool OpenPipeline(const std::string &filename);
     Json::Value GetMetadataJson();
     std::string GetTagInMetadata(const std::string &tag_name);
 };
