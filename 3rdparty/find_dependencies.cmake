@@ -1939,7 +1939,6 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         VERSION 2021.4.0
         TARGETS TBB::tbb
     )
-    list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
     list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_tbb)
 
 else(OPEN3D_USE_ONEAPI_PACKAGES)
@@ -2082,11 +2081,11 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
     # used by utility::ProgressBar. Bundled TBB (mkl/tbb.cmake) is newer.
     if(USE_SYSTEM_TBB)
         open3d_find_package_3rdparty_library(3rdparty_tbb
+            PUBLIC
             PACKAGE TBB
             VERSION 2021.4.0
             TARGETS TBB::tbb
         )
-        list(APPEND Open3D_3RDPARTY_EXTERNAL_MODULES TBB)
         if(NOT 3rdparty_tbb_FOUND)
             set(USE_SYSTEM_TBB OFF)
         endif()
