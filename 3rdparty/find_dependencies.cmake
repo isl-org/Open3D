@@ -1951,6 +1951,19 @@ else(OPEN3D_USE_ONEAPI_PACKAGES)
             find_package(LAPACKE)
             if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
                 message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+                # open3d/core/linalg includes <cblas.h> and calls cblas_sgemm /
+                # cblas_dgemm, but find_package(BLAS) resolves only the Fortran
+                # interface. In reference/netlib-style stacks the C interface
+                # lives in a separate library, so libOpen3D links cleanly and
+                # then fails at load with "undefined symbol: cblas_dgemm".
+                # Accelerate and MKL both ship the C interface in the library
+                # find_package(BLAS) already returns.
+                if(UNIX AND NOT APPLE)
+                    find_library(CBLAS_LIBRARY NAMES cblas)
+                    if(CBLAS_LIBRARY)
+                        list(APPEND BLAS_LIBRARIES ${CBLAS_LIBRARY})
+                    endif()
+                endif()
                 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM
                     ${BLAS_LIBRARIES}
                     ${LAPACK_LIBRARIES}
