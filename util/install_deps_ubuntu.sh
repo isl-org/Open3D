@@ -32,6 +32,9 @@ deps=(
     libusb-1.0-0-dev
     autoconf
     libtool
+    # cpp/apps/Open3DViewer/postinstall-linux.sh
+    desktop-file-utils
+    gtk-update-icon-cache
 )
 
 # Special case for ARM64
