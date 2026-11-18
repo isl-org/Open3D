@@ -68,6 +68,7 @@ mesh.material.material_name = 'defaultLit'
 mesh.material.scalar_properties['metallic'] = 1.0
 mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(
     dataset.path_map['albedo'])
+# Roughness and metallic maps store linear values; to_mitsuba preserves them.
 mesh.material.texture_maps['roughness'] = o3d.t.io.read_image(
     dataset.path_map['roughness'])
 mesh.material.texture_maps['metallic'] = o3d.t.io.read_image(
