@@ -1416,12 +1416,74 @@ endif()
 # Filament
 if(BUILD_GUI)
     if(USE_SYSTEM_FILAMENT)
-        open3d_find_package_3rdparty_library(3rdparty_filament
-            PACKAGE filament
-            TARGETS filament::filament filament::geometry filament::image
-        )
+        # Filament installs no CMake package configuration upstream, so both
+        # the package name and the namespace depend on who packaged it.
+        # conda-forge ships lib/cmake/Filament/FilamentConfig.cmake exporting
+        # Filament::; accept the lowercase spelling too rather than replace it.
+        #
+        # ktxreader is required: FilamentResourceManager constructs
+        # image::Ktx1Bundle and calls ktxreader::Ktx1Reader::createTexture() when
+        # loading the IBL and skybox textures. It pulls in image transitively.
+        #
+        # bluegl is named explicitly because Visualizer::InitOpenGL calls
+        # bluegl::bind(). Where BlueGL is a shared library it also arrives
+        # through backend's link interface, but on Windows it is static and
+        # outside that interface, so relying on the transitive edge fails.
+        set(_open3d_filament_package "")
+        foreach(_open3d_filament_candidate Filament filament)
+            find_package(${_open3d_filament_candidate} QUIET)
+            if(${_open3d_filament_candidate}_FOUND)
+                set(_open3d_filament_package ${_open3d_filament_candidate})
+                break()
+            endif()
+        endforeach()
+        # Decide the namespace from the targets that were actually defined:
+        # on a case-insensitive filesystem find_package() may answer to a
+        # spelling that does not match the namespace the config exports.
+        if(TARGET filament::filament)
+            set(_open3d_filament_ns filament)
+        else()
+            set(_open3d_filament_ns Filament)
+        endif()
+        if(_open3d_filament_package)
+            open3d_find_package_3rdparty_library(3rdparty_filament
+                PACKAGE ${_open3d_filament_package}
+                TARGETS ${_open3d_filament_ns}::filament
+                        ${_open3d_filament_ns}::backend
+                        ${_open3d_filament_ns}::bluegl
+                        ${_open3d_filament_ns}::geometry
+                        ${_open3d_filament_ns}::ktxreader
+                        ${_open3d_filament_ns}::utils
+            )
+        endif()
+        unset(_open3d_filament_candidate)
+        unset(_open3d_filament_package)
         if(3rdparty_filament_FOUND)
-            set(FILAMENT_MATC "/usr/bin/matc")
+            # Use the matc that ships with the package rather than assuming a
+            # system-wide install path.
+            if(TARGET ${_open3d_filament_ns}::matc)
+                set(FILAMENT_MATC ${_open3d_filament_ns}::matc)
+            elseif(NOT FILAMENT_MATC)
+                find_program(FILAMENT_MATC matc)
+            endif()
+            if(APPLE)
+                # Open3D's own Objective-C++ sources (NativeMacOS.mm,
+                # MenuMacOS.mm, ComputeGPUMetal.mm, GaussianSplatMetalBackend.mm)
+                # reference AppKit, Metal and QuartzCore directly. The bundled
+                # Filament branch below adds these to 3rdparty_filament, but the
+                # system branch never reaches it, so libOpen3D fails to link with
+                # undefined _NSApp, _OBJC_CLASS_$_CAMetalLayer and friends.
+                find_library(CORE_VIDEO CoreVideo)
+                find_library(QUARTZ_CORE QuartzCore)
+                find_library(OPENGL_LIBRARY OpenGL)
+                find_library(METAL_LIBRARY Metal)
+                find_library(APPKIT_LIBRARY AppKit)
+                target_link_libraries(3rdparty_filament INTERFACE
+                    ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY}
+                    ${METAL_LIBRARY} ${APPKIT_LIBRARY})
+                target_link_options(3rdparty_filament INTERFACE
+                    "-fobjc-link-runtime")
+            endif()
         else()
             set(USE_SYSTEM_FILAMENT OFF)
         endif()
