@@ -125,8 +125,10 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "**.ipynb_checkpoints",
+    "dev_wheels.in.rst",
     "docker.in.rst",
     "getting_started.in.rst",
+    "sycl.in.rst",
     "jupyter/*/*.ipynb",
     "python_api_in/*.rst",
 ]
