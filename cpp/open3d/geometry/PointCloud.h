@@ -128,12 +128,40 @@ public:
     std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t>& indices, bool invert = false) const;
 
+    /// \enum VoxelReduction
+    ///
+    /// \brief Selects how each occupied voxel is reduced to a single output
+    /// point in VoxelDownSample.
+    ///
+    /// Centroid returns the arithmetic mean of the points in each voxel with
+    /// averaged attributes (default, existing behaviour). NearestToCentroid
+    /// returns the input point closest to the voxel's centroid, with that
+    /// point's original attributes preserved. NearestToCenter returns the
+    /// input point closest to the voxel's geometric center, with that point's
+    /// original attributes preserved.
+    enum class VoxelReduction {
+        Centroid,
+        NearestToCentroid,
+        NearestToCenter,
+    };
+
     /// \brief Downsample input pointcloud with a voxel, and return a new
-    /// point-cloud. Normals, covariances and colors are averaged if they exist.
+    /// point-cloud.
+    ///
+    /// In VoxelReduction::Centroid mode (default), each occupied voxel is
+    /// reduced to the arithmetic mean of the points that fell into it and
+    /// normals, covariances, and colors are averaged. In the two nearest
+    /// modes, the output point is one of the original input points and its
+    /// attributes are copied through unchanged. See PDAL's
+    /// VoxelCentroidNearestNeighbor and VoxelCenterNearestNeighbor filters
+    /// for precedent.
     ///
     /// \param voxel_size Defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud.
-    std::shared_ptr<PointCloud> VoxelDownSample(double voxel_size) const;
+    /// \param reduction Selects the per-voxel reduction mode.
+    std::shared_ptr<PointCloud> VoxelDownSample(
+            double voxel_size,
+            VoxelReduction reduction = VoxelReduction::Centroid) const;
 
     /// \brief Function to downsample using geometry.PointCloud.VoxelDownSample
     ///
