@@ -183,21 +183,21 @@ def _example(parser, args):
     examples_in_category = _get_examples_in_category(category)
     target = str((examples_dir / category / examples_in_category[example] /
                   f"{example}.py").resolve())
-    # path for examples needs to be modified for implicit relative imports
-    sys.path.append(
-        (examples_dir / category / examples_in_category[example]).resolve())
-
     if args.show:
         with open(target) as f:
             print(f.read())
         return 0
 
     print(f"Running example {args.category_example} ...")
-    removed_args = sys.argv[1:3]
-    del sys.argv[1:3]
-    runpy.run_path(target, run_name="__main__")
-    sys.argv.insert(1, removed_args[0])
-    sys.argv.insert(2, removed_args[1])
+    original_argv = sys.argv
+    sys.argv = [target, *sys.argv[3:]]
+    original_path = sys.path
+    sys.path = [str(Path(target).parent), *original_path]
+    try:
+        runpy.run_path(target, run_name="__main__")
+    finally:
+        sys.path = original_path
+        sys.argv = original_argv
 
     return 0
 
