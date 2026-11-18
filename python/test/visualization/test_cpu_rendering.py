@@ -29,6 +29,29 @@ def draw_box_offscreen():
     _ = render.render_to_image()
 
 
+def draw_tone_mapping_offscreen():
+    """Checks that public tone-mapping selections reach Filament."""
+    import numpy as np
+    import open3d.visualization.rendering as rendering
+
+    render = rendering.OffscreenRenderer(160, 90)
+    scene = render.scene
+    scene.show_skybox(False)
+    scene.view.set_post_processing(True)
+
+    grading = rendering.ColorGrading
+    means = []
+    for mode in (grading.ToneMapping.LINEAR, grading.ToneMapping.ACES):
+        scene.view.set_color_grading(grading(grading.Quality.ULTRA, mode))
+        scene.set_background([1.0, 1.0, 1.0, 1.0])
+        pixels = np.asarray(render.render_to_image())
+        means.append(pixels[15:75, 15:145, :3].mean())
+
+    # LINEAR leaves the white background close to 255, while ACES compresses
+    # it. The old code ignored both selections and differed only by dithering.
+    assert abs(means[0] - means[1]) > 20.0
+
+
 @pytest.mark.skipif(
     not (platform.system() == "Linux" and platform.machine() == "x86_64") or
     os.getenv("OPEN3D_CPU_RENDERING", '') != 'true',
@@ -41,5 +64,21 @@ def test_draw_cpu():
     if proc.exitcode is None:
         proc.kill()
         proc.join()  # Reap the killed process to avoid leaving a zombie.
+        pytest.fail(__name__ + " did not complete.")
+    assert proc.exitcode == 0
+
+
+@pytest.mark.skipif(
+    not (platform.system() == "Linux" and platform.machine() == "x86_64") or
+    os.getenv("OPEN3D_CPU_RENDERING", '') != 'true',
+    reason="Offscreen CPU rendering is only supported on x86_64 Linux")
+def test_tone_mapping_cpu():
+    """Test that supported tone-mapping modes produce different output."""
+    proc = Process(target=draw_tone_mapping_offscreen)
+    proc.start()
+    proc.join(timeout=10)
+    if proc.exitcode is None:
+        proc.kill()
+        proc.join()
         pytest.fail(__name__ + " did not complete.")
     assert proc.exitcode == 0

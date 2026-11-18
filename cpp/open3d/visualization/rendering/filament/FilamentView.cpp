@@ -24,6 +24,7 @@
 #include <filament/Engine.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
+#include <filament/ToneMapper.h>
 #include <filament/View.h>
 #include <filament/Viewport.h>
 
@@ -245,64 +246,58 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
             break;
     }
 
-    // Tone mapping is not supported in Filament's ColorGrading::Builder API.
-    // The toneMapping() method was removed/deprecated in newer versions of
-    // Filament, so this code is commented out. The ToneMapping parameter in
-    // ColorGradingParams is kept for API compatibility but is not applied.
-    // filament::ColorGrading::ToneMapping tm =
-    //         filament::ColorGrading::ToneMapping::LINEAR;
-    // switch (color_grading.GetToneMapping()) {
-    //     case ColorGradingParams::ToneMapping::kAcesLegacy:
-    //         tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
-    //         break;
-    //     case ColorGradingParams::ToneMapping::kAces:
-    //         tm = filament::ColorGrading::ToneMapping::ACES;
-    //         break;
-    //     case ColorGradingParams::ToneMapping::kFilmic:
-    //         tm = filament::ColorGrading::ToneMapping::FILMIC;
-    //         break;
-    //     case ColorGradingParams::ToneMapping::kUchimura:
-    //         tm = filament::ColorGrading::ToneMapping::UCHIMURA;
-    //         break;
-    //     case ColorGradingParams::ToneMapping::kReinhard:
-    //         tm = filament::ColorGrading::ToneMapping::REINHARD;
-    //         break;
-    //     case ColorGradingParams::ToneMapping::kDisplayRange:
-    //         tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
-    //         break;
-    //     default:
-    //         break;
-    // }
+    // The mapper is needed only while the grading LUT is built synchronously.
+    std::unique_ptr<filament::ToneMapper> tone_mapper;
+    switch (color_grading.GetToneMapping()) {
+        case ColorGradingParams::ToneMapping::kLinear:
+            tone_mapper = std::make_unique<filament::LinearToneMapper>();
+            break;
+        case ColorGradingParams::ToneMapping::kAcesLegacy:
+            tone_mapper = std::make_unique<filament::ACESLegacyToneMapper>();
+            break;
+        case ColorGradingParams::ToneMapping::kAces:
+            tone_mapper = std::make_unique<filament::ACESToneMapper>();
+            break;
+        case ColorGradingParams::ToneMapping::kFilmic:
+            tone_mapper = std::make_unique<filament::FilmicToneMapper>();
+            break;
+        case ColorGradingParams::ToneMapping::kDisplayRange:
+            tone_mapper = std::make_unique<filament::DisplayRangeToneMapper>();
+            break;
+        default:
+            // Uchimura and Reinhard have no equivalent in Filament's current
+            // API. Retain Filament's default mapper for those modes.
+            break;
+    }
 
     if (color_grading_) {
         engine_.destroy(color_grading_);
     }
-    color_grading_ =
-            filament::ColorGrading::Builder()
-                    .quality(q)
-                    // .toneMapping(tm)
-                    .whiteBalance(color_grading.GetTemperature(),
-                                  color_grading.GetTint())
-                    .channelMixer(
-                            eigen_to_float3(color_grading.GetMixerRed()),
-                            eigen_to_float3(color_grading.GetMixerGreen()),
-                            eigen_to_float3(color_grading.GetMixerBlue()))
-                    .shadowsMidtonesHighlights(
-                            eigen_to_float4(color_grading.GetShadows()),
-                            eigen_to_float4(color_grading.GetMidtones()),
-                            eigen_to_float4(color_grading.GetHighlights()),
-                            eigen_to_float4(color_grading.GetRanges()))
-                    .slopeOffsetPower(
-                            eigen_to_float3(color_grading.GetSlope()),
-                            eigen_to_float3(color_grading.GetOffset()),
-                            eigen_to_float3(color_grading.GetPower()))
-                    .contrast(color_grading.GetContrast())
-                    .vibrance(color_grading.GetVibrance())
-                    .saturation(color_grading.GetSaturation())
-                    .curves(eigen_to_float3(color_grading.GetShadowGamma()),
-                            eigen_to_float3(color_grading.GetMidpoint()),
-                            eigen_to_float3(color_grading.GetHighlightScale()))
-                    .build(engine_);
+    filament::ColorGrading::Builder builder;
+    builder.quality(q)
+            .whiteBalance(color_grading.GetTemperature(),
+                          color_grading.GetTint())
+            .channelMixer(eigen_to_float3(color_grading.GetMixerRed()),
+                          eigen_to_float3(color_grading.GetMixerGreen()),
+                          eigen_to_float3(color_grading.GetMixerBlue()))
+            .shadowsMidtonesHighlights(
+                    eigen_to_float4(color_grading.GetShadows()),
+                    eigen_to_float4(color_grading.GetMidtones()),
+                    eigen_to_float4(color_grading.GetHighlights()),
+                    eigen_to_float4(color_grading.GetRanges()))
+            .slopeOffsetPower(eigen_to_float3(color_grading.GetSlope()),
+                              eigen_to_float3(color_grading.GetOffset()),
+                              eigen_to_float3(color_grading.GetPower()))
+            .contrast(color_grading.GetContrast())
+            .vibrance(color_grading.GetVibrance())
+            .saturation(color_grading.GetSaturation())
+            .curves(eigen_to_float3(color_grading.GetShadowGamma()),
+                    eigen_to_float3(color_grading.GetMidpoint()),
+                    eigen_to_float3(color_grading.GetHighlightScale()));
+    if (tone_mapper) {
+        builder.toneMapper(tone_mapper.get());
+    }
+    color_grading_ = builder.build(engine_);
     view_->setColorGrading(color_grading_);
 }
 
