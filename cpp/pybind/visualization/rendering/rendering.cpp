@@ -7,6 +7,7 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
@@ -596,11 +597,23 @@ void pybind_rendering_definitions(py::module &m) {
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
+            .def("update_geometry",
+                 (void(Scene::*)(const std::string &,
+                                 const t::geometry::LineSet &, uint32_t)) &
+                         Scene::UpdateGeometry,
+                 "name"_a, "line_set"_a, "update_flag"_a,
+                 "Updates flagged point positions or line colors of an "
+                 "existing tensor LineSet in place. Point and line counts, "
+                 "line indices, width mode, and color layout must remain "
+                 "unchanged.")
             .def("has_geometry", &Scene::HasGeometry, "name"_a,
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
-            .def("update_geometry", &Scene::UpdateGeometry, "name"_a,
-                 "point_cloud"_a, "update_flag"_a,
+            .def("update_geometry",
+                 (void(Scene::*)(const std::string &,
+                                 const t::geometry::PointCloud &, uint32_t)) &
+                         Scene::UpdateGeometry,
+                 "name"_a, "point_cloud"_a, "update_flag"_a,
                  "Updates the flagged arrays from the tgeometry.PointCloud. "
                  "The flags should be ORed from Scene.UPDATE_POINTS_FLAG, "
                  "Scene.UPDATE_NORMALS_FLAG, Scene.UPDATE_COLORS_FLAG, and "
@@ -741,6 +754,13 @@ void pybind_rendering_definitions(py::module &m) {
             .def("has_geometry", &Open3DScene::HasGeometry, "name"_a,
                  "Returns True if the geometry has been added to the scene, "
                  "False otherwise")
+            .def("update_geometry",
+                 py::overload_cast<const std::string &,
+                                   const t::geometry::LineSet &, uint32_t>(
+                         &Open3DScene::UpdateGeometry),
+                 "name"_a, "line_set"_a, "update_flag"_a,
+                 "Updates selected fixed-topology tensor LineSet attributes "
+                 "and refreshes the scene bounds.")
             .def("remove_geometry", &Open3DScene::RemoveGeometry, "name"_a,
                  "Removes the geometry with the given name")
             .def("geometry_is_visible", &Open3DScene::GeometryIsVisible,

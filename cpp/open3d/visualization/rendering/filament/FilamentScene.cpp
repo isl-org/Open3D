@@ -62,6 +62,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #ifdef WITH_IPP
 #include "open3d/t/geometry/kernel/IPPImage.h"
@@ -854,6 +855,21 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         // Mesh changes alter the cached Filament color/depth attachments that
         // Gaussian compositing samples, so invalidate its per-view render data.
         MarkGaussianSplatChanged();
+        if (auto* line_set = dynamic_cast<const t::geometry::LineSet*>(
+                    &geometry)) {
+            auto& renderable = geometries_.at(object_name);
+            renderable.is_tensor_line_set = true;
+            auto* line_builder =
+                    dynamic_cast<TLineSetBuffersBuilder*>(buffer_builder.get());
+            renderable.tensor_line_set_layout =
+                    static_cast<uint8_t>(line_builder->GetLayout());
+            renderable.tensor_line_set_source_point_count = static_cast<size_t>(
+                    line_set->GetPointPositions().GetLength());
+            renderable.tensor_line_set_line_count =
+                    static_cast<size_t>(line_set->GetLineIndices().GetLength());
+            renderable.tensor_line_set_topology_hash =
+                    line_builder->GetTopologyHash();
+        }
     }
     return success;
 }
@@ -970,6 +986,64 @@ bool FilamentScene::HasGeometry(const std::string& object_name) const {
     }
     auto geom_entry = geometries_.find(object_name);
     return (geom_entry != geometries_.end());
+}
+
+void FilamentScene::UpdateGeometry(const std::string& object_name,
+                                   const t::geometry::LineSet& line_set,
+                                   uint32_t update_flags) {
+    auto geoms = GetGeometry(object_name, false);
+    if (geoms.empty()) {
+        utility::LogWarning("Geometry {} is not in the scene graph",
+                            object_name);
+        return;
+    }
+    if (geoms.size() != 1 || !geoms[0]->is_tensor_line_set) {
+        utility::LogWarning(
+                "Geometry {} is not a tensor LineSet and cannot be updated "
+                "from one.",
+                object_name);
+        return;
+    }
+
+    auto* geometry = geoms[0];
+    TLineSetBuffersBuilder buffer_builder(line_set);
+    if (geometry->tensor_line_set_layout ==
+        static_cast<uint8_t>(TLineSetBuffersBuilder::Layout::kWideExpanded)) {
+        buffer_builder.SetWideLines();
+    }
+    const bool incompatible_layout =
+            static_cast<uint8_t>(buffer_builder.GetLayout()) !=
+                    geometry->tensor_line_set_layout ||
+            static_cast<size_t>(line_set.GetPointPositions().GetLength()) !=
+                    geometry->tensor_line_set_source_point_count ||
+            static_cast<size_t>(line_set.GetLineIndices().GetLength()) !=
+                    geometry->tensor_line_set_line_count ||
+            buffer_builder.GetTopologyHash() !=
+                    geometry->tensor_line_set_topology_hash;
+    if (incompatible_layout) {
+        utility::LogWarning(
+                "Tensor line set {} cannot be updated because its point "
+                "count, line topology, width mode, or color layout has "
+                "changed. Remove and add the line set again.",
+                object_name);
+        return;
+    }
+
+    const bool update_points = update_flags & kUpdatePointsFlag;
+    const bool update_colors = update_flags & kUpdateColorsFlag;
+    if (!update_points && !update_colors) return;
+    if (!buffer_builder.UpdateBuffers(geometry->vb, geometry->ib, update_points,
+                                      update_colors, false)) {
+        return;
+    }
+
+    if (update_points) {
+        auto& renderable_mgr = engine_.getRenderableManager();
+        auto instance = renderable_mgr.getInstance(geometry->filament_entity);
+        renderable_mgr.setAxisAlignedBoundingBox(instance,
+                                                 buffer_builder.ComputeAABB());
+    }
+    MarkGaussianSplatChanged();
 }
 
 void FilamentScene::UpdateGeometry(const std::string& object_name,

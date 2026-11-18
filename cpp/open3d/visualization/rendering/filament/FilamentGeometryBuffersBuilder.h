@@ -180,6 +180,12 @@ protected:
 
 class TLineSetBuffersBuilder : public GeometryBuffersBuilder {
 public:
+    enum class Layout : uint8_t {
+        kThinIndexed,
+        kThinExpanded,
+        kWideExpanded,
+    };
+
     explicit TLineSetBuffersBuilder(const t::geometry::LineSet& geometry);
 
     filament::RenderableManager::PrimitiveType GetPrimitiveType()
@@ -188,21 +194,20 @@ public:
     Buffers ConstructBuffers() override;
     filament::Box ComputeAABB() override;
 
+    /// Updates selected attributes in existing, compatible Filament buffers.
+    /// The caller must preserve the line topology and render layout.
+    bool UpdateBuffers(VertexBufferHandle vertex_buffer,
+                       IndexBufferHandle index_buffer,
+                       bool update_points,
+                       bool update_colors,
+                       bool update_indices = false);
+
+    Layout GetLayout() const;
+    size_t GetVertexCount() const;
+    size_t GetIndexCount() const;
+    uint64_t GetTopologyHash() const;
+
 private:
-    /// Utility function for building GPU assets needed for rendering lines as
-    /// lines. Used for 'thin' lines.
-    void ConstructThinLines(uint32_t& n_vertices,
-                            float** vertex_data,
-                            uint32_t& n_indices,
-                            uint32_t& indices_bytes,
-                            uint32_t** line_indices);
-    /// Utility method for building GPU assets needed for rendering wide lines
-    /// which are rendered as pairs of triangles per line
-    void ConstructWideLines(uint32_t& n_vertices,
-                            float** vertex_data,
-                            uint32_t& n_indices,
-                            uint32_t& indices_bytes,
-                            uint32_t** line_indices);
     t::geometry::LineSet geometry_;
 };
 

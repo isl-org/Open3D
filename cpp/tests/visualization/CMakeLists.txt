@@ -4,3 +4,7 @@ if (BUILD_GUI)
         rendering/GaussianSplatRender.cpp
     )
 endif()
+
+if (BUILD_GUI)
+    target_sources(tests PRIVATE rendering/TensorLineSetUpdate.cpp)
+endif()

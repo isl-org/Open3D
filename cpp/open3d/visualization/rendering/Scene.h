@@ -24,6 +24,7 @@ class Image;
 namespace t {
 namespace geometry {
 class Geometry;
+class LineSet;
 class PointCloud;
 }  // namespace geometry
 }  // namespace t
@@ -84,6 +85,11 @@ public:
     virtual bool AddGeometry(const std::string& object_name,
                              const TriangleMeshModel& model) = 0;
     virtual bool HasGeometry(const std::string& object_name) const = 0;
+    /// Updates selected attributes of an existing tensor line set. The line
+    /// topology, width mode, and render attribute layout must remain unchanged.
+    virtual void UpdateGeometry(const std::string& object_name,
+                                const t::geometry::LineSet& line_set,
+                                uint32_t update_flags) = 0;
     virtual void UpdateGeometry(const std::string& object_name,
                                 const t::geometry::PointCloud& point_cloud,
                                 uint32_t update_flags) = 0;
