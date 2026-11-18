@@ -164,8 +164,8 @@ std::string TensorMap::ToString() const {
        << std::endl;
     for (const std::string& key : keys) {
         const core::Tensor& val = at(key);
-        ss << fmt::format(tensor_format_str, key, val.GetShape().ToString(),
-                          val.GetDtype().ToString(),
+        ss << fmt::format(fmt::runtime(tensor_format_str), key,
+                          val.GetShape().ToString(), val.GetDtype().ToString(),
                           val.GetDevice().ToString());
         if (key == primary_key) {
             ss << " (primary)";
