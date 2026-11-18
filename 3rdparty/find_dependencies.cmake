@@ -893,9 +893,20 @@ if (BUILD_LIBREALSENSE)
         endif()
         # Link system libusb-1.0 (required when USE_EXTERNAL_USB=ON)
         # Required on both Linux and macOS
-        if (UNIX)
+        if (APPLE)
+            # Prefer the static archive so that libOpen3D does not load
+            # libusb from the Homebrew prefix at runtime (issue #7586).
+            find_library(USB1_LIBRARY NAMES libusb-1.0.a usb-1.0 REQUIRED
+                DOC "Library provided by Homebrew libusb (macOS)")
+            target_link_libraries(3rdparty_librealsense INTERFACE ${USB1_LIBRARY})
+            if (USB1_LIBRARY MATCHES "\\.a$")
+                # Libs.private from libusb-1.0.pc
+                target_link_libraries(3rdparty_librealsense INTERFACE
+                    "-lobjc -framework IOKit -framework CoreFoundation -framework Security")
+            endif()
+        elseif (UNIX)
             find_library(USB1_LIBRARY usb-1.0 REQUIRED
-                DOC "Library provided by the deb package libusb-1.0-dev (Linux) or Homebrew libusb (macOS)")
+                DOC "Library provided by the deb package libusb-1.0-dev (Linux)")
             target_link_libraries(3rdparty_librealsense INTERFACE ${USB1_LIBRARY})
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_librealsense)
