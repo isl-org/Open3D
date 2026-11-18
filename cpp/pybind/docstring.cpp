@@ -140,7 +140,7 @@ size_t FunctionDoc::ParseSummary() {
         size_t summary_start_pos =
                 result_type_pos + utility::WordLength(pybind_doc_,
                                                       result_type_pos,
-                                                      "._:,[]() ,\"");
+                                                      "._:,[]() ,\"|");
         summary_end_pos =
                 pybind_doc_.find(". " + name_ + "(", summary_start_pos);
         if (summary_end_pos == std::string::npos)
@@ -178,7 +178,7 @@ void FunctionDoc::ParseReturn() {
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
                 utility::WordLength(pybind_doc_, result_type_pos,
-                                    "._:,[]() ,\""));
+                                    "._:,[]() ,\"|"));
         overload_docs_.back().return_doc_.type_ = StringCleanAll(return_type);
     }
 }
@@ -302,7 +302,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
     // Argument with default value
     std::regex rgx_with_default(
             "([A-Za-z_][A-Za-z\\d_]*): "
-            "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*) = (.*)");
+            "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,|]*) = (.*)");
     std::smatch matches;
     if (std::regex_search(argument_token, matches, rgx_with_default)) {
         argument_doc.name_ = matches[1].str();
@@ -325,7 +325,7 @@ ArgumentDoc FunctionDoc::ParseArgumentToken(const std::string& argument_token) {
         // Argument without default value
         std::regex rgx_without_default(
                 "([A-Za-z_][A-Za-z\\d_]*): "
-                "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,]*)");
+                "([A-Za-z_][A-Za-z\\d_:\\.\\[\\]\\(\\) ,|]*)");
         if (std::regex_search(argument_token, matches, rgx_without_default)) {
             argument_doc.name_ = matches[1].str();
             argument_doc.type_ = matches[2].str();

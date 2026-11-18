@@ -37,6 +37,8 @@ public:
 ///         - Default value
 ///     3. Return type
 ///     4. Brief "summary" docstring received from pybind
+/// Argument and return annotations preserve PEP 604 union types, including
+/// unions inside generic types, without losing defaults or summary text.
 /// Optionally, the user can inject additional docstrings to the class.
 ///
 /// This approach was chosen in favor of writing docstring in Python files for
