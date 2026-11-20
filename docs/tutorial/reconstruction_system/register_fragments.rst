@@ -59,6 +59,11 @@ Pairwise global registration
 
 This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
 
+A result with no inlier correspondences (zero fitness) is rejected. The
+information matrix then checks that the overlap is sufficient. Pure translation
+and identity transformations can be valid alignments and are subject to the same
+overlap check.
+
 .. _reconstruction_system_compute_initial_registration:
 
 Multiway registration
