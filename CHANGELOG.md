@@ -99,6 +99,7 @@
 -   Fix Windows build failure for PyTorch ops due to PyTorch's bundled fmt (v11+) requiring `/utf-8` with MSVC (PR #7447)
 -   Fix `TriangleMesh::SamplePointsPoissonDisk` performance by incrementally updating neighbor weights instead of recomputing them with additional KD-tree queries (issue #7449)
 -   Add `GetMenu` for MenuBase for easy menu item/submenu control. (PR #7295)
+-   Fix ghosting and non-deterministic output in `TriangleMesh::ProjectImagesToAlbedo` caused by TBB work-stealing between image tasks (issue #7631) (PR #7632)
 
 ## 0.13
 
