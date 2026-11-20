@@ -26,8 +26,8 @@ namespace tests {
 /// \param eq_triangle_vertex_order If true then triangles are only equal if the
 /// order of the vertices is the same. If false any permutation of the triangle
 /// indices is allowed.
-void ExpectMeshEQ(const open3d::geometry::TriangleMesh &mesh0,
-                  const open3d::geometry::TriangleMesh &mesh1,
+void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
+                  const open3d::geometry::TriangleMesh& mesh1,
                   double threshold = 1e-6,
                   bool eq_triangle_vertex_order = true) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
@@ -665,9 +665,9 @@ TEST(TriangleMesh, OperatorAdditionAssignment) {
     geometry::TriangleMesh temp_tm1 = tm1;
     geometry::TriangleMesh temp_tm2 = tm2;
     // Function to reset values of temp_tm0, temp_tm1 and temp_tm2
-    auto reset_values = [&tm0, &tm1, &tm2](geometry::TriangleMesh &temp_tm0,
-                                           geometry::TriangleMesh &temp_tm1,
-                                           geometry::TriangleMesh &temp_tm2) {
+    auto reset_values = [&tm0, &tm1, &tm2](geometry::TriangleMesh& temp_tm0,
+                                           geometry::TriangleMesh& temp_tm1,
+                                           geometry::TriangleMesh& temp_tm2) {
         temp_tm0 = tm0;
         temp_tm1 = tm1;
         temp_tm2 = tm2;
@@ -769,6 +769,42 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
     tm.ComputeTriangleNormals();
 
     ExpectEQ(ref, tm.triangle_normals_);
+}
+
+TEST(TriangleMesh, RejectsOutOfRangeTriangleIndices) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 0, 0),
+                      Eigen::Vector3d(0, 1, 0)};
+    mesh.triangles_ = {Eigen::Vector3i(0, 1, 3)};
+    EXPECT_THROW(mesh.ComputeTriangleNormals(), std::runtime_error);
+    EXPECT_THROW(mesh.ComputeAdjacencyList(), std::runtime_error);
+    EXPECT_THROW(mesh.IsVertexManifold(), std::runtime_error);
+    EXPECT_THROW(mesh.SimplifyVertexClustering(1.0), std::runtime_error);
+    EXPECT_THROW(mesh.SimplifyQuadricDecimation(1, 0.0, 1.0),
+                 std::runtime_error);
+    EXPECT_THROW(mesh.SubdivideMidpoint(1), std::runtime_error);
+    EXPECT_THROW(mesh.SubdivideLoop(1), std::runtime_error);
+
+    mesh.triangles_ = {Eigen::Vector3i(0, 1, 2), Eigen::Vector3i(0, 1, 3)};
+    EXPECT_THROW(mesh.SubdivideMidpoint(1), std::runtime_error);
+
+    mesh.triangles_ = {Eigen::Vector3i(0, -1, 2)};
+    EXPECT_THROW(mesh.ComputeTriangleNormals(), std::runtime_error);
+    EXPECT_THROW(mesh.ComputeAdjacencyList(), std::runtime_error);
+    EXPECT_THROW(mesh.IsVertexManifold(), std::runtime_error);
+}
+
+TEST(TriangleMesh, SubdivideMidpointWithNoIterationsReturnsCopy) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_ = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 0, 0),
+                      Eigen::Vector3d(0, 1, 0)};
+    mesh.triangles_ = {Eigen::Vector3i(0, 1, 2)};
+
+    for (int iterations : {0, -1}) {
+        const auto subdivided = mesh.SubdivideMidpoint(iterations);
+        EXPECT_EQ(subdivided->vertices_.size(), mesh.vertices_.size());
+        EXPECT_EQ(subdivided->triangles_.size(), mesh.triangles_.size());
+    }
 }
 
 TEST(TriangleMesh, ComputeVertexNormals) {
@@ -1136,7 +1172,7 @@ TEST(TriangleMesh, SamplePointsPoissonDisk) {
 
     // All points must lie on the triangle surface (z=0, x>=0, y>=0, x+y<=1)
     for (size_t i = 0; i < pcd->points_.size(); ++i) {
-        const auto &p = pcd->points_[i];
+        const auto& p = pcd->points_[i];
         EXPECT_NEAR(p(2), 0.0, 1e-10);
         EXPECT_GE(p(0), -1e-10);
         EXPECT_GE(p(1), -1e-10);
@@ -2414,6 +2450,48 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
     std::vector<double> densities_es;
     std::tie(mesh_es, densities_es) =
             geometry::TriangleMesh::CreateFromPointCloudPoisson(pcd, 2);
+
+    // Poisson extraction can choose either diagonal for this coplanar quad.
+    auto alternate_triangles = mesh_gt.triangles_;
+    auto replace_triangle = [&alternate_triangles](const Eigen::Vector3i& from,
+                                                   const Eigen::Vector3i& to) {
+        auto triangle = std::find_if(
+                alternate_triangles.begin(), alternate_triangles.end(),
+                [&from](const Eigen::Vector3i& candidate) {
+                    return (candidate.array() == from.array()).all();
+                });
+        if (triangle == alternate_triangles.end()) {
+            return false;
+        }
+        *triangle = to;
+        return true;
+    };
+#if defined(__APPLE__) && defined(__arm64__)
+    ASSERT_TRUE(replace_triangle({44, 45, 50}, {44, 32, 50}));
+    ASSERT_TRUE(replace_triangle({45, 32, 50}, {44, 45, 32}));
+#else
+    ASSERT_TRUE(replace_triangle({44, 32, 50}, {44, 45, 50}));
+    ASSERT_TRUE(replace_triangle({44, 45, 32}, {45, 32, 50}));
+#endif
+    auto triangles_equal = [](const std::vector<Eigen::Vector3i>& triangles0,
+                              const std::vector<Eigen::Vector3i>& triangles1) {
+        return triangles0.size() == triangles1.size() &&
+               std::equal(triangles0.begin(), triangles0.end(),
+                          triangles1.begin(),
+                          [](const Eigen::Vector3i& triangle0,
+                             const Eigen::Vector3i& triangle1) {
+                              return (triangle0.array() == triangle1.array())
+                                      .all();
+                          });
+    };
+    const bool matches_expected =
+            triangles_equal(mesh_es->triangles_, mesh_gt.triangles_);
+    const bool matches_alternate =
+            triangles_equal(mesh_es->triangles_, alternate_triangles);
+    ASSERT_TRUE(matches_expected || matches_alternate);
+    if (matches_alternate) {
+        mesh_gt.triangles_ = alternate_triangles;
+    }
 
     ExpectMeshEQ(*mesh_es, mesh_gt, 1e-4);
     ExpectEQ(densities_es, densities_gt, 1e-4);

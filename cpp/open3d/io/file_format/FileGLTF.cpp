@@ -10,6 +10,7 @@
 #include <numeric>
 #include <vector>
 
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/FileSystem.h"
@@ -326,6 +327,10 @@ bool ReadTriangleMeshFromGLTF(const std::string& filename,
                     }
                 }
             }
+
+            geometry::detail::AssertTriangleIndicesInRange(
+                    mesh_temp.triangles_,
+                    static_cast<int64_t>(mesh_temp.vertices_.size()));
 
             if (gltf_node.matrix.size() > 0) {
                 std::vector<double> matrix = gltf_node.matrix;

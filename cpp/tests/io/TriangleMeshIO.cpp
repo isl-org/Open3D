@@ -49,5 +49,14 @@ TEST(TriangleMeshIO, AddTrianglesByEarClippingNonconvexPoly) {
     EXPECT_TRUE(io::AddTrianglesByEarClipping(*poly, indices));
 }
 
+TEST(TriangleMeshIO, AddTrianglesByEarClippingRejectsOutOfRangeIndex) {
+    geometry::TriangleMesh mesh;
+    mesh.vertices_.resize(3);
+    std::vector<unsigned int> indices{0, 1, 3};
+
+    EXPECT_FALSE(io::AddTrianglesByEarClipping(mesh, indices));
+    EXPECT_TRUE(mesh.triangles_.empty());
+}
+
 }  // namespace tests
 }  // namespace open3d
