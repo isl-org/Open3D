@@ -1577,7 +1577,7 @@ Image TriangleMesh::ProjectImagesToAlbedo(
             uv2xy(max_workers, core::Tensor({}, core::Float32)),
             uvrays(max_workers, core::Tensor({}, core::Float32));
 
-    auto project_one_image = [&](size_t i, tbb::feeder<size_t> &feeder) {
+    auto project_one_image_impl = [&](size_t i) {
         size_t widx = tbb::this_task_arena::current_thread_index();
         // initialize task variables
         if (!this_albedo[widx].GetShape().IsCompatible(
@@ -1683,6 +1683,14 @@ Image TriangleMesh::ProjectImagesToAlbedo(
                 p_albedo[k] += p_this_albedo[k] * softmax_weight;
             p_albedo[3] += softmax_weight;
         }
+    };
+    // The scratch buffers above are indexed by the worker thread index (widx).
+    // Since core::ParallelFor runs on TBB, the tensor ops inside a task spawn
+    // nested TBB loops; while waiting on them a thread may steal another image
+    // task, which then reuses the same widx buffers and corrupts both images.
+    // Isolate each image task so nested waits cannot pick up outer tasks.
+    auto project_one_image = [&](size_t i, tbb::feeder<size_t> &) {
+        tbb::this_task_arena::isolate([&]() { project_one_image_impl(i); });
     };
 
     std::vector<size_t> range(images.size(), 0);
