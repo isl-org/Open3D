@@ -520,7 +520,7 @@ build Open3D with remote visualization. Currently, Linux, macOS and Windows are
 supported for ``x86_64`` architecture. If you wish to use a different version of
 WebRTC or build for a different configuration or platform, please see the
 `official WebRTC documentation
-<https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/index.md>`_
+<https://webrtc.googlesource.com/src/+/main/docs/native-code/development/README.md>`_
 and the Open3D build scripts.
 
 Linux and macOS
