@@ -194,7 +194,7 @@ Jupyter mode. However, you might want to
 .. warning::
 
     For remote visualization, please use a `secure Jupyter server
-    <https://jupyter-notebook.readthedocs.io/en/stable/public_server.html>`_.
+    <https://jupyter-server.readthedocs.io/en/latest/operators/public-server.html>`_.
 
 Non-blocking functions
 ::::::::::::::::::::::
