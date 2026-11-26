@@ -13,12 +13,16 @@
 #pragma warning(disable : 4068)
 #endif  // _MSC_VER
 
+#include <filament/Material.h>
 #include <filament/MaterialInstance.h>
 #include <filament/TextureSampler.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
+
+#include <cstring>
+#include <vector>
 
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
@@ -44,6 +48,22 @@ TextureSampler::WrapMode ConvertWrapMode(
     }
 
     return TextureSampler::WrapMode::CLAMP_TO_EDGE;
+}
+
+// Returns true if the material declares `parameter` as a float3 uniform.
+bool IsFloat3Parameter(const MaterialInstance& material_instance,
+                       const char* parameter) {
+    const Material* material = material_instance.getMaterial();
+    std::vector<Material::ParameterInfo> infos(material->getParameterCount());
+    const size_t n = material->getParameters(infos.data(), infos.size());
+    for (size_t i = 0; i < n; ++i) {
+        const auto& info = infos[i];
+        if (!info.isSampler && !info.isSubpass &&
+            std::strcmp(info.name, parameter) == 0) {
+            return info.type == Material::ParameterType::FLOAT3;
+        }
+    }
+    return false;
 }
 
 }  // namespace
@@ -166,6 +186,16 @@ MaterialModifier& FilamentMaterialModifier::SetColor(
 MaterialModifier& FilamentMaterialModifier::SetColor(
         const char* parameter, const Eigen::Vector4f& value, bool srgb) {
     if (material_instance_) {
+        // Several materials (defaultLit, defaultUnlit, unlitSolidColor,
+        // unlitBackground, infiniteGroundPlane) declare their color as float3,
+        // while MaterialRecord colors are always RGBA. Writing a float4 into a
+        // float3 uniform overruns the field, and newer Filament versions
+        // reject it ("value does not fit parameter"), so drop the alpha there.
+        if (IsFloat3Parameter(*material_instance_, parameter)) {
+            return SetColor(parameter,
+                            Eigen::Vector3f(value(0), value(1), value(2)),
+                            srgb);
+        }
         const auto color =
                 filament::math::float4{value(0), value(1), value(2), value(3)};
         auto rgba_type =
