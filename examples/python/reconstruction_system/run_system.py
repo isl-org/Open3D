@@ -63,10 +63,9 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument(
         '--device',
-        help="(optional) select processing device for slac and slac_integrate. "
-        "[example: cpu:0, cuda:0, sycl:0].",
-        type=str,
-        default='cpu:0')
+        help="SLAC optimization device, overriding the config file if given. "
+        "Examples: CPU:0, CUDA:0, SYCL:0. Default: CPU:0.",
+        type=str)
 
     args = parser.parse_args()
 
@@ -96,7 +95,8 @@ if __name__ == "__main__":
     else:
         config['debug_mode'] = False
 
-    config['device'] = args.device
+    if args.device is not None:
+        config['device'] = args.device
 
     print("====================================")
     print("Configuration")
