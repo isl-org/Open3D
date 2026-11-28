@@ -107,6 +107,13 @@ details). If it is not given, the PrimeSense factory setting is used. For your
 own dataset, use an appropriate camera intrinsic and visualize a depth image
 (likewise :ref:`/tutorial/geometry/rgbd_image.ipynb`) prior to using the system.
 
+For SLAC optimization (``--slac``), set ``"device"`` in the config file or pass
+``--device`` to override it. If neither is set, SLAC uses ``CPU:0``.
+
+.. code-block:: sh
+
+    python run_system.py --config config/tutorial.json --slac --device CUDA:0
+
 .. note:: ``"python_multi_threading": true`` utilizes ``joblib`` to parallelize
     the system using every CPU cores. With this option, Mac users may encounter
     an unexpected program termination. To avoid this issue, set this flag to
